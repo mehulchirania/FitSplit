@@ -1,0 +1,24 @@
+# Firebase App Hosting config for FitSplit.
+# Set Supabase values in the Firebase console or Secret Manager before rollout.
+runConfig:
+  minInstances: 0
+  maxInstances: 10
+  concurrency: 80
+  cpu: 1
+  memoryMiB: 512
+
+env:
+  - variable: NEXT_PUBLIC_SUPABASE_URL
+    value: ""
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: NEXT_PUBLIC_SUPABASE_ANON_KEY
+    value: ""
+    availability:
+      - BUILD
+      - RUNTIME
+  - variable: SUPABASE_SERVICE_ROLE_KEY
+    secret: supabaseServiceRoleKey
+  - variable: CRON_SECRET
+    secret: cronSecret
