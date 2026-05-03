@@ -25,9 +25,10 @@ function requireText(formData: FormData, key: string) {
 }
 
 function addMonths(dateValue: string, months: number) {
-  const date = new Date(`${dateValue}T00:00:00+05:30`);
-  date.setMonth(date.getMonth() + months);
-  date.setDate(date.getDate() - 1);
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCMonth(date.getUTCMonth() + months);
+  date.setUTCDate(date.getUTCDate() - 1);
   return date.toISOString().slice(0, 10);
 }
 
@@ -67,6 +68,7 @@ export async function createMemberWithMembership(formData: FormData) {
   await ensureTitanWorkspace();
   const db = requireFirebase();
   const memberId = randomUUID();
+  const membershipId = randomUUID();
   const fullName = requireText(formData, "fullName");
   const email = requireText(formData, "email");
   const startDate = requireText(formData, "startDate");
@@ -93,8 +95,8 @@ export async function createMemberWithMembership(formData: FormData) {
     updatedAt: now
   });
 
-  await db.collection(collectionPaths.memberships).doc(randomUUID()).set({
-    id: randomUUID(),
+  await db.collection(collectionPaths.memberships).doc(membershipId).set({
+    id: membershipId,
     gymId: TITAN_GYM_ID,
     memberId,
     planName: `${durationMonths} Month Membership`,
@@ -109,6 +111,54 @@ export async function createMemberWithMembership(formData: FormData) {
 
   revalidatePath("/owner");
   revalidatePath("/owner/members");
+}
+
+export async function renewMemberMembership(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const membershipId = randomUUID();
+  const notificationId = randomUUID();
+  const memberId = requireText(formData, "memberId");
+  const startDate = requireText(formData, "startDate");
+  const durationMonths = Number(formData.get("durationMonths") ?? 1);
+
+  if (![1, 3, 6, 12].includes(durationMonths)) {
+    throw new Error("durationMonths must be 1, 3, 6, or 12.");
+  }
+
+  const endDate = addMonths(startDate, durationMonths);
+  const paymentReference = String(formData.get("paymentReference") ?? "").trim();
+  const now = new Date().toISOString();
+
+  await db.collection(collectionPaths.memberships).doc(membershipId).set({
+    id: membershipId,
+    gymId: TITAN_GYM_ID,
+    memberId,
+    planName: `${durationMonths} Month Renewal`,
+    startDate,
+    endDate,
+    durationMonths,
+    paymentReference,
+    createdBy: TITAN_OWNER_ID,
+    createdAt: now,
+    updatedAt: now,
+    type: "renewal"
+  });
+
+  await db.collection(collectionPaths.notifications).doc(notificationId).set({
+    id: notificationId,
+    recipientRole: "member",
+    recipientId: memberId,
+    type: "membership_renewed",
+    title: "Membership renewed",
+    body: `Your membership has been renewed until ${endDate}.`,
+    createdAt: now
+  });
+
+  revalidatePath("/owner");
+  revalidatePath("/owner/members");
+  revalidatePath(`/owner/members/${memberId}`);
+  revalidatePath("/member");
 }
 
 export async function createCatalogExercise(formData: FormData) {

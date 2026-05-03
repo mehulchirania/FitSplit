@@ -189,6 +189,7 @@ lib/firebase/read-models.ts
 Server actions in `lib/firebase/actions.ts`:
 
 - `createMemberWithMembership`
+- `renewMemberMembership`
 - `createCatalogExercise`
 - `createCustomWorkoutProgram`
 
@@ -205,6 +206,7 @@ components/custom-plan-builder.tsx
 Read models in `lib/firebase/read-models.ts`:
 
 - `getMembersWithMemberships`
+- `getMemberDetail`
 - `getExerciseCatalog`
 
 If Firebase Admin env vars are missing, the app falls back to mock data from:
@@ -310,6 +312,10 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Wired member renewal saving to Firebase. `/owner/members/[memberId]` now reads member detail from Firestore, submits renewal memberships with a notification record, and refreshes owner/member views.
+- Fixed membership ID creation so the stored membership `id` matches the Firestore document ID.
+- Made membership date calculation use UTC date-only math to avoid timezone drift.
+- Made `/owner/members/[memberId]` dynamic so newly created Firebase members can open detail pages without a rebuild.
 - Refreshed `README.md` to match current Firebase-only architecture, live App Hosting deployment, commands, caveats, and setup files.
 - Created Firebase Web App `FitSplit`.
 - Created Firebase App Hosting backend `fitsplit` in `us-central1`.
@@ -327,6 +333,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - No real Firebase Auth flow yet.
 - No Firebase custom claims or server-side role checks yet.
 - No production seed has been run unless `npm.cmd run seed:firebase` was executed with Admin credentials.
+- Renewal saving now writes to Firestore, but there is not yet a user-facing success toast or form error state.
 
 ## Last Known Verified Commands
 
@@ -335,6 +342,13 @@ These passed after Firebase migration:
 ```bash
 npm.cmd run typecheck
 npm.cmd run build
+```
+
+These passed after wiring member renewal:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
 ```
 
 App Hosting deploy passed:

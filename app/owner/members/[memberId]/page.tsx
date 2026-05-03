@@ -3,19 +3,17 @@ import { notFound } from "next/navigation";
 import { CalendarDays, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { StatusPill } from "@/components/status-pill";
+import { renewMemberMembership } from "@/lib/firebase/actions";
+import { getMemberDetail } from "@/lib/firebase/read-models";
 import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
-import {
-  assignments,
-  gym,
-  members,
-  memberships,
-  programs
-} from "@/lib/mock-data";
+import { assignments, gym, programs } from "@/lib/mock-data";
 
-export function generateStaticParams() {
-  return members.map((member) => ({
-    memberId: member.id
-  }));
+export const dynamic = "force-dynamic";
+
+function getNextDate(dateValue: string) {
+  const [year, month, day] = dateValue.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + 1));
+  return date.toISOString().slice(0, 10);
 }
 
 export default async function MemberDetailPage({
@@ -24,18 +22,18 @@ export default async function MemberDetailPage({
   params: Promise<{ memberId: string }>;
 }) {
   const { memberId } = await params;
-  const member = members.find((item) => item.id === memberId);
+  const { member, membership, isPersisted } = await getMemberDetail(memberId);
 
-  if (!member) {
+  if (!member || !membership) {
     notFound();
   }
 
-  const membership = memberships.find((item) => item.memberId === member.id)!;
   const status = getMembershipStatus(membership, gym.expiryWarningDays);
   const assignment = assignments.find(
     (item) => item.memberId === member.id && item.status === "active"
   );
   const program = programs.find((item) => item.id === assignment?.programId);
+  const nextStartDate = getNextDate(membership.endDate);
 
   return (
     <main className="page">
@@ -54,6 +52,9 @@ export default async function MemberDetailPage({
             <Link className="button button-secondary" href="/owner/programs">
               Assign program
             </Link>
+            <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
+              {isPersisted ? "Reading from Firestore" : "Using mock seed data"}
+            </span>
           </div>
         </div>
 
@@ -86,16 +87,17 @@ export default async function MemberDetailPage({
       </section>
 
       <section className="content-grid">
-        <form className="form-panel">
+        <form action={renewMemberMembership} className="form-panel">
           <h2>Renew membership</h2>
+          <input name="memberId" type="hidden" value={member.id} />
           <div className="form-grid">
             <label>
               New start date
-              <input type="date" defaultValue="2026-05-10" />
+              <input name="startDate" type="date" defaultValue={nextStartDate} />
             </label>
             <label>
               Duration
-              <select defaultValue="3">
+              <select name="durationMonths" defaultValue="3">
                 <option value="1">1 month</option>
                 <option value="3">3 months</option>
                 <option value="6">6 months</option>
@@ -105,10 +107,10 @@ export default async function MemberDetailPage({
           </div>
           <label>
             Offline payment reference
-            <input placeholder="UPI, cash note, receipt number" />
+            <input name="paymentReference" placeholder="UPI, cash note, receipt number" />
           </label>
-          <button className="button button-primary" type="button">
-            Save renewal draft
+          <button className="button button-primary" type="submit">
+            Save renewal
           </button>
         </form>
 
