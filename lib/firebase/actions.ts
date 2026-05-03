@@ -113,6 +113,41 @@ export async function createMemberWithMembership(formData: FormData) {
   revalidatePath("/owner/members");
 }
 
+export async function updateMemberProfile(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const memberId = requireText(formData, "memberId");
+  const fullName = requireText(formData, "fullName");
+  const email = requireText(formData, "email");
+  const now = new Date().toISOString();
+
+  await db.collection(collectionPaths.profiles).doc(memberId).set(
+    {
+      id: memberId,
+      fullName,
+      email,
+      phone: String(formData.get("phone") ?? "").trim(),
+      role: "member",
+      defaultGymId: TITAN_GYM_ID,
+      goal: String(formData.get("goal") ?? "General fitness").trim(),
+      avatarInitials: fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      isActive: true,
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
+  revalidatePath("/owner");
+  revalidatePath("/owner/members");
+  revalidatePath(`/owner/members/${memberId}`);
+  revalidatePath("/member");
+}
+
 export async function renewMemberMembership(formData: FormData) {
   await ensureTitanWorkspace();
   const db = requireFirebase();

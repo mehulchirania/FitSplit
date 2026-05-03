@@ -4,22 +4,36 @@ import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { StatusPill } from "@/components/status-pill";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 import {
-  currentWorkspace,
-  exercises,
-  gym,
-  members,
-  memberships,
-  notifications,
-  programs
-} from "@/lib/mock-data";
+  getExerciseCatalog,
+  getMembersWithMemberships,
+  getOwnerNotifications,
+  getWorkoutPrograms
+} from "@/lib/firebase/read-models";
+import { getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
+import { currentWorkspace, gym } from "@/lib/mock-data";
 
-export default function OwnerDashboard() {
-  const memberMemberships = members.map((member) => ({
-    member,
-    membership: memberships.find((membership) => membership.memberId === member.id)!
-  }));
+export const dynamic = "force-dynamic";
+
+export default async function OwnerDashboard() {
+  const [
+    { members, memberships },
+    { notifications: ownerNotifications },
+    { exercises },
+    { programs }
+  ] = await Promise.all([
+    getMembersWithMemberships(),
+    getOwnerNotifications(),
+    getExerciseCatalog(),
+    getWorkoutPrograms()
+  ]);
+
+  const memberMemberships = members
+    .map((member) => ({
+      member,
+      membership: memberships.find((membership) => membership.memberId === member.id)!
+    }))
+    .filter((item) => item.membership);
 
   const counts = memberMemberships.reduce(
     (total, item) => {
@@ -28,10 +42,6 @@ export default function OwnerDashboard() {
       return total;
     },
     { active: 0, expiring_soon: 0, expired: 0 }
-  );
-
-  const ownerNotifications = notifications.filter(
-    (notification) => notification.recipientRole === "owner"
   );
 
   return (

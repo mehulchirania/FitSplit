@@ -41,6 +41,7 @@ fitsplit-29215
 - Firebase App Hosting backend `fitsplit` is deployed in `us-central1`.
 - Live App Hosting URL returns HTTP 200.
 - Firestore is initialized.
+- Firestore has demo records for the Titan V2 Fitness pilot workspace.
 - Firestore rules and indexes are deployed.
 - Storage rules exist, but Storage setup/rules deploy may still need to be completed in Firebase Console.
 - GitHub automatic deployments are not connected yet; local-source App Hosting deployment works.
@@ -52,6 +53,7 @@ fitsplit-29215
 - Titan V2 Fitness pilot workspace
 - Owner dashboard
 - Member management
+- Editable Firestore-backed member records
 - Membership status calculation
 - Owner-only exercise catalog
 - Workout split templates loaded from `lib/workouts.json`
@@ -110,13 +112,18 @@ lib/firebase/read-models.ts
 Current server actions:
 
 - `createMemberWithMembership`
+- `updateMemberProfile`
+- `renewMemberMembership`
 - `createCatalogExercise`
 - `createCustomWorkoutProgram`
 
 Current read models:
 
 - `getMembersWithMemberships`
+- `getMemberDetail`
 - `getExerciseCatalog`
+- `getOwnerNotifications`
+- `getWorkoutPrograms`
 
 If Firebase Admin cannot initialize, read models fall back to:
 
@@ -137,6 +144,7 @@ Seed script:
 
 ```text
 scripts/seed-firebase.mjs
+scripts/seed-demo-firestore.mjs
 ```
 
 Included split templates:
@@ -204,6 +212,19 @@ Seed Firestore from `lib/workouts.json`:
 
 ```bash
 npm.cmd run seed:firebase
+```
+
+Seed Firestore with the full demo pilot data:
+
+```bash
+npm.cmd run seed:demo
+```
+
+For local machines without service account env vars, an authenticated Firebase CLI fallback is available:
+
+```bash
+set USE_FIREBASE_CLI_TOKEN=1
+npm.cmd run seed:demo
 ```
 
 Deploy Firestore rules and indexes:
@@ -285,4 +306,3 @@ PROJECT_HANDOFF.md
 ```
 
 That file tracks current status, updates, issues, commands, and next steps.
-

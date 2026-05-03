@@ -19,12 +19,12 @@ export function MemberRow({
       <div>
         <span className="member-name">{member.fullName}</span>
         <span className="member-meta">
-          {member.goal} · Ends {formatDate(membership.endDate)}
+          {member.goal} - Ends {formatDate(membership.endDate)}
         </span>
       </div>
       <StatusPill status={status} />
       <Link className="button button-secondary" href={`/owner/members/${member.id}`}>
-        View
+        Edit
       </Link>
     </div>
   );

@@ -1,9 +1,19 @@
-import type { Exercise, Member, Membership, MuscleGroup } from "@/types/domain";
+import type {
+  Difficulty,
+  Exercise,
+  Member,
+  Membership,
+  MuscleGroup,
+  Notification,
+  WorkoutProgram
+} from "@/types/domain";
 import {
   exerciseCatalogByMuscle as mockExerciseCatalogByMuscle,
   exercises as mockExercises,
   memberships as mockMemberships,
-  members as mockMembers
+  members as mockMembers,
+  notifications as mockNotifications,
+  programs as mockPrograms
 } from "@/lib/mock-data";
 import { collectionPaths, TITAN_GYM_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
@@ -218,7 +228,7 @@ export async function getExerciseCatalog(): Promise<{
     };
   });
 
-  const allExercises = [...persistedExercises, ...mockExercises];
+  const allExercises = persistedExercises;
   const muscleGroups = Array.from(
     new Set(allExercises.map((exercise) => exercise.muscleGroup))
   );
@@ -231,4 +241,106 @@ export async function getExerciseCatalog(): Promise<{
     })),
     isPersisted: true
   };
+}
+
+export async function getOwnerNotifications(): Promise<{
+  notifications: Notification[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return {
+      notifications: mockNotifications.filter(
+        (notification) => notification.recipientRole === "owner"
+      ),
+      isPersisted: false
+    };
+  }
+
+  let snapshot;
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    snapshot = await db
+      .collection(collectionPaths.notifications)
+      .where("recipientRole", "==", "owner")
+      .get();
+  } catch {
+    return {
+      notifications: mockNotifications.filter(
+        (notification) => notification.recipientRole === "owner"
+      ),
+      isPersisted: false
+    };
+  }
+
+  if (snapshot.empty) {
+    return {
+      notifications: mockNotifications.filter(
+        (notification) => notification.recipientRole === "owner"
+      ),
+      isPersisted: false
+    };
+  }
+
+  const notifications: Notification[] = snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        recipientRole: String(data.recipientRole ?? "owner") as Notification["recipientRole"],
+        recipientId: String(data.recipientId ?? ""),
+        type: String(data.type ?? "membership_expiring_soon") as Notification["type"],
+        title: String(data.title ?? "Notification"),
+        body: String(data.body ?? ""),
+        createdAt: String(data.createdAt ?? new Date().toISOString()),
+        readAt: data.readAt ? String(data.readAt) : undefined
+      };
+    })
+    .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+  return { notifications, isPersisted: true };
+}
+
+export async function getWorkoutPrograms(): Promise<{
+  programs: WorkoutProgram[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { programs: mockPrograms, isPersisted: false };
+  }
+
+  let snapshot;
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    snapshot = await db
+      .collection(collectionPaths.workoutPrograms)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("isActive", "==", true)
+      .get();
+  } catch {
+    return { programs: mockPrograms, isPersisted: false };
+  }
+
+  if (snapshot.empty) {
+    return { programs: mockPrograms, isPersisted: false };
+  }
+
+  const programs: WorkoutProgram[] = snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        title: String(data.title ?? "Stored program"),
+        description: String(data.description ?? ""),
+        goal: String(data.goal ?? "Structured training"),
+        difficulty: String(data.difficulty ?? "intermediate") as Difficulty,
+        daysPerWeek: Number(data.daysPerWeek ?? 1),
+        splitType: String(data.splitType ?? "custom") as WorkoutProgram["splitType"],
+        days: Array.isArray(data.days) ? data.days : []
+      };
+    })
+    .sort((left, right) => left.title.localeCompare(right.title));
+
+  return { programs, isPersisted: true };
 }

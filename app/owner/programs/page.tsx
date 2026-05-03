@@ -2,7 +2,9 @@ import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { exerciseCatalogByMuscle, programs } from "@/lib/mock-data";
+import { getExerciseCatalog, getWorkoutPrograms } from "@/lib/firebase/read-models";
+
+export const dynamic = "force-dynamic";
 
 const splitLabels: Record<string, string> = {
   ppl_x2: "PPL x 2",
@@ -12,7 +14,13 @@ const splitLabels: Record<string, string> = {
   custom: "Custom"
 };
 
-export default function ProgramsPage() {
+export default async function ProgramsPage() {
+  const [{ catalog }, { programs, isPersisted }] = await Promise.all([
+    getExerciseCatalog(),
+    getWorkoutPrograms()
+  ]);
+  const previewProgram = programs[0];
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -26,7 +34,10 @@ export default function ProgramsPage() {
         </div>
         <aside className="builder-stack">
           <WorkspaceSwitcher />
-          <CustomPlanBuilder catalog={exerciseCatalogByMuscle} />
+          <CustomPlanBuilder catalog={catalog} />
+          <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
+            {isPersisted ? "Reading programs from Firestore" : "Using mock seed data"}
+          </span>
         </aside>
       </section>
 
@@ -59,17 +70,19 @@ export default function ProgramsPage() {
         ))}
       </section>
 
-      <section className="list-panel" style={{ marginTop: 16 }}>
-        <div className="panel-title">
-          <h2>{programs[0].title} preview</h2>
-          <span className="status-pill status-neutral">
-            {programs[0].days[0].title}
-          </span>
-        </div>
-        <div className="notification-list">
-          <ExerciseList items={programs[0].days[0].exercises} />
-        </div>
-      </section>
+      {previewProgram ? (
+        <section className="list-panel" style={{ marginTop: 16 }}>
+          <div className="panel-title">
+            <h2>{previewProgram.title} preview</h2>
+            <span className="status-pill status-neutral">
+              {previewProgram.days[0]?.title ?? "First session"}
+            </span>
+          </div>
+          <div className="notification-list">
+            <ExerciseList items={previewProgram.days[0]?.exercises ?? []} />
+          </div>
+        </section>
+      ) : null}
     </main>
   );
 }

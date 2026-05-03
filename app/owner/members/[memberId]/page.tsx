@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { CalendarDays, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { StatusPill } from "@/components/status-pill";
-import { renewMemberMembership } from "@/lib/firebase/actions";
+import { renewMemberMembership, updateMemberProfile } from "@/lib/firebase/actions";
 import { getMemberDetail } from "@/lib/firebase/read-models";
 import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 import { assignments, gym, programs } from "@/lib/mock-data";
@@ -87,6 +87,32 @@ export default async function MemberDetailPage({
       </section>
 
       <section className="content-grid">
+        <form action={updateMemberProfile} className="form-panel">
+          <h2>Edit member</h2>
+          <input name="memberId" type="hidden" value={member.id} />
+          <div className="form-grid">
+            <label>
+              Full name
+              <input name="fullName" defaultValue={member.fullName} />
+            </label>
+            <label>
+              Email
+              <input name="email" type="email" defaultValue={member.email} />
+            </label>
+            <label>
+              Phone
+              <input name="phone" defaultValue={member.phone} />
+            </label>
+            <label>
+              Goal
+              <input name="goal" defaultValue={member.goal} />
+            </label>
+          </div>
+          <button className="button button-primary" type="submit">
+            Save member details
+          </button>
+        </form>
+
         <form action={renewMemberMembership} className="form-panel">
           <h2>Renew membership</h2>
           <input name="memberId" type="hidden" value={member.id} />
@@ -113,7 +139,9 @@ export default async function MemberDetailPage({
             Save renewal
           </button>
         </form>
+      </section>
 
+      <section className="content-grid" style={{ marginTop: 16 }}>
         <aside className="form-panel">
           <h2>AI program brief</h2>
           <label>
