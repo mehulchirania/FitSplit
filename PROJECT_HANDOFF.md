@@ -310,6 +310,7 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Refreshed `README.md` to match current Firebase-only architecture, live App Hosting deployment, commands, caveats, and setup files.
 - Created Firebase Web App `FitSplit`.
 - Created Firebase App Hosting backend `fitsplit` in `us-central1`.
 - Added `apphosting` backend entry to `firebase.json`.
