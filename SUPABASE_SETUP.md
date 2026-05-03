@@ -54,10 +54,25 @@ The members and exercise catalog pages show a badge:
 
 If the app is still showing mock data, check that `.env.local` is present and the migrations ran successfully.
 
+## 5. Seed The Workout Catalog And Splits
+
+After migrations and env vars are ready:
+
+```bash
+npm.cmd run seed:supabase
+```
+
+This imports `lib/workouts.json` into Supabase as:
+
+- owner-only catalog exercises
+- workout programs
+- workout days
+- workout exercise rows
+- workout split templates
+
 ## Current Persistence Notes
 
 - The app auto-creates a Titan V2 Fitness gym row if missing.
 - The app auto-creates a temporary owner profile with id `00000000-0000-0000-0000-000000000001` for local development writes.
 - JSON workout catalog exercises are mirrored into Supabase automatically when used in a saved custom plan.
 - Real Supabase Auth and RLS enforcement should be the next security step before production use.
-

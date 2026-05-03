@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "deploy:firebase": "npm run build && firebase deploy",
+    "seed:supabase": "node scripts/seed-supabase.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
