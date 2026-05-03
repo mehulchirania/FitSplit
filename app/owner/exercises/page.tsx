@@ -1,8 +1,8 @@
 import { Dumbbell, Video } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { muscleGroups } from "@/lib/mock-data";
-import { createCatalogExercise } from "@/lib/supabase/actions";
-import { getExerciseCatalog } from "@/lib/supabase/read-models";
+import { createCatalogExercise } from "@/lib/firebase/actions";
+import { getExerciseCatalog } from "@/lib/firebase/read-models";
 
 export default async function ExerciseCatalogPage() {
   const {
@@ -22,7 +22,7 @@ export default async function ExerciseCatalogPage() {
             Members only see exercises that are part of their assigned plan.
           </p>
           <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-            {isPersisted ? "Reading from Supabase" : "Using JSON catalog"}
+            {isPersisted ? "Reading from Firestore" : "Using JSON catalog"}
           </span>
         </div>
         <form action={createCatalogExercise} className="form-panel">
@@ -53,20 +53,20 @@ export default async function ExerciseCatalogPage() {
                 <option value="none">None</option>
                 <option value="youtube">YouTube</option>
                 <option value="vimeo">Vimeo</option>
-                <option value="upload">Supabase upload path</option>
+                <option value="upload">Firebase Storage path</option>
               </select>
             </label>
           </div>
           <label>
             Video URL or upload path
-            <input name="videoUrl" placeholder="YouTube, Vimeo, or Supabase Storage path" />
+            <input name="videoUrl" placeholder="YouTube, Vimeo, or Firebase Storage path" />
           </label>
           <label>
             Coaching instructions
             <textarea name="instructions" placeholder="Setup, tempo, range of motion, cues" />
           </label>
           <button className="button button-primary" type="submit">
-            Save exercise to Supabase
+            Save exercise to Firebase
           </button>
         </form>
       </section>

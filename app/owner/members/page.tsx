@@ -1,7 +1,7 @@
 import { MemberRow } from "@/components/member-row";
 import { UsersRound } from "@/components/icons";
-import { getMembersWithMemberships } from "@/lib/supabase/read-models";
-import { createMemberWithMembership } from "@/lib/supabase/actions";
+import { createMemberWithMembership } from "@/lib/firebase/actions";
+import { getMembersWithMemberships } from "@/lib/firebase/read-models";
 
 export default async function MembersPage() {
   const { members, memberships, isPersisted } = await getMembersWithMemberships();
@@ -17,7 +17,7 @@ export default async function MembersPage() {
             and open a member record for program assignment.
           </p>
           <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-            {isPersisted ? "Reading from Supabase" : "Using mock seed data"}
+            {isPersisted ? "Reading from Firestore" : "Using mock seed data"}
           </span>
         </div>
         <form action={createMemberWithMembership} className="form-panel">
@@ -58,7 +58,7 @@ export default async function MembersPage() {
             </label>
           </div>
           <button className="button button-primary" type="submit">
-            Save member to Supabase
+            Save member to Firebase
           </button>
         </form>
       </section>

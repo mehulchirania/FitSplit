@@ -1,0 +1,63 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function profile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid));
+    }
+
+    function isAdmin() {
+      return signedIn() && profile().data.role == "admin";
+    }
+
+    function isOwnerForGym(gymId) {
+      return signedIn()
+        && profile().data.role == "owner"
+        && profile().data.defaultGymId == gymId;
+    }
+
+    function isMemberSelf(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    match /gyms/{gymId} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || isOwnerForGym(gymId);
+    }
+
+    match /profiles/{userId} {
+      allow read: if isAdmin() || isOwnerForGym(resource.data.defaultGymId) || isMemberSelf(userId);
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.defaultGymId) || isMemberSelf(userId);
+    }
+
+    match /memberships/{membershipId} {
+      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+    }
+
+    match /exerciseCatalog/{exerciseId} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+    }
+
+    match /workoutPrograms/{programId} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+    }
+
+    match /workoutSplitTemplates/{templateId} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+    }
+
+    match /notifications/{notificationId} {
+      allow read, update: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.recipientUserId);
+      allow create: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow delete: if isAdmin();
+    }
+  }
+}

@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Plus } from "@/components/icons";
-import { createCustomWorkoutProgram } from "@/lib/supabase/actions";
+import { createCustomWorkoutProgram } from "@/lib/firebase/actions";
 import type { Exercise, MuscleGroup } from "@/types/domain";
 
 type CatalogGroup = {
@@ -108,7 +108,7 @@ export function CustomPlanBuilder({ catalog }: { catalog: CatalogGroup[] }) {
       <input name="daysPerWeek" type="hidden" value="1" />
       <input name="restSeconds" type="hidden" value="75" />
       <button className="button button-primary" type="submit">
-        Save custom plan to Supabase
+        Save custom plan to Firebase
       </button>
     </form>
   );
