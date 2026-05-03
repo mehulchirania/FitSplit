@@ -14,7 +14,7 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY
-    value: ""
+    value: "AIzaSyAi7mmLdZNVURG7yGc5I63YbblMYw7Vewg"
     availability:
       - BUILD
       - RUNTIME
@@ -24,17 +24,17 @@ env:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
-    value: ""
+    value: "fitsplit-29215.firebasestorage.app"
     availability:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
-    value: ""
+    value: "766523780087"
     availability:
       - BUILD
       - RUNTIME
   - variable: NEXT_PUBLIC_FIREBASE_APP_ID
-    value: ""
+    value: "1:766523780087:web:e825b99ed4a88d30c79cf2"
     availability:
       - BUILD
       - RUNTIME
@@ -43,9 +43,3 @@ env:
     availability:
       - BUILD
       - RUNTIME
-  - variable: FIREBASE_CLIENT_EMAIL
-    secret: firebaseClientEmail
-  - variable: FIREBASE_PRIVATE_KEY
-    secret: firebasePrivateKey
-  - variable: CRON_SECRET
-    secret: cronSecret

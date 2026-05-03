@@ -1,4 +1,4 @@
-import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { applicationDefault, cert, getApps, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
@@ -8,11 +8,7 @@ function privateKey() {
 }
 
 export function hasFirebaseAdminConfig() {
-  return Boolean(
-    process.env.FIREBASE_PROJECT_ID &&
-      process.env.FIREBASE_CLIENT_EMAIL &&
-      privateKey()
-  );
+  return Boolean(process.env.FIREBASE_PROJECT_ID);
 }
 
 export function createFirebaseAdminApp() {
@@ -20,16 +16,16 @@ export function createFirebaseAdminApp() {
     return getApps()[0];
   }
 
-  if (!hasFirebaseAdminConfig()) {
-    throw new Error("Missing Firebase Admin environment variables.");
-  }
-
   return initializeApp({
-    credential: cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: privateKey()
-    }),
+    credential:
+      process.env.FIREBASE_CLIENT_EMAIL && privateKey()
+        ? cert({
+            projectId: process.env.FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            privateKey: privateKey()
+          })
+        : applicationDefault(),
+    projectId: process.env.FIREBASE_PROJECT_ID,
     storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
   });
 }

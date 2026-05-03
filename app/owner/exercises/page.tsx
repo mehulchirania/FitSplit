@@ -4,6 +4,8 @@ import { muscleGroups } from "@/lib/mock-data";
 import { createCatalogExercise } from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
 
+export const dynamic = "force-dynamic";
+
 export default async function ExerciseCatalogPage() {
   const {
     exercises,

@@ -17,13 +17,20 @@ export async function getMembersWithMemberships(): Promise<{
     return { members: mockMembers, memberships: mockMemberships, isPersisted: false };
   }
 
-  const { db } = getFirebaseAdminServices();
-  const profileSnapshot = await db
-    .collection(collectionPaths.profiles)
-    .where("defaultGymId", "==", TITAN_GYM_ID)
-    .where("role", "==", "member")
-    .where("isActive", "==", true)
-    .get();
+  let profileSnapshot;
+  let db;
+
+  try {
+    db = getFirebaseAdminServices().db;
+    profileSnapshot = await db
+      .collection(collectionPaths.profiles)
+      .where("defaultGymId", "==", TITAN_GYM_ID)
+      .where("role", "==", "member")
+      .where("isActive", "==", true)
+      .get();
+  } catch {
+    return { members: mockMembers, memberships: mockMemberships, isPersisted: false };
+  }
 
   if (profileSnapshot.empty) {
     return { members: mockMembers, memberships: mockMemberships, isPersisted: false };
@@ -77,12 +84,22 @@ export async function getExerciseCatalog(): Promise<{
     };
   }
 
-  const { db } = getFirebaseAdminServices();
-  const snapshot = await db
-    .collection(collectionPaths.exerciseCatalog)
-    .where("gymId", "==", TITAN_GYM_ID)
-    .where("isActive", "==", true)
-    .get();
+  let snapshot;
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    snapshot = await db
+      .collection(collectionPaths.exerciseCatalog)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("isActive", "==", true)
+      .get();
+  } catch {
+    return {
+      exercises: mockExercises,
+      catalog: mockExerciseCatalogByMuscle,
+      isPersisted: false
+    };
+  }
 
   if (snapshot.empty) {
     return {

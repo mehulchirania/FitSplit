@@ -38,17 +38,24 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - Firebase Authentication, planned for real login and role enforcement
 - Cloud Firestore for app data
 - Firebase Storage for uploaded exercise videos, pending Storage setup in console
-- Firebase App Hosting for full-stack hosting after Blaze upgrade
+- Firebase App Hosting for full-stack hosting
 - Firebase Security Rules for Firestore and Storage
 
 ## Important Status
 
+- Last updated: 2026-05-04.
 - Firebase Blaze is ready per user.
+- Firebase Web App exists: `1:766523780087:web:e825b99ed4a88d30c79cf2`.
+- App Hosting backend exists: `fitsplit` in `us-central1`.
+- App Hosting URL: `https://fitsplit--fitsplit-29215.us-central1.hosted.app`.
+- App Hosting local-source deploy succeeded.
+- Live App Hosting URL returned HTTP 200 after deploy.
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
 - Storage rules file exists but Storage setup was previously blocked until console setup.
-- App Hosting config exists in `apphosting.yaml`, but backend still needs to be created/connected after Blaze.
-- The app has Firebase Admin server actions but still uses mock fallback when Firebase Admin env vars are absent.
+- App Hosting config exists in `apphosting.yaml`.
+- Firebase Admin on App Hosting uses application default credentials. Local development can use service account env vars.
+- The app has Firebase Admin server actions and mock fallback when Firebase Admin cannot be initialized.
 - Videos/workouts will be updated later by user.
 
 ## Key Commands
@@ -101,6 +108,12 @@ Deploy all Firebase config:
 firebase.cmd deploy --project fitsplit-29215
 ```
 
+Deploy App Hosting only:
+
+```bash
+firebase.cmd deploy --only apphosting:fitsplit --project fitsplit-29215
+```
+
 ## Firebase Environment Variables
 
 `.env.example` lists required variables.
@@ -111,9 +124,9 @@ Client-side Firebase config:
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=fitsplit-29215.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=fitsplit-29215
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-NEXT_PUBLIC_FIREBASE_APP_ID=
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=fitsplit-29215.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=766523780087
+NEXT_PUBLIC_FIREBASE_APP_ID=1:766523780087:web:e825b99ed4a88d30c79cf2
 ```
 
 Server-side Firebase Admin config:
@@ -131,15 +144,14 @@ CRON_SECRET=
 AI_PROVIDER_API_KEY=
 ```
 
-For App Hosting, map secrets in Firebase/Google Secret Manager:
+For local development outside Google runtime, use a service account key:
 
 ```text
-firebaseClientEmail
-firebasePrivateKey
-cronSecret
+FIREBASE_CLIENT_EMAIL
+FIREBASE_PRIVATE_KEY
 ```
 
-`apphosting.yaml` currently references these.
+For Firebase App Hosting, Firebase Admin uses the runtime service account via application default credentials. `apphosting.yaml` includes the public Firebase web config.
 
 ## Firebase Data Model
 
@@ -261,34 +273,59 @@ Storage rules exist but need deployment after Firebase Storage is initialized in
 
 ## App Hosting Next Steps
 
-Now that Blaze is ready:
+Current backend:
 
-1. Confirm Firebase App Hosting API works:
+```text
+Backend: fitsplit
+Region: us-central1
+URL: https://fitsplit--fitsplit-29215.us-central1.hosted.app
+```
+
+Useful commands:
 
 ```bash
 firebase.cmd apphosting:backends:list --project fitsplit-29215 --json
+firebase.cmd deploy --only apphosting:fitsplit --project fitsplit-29215
 ```
 
-2. Create/connect an App Hosting backend to:
+GitHub automatic deployments are not connected yet. To enable them, connect:
 
 ```text
 GitHub repo: mehulchirania/FitSplit
 Branch: main
 Root directory: /
-Region: asia-south1 preferred
+Backend: fitsplit
 ```
 
-3. Configure App Hosting env/secrets from `apphosting.yaml`.
-
-4. Deploy/roll out backend.
+Manual App Hosting deployment from local source is working and should be used until GitHub automatic deployments are connected.
 
 ## Known Caveats
 
 - Real Firebase Auth login/role session enforcement is not fully implemented yet.
 - Server actions currently use Firebase Admin and trust the owner/admin UI route. Add authenticated role checks before production use.
 - Storage upload UI is not implemented yet; exercise form stores video URL/path text only.
+- Firebase Storage still needs console setup and storage rules deployment if not completed.
 - Member portal still uses the first mock member unless extended to auth-aware member lookup.
 - Workouts and videos will be updated later.
+
+## Recent Updates
+
+- Created Firebase Web App `FitSplit`.
+- Created Firebase App Hosting backend `fitsplit` in `us-central1`.
+- Added `apphosting` backend entry to `firebase.json`.
+- Updated Firebase Admin initialization to use application default credentials on App Hosting.
+- Marked owner members and exercise catalog pages as dynamic to avoid build-time Firestore reads.
+- Hardened Firebase read models to fall back to mock data if Admin initialization/querying fails.
+- Deployed App Hosting successfully.
+- Verified live URL returns HTTP 200.
+
+## Open Issues
+
+- GitHub automatic deployment is not connected in Firebase App Hosting backend settings.
+- Storage rules deploy was previously blocked because Firebase Storage had not been initialized in console.
+- No real Firebase Auth flow yet.
+- No Firebase custom claims or server-side role checks yet.
+- No production seed has been run unless `npm.cmd run seed:firebase` was executed with Admin credentials.
 
 ## Last Known Verified Commands
 
@@ -297,6 +334,18 @@ These passed after Firebase migration:
 ```bash
 npm.cmd run typecheck
 npm.cmd run build
+```
+
+App Hosting deploy passed:
+
+```bash
+firebase.cmd deploy --only apphosting:fitsplit --project fitsplit-29215
+```
+
+Live URL check passed:
+
+```text
+https://fitsplit--fitsplit-29215.us-central1.hosted.app -> HTTP 200
 ```
 
 Firestore deploy passed:
@@ -310,4 +359,3 @@ GitHub push passed to:
 ```text
 https://github.com/mehulchirania/FitSplit
 ```
-
