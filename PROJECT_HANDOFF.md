@@ -52,6 +52,7 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - Live App Hosting URL returned HTTP 200 after deploy.
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
+- Firestore was checked on 2026-05-04 via REST API: the default database exists, but root collection count is currently `0`.
 - Storage rules file exists but Storage setup was previously blocked until console setup.
 - App Hosting config exists in `apphosting.yaml`.
 - Firebase Admin on App Hosting uses application default credentials. Local development can use service account env vars.
@@ -312,6 +313,7 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Checked Firestore collection state for project `fitsplit-29215`: expected app collections are defined in code, but no root collections/documents currently exist in the live default Firestore database.
 - Wired member renewal saving to Firebase. `/owner/members/[memberId]` now reads member detail from Firestore, submits renewal memberships with a notification record, and refreshes owner/member views.
 - Fixed membership ID creation so the stored membership `id` matches the Firestore document ID.
 - Made membership date calculation use UTC date-only math to avoid timezone drift.
@@ -333,6 +335,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - No real Firebase Auth flow yet.
 - No Firebase custom claims or server-side role checks yet.
 - No production seed has been run unless `npm.cmd run seed:firebase` was executed with Admin credentials.
+- Live Firestore has no root collections yet. Seed workspace/workout data or create the first member from the owner UI to create documents.
 - Renewal saving now writes to Firestore, but there is not yet a user-facing success toast or form error state.
 
 ## Last Known Verified Commands
