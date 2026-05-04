@@ -333,6 +333,12 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Added member-side AI Semi-Personal Trainer workflow: Update Injury/Limitation trigger, deterministic catalog-based exercise swaps, and fallback recovery routine.
+- Added mandatory Start Workout and End Workout controls on the member workout screen, using local active-session state as an attendance proxy.
+- Added member Gym Busyness widget based on active workout count.
+- Added owner dashboard AI business-value analytics: Active Semi-Personal Training Plans, Trainer Hours Saved, and AI-ready templates.
+- Added owner live capacity panel with exact active workout headcount and a simple peak usage chart.
+- Updated home/about/member/owner copy to emphasize the AI as an automated Semi-Personal Trainer.
 - Added global hamburger drawer with Light/Dark mode toggle, Activity link, and About link.
 - Added profile icon dropdown with View Profile link and dummy Log Out button.
 - Added `/activity` page with owner/member conditional feed views.
@@ -405,6 +411,13 @@ npm.cmd run typecheck
 ```
 
 These passed after adding navigation, activity, profile, and about pages:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
+```
+
+These passed after adding AI modification and live capacity tracker features:
 
 ```bash
 npm.cmd run build

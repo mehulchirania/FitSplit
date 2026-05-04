@@ -9,7 +9,7 @@ const workstreams = [
   },
   {
     title: "Workout Programs",
-    body: "Build structured programs with days, exercises, notes, and demonstration videos.",
+    body: "Use the AI Semi-Personal Trainer to adapt structured plans around goals, injuries, and owner review.",
     icon: Dumbbell
   },
   {
@@ -28,7 +28,8 @@ export default function Home() {
           <h1>FitSplit</h1>
           <p>
             A focused gym management app for memberships, assigned workout plans,
-            exercise videos, and renewal alerts.
+            exercise videos, renewal alerts, and an automated Semi-Personal
+            Trainer layer.
           </p>
           <div className="hero-actions">
             <Link className="button button-primary" href="/owner">
@@ -74,10 +75,11 @@ export default function Home() {
       <section className="ai-band">
         <Activity />
         <div>
-          <h2>AI-ready by design</h2>
+          <h2>Automated Semi-Personal Trainer</h2>
           <p>
-            The app keeps AI-generated programs in a draft state for owner review,
-            so Claude can assist without bypassing professional judgment.
+            AI-generated workout changes are framed as semi-personal coaching:
+            fast member support, safer exercise substitutions, and owner review
+            before the gym scales the experience.
           </p>
         </div>
         <UsersRound />

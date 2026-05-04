@@ -928,6 +928,103 @@ textarea {
   width: 16px;
 }
 
+.workout-session-panel,
+.injury-card,
+.ai-modification-panel,
+.busyness-widget,
+.capacity-headcount {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.workout-session-panel {
+  align-items: center;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.workout-session-panel h2,
+.injury-card h2,
+.ai-modification-panel h2 {
+  margin: 0;
+}
+
+.workout-session-panel p,
+.injury-card p,
+.ai-modification-panel p,
+.busyness-widget p {
+  margin: 0;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.busyness-widget strong,
+.capacity-headcount strong {
+  font-size: clamp(2.8rem, 7vw, 4.6rem);
+  line-height: 0.95;
+}
+
+.busyness-widget span,
+.capacity-headcount span {
+  color: var(--text-soft);
+  font-weight: 780;
+}
+
+.ai-modification-panel span {
+  background: var(--brand-soft);
+  border-radius: 999px;
+  color: var(--brand-strong);
+  font-size: 0.82rem;
+  font-weight: 780;
+  padding: 8px 10px;
+}
+
+.compact-stats {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.usage-chart {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  min-height: 190px;
+}
+
+.usage-bar {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-rows: auto 1fr auto;
+  height: 190px;
+  justify-items: center;
+}
+
+.usage-bar strong {
+  align-self: end;
+  background: linear-gradient(180deg, var(--brand), var(--brand-strong));
+  border-radius: 999px 999px 6px 6px;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--brand) 22%, transparent);
+  display: block;
+  min-height: 18px;
+  width: 100%;
+}
+
+.usage-bar span,
+.usage-bar small {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 780;
+}
+
 .bmi-panel {
   align-content: start;
 }
@@ -1050,8 +1147,13 @@ textarea {
   .workstream-grid,
   .program-grid,
   .catalog-grid,
+  .compact-stats,
   .form-grid,
   .add-exercise-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .workout-session-panel {
     grid-template-columns: 1fr;
   }
 

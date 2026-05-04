@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Bell, CalendarDays, Dumbbell, UsersRound } from "@/components/icons";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
+import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
 import { StatusPill } from "@/components/status-pill";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import {
@@ -52,7 +53,8 @@ export default async function OwnerDashboard() {
           <h1>Run the floor with fewer blind spots.</h1>
           <p>
             Monitor memberships, renewal alerts, and assigned training programs
-            for the Titan V2 Fitness pilot workspace.
+            for the Titan V2 Fitness pilot workspace, with AI positioned as an
+            automated Semi-Personal Trainer that protects retention.
           </p>
           <div className="quick-actions">
             <Link className="button button-primary" href="/owner/members">
@@ -104,7 +106,12 @@ export default async function OwnerDashboard() {
         </article>
       </section>
 
-      <section className="content-grid">
+      <OwnerAiCapacityPanel
+        activeMembers={counts.active}
+        programCount={programs.length}
+      />
+
+      <section className="content-grid" style={{ marginTop: 16 }}>
         <div className="list-panel">
           <div className="panel-title">
             <h2>

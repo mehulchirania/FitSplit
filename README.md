@@ -59,6 +59,11 @@ fitsplit-29215
 - Membership status calculation
 - Role-aware activity feed
 - User profile form with reactive BMI calculation
+- Member injury/limitation logging with deterministic AI-style exercise swaps
+- Start Workout and End Workout controls for active-session attendance tracking
+- Member Gym Busyness widget based on active workouts
+- Owner AI business-value analytics for Semi-Personal Training plans and trainer hours saved
+- Owner live capacity panel with active headcount and peak usage chart
 - About page with contact form, social placeholders, email link, and footer
 - Owner-only exercise catalog
 - Workout split templates loaded from `lib/workouts.json`

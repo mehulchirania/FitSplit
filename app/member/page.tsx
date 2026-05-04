@@ -1,5 +1,5 @@
-import { Bell, CalendarDays, Dumbbell } from "@/components/icons";
-import { ExerciseList } from "@/components/exercise-list";
+import { Bell, CalendarDays } from "@/components/icons";
+import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
 import { StatusPill } from "@/components/status-pill";
 import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
@@ -31,8 +31,9 @@ export default function MemberDashboard() {
           <p className="eyebrow">Member dashboard</p>
           <h1>Today&apos;s plan is already set.</h1>
           <p>
-            {member.fullName} can see membership dates, renewal status, and the
-            assigned workout program with demonstration videos.
+            {member.fullName} can see membership dates, renewal status, and an
+            AI Semi-Personal Trainer that adjusts workouts when limitations are
+            logged.
           </p>
         </div>
 
@@ -64,28 +65,9 @@ export default function MemberDashboard() {
         </aside>
       </section>
 
-      <section className="content-grid">
-        <div className="list-panel">
-          <div className="panel-title">
-            <h2>
-              <Dumbbell /> {program.title}
-            </h2>
-            <span className="status-pill status-neutral">
-              {program.daysPerWeek} days/week
-            </span>
-          </div>
-          <div className="notification-list">
-            {program.days.map((day) => (
-              <article key={day.id}>
-                <p className="eyebrow">Day {day.dayNumber}</p>
-                <h2>{day.title}</h2>
-                <p>{day.focus}</p>
-                <ExerciseList items={day.exercises} />
-              </article>
-            ))}
-          </div>
-        </div>
+      <MemberWorkoutConsole program={program} />
 
+      <section className="content-grid" style={{ marginTop: 16 }}>
         <aside className="list-panel">
           <div className="panel-title">
             <h2>
