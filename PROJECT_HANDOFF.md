@@ -269,11 +269,14 @@ Important pages:
 
 ```text
 /admin
+/activity
+/about
 /owner
 /owner/members
 /owner/exercises
 /owner/programs
 /member
+/profile
 ```
 
 ## Firebase Rules
@@ -330,6 +333,11 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Added global hamburger drawer with Light/Dark mode toggle, Activity link, and About link.
+- Added profile icon dropdown with View Profile link and dummy Log Out button.
+- Added `/activity` page with owner/member conditional feed views.
+- Added `/profile` page with basic data entry fields and reactive BMI calculation.
+- Added `/about` page with required contact fields, social placeholders, email link, and exact footer text.
 - Added `public/favicon.ico` generated from the cropped icon and changed tab icon links to `/favicon.ico?v=3` plus versioned PNG links to force browser favicon refresh.
 - Recropped `public/icon-512.png` to the dark artwork panel so no white border is visible, and replaced the header `FS` text mark with the same icon image.
 - Added FitSplit PWA/browser icon assets: `public/icon-512.png`, `public/manifest.json`, and root layout manifest/favicon/apple-touch links.
@@ -390,6 +398,13 @@ npm.cmd run typecheck
 ```
 
 These passed after adding the dedicated favicon and cache-busted icon links:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
+```
+
+These passed after adding navigation, activity, profile, and about pages:
 
 ```bash
 npm.cmd run build

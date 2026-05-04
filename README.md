@@ -53,8 +53,13 @@ fitsplit-29215
 - Titan V2 Fitness pilot workspace
 - Owner dashboard
 - Member management
+- Global hamburger drawer with theme, Activity, and About links
+- Profile dropdown with View Profile and dummy Log Out controls
 - Editable Firestore-backed member records
 - Membership status calculation
+- Role-aware activity feed
+- User profile form with reactive BMI calculation
+- About page with contact form, social placeholders, email link, and footer
 - Owner-only exercise catalog
 - Workout split templates loaded from `lib/workouts.json`
 - Custom workout plan builder
@@ -69,11 +74,14 @@ fitsplit-29215
 
 ```text
 /admin
+/activity
+/about
 /owner
 /owner/members
 /owner/exercises
 /owner/programs
 /member
+/profile
 ```
 
 ## Firebase Data Model

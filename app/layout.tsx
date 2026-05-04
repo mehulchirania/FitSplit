@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { MainNav } from "@/components/main-nav";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { AppTopbar } from "@/components/app-topbar";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -49,23 +47,7 @@ export default function RootLayout({
       </head>
       <body>
         <div className="app-shell">
-          <header className="topbar">
-            <Link className="brand" href="/">
-              <img
-                alt="FitSplit"
-                className="brand-icon"
-                height="36"
-                src="/icon-512.png"
-                width="36"
-              />
-              <span>
-                <strong>FitSplit</strong>
-                <small>Gym operations</small>
-              </span>
-            </Link>
-            <MainNav />
-            <ThemeToggle />
-          </header>
+          <AppTopbar />
           {children}
         </div>
       </body>

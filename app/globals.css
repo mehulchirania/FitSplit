@@ -108,6 +108,13 @@ svg {
   z-index: 50;
 }
 
+.topbar-left {
+  align-items: center;
+  display: inline-flex;
+  gap: 12px;
+  min-width: max-content;
+}
+
 .brand {
   align-items: center;
   display: inline-flex;
@@ -685,6 +692,12 @@ p {
   width: 40px;
 }
 
+.neutral-icon-button {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 .icon-button:hover {
   box-shadow: 0 12px 26px color-mix(in srgb, var(--brand) 24%, transparent);
   transform: translateY(-1px);
@@ -693,6 +706,110 @@ p {
 .icon-button svg {
   height: 16px;
   width: 16px;
+}
+
+.profile-menu {
+  position: relative;
+}
+
+.profile-dropdown {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 6px;
+  min-width: 180px;
+  padding: 8px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 70;
+}
+
+.profile-dropdown a,
+.profile-dropdown button,
+.drawer-links a {
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 760;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.profile-dropdown a:hover,
+.profile-dropdown button:hover,
+.drawer-links a:hover {
+  background: var(--bg-muted);
+}
+
+.drawer-backdrop {
+  background: rgba(0, 0, 0, 0.42);
+  inset: 0;
+  position: fixed;
+  z-index: 80;
+}
+
+.side-drawer {
+  animation: slideIn var(--slow) ease both;
+  background: var(--bg-elevated);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 20px;
+  height: 100%;
+  left: 0;
+  max-width: min(360px, 92vw);
+  padding: 24px;
+  position: fixed;
+  top: 0;
+  width: 360px;
+}
+
+.drawer-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+}
+
+.drawer-header h2 {
+  margin: 0;
+}
+
+.drawer-section {
+  align-items: center;
+  border-block: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  padding-block: 16px;
+}
+
+.drawer-section span {
+  color: var(--text-soft);
+  font-weight: 780;
+}
+
+.drawer-links {
+  display: grid;
+  gap: 6px;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .add-exercise-button {
@@ -761,6 +878,91 @@ textarea:focus {
 textarea {
   min-height: 110px;
   resize: vertical;
+}
+
+.activity-feed {
+  display: grid;
+  gap: 12px;
+}
+
+.activity-item {
+  align-items: flex-start;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto 1fr;
+  padding: 14px;
+}
+
+.activity-item h2 {
+  font-size: 1rem;
+  margin: 0 0 4px;
+}
+
+.activity-item p {
+  margin: 0;
+}
+
+.activity-item span:not(.activity-icon) {
+  color: var(--text-soft);
+  display: inline-block;
+  font-size: 0.8rem;
+  margin-top: 8px;
+}
+
+.activity-icon {
+  align-items: center;
+  background: var(--brand-soft);
+  border-radius: 10px;
+  color: var(--brand-strong);
+  display: inline-flex;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.activity-icon svg {
+  height: 16px;
+  width: 16px;
+}
+
+.bmi-panel {
+  align-content: start;
+}
+
+.bmi-panel > strong {
+  display: block;
+  font-size: clamp(3rem, 8vw, 5.5rem);
+  line-height: 0.95;
+  margin-bottom: 12px;
+}
+
+.links-panel {
+  align-content: start;
+  display: grid;
+  gap: 10px;
+}
+
+.links-panel a {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-weight: 780;
+  padding: 12px;
+}
+
+.links-panel a:hover {
+  background: var(--bg-muted);
+}
+
+.app-footer {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 760;
+  padding: 28px 0 6px;
+  text-align: center;
 }
 
 .workspace-switcher {
