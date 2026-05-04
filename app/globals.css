@@ -1,73 +1,89 @@
 :root {
   color-scheme: light;
-  --bg: #f7f8f5;
+  --bg: #f4f6f2;
   --bg-elevated: #ffffff;
-  --bg-subtle: #eef2ed;
-  --text: #121815;
-  --text-soft: #5f6b65;
-  --text-faint: #84908a;
-  --border: #dde4df;
-  --border-strong: #cbd5cf;
-  --brand: #1a7f4e;
-  --brand-strong: #11603a;
-  --brand-soft: #e0f3e8;
-  --warning: #a76b0b;
-  --warning-soft: #fff2d2;
-  --danger: #b6342a;
-  --danger-soft: #ffe3df;
-  --info-soft: #e8eef5;
-  --info: #335470;
-  --shadow: 0 24px 70px rgba(18, 24, 21, 0.08);
-  --shadow-soft: 0 10px 30px rgba(18, 24, 21, 0.06);
-  --radius: 14px;
+  --bg-subtle: #edf1eb;
+  --text: #0f1612;
+  --text-soft: #556060;
+  --text-faint: #8a9690;
+  --border: #d8e2da;
+  --border-strong: #beccC4;
+  --brand: #178a4a;
+  --brand-strong: #0e6336;
+  --brand-soft: #daf2e6;
+  --primary: #178a4a;
+  --primary-foreground: #ffffff;
+  --warning: #9e6308;
+  --warning-soft: #fef3cc;
+  --danger: #b03028;
+  --danger-soft: #ffe4e0;
+  --info-soft: #e5edf6;
+  --info: #2d4f6e;
+  --shadow: 0 20px 60px rgba(14, 22, 18, 0.10);
+  --shadow-soft: 0 6px 24px rgba(14, 22, 18, 0.07);
+  --shadow-glow: 0 8px 32px color-mix(in srgb, var(--brand) 28%, transparent);
+  --radius: 16px;
   --radius-sm: 10px;
-  --fast: 160ms ease;
-  --slow: 420ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  --radius-xs: 7px;
+  --fast: 140ms cubic-bezier(0.4, 0, 0.2, 1);
+  --medium: 260ms cubic-bezier(0.4, 0, 0.2, 1);
+  --slow: 440ms cubic-bezier(0.16, 1, 0.3, 1);
+  --spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0e1110;
-  --bg-elevated: #151a18;
-  --bg-subtle: #1d2421;
-  --text: #edf2ee;
-  --text-soft: #aeb9b3;
-  --text-faint: #7f8b85;
-  --border: #26312c;
-  --border-strong: #34423b;
-  --brand: #45d28b;
-  --brand-strong: #74e3a9;
-  --brand-soft: #173425;
-  --warning: #f3bd55;
-  --warning-soft: #392a12;
-  --danger: #ff8278;
-  --danger-soft: #3d1d1b;
-  --info-soft: #1b2834;
-  --info: #b5cde2;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
-  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.22);
+  --bg: #0c0f0e;
+  --bg-elevated: #131918;
+  --bg-subtle: #1a2120;
+  --text: #e8f0ea;
+  --text-soft: #a8b8b0;
+  --text-faint: #788880;
+  --border: #222e29;
+  --border-strong: #30403a;
+  --brand: #3ecb80;
+  --brand-strong: #6ddea0;
+  --brand-soft: #0f2e1e;
+  --primary: #3ecb80;
+  --primary-foreground: #061a0f;
+  --warning: #edb84e;
+  --warning-soft: #321f08;
+  --danger: #ff7b70;
+  --danger-soft: #380f0d;
+  --info-soft: #152232;
+  --info: #a8c8e0;
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.44);
+  --shadow-soft: 0 8px 28px rgba(0, 0, 0, 0.30);
+  --shadow-glow: 0 8px 32px color-mix(in srgb, var(--brand) 22%, transparent);
 }
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   background: var(--bg);
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--brand) 11%, transparent), transparent 34rem),
+    radial-gradient(ellipse at 0% 0%, color-mix(in srgb, var(--brand) 9%, transparent) 0%, transparent 55%),
+    radial-gradient(ellipse at 100% 100%, color-mix(in srgb, var(--brand) 5%, transparent) 0%, transparent 40%),
     var(--bg);
   color: var(--text);
   font-family:
-    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
     sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background-color var(--slow), color var(--slow);
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
 }
 
 a {
@@ -80,6 +96,7 @@ input,
 select,
 textarea {
   font: inherit;
+  touch-action: manipulation;
 }
 
 button {
@@ -92,19 +109,22 @@ svg {
 
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .topbar {
   align-items: center;
-  backdrop-filter: blur(18px);
-  background: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
-  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(28px) saturate(160%);
+  -webkit-backdrop-filter: blur(28px) saturate(160%);
+  background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
   display: grid;
   gap: 18px;
   grid-template-columns: auto 1fr auto;
-  padding: 14px clamp(18px, 4vw, 56px);
+  padding: 12px clamp(18px, 4vw, 56px);
   position: sticky;
   top: 0;
+  transition: box-shadow var(--medium), background-color var(--slow);
   z-index: 50;
 }
 
@@ -178,16 +198,17 @@ svg {
   border: 1px solid transparent;
   border-radius: 999px;
   display: inline-flex;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   font-weight: 760;
   justify-content: center;
   min-height: 38px;
-  padding: 9px 13px;
+  padding: 9px 16px;
   transition:
-    background-color var(--fast),
-    border-color var(--fast),
-    color var(--fast),
-    transform var(--fast);
+    background-color var(--medium),
+    border-color var(--medium),
+    color var(--medium),
+    box-shadow var(--medium),
+    transform var(--spring);
 }
 
 .topnav a {
@@ -197,7 +218,12 @@ svg {
 .topnav a:hover,
 .theme-toggle:hover,
 .button:hover {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.button:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
 }
 
 .topnav a:hover,
@@ -230,10 +256,10 @@ svg {
 
 .home,
 .page {
-  animation: page-in 460ms var(--slow) both;
+  animation: page-in 520ms var(--slow) both;
   margin: 0 auto;
-  max-width: 1220px;
-  padding: 30px clamp(18px, 4vw, 56px) 58px;
+  max-width: 1240px;
+  padding: 32px clamp(18px, 4vw, 56px) 64px;
 }
 
 .hero-band,
@@ -313,16 +339,29 @@ p {
 }
 
 .button-primary {
-  background: var(--brand);
-  border-color: var(--brand);
+  background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 82%, #000));
+  border-color: transparent;
   color: #ffffff;
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--brand) 25%, transparent);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--brand) 32%, transparent),
+              0 1px 3px rgba(0,0,0,0.12);
+  letter-spacing: 0.01em;
+}
+
+.button-primary:hover {
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--brand) 44%, transparent),
+              0 2px 6px rgba(0,0,0,0.12);
 }
 
 .button-secondary {
   background: var(--bg-elevated);
   border-color: var(--border);
   color: var(--text);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+.button-secondary:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 14px rgba(0,0,0,0.09);
 }
 
 .hero-panel,
@@ -335,15 +374,15 @@ p {
 .exercise-row,
 .notification-row,
 .form-panel {
-  background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+  background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow-soft);
   transition:
     background-color var(--slow),
-    border-color var(--slow),
-    box-shadow var(--fast),
-    transform var(--fast);
+    border-color var(--medium),
+    box-shadow var(--medium),
+    transform var(--spring);
 }
 
 .hero-panel,
@@ -356,13 +395,18 @@ p {
 
 .feature-card:hover,
 .stat-card:hover,
-.program-card:hover,
+.program-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--border));
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--brand) 10%, transparent);
+  transform: translateY(-3px);
+}
+
 .exercise-row:hover,
 .notification-row:hover,
 .catalog-item:hover {
   border-color: var(--border-strong);
-  box-shadow: var(--shadow);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-soft);
+  transform: translateX(3px);
 }
 
 .summary-panel,
@@ -526,11 +570,13 @@ p {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-weight: 820;
   justify-content: center;
-  min-height: 28px;
-  padding: 5px 10px;
+  letter-spacing: 0.01em;
+  min-height: 26px;
+  padding: 4px 11px;
+  transition: transform var(--fast), box-shadow var(--fast);
   white-space: nowrap;
 }
 
@@ -567,9 +613,10 @@ p {
 }
 
 .notification-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
   background: var(--warning);
   border-radius: 999px;
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--warning) 14%, transparent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--warning) 16%, transparent);
   height: 8px;
   width: 8px;
 }
@@ -698,14 +745,14 @@ p {
 
 .icon-button {
   align-items: center;
-  background: var(--brand);
-  border: 1px solid var(--brand);
+  background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 80%, #000));
+  border: 1px solid transparent;
   border-radius: 999px;
   color: #ffffff;
   display: inline-flex;
   height: 40px;
   justify-content: center;
-  transition: transform var(--fast), box-shadow var(--fast), background-color var(--fast);
+  transition: transform var(--spring), box-shadow var(--medium), background-color var(--medium);
   width: 40px;
 }
 
@@ -716,8 +763,13 @@ p {
 }
 
 .icon-button:hover {
-  box-shadow: 0 12px 26px color-mix(in srgb, var(--brand) 24%, transparent);
-  transform: translateY(-1px);
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--brand) 36%, transparent);
+  transform: translateY(-2px) scale(1.05);
+}
+
+.icon-button:active {
+  transform: scale(0.95);
+  transition-duration: 80ms;
 }
 
 .icon-button svg {
@@ -730,17 +782,18 @@ p {
 }
 
 .profile-dropdown {
+  animation: dropdown-in 200ms var(--slow) both;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
   display: grid;
-  gap: 6px;
-  min-width: 180px;
+  gap: 4px;
+  min-width: 190px;
   padding: 8px;
   position: absolute;
   right: 0;
-  top: calc(100% + 10px);
+  top: calc(100% + 12px);
   z-index: 70;
 }
 
@@ -830,16 +883,16 @@ p {
 }
 
 .confirm-dialog {
-  animation: page-in 220ms var(--slow) both;
+  animation: modal-in 280ms var(--slow) both;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--brand) 8%, transparent);
   display: grid;
-  gap: 12px;
-  max-width: 420px;
-  padding: 20px;
-  width: min(100%, 420px);
+  gap: 14px;
+  max-width: 440px;
+  padding: 24px;
+  width: min(100%, 440px);
 }
 
 .confirm-dialog h2,
@@ -938,8 +991,9 @@ input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 4px color-mix(in srgb, var(--brand) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent);
   outline: none;
+  transition: border-color var(--fast), box-shadow var(--medium);
 }
 
 textarea {
@@ -1002,13 +1056,15 @@ textarea {
 
 .activity-icon {
   align-items: center;
-  background: var(--brand-soft);
-  border-radius: 10px;
+  background: linear-gradient(135deg, var(--brand-soft), color-mix(in srgb, var(--brand-soft) 60%, var(--bg-elevated)));
+  border: 1px solid color-mix(in srgb, var(--brand) 16%, transparent);
+  border-radius: 12px;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--brand) 12%, transparent);
   color: var(--brand-strong);
   display: inline-flex;
-  height: 36px;
+  height: 38px;
   justify-content: center;
-  width: 36px;
+  width: 38px;
 }
 
 .activity-icon svg {
@@ -1240,16 +1296,24 @@ textarea {
   display: grid;
   gap: 4px;
   min-height: 76px;
-  padding: 10px 12px;
+  padding: 12px 14px;
   text-align: left;
-  transition: border-color var(--fast), background-color var(--fast), transform var(--fast);
+  transition: border-color var(--medium), background-color var(--medium), transform var(--spring), box-shadow var(--medium);
 }
 
-.day-tabs button:hover,
-.day-tabs button.is-selected {
+.day-tabs button:hover {
   background: var(--brand-soft);
-  border-color: color-mix(in srgb, var(--brand) 34%, var(--border));
-  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--brand) 24%, var(--border));
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--brand) 12%, transparent);
+  transform: translateY(-2px);
+}
+
+.day-tabs button.is-selected {
+  background: linear-gradient(135deg, var(--brand-soft), color-mix(in srgb, var(--brand-soft) 60%, var(--bg-elevated)));
+  border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
+  box-shadow: 0 4px 18px color-mix(in srgb, var(--brand) 18%, transparent),
+              inset 0 1px 0 color-mix(in srgb, var(--brand) 20%, transparent);
+  transform: translateY(-2px);
 }
 
 .day-tabs span {
@@ -1352,12 +1416,39 @@ textarea {
 @keyframes page-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes dropdown-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pulse-dot {
+  0%, 100% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--warning) 16%, transparent); }
+  50% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--warning) 7%, transparent); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1373,11 +1464,21 @@ textarea {
 @media (max-width: 940px) {
   .topbar {
     grid-template-columns: 1fr auto;
+    gap: 12px;
+    padding: 10px clamp(14px, 3vw, 32px);
   }
 
   .topnav {
     grid-column: 1 / -1;
     justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .topnav a,
+  .theme-toggle {
+    font-size: 0.82rem;
+    min-height: 34px;
+    padding: 7px 11px;
   }
 
   .hero-band,
@@ -1390,12 +1491,21 @@ textarea {
   .header-copy,
   .compact-header .header-copy {
     min-height: auto;
+    padding-bottom: 6px;
   }
 
-  .workstream-grid,
+  .workstream-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-top: 18px;
+  }
+
   .program-grid,
   .catalog-grid,
-  .compact-stats,
+  .compact-stats {
+    grid-template-columns: 1fr;
+  }
+
   .form-grid,
   .add-exercise-grid {
     grid-template-columns: 1fr;
@@ -1403,11 +1513,27 @@ textarea {
 
   .workout-session-panel {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 
-  .lift-log-form,
+  .lift-log-form {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .lift-log-form label:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .lift-log-form .button {
+    grid-column: 1 / -1;
+    justify-self: stretch;
+  }
+
   .lift-log-table div {
     grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 10px;
   }
 
   .add-exercise-button {
@@ -1416,6 +1542,8 @@ textarea {
 
   .member-row {
     grid-template-columns: auto 1fr;
+    gap: 10px;
+    padding: 12px 14px;
   }
 
   .member-row .status-pill,
@@ -1425,37 +1553,384 @@ textarea {
   }
 
   .exercise-row {
-    grid-template-columns: 88px 1fr;
+    grid-template-columns: 80px 1fr;
+    gap: 10px;
+    padding: 8px;
   }
 
   .exercise-prescription {
     grid-column: 1 / -1;
     justify-self: start;
   }
+
+  .exercise-thumb {
+    min-height: 68px;
+  }
+
+  .summary-panel,
+  .member-focus,
+  .form-panel {
+    padding: 16px;
+  }
+
+  .panel-title {
+    padding: 12px 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .notification-list {
+    padding: 12px;
+    gap: 8px;
+  }
+
+  .weekly-schedule {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .day-tabs {
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 6px;
+  }
+
+  .day-tabs button {
+    min-height: 64px;
+    padding: 10px 12px;
+  }
+
+  .timer-presets {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+
+  .usage-chart {
+    min-height: 150px;
+  }
+
+  .usage-bar {
+    height: 150px;
+  }
+
+  h1 {
+    font-size: clamp(1.8rem, 5vw, 3.5rem);
+    margin-bottom: 14px;
+  }
+
+  .dashboard-header h1 {
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+  }
+
+  .feature-card {
+    padding: 16px;
+  }
+
+  .stat-card {
+    padding: 14px;
+  }
+
+  .stat-card strong {
+    font-size: 1.4rem;
+  }
+
+  .ai-band {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .ai-band svg {
+    display: none;
+  }
+
+  .dialog-backdrop {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .confirm-dialog {
+    max-width: 100%;
+    width: 100%;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .program-dialog {
+    max-width: 100%;
+    width: 100%;
+    max-height: 88vh;
+    border-radius: var(--radius) var(--radius) 0 0;
+    padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .capacity-list {
+    padding: 0 12px 12px;
+  }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 640px) {
   .home,
   .page {
-    padding-inline: 14px;
+    padding: 20px 14px 48px;
   }
 
   .topbar {
-    padding-inline: 14px;
+    padding-inline: 12px;
   }
 
-  .metric-strip,
-  .detail-window,
-  .ai-band {
-    grid-template-columns: 1fr;
+  .topnav {
+    display: none;
+  }
+
+  .topbar-gym-name {
+    display: none;
+  }
+
+  .brand small {
+    display: none;
+  }
+
+  .hero-band,
+  .dashboard-header {
+    gap: 14px;
+    margin-bottom: 16px;
+  }
+
+  .metric-strip {
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
   }
 
   .metric-strip span {
     border-bottom: 1px solid var(--border);
     border-right: 0;
+    padding: 12px;
+    font-size: 0.78rem;
   }
 
-  .metric-strip span:last-child {
+  .metric-strip span:nth-child(odd) {
+    border-right: 1px solid var(--border);
+  }
+
+  .metric-strip span:last-child,
+  .metric-strip span:nth-last-child(2):nth-child(odd) ~ span:last-child {
     border-bottom: 0;
   }
+
+  .metric-strip strong {
+    font-size: 1.35rem;
+  }
+
+  .detail-window {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 12px;
+    padding-top: 12px;
+  }
+
+  .quick-actions {
+    gap: 8px;
+  }
+
+  .quick-actions .button {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+    font-size: 0.84rem;
+    padding: 10px 12px;
+  }
+
+  .button {
+    font-size: 0.84rem;
+    min-height: 42px;
+    padding: 10px 14px;
+  }
+
+  .training-image {
+    min-height: 200px;
+    border-radius: var(--radius);
+  }
+
+  .lift-log-form {
+    grid-template-columns: 1fr;
+  }
+
+  .day-tabs {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .day-tabs button {
+    min-height: 56px;
+    padding: 8px 10px;
+    gap: 2px;
+  }
+
+  .day-tabs span {
+    font-size: 0.72rem;
+  }
+
+  .day-tabs strong {
+    font-size: 0.82rem;
+    line-height: 1.15;
+  }
+
+  .exercise-row {
+    grid-template-columns: 70px 1fr;
+    gap: 8px;
+  }
+
+  .exercise-thumb {
+    min-height: 60px;
+    border-radius: 8px;
+  }
+
+  .exercise-row h3 {
+    font-size: 0.88rem;
+  }
+
+  .exercise-row p {
+    font-size: 0.8rem;
+  }
+
+  .exercise-prescription {
+    font-size: 0.8rem;
+    padding: 6px 9px;
+  }
+
+  .back-row {
+    padding: 10px 14px 0;
+  }
+
+  .app-footer {
+    font-size: 0.82rem;
+    padding: 20px 14px 6px;
+  }
+
+  .social-links {
+    padding-top: 16px;
+    gap: 8px;
+  }
+
+  .social-links a {
+    height: 36px;
+    width: 36px;
+  }
+
+  .side-drawer {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  .bmi-panel > strong {
+    font-size: clamp(2rem, 6vw, 4rem);
+  }
+
+  .activity-item {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .activity-item h2 {
+    font-size: 0.92rem;
+  }
+
+  .busyness-widget strong,
+  .capacity-headcount strong {
+    font-size: clamp(2rem, 5vw, 3rem);
+  }
+
+  .rest-timer-card > strong {
+    font-size: clamp(1.3rem, 3vw, 1.8rem);
+  }
+
+  .timer-presets {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .timer-presets button {
+    padding: 10px 8px;
+    font-size: 0.84rem;
+  }
+
+  .workspace-switcher {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .catalog-list {
+    padding: 10px;
+    gap: 6px;
+  }
+
+  .catalog-item {
+    padding: 10px;
+    flex-wrap: wrap;
+  }
+
+  .injury-card,
+  .ai-modification-panel,
+  .workout-session-panel,
+  .rest-timer-card,
+  .lift-log-panel {
+    padding: 12px;
+    gap: 10px;
+  }
 }
+
+@media (max-width: 420px) {
+  h1 {
+    font-size: 1.6rem;
+    line-height: 1.05;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .eyebrow {
+    font-size: 0.68rem;
+    margin-bottom: 8px;
+  }
+
+  h2 {
+    font-size: 0.96rem;
+  }
+
+  p {
+    font-size: 0.88rem;
+    line-height: 1.55;
+  }
+
+  .day-tabs {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .member-row {
+    padding: 10px 12px;
+  }
+
+  .panel-title {
+    padding: 10px 12px;
+  }
+
+  .panel-title h2 {
+    font-size: 0.9rem;
+  }
+
+  .status-pill {
+    font-size: 0.68rem;
+    padding: 3px 8px;
+    min-height: 22px;
+  }
+
+  .confirm-dialog {
+    padding: 18px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+    gap: 12px;
+  }
+
+  .confirm-dialog h2 {
+    font-size: 1rem;
+  }
+}
+

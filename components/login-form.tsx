@@ -8,34 +8,52 @@ export function LoginForm() {
   const [resetState, forgotPasswordAction] = useActionState(requestPasswordReset, null);
 
   return (
-    <form action={formAction} className="form-panel" style={{ maxWidth: 450, margin: "0 auto", marginTop: "10vh", padding: "40px 32px" }}>
-      <div style={{ textAlign: "center", marginBottom: "32px", display: "flex", flexDirection: "column", alignItems: "center" }}>
+    <form
+      action={formAction}
+      className="form-panel"
+      style={{
+        maxWidth: 420,
+        width: "100%",
+        margin: "0 auto",
+        marginTop: "clamp(24px, 8vh, 80px)",
+        padding: "clamp(24px, 5vw, 40px) clamp(20px, 4vw, 32px)",
+      }}
+    >
+      <div style={{ textAlign: "center", marginBottom: "clamp(20px, 4vw, 32px)", display: "flex", flexDirection: "column", alignItems: "center" }}>
         <img
           alt="FitSplit"
           src="/icon-512.png"
-          width="96"
-          height="96"
-          style={{ borderRadius: "18px", marginBottom: "20px" }}
+          width="80"
+          height="80"
+          style={{ borderRadius: "18px", marginBottom: "16px", boxShadow: "var(--shadow-soft)" }}
         />
-        <h1 style={{ fontSize: "2rem", lineHeight: 1.2, fontWeight: 700, margin: 0, letterSpacing: "-0.02em" }}>
+        <h1 style={{
+          fontSize: "clamp(1.4rem, 4.5vw, 2rem)",
+          lineHeight: 1.2,
+          fontWeight: 700,
+          margin: 0,
+          letterSpacing: "-0.02em"
+        }}>
           Welcome to FitSplit,<br />your workout companion.
         </h1>
       </div>
 
-      <div className="builder-stack">
+      <div className="builder-stack" style={{ gap: "14px" }}>
         <label style={{ display: "grid", gap: "6px" }}>
           <span className="eyebrow" style={{ margin: 0 }}>Username / Mobile Number</span>
           <input
             type="text"
             name="username"
             required
+            autoComplete="username"
             placeholder="Enter username/mobile number"
             style={{
-              padding: "12px",
-              borderRadius: "8px",
+              padding: "12px 14px",
+              borderRadius: "var(--radius-sm)",
               border: "1px solid var(--border)",
               background: "var(--bg-elevated)",
               color: "var(--text)",
+              fontSize: "1rem",
             }}
           />
         </label>
@@ -46,41 +64,42 @@ export function LoginForm() {
             type="password"
             name="password"
             required
+            autoComplete="current-password"
             placeholder="password"
             style={{
-              padding: "12px",
-              borderRadius: "8px",
+              padding: "12px 14px",
+              borderRadius: "var(--radius-sm)",
               border: "1px solid var(--border)",
               background: "var(--bg-elevated)",
               color: "var(--text)",
+              fontSize: "1rem",
             }}
           />
         </label>
 
         {state?.error && (
-          <div style={{ padding: "10px", background: "var(--danger-soft)", color: "var(--danger)", borderRadius: "8px", fontSize: "0.9rem", marginTop: "8px" }}>
+          <div style={{ padding: "10px 14px", background: "var(--danger-soft)", color: "var(--danger)", borderRadius: "var(--radius-sm)", fontSize: "0.88rem" }}>
             {state.error}
           </div>
         )}
         
         {resetState?.error && (
-          <div style={{ padding: "10px", background: "var(--danger-soft)", color: "var(--danger)", borderRadius: "8px", fontSize: "0.9rem", marginTop: "8px" }}>
+          <div style={{ padding: "10px 14px", background: "var(--danger-soft)", color: "var(--danger)", borderRadius: "var(--radius-sm)", fontSize: "0.88rem" }}>
             {resetState.error}
           </div>
         )}
 
         {resetState?.status === "success" && resetState?.message && (
-          <div style={{ padding: "10px", background: "var(--success-soft)", color: "var(--success)", borderRadius: "8px", fontSize: "0.9rem", marginTop: "8px" }}>
+          <div style={{ padding: "10px 14px", background: "var(--brand-soft)", color: "var(--brand-strong)", borderRadius: "var(--radius-sm)", fontSize: "0.88rem" }}>
             {resetState.message}
           </div>
         )}
-
 
         <button
           type="submit"
           disabled={isPending}
           className="button button-primary"
-          style={{ marginTop: "16px", width: "100%", padding: "14px", fontSize: "1rem" }}
+          style={{ marginTop: "8px", width: "100%", padding: "14px", fontSize: "1rem" }}
         >
           {isPending ? "Logging in..." : "Log in"}
         </button>
@@ -88,7 +107,7 @@ export function LoginForm() {
         <button 
           formAction={forgotPasswordAction}
           className="button"
-          style={{ marginTop: "8px", width: "100%", padding: "14px", background: "none", border: "none", color: "var(--primary)", fontSize: "0.9rem", cursor: "pointer" }}
+          style={{ width: "100%", padding: "12px", background: "none", border: "none", color: "var(--brand)", fontSize: "0.88rem", cursor: "pointer" }}
         >
           Forgot Password?
         </button>

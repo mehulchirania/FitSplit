@@ -74,7 +74,7 @@ export function AppTopbar({ initials, gymName }: { initials?: string; gymName?: 
 
         <div className="profile-menu" ref={profileRef} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
           {gymName && (
-            <span style={{ fontSize: "0.85rem", color: "var(--text-soft)", fontWeight: 600 }}>{gymName}</span>
+            <span className="topbar-gym-name" style={{ fontSize: "0.84rem", color: "var(--text-soft)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>{gymName}</span>
           )}
           <button
             aria-expanded={isProfileOpen}
