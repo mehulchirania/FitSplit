@@ -9,7 +9,7 @@ import { Menu, UserRound } from "@/components/icons";
 
 import { logoutUser } from "@/lib/auth";
 
-export function AppTopbar({ initials }: { initials?: string }) {
+export function AppTopbar({ initials, gymName }: { initials?: string; gymName?: string }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -72,7 +72,10 @@ export function AppTopbar({ initials }: { initials?: string }) {
 
         <MainNav />
 
-        <div className="profile-menu" ref={profileRef} style={{ marginLeft: "auto" }}>
+        <div className="profile-menu" ref={profileRef} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
+          {gymName && (
+            <span style={{ fontSize: "0.85rem", color: "var(--text-soft)", fontWeight: 600 }}>{gymName}</span>
+          )}
           <button
             aria-expanded={isProfileOpen}
             aria-label="Open profile menu"

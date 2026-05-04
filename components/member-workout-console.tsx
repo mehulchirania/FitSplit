@@ -23,6 +23,7 @@ type Modification = {
   injury: string;
   summary: string;
   swaps: Array<{ from: string; to: string; reason: string }>;
+  addedStretches: Array<{ name: string; reason: string }>;
   routine: WorkoutExercise[];
 };
 
@@ -90,13 +91,13 @@ function getInjuryRule(injury: string) {
     };
   }
 
-  if (value.includes("back") || value.includes("spine")) {
+  if (value.includes("back") || value.includes("spine") || value.includes("lower back")) {
     return {
-      avoidMuscles: ["Back", "Legs"],
-      avoidTerms: ["deadlift", "row", "squat"],
-      preferredMuscles: ["Chest", "Shoulders", "Core"],
+      avoidMuscles: ["Back"] as string[],
+      avoidTerms: ["deadlift", "row", "good morning"],
+      preferredMuscles: ["Chest", "Shoulders", "Biceps"] as string[],
       summary:
-        "Avoided spinal loading and rebuilt the day around supported upper-body and low-load core work.",
+        "Avoided spinal loading and rebuilt the day around supported upper-body push/pull work.",
       stretches: ["stretch-cat-cow"]
     };
   }
@@ -130,14 +131,33 @@ function isContraindicated(
   );
 }
 
-function findAlternative(usedIds: Set<string>, injury: string, exercises: Exercise[]) {
+function findAlternative(
+  usedIds: Set<string>,
+  injury: string,
+  exercises: Exercise[],
+  originalMuscleGroup?: string
+) {
   const rule = getInjuryRule(injury);
-  return exercises.find(
-    (exercise) =>
-      !usedIds.has(exercise.id) &&
-      exercise.ownerOnly &&
-      rule.preferredMuscles.includes(exercise.muscleGroup as string)
-  );
+  // Determine mechanic type of the original exercise to prevent push/pull confusion
+  const PUSH_MUSCLES = ["Chest", "Shoulders", "Triceps"];
+  const PULL_MUSCLES = ["Back", "Biceps"];
+  const originalIsPush = originalMuscleGroup && PUSH_MUSCLES.includes(originalMuscleGroup);
+  const originalIsPull = originalMuscleGroup && PULL_MUSCLES.includes(originalMuscleGroup);
+
+  return exercises.find((exercise) => {
+    if (usedIds.has(exercise.id)) return false;
+    if (!exercise.ownerOnly) return false;
+    if (!rule.preferredMuscles.includes(exercise.muscleGroup as string)) return false;
+    // If original was a pull exercise and preferred is a push exercise, skip (and vice versa)
+    // unless the original's muscle group is contraindicated
+    const thisIsPush = PUSH_MUSCLES.includes(exercise.muscleGroup as string);
+    const thisIsPull = PULL_MUSCLES.includes(exercise.muscleGroup as string);
+    if (originalMuscleGroup && !rule.avoidMuscles.includes(originalMuscleGroup)) {
+      if (originalIsPush && thisIsPull) return false;
+      if (originalIsPull && thisIsPush) return false;
+    }
+    return true;
+  });
 }
 
 function createModification(
@@ -147,13 +167,14 @@ function createModification(
 ): Modification {
   const usedIds = new Set(activeDay.exercises.map((item) => item.exerciseId));
   const swaps: Modification["swaps"] = [];
+  const addedStretches: Modification["addedStretches"] = [];
   const routine = activeDay.exercises.map((item) => {
     if (!isContraindicated(item, injury, exercises)) {
       return item;
     }
 
     const original = exercises.find((exercise) => exercise.id === item.exerciseId);
-    const alternative = findAlternative(usedIds, injury, exercises);
+    const alternative = findAlternative(usedIds, injury, exercises, original?.muscleGroup as string | undefined);
 
     if (!original || !alternative) {
       return item;
@@ -163,7 +184,7 @@ function createModification(
     swaps.push({
       from: original.name,
       to: alternative.name,
-      reason: "Reduced risk based on the logged injury or limitation."
+      reason: `Swapped to protect your ${injury}. Maintains similar movement pattern.`
     });
 
     return { ...item, exerciseId: alternative.id, notes: "AI Semi-Personal Trainer swap" };
@@ -174,10 +195,9 @@ function createModification(
     const stretchExercises = rule.stretches.map((stretchId) => {
       const ex = exercises.find(e => e.id === stretchId);
       if (ex) {
-        swaps.push({
-          from: "Added dynamically",
-          to: ex.name,
-          reason: "Suggested warm-up/stretch for your reported limitation."
+        addedStretches.push({
+          name: ex.name,
+          reason: `Therapeutic warm-up for your reported ${injury}.`
         });
       }
       return {
@@ -185,13 +205,13 @@ function createModification(
         sets: 2,
         reps: "10-15",
         restSeconds: 30,
-        notes: "AI Suggestion: Do this warm-up to prepare safely."
+        notes: "AI Suggestion: Warm-up stretch"
       };
     });
     routine.unshift(...stretchExercises);
   }
 
-  if (!swaps.length) {
+  if (!swaps.length && !addedStretches.length) {
     const recoveryExercises = exercises
       .filter((exercise) => getInjuryRule(injury).preferredMuscles.includes(exercise.muscleGroup as string))
       .slice(0, 4)
@@ -206,13 +226,12 @@ function createModification(
     return {
       injury,
       summary: getInjuryRule(injury).summary,
-      swaps: [
-        {
-          from: "Original training intensity",
-          to: "Dedicated recovery routine",
-          reason: "No direct contraindicated exercise was detected, so the plan was softened."
-        }
-      ],
+      swaps: [{
+        from: "Original training intensity",
+        to: "Dedicated recovery routine",
+        reason: "No direct contraindicated exercise was detected, so the plan was softened."
+      }],
+      addedStretches: [],
       routine: recoveryExercises
     };
   }
@@ -221,9 +240,13 @@ function createModification(
     injury,
     summary: getInjuryRule(injury).summary,
     swaps,
+    addedStretches,
     routine
   };
 }
+
+const SESSION_START_KEY = "fitsplit-session-start";
+const MAX_SESSION_SECONDS = 4 * 60 * 60; // 4 hours
 
 function formatTimer(seconds: number) {
   const minutes = Math.floor(seconds / 60)
@@ -231,6 +254,14 @@ function formatTimer(seconds: number) {
     .padStart(2, "0");
   const remainingSeconds = (seconds % 60).toString().padStart(2, "0");
   return `${minutes}:${remainingSeconds}`;
+}
+
+function formatElapsed(seconds: number) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
 function getExerciseName(exerciseId: string, exercises: Exercise[]) {
@@ -253,6 +284,7 @@ export function MemberWorkoutConsole({
   const router = useRouter();
   const [isActive, setIsActive] = useState(false);
   const [activeCount, setActiveCount] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [injury, setInjury] = useState("");
   const [modification, setModification] = useState<Modification | null>(null);
   const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
@@ -321,6 +353,44 @@ export function MemberWorkoutConsole({
     return () => window.clearInterval(intervalId);
   }, [isTimerRunning]);
 
+  // Elapsed workout clock — ticks while active, auto-ends at 4 hours
+  useEffect(() => {
+    if (!isActive) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    // Restore elapsed time from stored start timestamp
+    const storedStart = window.localStorage.getItem(SESSION_START_KEY);
+    const startTime = storedStart ? Number(storedStart) : Date.now();
+    if (!storedStart) {
+      window.localStorage.setItem(SESSION_START_KEY, String(startTime));
+    }
+
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsedSeconds(elapsed);
+
+      if (elapsed >= MAX_SESSION_SECONDS) {
+        // Auto-end after 4 hours
+        const formData = new FormData();
+        formData.set("sessionId", `active-${memberId}`);
+        endWorkoutSession(initialFormActionState, formData).then(() => {
+          window.localStorage.removeItem(sessionKey);
+          window.localStorage.removeItem(SESSION_START_KEY);
+          setIsActive(false);
+          setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
+          setElapsedSeconds(0);
+          router.refresh();
+        });
+      }
+    };
+
+    tick();
+    const intervalId = window.setInterval(tick, 1000);
+    return () => window.clearInterval(intervalId);
+  }, [isActive, memberId, router]);
+
   function startWorkout() {
     if (isActive) {
       return;
@@ -338,6 +408,7 @@ export function MemberWorkoutConsole({
 
         if (result.status === "success") {
           window.localStorage.setItem(sessionKey, "active");
+          window.localStorage.setItem(SESSION_START_KEY, String(Date.now()));
           setIsActive(true);
           setActiveCount(setStoredActiveCount(getStoredActiveCount() + 1));
           router.refresh();
@@ -364,7 +435,9 @@ export function MemberWorkoutConsole({
 
         if (result.status === "success") {
           window.localStorage.removeItem(sessionKey);
+          window.localStorage.removeItem(SESSION_START_KEY);
           setIsActive(false);
+          setElapsedSeconds(0);
           setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
           router.refresh();
         }
@@ -475,10 +548,23 @@ export function MemberWorkoutConsole({
           <div>
             <p className="eyebrow">Attendance proxy</p>
             <h2>{isActive ? "Workout in progress" : "Ready to train"}</h2>
-            <p>
-              Start and end buttons are mandatory so FitSplit can estimate live
-              gym capacity from active workouts.
-            </p>
+            {isActive ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "6px", flexWrap: "wrap" }}>
+                <span style={{
+                  fontSize: "clamp(1.4rem, 3vw, 2rem)",
+                  fontWeight: 700,
+                  fontVariantNumeric: "tabular-nums",
+                  color: elapsedSeconds > 3 * 3600 ? "var(--danger)" : "var(--brand)"
+                }}>
+                  ⏱ {formatElapsed(elapsedSeconds)}
+                </span>
+                {elapsedSeconds > 3 * 3600 && (
+                  <span className="status-pill status-expired">Auto-ends at 4h</span>
+                )}
+              </div>
+            ) : (
+              <p>Start and end buttons update live gym capacity.</p>
+            )}
           </div>
           <div className="quick-actions">
             <button
@@ -525,7 +611,27 @@ export function MemberWorkoutConsole({
                 </p>
                 <h2>{visibleWorkoutDay.title}</h2>
                 <p>{modification ? modification.summary : visibleWorkoutDay.focus}</p>
-                <ExerciseList exercises={exercises} items={visibleWorkoutDay.exercises} />
+
+                {/* Stretches section — shown when modified */}
+                {modification && modification.routine.some(item => item.notes?.includes("stretch") || item.notes?.includes("Warm-up")) && (
+                  <>
+                    <p className="eyebrow" style={{ marginTop: "12px", color: "var(--brand)" }}>🧘 Stretches &amp; Warm-ups</p>
+                    <ExerciseList
+                      exercises={exercises}
+                      items={visibleWorkoutDay.exercises.filter(item => item.notes?.includes("stretch") || item.notes?.includes("Warm-up"))}
+                    />
+                    <p className="eyebrow" style={{ marginTop: "12px" }}>🏋️ Weight Exercises</p>
+                    <ExerciseList
+                      exercises={exercises}
+                      items={visibleWorkoutDay.exercises.filter(item => !item.notes?.includes("stretch") && !item.notes?.includes("Warm-up"))}
+                    />
+                  </>
+                )}
+
+                {/* Default (no modification) */}
+                {!modification && (
+                  <ExerciseList exercises={exercises} items={visibleWorkoutDay.exercises} />
+                )}
               </article>
             ) : null}
           </div>
@@ -557,7 +663,7 @@ export function MemberWorkoutConsole({
               </select>
             </label>
             <label>
-              Weight
+              Weight (kg)
               <input min="0" name="weight" placeholder="60" required step="0.5" type="number" />
             </label>
             <label>
@@ -650,12 +756,34 @@ export function MemberWorkoutConsole({
         {modification ? (
           <div className="ai-modification-panel">
             <p className="eyebrow">Plan modified</p>
-            <h2>{modification.swaps.length} AI adjustment(s)</h2>
-            {modification.swaps.map((swap) => (
-              <span key={`${swap.from}-${swap.to}`}>
-                {swap.from} {"->"} {swap.to}
-              </span>
-            ))}
+            <h2>AI Adjustments for {modification.injury}</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", margin: 0 }}>{modification.summary}</p>
+
+            {modification.swaps.length > 0 && (
+              <>
+                <p className="eyebrow" style={{ margin: "8px 0 4px", color: "var(--warning)" }}>🔄 Exercises Swapped</p>
+                {modification.swaps.map((swap) => (
+                  <span key={`${swap.from}-${swap.to}`}>
+                    <strong>{swap.from}</strong> → <strong>{swap.to}</strong>
+                    <br />
+                    <small style={{ color: "var(--text-soft)" }}>{swap.reason}</small>
+                  </span>
+                ))}
+              </>
+            )}
+
+            {modification.addedStretches.length > 0 && (
+              <>
+                <p className="eyebrow" style={{ margin: "8px 0 4px", color: "var(--brand)" }}>🧘 Stretches Added for Pain Management</p>
+                {modification.addedStretches.map((stretch) => (
+                  <span key={stretch.name}>
+                    <strong>{stretch.name}</strong>
+                    <br />
+                    <small style={{ color: "var(--text-soft)" }}>{stretch.reason}</small>
+                  </span>
+                ))}
+              </>
+            )}
           </div>
         ) : null}
       </aside>

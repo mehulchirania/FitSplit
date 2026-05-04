@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppTopbar } from "@/components/app-topbar";
 import { BackButton } from "@/components/back-button";
+import { getTitanWorkspace } from "@/lib/firebase/read-models";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default async function RootLayout({
 }>) {
   const cookieStore = await cookies();
   const username = cookieStore.get("fitsplit-username")?.value;
+  const { gym } = await getTitanWorkspace();
   
   let initials = "";
   if (username) {
@@ -33,6 +35,7 @@ export default async function RootLayout({
     else if (username === "admin") initials = "AD";
     else initials = "AA"; // aarav
   }
+  const gymName = username ? gym?.name : undefined;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -61,7 +64,7 @@ export default async function RootLayout({
       </head>
       <body>
         <div className="app-shell">
-          <AppTopbar initials={initials} />
+          <AppTopbar initials={initials} gymName={gymName} />
           <BackButton />
           {children}
           <footer className="app-footer">{"Developed with 💪 by Mehul"}</footer>

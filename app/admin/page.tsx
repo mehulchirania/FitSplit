@@ -59,7 +59,7 @@ export default async function AdminPage() {
           </Link>
         </div>
         {gyms.map((workspace) => (
-          <Link href="/owner/dashboard" key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link href="/owner" key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>
             <article className="member-row">
               <span className="avatar">TV</span>
               <div>

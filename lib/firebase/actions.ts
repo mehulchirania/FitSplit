@@ -170,6 +170,16 @@ export async function assignProgramToMember(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const memberName = String(formData.get("memberName") ?? "Member").trim();
+    const programTitle = String(formData.get("programTitle") ?? "Workout program").trim();
+
+    if (!hasFirebaseAdminConfig()) {
+      // Mock mode — assignment is local only; full persistence requires Firebase Admin
+      revalidatePath("/owner");
+      revalidatePath("/member");
+      return success(`${programTitle} was assigned to ${memberName} (local mode).`);
+    }
+
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const assignmentId = randomUUID();
@@ -177,8 +187,6 @@ export async function assignProgramToMember(
     const activityId = randomUUID();
     const memberId = requireText(formData, "memberId", "Member");
     const programId = requireText(formData, "programId", "Workout program");
-    const memberName = String(formData.get("memberName") ?? "Member").trim();
-    const programTitle = String(formData.get("programTitle") ?? "Workout program").trim();
     const now = new Date().toISOString();
 
     const existingAssignments = await db
@@ -285,6 +293,10 @@ export async function logLiftSet(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    if (!hasFirebaseAdminConfig()) {
+      // Mock mode — lift is saved client-side optimistically
+      return success("Lift entry was logged (local mode).");
+    }
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const liftLogId = randomUUID();
@@ -379,6 +391,10 @@ export async function startWorkoutSession(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    if (!hasFirebaseAdminConfig()) {
+      // Mock mode — just confirm success locally
+      return success("Workout session was started (local mode).");
+    }
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const memberId = requireText(formData, "memberId", "Member");
@@ -413,6 +429,9 @@ export async function endWorkoutSession(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    if (!hasFirebaseAdminConfig()) {
+      return success("Workout session was ended (local mode).");
+    }
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");

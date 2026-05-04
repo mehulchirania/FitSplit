@@ -1,8 +1,6 @@
 # FitSplit
 
-FitSplit is a Firebase-backed gym management web app for the **Titan V2 Fitness** pilot gym.
-
-The app supports admin and owner workflows for gym workspaces, members, memberships, exercise catalogs, workout programs, and workout split templates. It also includes a member-facing portal for membership status and assigned workouts.
+FitSplit is a Firebase-backed gym management web app supporting **Titan V2 Fitness** and **Dummy-Gym** as pilot workspaces. It includes a fully custom mock authentication system, role-based routing (admin, owner, member), and a smart AI semi-personal trainer.
 
 Live app:
 
@@ -27,68 +25,65 @@ fitsplit-29215
 - Next.js App Router
 - React 19
 - TypeScript
-- Firebase Authentication, planned for real login and role enforcement
-- Cloud Firestore for app data
-- Firebase Storage for future uploaded exercise videos
+- Mock cookie-based auth (username + mobile number login, password reset flow)
+- Cloud Firestore for app data (with full mock fallbacks)
 - Firebase Admin SDK for server actions
 - Firebase Security Rules
 - Firebase App Hosting
+- Gemini API (AI Semi-Personal Trainer)
 
-## Current Status
+## Current Status (as of May 2026)
 
-- Firebase Blaze is enabled.
-- Firebase Web App is created.
-- Firebase App Hosting backend `fitsplit` is deployed in `us-central1`.
-- Live App Hosting URL returns HTTP 200.
-- Firestore is initialized.
-- Firestore has demo records for the Titan V2 Fitness pilot workspace.
-- Firestore rules and indexes are deployed.
-- Storage rules exist, but Storage setup/rules deploy may still need to be completed in Firebase Console.
-- GitHub automatic deployments are not connected yet; local-source App Hosting deployment works.
-- Real Firebase Auth login and server-side role enforcement are not implemented yet.
+- ✅ Firebase Blaze enabled, Firestore seeded with demo data
+- ✅ Mock authentication fully working (no Firebase Auth required for local dev)
+- ✅ Member dashboard personalized with BMI, weight, height, age (inline editable)
+- ✅ AI trainer enhanced with injury-aware stretch injection, push/pull logic fixed
+- ✅ Dialog positioning fixed (centered modal via `position: fixed`)
+- ✅ Workout session start/end and lift logging work in local mock mode (no Firebase config required)
+- ✅ Coaching notes dynamically generated for all exercises (no more placeholder text)
+- ✅ Exercise thumbnails updated with muscle-specific Unsplash images
+- ✅ Dummy-Gym loaded alongside Titan V2 Fitness in admin panel
+- ⚠️ Firebase Auth login not implemented yet (mock cookie auth is used)
+- ⚠️ GitHub automatic deploys not connected
+
+## Mock Login Credentials
+
+| Role   | Username / Mobile     | Password |
+|--------|-----------------------|----------|
+| Admin  | `admin`               | password |
+| Owner  | `titan-owner-1`       | password |
+| Owner  | `dummy-gym-owner-1`   | password |
+| Member | `mehulchirania`       | password |
+| Member | `9688227039`          | password |
+| Member | `aaravs`              | password |
+
+> Mobile numbers are auto-normalized: typing `9688227039` is treated as `+91 9688227039`.
 
 ## Features
 
-- Admin workspace overview
-- Titan V2 Fitness pilot workspace
-- Owner dashboard
-- Member management
-- Global hamburger drawer with theme, Activity, and About links
-- Profile dropdown with View Profile and dummy Log Out controls
-- Editable Firestore-backed member records
-- Membership status calculation
-- Role-aware activity feed
-- User profile form with reactive BMI calculation
-- Member injury/limitation logging with deterministic AI-style exercise swaps
-- Start Workout and End Workout controls for active-session attendance tracking
-- Member Gym Busyness widget based on active workouts
-- Firestore-backed historical lift log for progressive overload
-- In-workout rest countdown timer
-- Owner AI business-value analytics for Semi-Personal Training plans and trainer hours saved
-- Owner live capacity panel with active headcount and peak usage chart
-- About page with contact form, social placeholders, email link, and footer
-- Owner-only exercise catalog
-- Workout split templates loaded from `lib/workouts.json`
-- Custom workout plan builder
-- Member dashboard
-- Route-aware navigation
-- Modern minimal UI
-- Dark mode
-- Firestore read models with mock fallback
-- Firebase server actions for writes
+- **Login:** Centered brand UI, username or mobile number login, Forgot Password flow (notifies owner)
+- **Admin:** Gym list with clickable links to owner dashboard, multi-gym support
+- **Owner:** Member management, program assignment, password reset, live capacity panel
+- **Member:** Personalized dashboard ("Welcome, Mehul"), inline editable BMI/metrics, assigned workout, notifications
+- **AI Trainer:** Injury-aware exercise swaps (push/pull logic enforced), therapeutic stretches prepended, two-section Plan Modified view (Swaps + Stretches)
+- **Workout Console:** Separate Stretches and Weight Exercise sections when modified, start/end workout modal (centered), in-workout rest timer (compact), progressive overload log with weight (kg)
+- **Topbar:** Gym name shown left of profile avatar, initials avatar (e.g. `MC`), hidden on login page
+- **Notifications:** Empty state message ("No new notifications for you!")
+- Dark mode, mobile responsive UI
 
 ## App Routes
 
 ```text
-/admin
-/activity
-/about
-/owner
-/owner/members
-/owner/exercises
-/owner/programs
-/member
-/profile
+/                 → Login page
+/admin            → Admin gym overview
+/owner            → Owner dashboard
+/owner/members    → Member list
+/owner/exercises  → Exercise catalog
+/owner/programs   → Workout programs
+/member           → Member dashboard
+/profile          → Profile page
+/activity         → Activity feed
+/about            → Contact and about
 ```
 
 ## Firebase Data Model
@@ -116,112 +111,65 @@ Important IDs:
 ```text
 Titan gym id: titan-v2-fitness
 Titan owner id: owner-titan-v2
+Dummy gym id: dummy-gym
+Dummy owner id: dummy-gym-owner-1
 ```
 
-## Firebase App Code
-
-Firebase helpers:
+## Key Files
 
 ```text
-lib/firebase/actions.ts
-lib/firebase/admin.ts
-lib/firebase/client.ts
-lib/firebase/collections.ts
-lib/firebase/read-models.ts
+lib/mock-data.ts              → All mock data (gyms, members, exercises with coaching notes)
+lib/auth.ts                   → Mock login, logout, password reset server actions
+lib/firebase/actions.ts       → Firebase write actions (with local mock fallbacks)
+lib/firebase/read-models.ts   → Firebase read models (with mock fallbacks)
+components/member-workout-console.tsx → AI trainer, workout display, lift log
+components/login-form.tsx     → Login page form
+components/editable-metrics.tsx → Inline BMI/body metric editing
+components/app-topbar.tsx     → Topbar with gym name + initials avatar
+app/layout.tsx                → Root layout, passes gym name and initials to topbar
+app/member/page.tsx           → Member dashboard
+app/admin/page.tsx            → Admin gym control panel
 ```
-
-Current server actions:
-
-- `createMemberWithMembership`
-- `updateMemberProfile`
-- `updateProfileMetrics`
-- `renewMemberMembership`
-- `logLiftSet`
-- `startWorkoutSession`
-- `endWorkoutSession`
-- `submitContactMessage`
-- `createCatalogExercise`
-- `createCustomWorkoutProgram`
-
-Current read models:
-
-- `getMembersWithMemberships`
-- `getMemberDetail`
-- `getGymWorkspaces`
-- `getTitanWorkspace`
-- `getRoleSummary`
-- `getExerciseCatalog`
-- `getOwnerNotifications`
-- `getMemberNotifications`
-- `getWorkoutPrograms`
-- `getLiftLogsForMember`
-- `getProgramAssignmentForMember`
-- `getActivityEvents`
-- `getProfileMetrics`
-- `getSiteLinks`
-- `getActiveWorkoutSessions`
-
-If Firebase Admin cannot initialize, read models fall back to:
-
-```text
-lib/mock-data.ts
-lib/workouts.json
-```
-
-## Workout Data
-
-Workout source:
-
-```text
-lib/workouts.json
-```
-
-Seed script:
-
-```text
-scripts/seed-firebase.mjs
-scripts/seed-demo-firestore.mjs
-```
-
-Included split templates:
-
-- PPL x 2
-- PPL + Upper/Lower
-- Bro Split
-- Modified Arnold Split x 2
-- Custom User Routine
 
 ## Local Setup
 
-Install dependencies:
+Install:
 
 ```bash
-npm.cmd install
+npm install
 ```
 
-Run locally:
+Run locally (no Firebase config needed — mock fallback is automatic):
 
 ```bash
-npm.cmd run dev
-```
-
-Typecheck:
-
-```bash
-npm.cmd run typecheck
+npm run dev
 ```
 
 Build:
 
 ```bash
-npm.cmd run build
+npm run build
 ```
 
 ## Environment Variables
 
 Copy `.env.example` to `.env.local`.
 
-Client Firebase config:
+Required for AI Trainer:
+
+```env
+GEMINI_API_KEY=your_key_here
+```
+
+Optional Firebase Admin (for live data — mock fallback used if absent):
+
+```env
+FIREBASE_PROJECT_ID=fitsplit-29215
+FIREBASE_CLIENT_EMAIL=
+FIREBASE_PRIVATE_KEY=
+```
+
+Optional Firebase Client (for future auth):
 
 ```env
 NEXT_PUBLIC_FIREBASE_API_KEY=
@@ -232,113 +180,33 @@ NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=766523780087
 NEXT_PUBLIC_FIREBASE_APP_ID=1:766523780087:web:e825b99ed4a88d30c79cf2
 ```
 
-Server Firebase Admin config for local development:
-
-```env
-FIREBASE_PROJECT_ID=fitsplit-29215
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
-```
-
-Firebase App Hosting uses application default credentials at runtime, so service account key values are mainly for local development and seeding.
-
 ## Firebase Commands
 
-Seed Firestore from `lib/workouts.json`:
+Seed demo data:
 
 ```bash
-npm.cmd run seed:firebase
+npm run seed:demo
 ```
 
-Seed Firestore with the full demo pilot data:
+Deploy Firestore rules:
 
 ```bash
-npm.cmd run seed:demo
-```
-
-For local machines without service account env vars, an authenticated Firebase CLI fallback is available:
-
-```bash
-set USE_FIREBASE_CLI_TOKEN=1
-npm.cmd run seed:demo
-```
-
-Deploy Firestore rules and indexes:
-
-```bash
-firebase.cmd deploy --only firestore:rules,firestore:indexes --project fitsplit-29215
-```
-
-Deploy Storage rules after Firebase Storage is initialized:
-
-```bash
-firebase.cmd deploy --only storage --project fitsplit-29215
+firebase deploy --only firestore:rules,firestore:indexes --project fitsplit-29215
 ```
 
 Deploy App Hosting:
 
 ```bash
-firebase.cmd deploy --only apphosting:fitsplit --project fitsplit-29215
-```
-
-Deploy all configured Firebase targets:
-
-```bash
-firebase.cmd deploy --project fitsplit-29215
-```
-
-## Firebase Config Files
-
-```text
-firebase.json
-apphosting.yaml
-firestore.rules
-firestore.indexes.json
-storage.rules
-.firebaserc
-```
-
-## Deployment
-
-Current deployed backend:
-
-```text
-Backend: fitsplit
-Region: us-central1
-URL: https://fitsplit--fitsplit-29215.us-central1.hosted.app
-```
-
-Manual App Hosting deployment from local source is working:
-
-```bash
-firebase.cmd deploy --only apphosting:fitsplit --project fitsplit-29215
-```
-
-GitHub automatic deployment is not connected yet. To enable it in Firebase Console, connect:
-
-```text
-Repository: mehulchirania/FitSplit
-Branch: main
-Root directory: /
-Backend: fitsplit
+firebase deploy --only apphosting:fitsplit --project fitsplit-29215
 ```
 
 ## Known Caveats
 
-- Firebase Auth login flow is not implemented yet.
-- Firebase custom claims and server-side role checks are not implemented yet.
-- Server actions currently trust the owner/admin UI route.
-- Firebase Storage upload UI is not implemented yet; exercise forms store URL/path text.
-- Firebase Storage setup/rules deploy may still need to be completed in console.
-- Member portal currently uses mock/member fallback behavior until auth-aware lookup is added.
-- Workouts and videos will be updated later.
+- Firebase Auth login not implemented; mock cookie auth is used
+- Server actions for workouts/lifts return mock success locally (no Firebase Admin required)
+- Exercise video upload UI not implemented; stores URL text
+- GitHub automatic deploy not connected to Firebase App Hosting
 
 ## Handoff
 
-For future chats, start with:
-
-```text
-PROJECT_HANDOFF.md
-```
-
-That file tracks current status, updates, issues, commands, and next steps.
+See `PROJECT_HANDOFF.md` for full change history and next steps.

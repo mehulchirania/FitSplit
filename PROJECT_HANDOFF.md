@@ -2,6 +2,94 @@
 
 Use this file as the starting context for future Codex chats.
 
+## ⚡ Latest Update — May 2026 (Session 2): Admin, Program Assign & Workout Clock
+
+### Admin Panel Fix
+- Gym name link now correctly points to `/owner` (was `/owner/dashboard` which 404'd).
+
+### Program Assignment Fix
+- `assignProgramToMember` action now has a **mock fallback** — works without Firebase Admin configured.
+- Returns `"… was assigned (local mode)."` locally instead of a 500 error.
+
+### Workout Elapsed Clock
+- A **live elapsed clock** (`⏱ MM:SS` or `⏱ Xh YYm`) is displayed in the session panel when a workout is active.
+- The start timestamp is persisted in `localStorage` (`fitsplit-session-start`) so the clock survives page refreshes.
+- At **3 hours** elapsed, the clock turns red and shows an `"Auto-ends at 4h"` warning pill.
+- At **4 hours**, the session is **automatically ended** — `endWorkoutSession` is called, localStorage is cleared, and capacity is decremented.
+- The clock resets to zero on manual "End Workout" as well.
+
+---
+
+## ⚡ Latest Update — May 2026: Auth & UX Overhaul
+
+### Authentication
+- **Mock auth** implemented via `lib/auth.ts` using Next.js cookies (no Firebase Auth required).
+- Login supports **username OR mobile number** (e.g., `9688227039` → auto-normalizes to `+91 9688227039`).
+- Inputs are trimmed of whitespace before matching.
+- **Forgot Password** flow sends a notification to admin/owner. Owner can reset from member detail page.
+- Password field now shows a placeholder (`password`) rather than pre-filled `*****`.
+
+| Role   | Username / Mobile     | Password |
+|--------|-----------------------|----------|
+| Admin  | `admin`               | password |
+| Owner  | `titan-owner-1`       | password |
+| Owner  | `dummy-gym-owner-1`   | password |
+| Member | `mehulchirania`       | password |
+| Member | `9688227039`          | password |
+| Member | `aaravs`              | password |
+
+### Login Page
+- Centered FitSplit logo/branding, no topbar/hamburger/profile on login.
+- Placeholder: `"Enter username/mobile number"`.
+- Forgot Password moved to bottom of form (after Login button) to prevent Tab-key skip.
+
+### Member Dashboard
+- Greeting: `"Welcome, Mehul"` + `"Let's get fit!"` headline.
+- Body metrics (Age, Weight, Height, BMI) shown as pills with a **pencil ✏️ icon** for inline editing via `<EditableMetrics />` component.
+- BMI auto-calculated from weight/height.
+- **Gym Busyness widget removed.**
+- Assigned Program panel shows correct `daysPerWeek` (not `days.length`).
+- Gym name **removed from Assigned Program panel** — now shown in topbar next to profile avatar.
+
+### Topbar
+- Gym name displayed to the left of the initials avatar.
+- Initials avatar (e.g., `MC`) replaces the generic person icon.
+- Hidden entirely on the login page (`/`).
+- Hook-order bug fixed (early return moved after all `useEffect` calls).
+
+### AI Semi-Personal Trainer
+- **Push/Pull logic enforced:** swapping a push exercise no longer accidentally assigns a pull exercise.
+- **Lower back pain** no longer avoids Legs (only avoids Back/deadlifts/rows).
+- Stretches are **prepended** to the routine and shown in a separate `🧘 Stretches & Warm-ups` section in the workout view.
+- Weight exercises appear in a separate `🏋️ Weight Exercises` section when modified.
+- **Plan Modified panel** now has two distinct sections: `🔄 Exercises Swapped` and `🧘 Stretches Added for Pain Management`.
+- Swap reasons include injury name for better context.
+
+### Firebase / Local Mode
+- `startWorkoutSession`, `endWorkoutSession`, `logLiftSet` — all now **return mock success** when Firebase Admin is not configured. No more 500 errors locally.
+- Dialog (`confirm-dialog`) positioning fixed: `position: fixed; display: flex; z-index: 1000` — always centered on screen.
+
+### Admin Page
+- **"Owner scope"** row removed from summary panel.
+- Gym names are **clickable links** to `/owner/dashboard`.
+- **Dummy-Gym** displayed alongside Titan V2 Fitness.
+
+### Mock Data
+- All exercise `instructions` now have **real coaching notes** (e.g., "Keep chest up, drive through the heels...") instead of the placeholder `"Compound back movement. Add coaching notes..."`.
+- Exercise thumbnails updated to muscle-specific Unsplash images (bench press for Chest, pull-up for Back, squat for Legs, etc.).
+- Mehul's phone number updated to `+91 9688227039`.
+
+### Rest Timer
+- Font size reduced (`clamp(1.6rem, 4vw, 2.4rem)`) to make the timer more compact.
+
+### Weight Label
+- Log Lift form label updated to `"Weight (kg)"`.
+
+### Notifications
+- Empty state added: `"No new notifications for you!"`.
+
+---
+
 ## Project
 
 FitSplit is a Next.js gym management app for the Titan V2 Fitness pilot gym.
