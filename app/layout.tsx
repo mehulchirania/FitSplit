@@ -46,7 +46,13 @@ export default function RootLayout({
         <div className="app-shell">
           <header className="topbar">
             <Link className="brand" href="/">
-              <span className="brand-mark">FS</span>
+              <img
+                alt="FitSplit"
+                className="brand-icon"
+                height="36"
+                src="/icon-512.png"
+                width="36"
+              />
               <span>
                 <strong>FitSplit</strong>
                 <small>Gym operations</small>
