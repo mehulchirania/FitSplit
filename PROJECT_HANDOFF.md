@@ -330,6 +330,7 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Added `public/favicon.ico` generated from the cropped icon and changed tab icon links to `/favicon.ico?v=3` plus versioned PNG links to force browser favicon refresh.
 - Recropped `public/icon-512.png` to the dark artwork panel so no white border is visible, and replaced the header `FS` text mark with the same icon image.
 - Added FitSplit PWA/browser icon assets: `public/icon-512.png`, `public/manifest.json`, and root layout manifest/favicon/apple-touch links.
 - Seeded live Firestore for project `fitsplit-29215` with full Titan V2 Fitness demo data: gym workspace, admin/owner/member profiles, memberships, exercise catalog, workout programs, notifications, and split templates.
@@ -382,6 +383,13 @@ npm.cmd run typecheck
 ```
 
 These passed after recropping the icon and using it in the header brand:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
+```
+
+These passed after adding the dedicated favicon and cache-busted icon links:
 
 ```bash
 npm.cmd run build

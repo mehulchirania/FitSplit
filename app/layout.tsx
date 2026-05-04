@@ -9,8 +9,11 @@ export const metadata: Metadata = {
   description: "Gym membership and workout management for focused fitness teams.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon-512.png",
-    apple: "/icon-512.png"
+    icon: [
+      { url: "/favicon.ico?v=3", type: "image/x-icon" },
+      { url: "/icon-512.png?v=3", sizes: "512x512", type: "image/png" }
+    ],
+    apple: "/icon-512.png?v=3"
   }
 };
 
@@ -25,11 +28,13 @@ export default function RootLayout({
         {/* Points to your manifest file */}
         <link rel="manifest" href="/manifest.json" />
 
-        {/* Uses the exact same image for the browser tab */}
-        <link rel="icon" type="image/png" href="/icon-512.png" />
+        {/* Uses the cropped icon for the browser tab */}
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
+        <link rel="shortcut icon" href="/favicon.ico?v=3" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=3" />
 
         {/* Tells iPhones to use the same image for the home screen */}
-        <link rel="apple-touch-icon" href="/icon-512.png" />
+        <link rel="apple-touch-icon" href="/icon-512.png?v=3" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
