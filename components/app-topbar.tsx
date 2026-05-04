@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, UserRound } from "@/components/icons";
 
-export function AppTopbar() {
+import { logoutUser } from "@/lib/auth";
+
+export function AppTopbar({ initials }: { initials?: string }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setIsDrawerOpen(false);
+    setIsProfileOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     function closeProfile(event: MouseEvent) {
@@ -28,6 +37,9 @@ export function AppTopbar() {
       document.body.style.overflow = "";
     };
   }, [isDrawerOpen]);
+  if (pathname === "/") {
+    return null;
+  }
 
   return (
     <>
@@ -46,12 +58,13 @@ export function AppTopbar() {
             <img
               alt="FitSplit"
               className="brand-icon"
-              height="36"
+              height="48"
               src="/icon-512.png"
-              width="36"
+              width="48"
+              style={{ width: "48px", height: "48px" }}
             />
             <span>
-              <strong>FitSplit</strong>
+              <strong style={{ fontSize: "1.3rem" }}>FitSplit</strong>
               <small>Your fitness companion</small>
             </span>
           </Link>
@@ -59,22 +72,25 @@ export function AppTopbar() {
 
         <MainNav />
 
-        <div className="profile-menu" ref={profileRef}>
+        <div className="profile-menu" ref={profileRef} style={{ marginLeft: "auto" }}>
           <button
             aria-expanded={isProfileOpen}
             aria-label="Open profile menu"
             className="icon-button neutral-icon-button"
             onClick={() => setIsProfileOpen((current) => !current)}
             type="button"
+            style={{ borderRadius: "50%", background: "var(--primary)", color: "var(--primary-foreground)", fontWeight: 600, fontSize: "1rem" }}
           >
-            <UserRound />
+            {initials ? initials : <UserRound />}
           </button>
           {isProfileOpen ? (
             <div className="profile-dropdown">
               <Link href="/profile" onClick={() => setIsProfileOpen(false)}>
                 View Profile
               </Link>
-              <button type="button">Log Out</button>
+              <form action={logoutUser}>
+                <button type="submit" style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, color: "var(--danger)", cursor: "pointer" }}>Log Out</button>
+              </form>
             </div>
           ) : null}
         </div>

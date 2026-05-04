@@ -8,9 +8,11 @@ import workoutsData from "../lib/workouts.json" with { type: "json" };
 const projectId = process.env.FIREBASE_PROJECT_ID || "fitsplit-29215";
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-const ownerId = "owner-titan-v2";
+const ownerId = "titan-owner-1";
 const adminId = "admin-fitsplit";
 const gymId = "titan-v2-fitness";
+const dummyGymId = "dummy-gym";
+const dummyOwnerId = "dummy-gym-owner-1";
 const now = new Date().toISOString();
 
 const members = [
@@ -61,6 +63,18 @@ const members = [
     age: 26,
     heightCm: 158,
     weightKg: 55
+  },
+  {
+    id: "member-mehul",
+    fullName: "Mehul Chirania",
+    email: "mehul@example.com",
+    phone: "+91 9688227039",
+    joinedAt: "2026-05-01",
+    avatarInitials: "MC",
+    goal: "Improve strength and mobility",
+    age: 28,
+    heightCm: 180,
+    weightKg: 78
   }
 ];
 
@@ -100,6 +114,15 @@ const memberships = [
     endDate: "2026-09-04",
     durationMonths: 6,
     paymentReference: "UPI-1116"
+  },
+  {
+    id: "membership-mehul",
+    memberId: "member-mehul",
+    planName: "12 Month Elite",
+    startDate: "2026-05-01",
+    endDate: "2027-04-30",
+    durationMonths: 12,
+    paymentReference: "UPI-9999"
   }
 ];
 
@@ -399,6 +422,29 @@ await setDoc("profiles", ownerId, {
   email: "owner@titanv2.local",
   role: "owner",
   defaultGymId: gymId,
+  isActive: true,
+  createdAt: now,
+  updatedAt: now
+});
+
+await setDoc("gyms", dummyGymId, {
+  id: dummyGymId,
+  name: "Dummy-Gym",
+  slug: dummyGymId,
+  ownerName: "Dummy Gym Owner",
+  ownerUserId: dummyOwnerId,
+  expiryWarningDays: 7,
+  memberCount: 0,
+  status: "pilot",
+  updatedAt: now
+});
+
+await setDoc("profiles", dummyOwnerId, {
+  id: dummyOwnerId,
+  fullName: "Dummy Gym Owner",
+  email: "owner@dummygym.local",
+  role: "owner",
+  defaultGymId: dummyGymId,
   isActive: true,
   createdAt: now,
   updatedAt: now

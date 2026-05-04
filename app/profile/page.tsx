@@ -2,11 +2,14 @@ import { ProfileForm } from "@/components/profile-form";
 import { UsersRound } from "@/components/icons";
 import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog } from "@/lib/firebase/read-models";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
+import { ProfileAiSummary } from "@/components/profile-ai-summary";
+import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const memberId = "member-aarav";
+  const cookieStore = await cookies();
+  const memberId = cookieStore.get("fitsplit-member-id")?.value || "member-aarav";
   
   const [
     { profile },
@@ -46,6 +49,8 @@ export default async function ProfilePage() {
       <ProfileForm memberId={memberId} profile={profile} />
       
       <ProgressiveOverloadChart liftLogs={liftLogs} exercises={exercises} />
+
+      <ProfileAiSummary memberId={memberId} />
     </main>
   );
 }

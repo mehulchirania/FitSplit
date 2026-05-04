@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import {
   endWorkoutSession,
   logLiftSet,
-  startWorkoutSession
+  startWorkoutSession,
+  syncOfflineLifts
 } from "@/lib/firebase/actions";
 import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
@@ -73,7 +74,8 @@ function getInjuryRule(injury: string) {
       avoidTerms: ["overhead", "press", "bench", "fly"],
       preferredMuscles: ["Legs", "Core", "Back"],
       summary:
-        "Reduced shoulder-loaded pressing and replaced it with lower-body, core, and controlled pulling work."
+        "Reduced shoulder-loaded pressing and replaced it with lower-body, core, and controlled pulling work.",
+      stretches: ["stretch-band-pulls"]
     };
   }
 
@@ -83,7 +85,8 @@ function getInjuryRule(injury: string) {
       avoidTerms: ["squat", "lunge", "leg press", "extension"],
       preferredMuscles: ["Chest", "Back", "Core"],
       summary:
-        "Removed knee-dominant leg work and shifted the session toward upper-body and trunk-safe movements."
+        "Removed knee-dominant leg work and shifted the session toward upper-body and trunk-safe movements.",
+      stretches: ["stretch-quad"]
     };
   }
 
@@ -93,16 +96,18 @@ function getInjuryRule(injury: string) {
       avoidTerms: ["deadlift", "row", "squat"],
       preferredMuscles: ["Chest", "Shoulders", "Core"],
       summary:
-        "Avoided spinal loading and rebuilt the day around supported upper-body and low-load core work."
+        "Avoided spinal loading and rebuilt the day around supported upper-body and low-load core work.",
+      stretches: ["stretch-cat-cow"]
     };
   }
 
   return {
-    avoidMuscles: [],
-    avoidTerms: [],
-    preferredMuscles: ["Core", "Cardio", "Chest"],
+    avoidMuscles: [] as string[],
+    avoidTerms: [] as string[],
+    preferredMuscles: ["Core", "Cardio", "Chest"] as string[],
     summary:
-      "Generated a conservative recovery routine while the owner reviews the limitation details."
+      "Generated a conservative recovery routine while the owner reviews the limitation details.",
+    stretches: [] as string[]
   };
 }
 
@@ -120,7 +125,7 @@ function isContraindicated(
 
   const text = `${exercise.name} ${exercise.instructions}`.toLowerCase();
   return (
-    rule.avoidMuscles.includes(exercise.muscleGroup) ||
+    rule.avoidMuscles.includes(exercise.muscleGroup as string) ||
     rule.avoidTerms.some((term) => text.includes(term))
   );
 }
@@ -131,7 +136,7 @@ function findAlternative(usedIds: Set<string>, injury: string, exercises: Exerci
     (exercise) =>
       !usedIds.has(exercise.id) &&
       exercise.ownerOnly &&
-      rule.preferredMuscles.includes(exercise.muscleGroup)
+      rule.preferredMuscles.includes(exercise.muscleGroup as string)
   );
 }
 
@@ -164,9 +169,31 @@ function createModification(
     return { ...item, exerciseId: alternative.id, notes: "AI Semi-Personal Trainer swap" };
   });
 
+  const rule = getInjuryRule(injury);
+  if (rule.stretches && rule.stretches.length > 0) {
+    const stretchExercises = rule.stretches.map((stretchId) => {
+      const ex = exercises.find(e => e.id === stretchId);
+      if (ex) {
+        swaps.push({
+          from: "Added dynamically",
+          to: ex.name,
+          reason: "Suggested warm-up/stretch for your reported limitation."
+        });
+      }
+      return {
+        exerciseId: stretchId,
+        sets: 2,
+        reps: "10-15",
+        restSeconds: 30,
+        notes: "AI Suggestion: Do this warm-up to prepare safely."
+      };
+    });
+    routine.unshift(...stretchExercises);
+  }
+
   if (!swaps.length) {
     const recoveryExercises = exercises
-      .filter((exercise) => getInjuryRule(injury).preferredMuscles.includes(exercise.muscleGroup))
+      .filter((exercise) => getInjuryRule(injury).preferredMuscles.includes(exercise.muscleGroup as string))
       .slice(0, 4)
       .map((exercise, index) => ({
         exerciseId: exercise.id,
@@ -235,6 +262,7 @@ export function MemberWorkoutConsole({
   const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
   const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
   const [isEventPending, setIsEventPending] = useState(false);
+  const [offlineLogsCount, setOfflineLogsCount] = useState(0);
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
   );
@@ -251,6 +279,26 @@ export function MemberWorkoutConsole({
   useEffect(() => {
     setIsActive(window.localStorage.getItem(sessionKey) === "active");
     setActiveCount(Math.max(initialActiveSessionCount, getStoredActiveCount()));
+    
+    function handleOnline() {
+      const offlineLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
+      if (offlineLogs.length > 0) {
+        syncOfflineLifts(offlineLogs).then((res) => {
+           if (res.status === "success") {
+             window.localStorage.removeItem("fitsplit-offline-logs");
+             setOfflineLogsCount(0);
+           }
+        });
+      }
+    }
+    
+    setOfflineLogsCount(JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]").length);
+    if (typeof navigator !== "undefined" && navigator.onLine) {
+       handleOnline();
+    }
+    
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
   }, [initialActiveSessionCount]);
 
   useEffect(() => {
@@ -360,25 +408,41 @@ export function MemberWorkoutConsole({
       message: `This will save a lift entry for ${exerciseName}.`,
       title: "Log this lift?",
       run: async () => {
-        const result = await logLiftSet(initialFormActionState, formData);
+        const newLog: LiftLog = {
+          id: `optimistic-${Date.now()}`,
+          memberId,
+          exerciseId: String(formData.get("exerciseId") ?? ""),
+          weight: Number(formData.get("weight") ?? 0),
+          sets: Number(formData.get("sets") ?? 1),
+          reps: String(formData.get("reps") ?? ""),
+          sessionId: String(formData.get("sessionId") ?? ""),
+          loggedAt: new Date().toISOString()
+        };
 
-        if (result.status === "success") {
-          const newLog: LiftLog = {
-            id: `optimistic-${Date.now()}`,
-            memberId,
-            exerciseId: String(formData.get("exerciseId") ?? ""),
-            weight: Number(formData.get("weight") ?? 0),
-            sets: Number(formData.get("sets") ?? 1),
-            reps: String(formData.get("reps") ?? ""),
-            sessionId: String(formData.get("sessionId") ?? ""),
-            loggedAt: new Date().toISOString()
-          };
-
-          setLiftLogs((current) => [newLog, ...current].slice(0, 12));
-          router.refresh();
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+           const existingLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
+           existingLogs.push(newLog);
+           window.localStorage.setItem("fitsplit-offline-logs", JSON.stringify(existingLogs));
+           setLiftLogs((current) => [newLog, ...current].slice(0, 12));
+           setOfflineLogsCount(existingLogs.length);
+           return { status: "success", message: "Saved offline. Will sync when connected." } as FormActionState;
         }
 
-        return result;
+        try {
+          const result = await logLiftSet(initialFormActionState, formData);
+          if (result.status === "success") {
+            setLiftLogs((current) => [newLog, ...current].slice(0, 12));
+            router.refresh();
+          }
+          return result;
+        } catch (e) {
+           const existingLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
+           existingLogs.push(newLog);
+           window.localStorage.setItem("fitsplit-offline-logs", JSON.stringify(existingLogs));
+           setLiftLogs((current) => [newLog, ...current].slice(0, 12));
+           setOfflineLogsCount(existingLogs.length);
+           return { status: "success", message: "Saved offline. Will sync when connected." } as FormActionState;
+        }
       }
     });
   }
@@ -468,8 +532,15 @@ export function MemberWorkoutConsole({
         </div>
 
         <div className="lift-log-panel">
-          <div className="panel-title">
-            <h2>Progressive overload</h2>
+          <div className="panel-title" style={{ display: "flex", justifyContent: "space-between" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <h2>Progressive overload</h2>
+              {offlineLogsCount > 0 && (
+                <span className="status-pill status-expired">
+                  {offlineLogsCount} unsynced (Offline)
+                </span>
+              )}
+            </div>
             <span className="status-pill status-neutral">Historical lift data</span>
           </div>
           <form className="lift-log-form" onSubmit={handleLiftLog}>
@@ -521,18 +592,6 @@ export function MemberWorkoutConsole({
       </div>
 
       <aside className="list-panel">
-        <div className="panel-title">
-          <h2>
-            <Activity /> Gym Busyness
-          </h2>
-          <span className={`status-pill ${busyness.tone}`}>{busyness.label}</span>
-        </div>
-        <div className="busyness-widget">
-          <strong>{activeCount}</strong>
-          <span>{busyness.dot} capacity status</span>
-          <p>Based on members who have started but not ended a workout.</p>
-        </div>
-
         <div className="rest-timer-card">
           <p className="eyebrow">In-workout rest timer</p>
           <strong>{formatTimer(remainingSeconds)}</strong>

@@ -16,11 +16,24 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+import { cookies } from "next/headers";
+
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const username = cookieStore.get("fitsplit-username")?.value;
+  
+  let initials = "";
+  if (username) {
+    if (username === "mehulchirania" || username === "+91 9688227039") initials = "MC";
+    else if (username.includes("owner")) initials = "OW";
+    else if (username === "admin") initials = "AD";
+    else initials = "AA"; // aarav
+  }
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -48,10 +61,10 @@ export default function RootLayout({
       </head>
       <body>
         <div className="app-shell">
-          <AppTopbar />
+          <AppTopbar initials={initials} />
           <BackButton />
           {children}
-          <footer className="app-footer">{"Developed with \u2764\uFE0F by Mehul"}</footer>
+          <footer className="app-footer">{"Developed with 💪 by Mehul"}</footer>
         </div>
       </body>
     </html>

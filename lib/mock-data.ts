@@ -46,10 +46,20 @@ export const gyms: GymWorkspace[] = [
     name: "Titan V2 Fitness",
     slug: "titan-v2-fitness",
     ownerName: "Titan Owner",
-    ownerUserId: "owner-titan",
+    ownerUserId: "titan-owner-1",
     status: "pilot",
     expiryWarningDays: 7,
     memberCount: 4
+  },
+  {
+    id: "dummy-gym",
+    name: "Dummy-Gym",
+    slug: "dummy-gym",
+    ownerName: "Dummy Gym Owner",
+    ownerUserId: "dummy-gym-owner-1",
+    status: "pilot",
+    expiryWarningDays: 7,
+    memberCount: 0
   }
 ];
 
@@ -64,7 +74,7 @@ export const roles = {
     access: "All workspaces"
   },
   owner: {
-    id: "owner-titan",
+    id: "titan-owner-1",
     name: "Titan V2 Owner",
     role: "owner",
     access: "Titan V2 Fitness"
@@ -111,6 +121,18 @@ export const members: Member[] = [
     joinedAt: "2026-03-02",
     avatarInitials: "NR",
     goal: "Beginner fitness"
+  },
+  {
+    id: "member-mehul",
+    fullName: "Mehul Chirania",
+    email: "mehul@example.com",
+    phone: "+91 9688227039",
+    joinedAt: "2026-05-01",
+    avatarInitials: "MC",
+    goal: "Improve strength and mobility",
+    age: 28,
+    heightCm: 180,
+    weightKg: 78
   }
 ];
 
@@ -150,23 +172,48 @@ export const memberships: Membership[] = [
     endDate: "2026-09-04",
     durationMonths: 6,
     paymentReference: "UPI-1116"
+  },
+  {
+    id: "membership-mehul",
+    memberId: "member-mehul",
+    planName: "12 Month Elite",
+    startDate: "2026-05-01",
+    endDate: "2027-04-30",
+    durationMonths: 12,
+    paymentReference: "UPI-9999"
   }
 ];
 
 const muscleThumbnails: Record<string, string> = {
   Chest:
-    "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=900&q=80",
   Back:
-    "https://images.unsplash.com/photo-1571019613914-85f342c6a11e?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1603287681836-b174ce5074c2?auto=format&fit=crop&w=900&q=80",
   Legs:
-    "https://images.unsplash.com/photo-1534368959876-26bf04f2c947?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1434682881908-b43d0467b798?auto=format&fit=crop&w=900&q=80",
   Shoulders:
-    "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=900&q=80",
   Biceps:
-    "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=900&q=80",
+    "https://images.unsplash.com/photo-1581009137042-c552e485697a?auto=format&fit=crop&w=900&q=80",
   Triceps:
     "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80"
 };
+
+function getCoachingNotes(name: string, mechanic: string, muscleGroup: string): string {
+  const n = name.toLowerCase();
+  if (n.includes("squat")) return "Keep chest up, drive through the heels, and maintain a neutral spine. Control the descent.";
+  if (n.includes("deadlift")) return "Hinge at the hips, keep the bar close to your shins, and squeeze glutes at the top. Do not round your back.";
+  if (n.includes("bench press")) return "Plant feet firmly, maintain a slight arch in your lower back, and lower the bar to your mid-chest.";
+  if (n.includes("pull-up") || n.includes("pulldown")) return "Depress your shoulders first, then pull with your lats. Squeeze at the bottom.";
+  if (n.includes("row")) return "Keep your torso stable. Pull your elbows back and squeeze your shoulder blades together.";
+  if (n.includes("curl")) return "Keep elbows pinned to your sides. Focus on the squeeze at the top and control the eccentric.";
+  if (n.includes("extension") && muscleGroup === "Triceps") return "Keep elbows tucked and stationary. Fully lock out at the bottom.";
+  if (n.includes("press") && muscleGroup === "Shoulders") return "Press straight up, keeping your core tight. Don't overarch your lower back.";
+  if (n.includes("lateral raise")) return "Lead with your elbows, pouring the pitcher at the top. Don't use momentum.";
+  if (n.includes("leg press")) return "Don't lock your knees at the top. Push through your full foot.";
+  
+  return `Focus on the mind-muscle connection for the ${muscleGroup}. Control the weight on the way down and explode on the way up.`;
+}
 
 export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catalog)
   .flatMap(([muscleGroup, catalogExercises]) =>
@@ -175,7 +222,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       name: catalogExercise.name,
       muscleGroup: muscleGroup as MuscleGroup,
       equipment: catalogExercise.mechanic,
-      instructions: `${catalogExercise.mechanic} ${muscleGroup.toLowerCase()} movement. Add the final coaching notes and demo video from the owner catalog.`,
+      instructions: getCoachingNotes(catalogExercise.name, catalogExercise.mechanic, muscleGroup),
       videoSource: "none" as const,
       videoUrl: "",
       thumbnailUrl:
@@ -183,7 +230,41 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
         "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80",
       ownerOnly: true
     }))
-  );
+  ).concat([
+    {
+      id: "stretch-band-pulls",
+      name: "Band Pull-Aparts",
+      muscleGroup: "Shoulders",
+      equipment: "band",
+      instructions: "Hold band at chest height, pull apart, squeezing shoulder blades.",
+      videoSource: "none",
+      videoUrl: "",
+      thumbnailUrl: muscleThumbnails["Shoulders"],
+      ownerOnly: false
+    },
+    {
+      id: "stretch-cat-cow",
+      name: "Cat-Cow Stretch",
+      muscleGroup: "Back",
+      equipment: "bodyweight",
+      instructions: "On all fours, arch back up, then dip back down slowly.",
+      videoSource: "none",
+      videoUrl: "",
+      thumbnailUrl: muscleThumbnails["Back"],
+      ownerOnly: false
+    },
+    {
+      id: "stretch-quad",
+      name: "Standing Quad Stretch",
+      muscleGroup: "Legs",
+      equipment: "bodyweight",
+      instructions: "Stand on one leg, pull other foot to glutes, keep knees together.",
+      videoSource: "none",
+      videoUrl: "",
+      thumbnailUrl: muscleThumbnails["Legs"],
+      ownerOnly: false
+    }
+  ]);
 
 export const exerciseCatalogByMuscle = muscleGroups.map((muscleGroup) => ({
   muscleGroup,
@@ -263,7 +344,7 @@ export const notifications: Notification[] = [
   {
     id: "notification-meera-expiring",
     recipientRole: "owner",
-    recipientId: "owner-titan",
+    recipientId: "titan-owner-1",
     type: "membership_expiring_soon",
     title: "Membership expiring soon",
     body: "Meera Iyer's membership ends on 09 May 2026.",
@@ -272,7 +353,7 @@ export const notifications: Notification[] = [
   {
     id: "notification-kabir-expired",
     recipientRole: "owner",
-    recipientId: "owner-titan",
+    recipientId: "titan-owner-1",
     type: "membership_expired",
     title: "Membership expired",
     body: "Kabir Khan's membership expired on 24 Apr 2026.",

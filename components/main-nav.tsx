@@ -18,19 +18,16 @@ const ownerLinks = [
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
-const memberLinks = [
-  { href: "/member", label: "Today" },
-  { href: "/profile", label: "Profile" },
-  { href: "/activity?role=member", label: "Activity" }
-];
-
 export function MainNav() {
   const pathname = usePathname();
-  const links = pathname.startsWith("/member")
-    ? memberLinks
-    : pathname.startsWith("/admin")
-      ? adminLinks
-      : ownerLinks;
+  
+  if (pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
+    return null;
+  }
+
+  const links = pathname.startsWith("/admin")
+    ? adminLinks
+    : ownerLinks;
 
   return (
     <nav className="topnav" aria-label="Primary navigation">

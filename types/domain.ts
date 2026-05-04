@@ -35,6 +35,9 @@ export type Member = {
   joinedAt: string;
   avatarInitials: string;
   goal: string;
+  age?: number;
+  weightKg?: number;
+  heightCm?: number;
 };
 
 export type Membership = {

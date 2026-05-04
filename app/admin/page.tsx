@@ -29,10 +29,6 @@ export default async function AdminPage() {
               Admin
               <strong>{roles.adminName}</strong>
             </span>
-            <span>
-              Owner scope
-              <strong>{roles.ownerAccess}</strong>
-            </span>
           </div>
         </aside>
       </section>
@@ -63,17 +59,19 @@ export default async function AdminPage() {
           </Link>
         </div>
         {gyms.map((workspace) => (
-          <article className="member-row" key={workspace.id}>
-            <span className="avatar">TV</span>
-            <div>
-              <span className="member-name">{workspace.name}</span>
-              <span className="member-meta">
-                Owner: {workspace.ownerName || roles.ownerName} / Slug: {workspace.slug}
-              </span>
-            </div>
-            <span className="status-pill status-neutral">{workspace.status}</span>
-            <span className="status-pill status-active">{workspace.memberCount} members</span>
-          </article>
+          <Link href="/owner/dashboard" key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+            <article className="member-row">
+              <span className="avatar">TV</span>
+              <div>
+                <span className="member-name" style={{ color: "var(--primary)" }}>{workspace.name}</span>
+                <span className="member-meta">
+                  Owner: {workspace.ownerName || roles.ownerName} / Slug: {workspace.slug}
+                </span>
+              </div>
+              <span className="status-pill status-neutral">{workspace.status}</span>
+              <span className="status-pill status-active">{workspace.memberCount} members</span>
+            </article>
+          </Link>
         ))}
       </section>
     </main>

@@ -4,7 +4,7 @@ import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell } from "@/components/icons";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
-import { updateMemberProfile } from "@/lib/firebase/actions";
+import { updateMemberProfile, resetPassword } from "@/lib/firebase/actions";
 import {
   getExerciseCatalog,
   getMemberDetail,
@@ -138,6 +138,21 @@ export default async function MemberDetailPage({
             Generate draft later
           </button>
         </aside>
+        
+        <ConfirmActionForm
+          action={resetPassword}
+          className="form-panel"
+          confirmMessage="This will reset the user's password to the default 'password'. Are you sure?"
+          confirmTitle="Reset Password"
+          pendingLabel="Resetting..."
+          submitLabel="Reset Password"
+        >
+          <h2>Account Security</h2>
+          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
+            If a member has forgotten their password or you received a reset request notification, you can reset their password to the default.
+          </p>
+          <input name="memberId" type="hidden" value={member.id} />
+        </ConfirmActionForm>
       </section>
 
       {program ? (

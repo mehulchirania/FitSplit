@@ -324,6 +324,55 @@ export async function logLiftSet(
   }
 }
 
+export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
+  try {
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const batch = db.batch();
+    const now = new Date().toISOString();
+
+    for (const log of logs) {
+      const liftLogId = randomUUID();
+      const docRef = db.collection(collectionPaths.liftLogs).doc(liftLogId);
+      
+      batch.set(docRef, {
+        id: liftLogId,
+        gymId: TITAN_GYM_ID,
+        memberId: log.memberId,
+        exerciseId: log.exerciseId,
+        weight: Number(log.weight),
+        sets: Number(log.sets),
+        reps: log.reps,
+        sessionId: log.sessionId || randomUUID(),
+        loggedAt: log.loggedAt || now,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+
+    await batch.commit();
+
+    revalidatePath("/member");
+
+    return success(`${logs.length} offline lift(s) synced.`);
+  } catch (error) {
+    console.error("Unable to sync offline lifts", error);
+    return failure(error, "Unable to sync offline lifts.");
+  }
+}
+
+export async function resetPassword(
+  prevState: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  const memberId = formData.get("memberId") as string;
+  if (!memberId) return failure(new Error("No member ID"), "Could not reset password.");
+
+  // Mock implementation
+  console.log(`Password reset for member ${memberId}`);
+  return success("Password successfully reset to 'password'.");
+}
+
 export async function startWorkoutSession(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData

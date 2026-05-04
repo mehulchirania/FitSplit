@@ -1,6 +1,7 @@
 import { Bell, Dumbbell } from "@/components/icons";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
+import { EditableMetrics } from "@/components/editable-metrics";
 import {
   getActiveWorkoutSessions,
   getExerciseCatalog,
@@ -12,10 +13,13 @@ import {
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
+import { cookies } from "next/headers";
+
 export const dynamic = "force-dynamic";
 
 export default async function MemberDashboard() {
-  const currentMemberId = "member-aarav";
+  const cookieStore = await cookies();
+  const currentMemberId = cookieStore.get("fitsplit-member-id")?.value || "member-aarav";
   const [
     { gym },
     { member },
@@ -46,13 +50,9 @@ export default async function MemberDashboard() {
     <main className="page">
       <section className="dashboard-header">
         <div className="header-copy">
-          <p className="eyebrow">Member dashboard</p>
-          <h1>Today&apos;s plan is already set.</h1>
-          <p>
-            {member.fullName} can see the assigned weekly schedule and use an
-            AI Semi-Personal Trainer that adjusts workouts when limitations are
-            logged. Memberships stay in your existing tracking app.
-          </p>
+          <p className="eyebrow">Welcome, {member.fullName.split(" ")[0]}</p>
+          <h1>Let&apos;s get fit!</h1>
+          <EditableMetrics member={member} />
         </div>
 
         <aside className="summary-panel">
@@ -69,15 +69,11 @@ export default async function MemberDashboard() {
             </span>
             <span>
               Weekly days
-              <strong>{program.days.length}</strong>
+              <strong>{program.daysPerWeek}</strong>
             </span>
             <span>
               Goal
               <strong>{program.goal}</strong>
-            </span>
-            <span>
-              Gym
-              <strong>{gym.name}</strong>
             </span>
           </div>
         </aside>
