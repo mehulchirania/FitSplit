@@ -4,9 +4,14 @@ import { CalendarDays, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { StatusPill } from "@/components/status-pill";
 import { renewMemberMembership, updateMemberProfile } from "@/lib/firebase/actions";
-import { getMemberDetail } from "@/lib/firebase/read-models";
+import {
+  getExerciseCatalog,
+  getMemberDetail,
+  getProgramAssignmentForMember,
+  getTitanWorkspace,
+  getWorkoutPrograms
+} from "@/lib/firebase/read-models";
 import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
-import { assignments, gym, programs } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -22,16 +27,25 @@ export default async function MemberDetailPage({
   params: Promise<{ memberId: string }>;
 }) {
   const { memberId } = await params;
-  const { member, membership, isPersisted } = await getMemberDetail(memberId);
+  const [
+    { member, membership, isPersisted },
+    { gym },
+    { assignment },
+    { programs },
+    { exercises }
+  ] = await Promise.all([
+    getMemberDetail(memberId),
+    getTitanWorkspace(),
+    getProgramAssignmentForMember(memberId),
+    getWorkoutPrograms(),
+    getExerciseCatalog()
+  ]);
 
   if (!member || !membership) {
     notFound();
   }
 
   const status = getMembershipStatus(membership, gym.expiryWarningDays);
-  const assignment = assignments.find(
-    (item) => item.memberId === member.id && item.status === "active"
-  );
   const program = programs.find((item) => item.id === assignment?.programId);
   const nextStartDate = getNextDate(membership.endDate);
 
@@ -163,7 +177,7 @@ export default async function MemberDetailPage({
             <span className="status-pill status-neutral">{program.title}</span>
           </div>
           <div className="notification-list">
-            <ExerciseList items={program.days[0].exercises} />
+            <ExerciseList exercises={exercises} items={program.days[0].exercises} />
           </div>
         </section>
       ) : null}

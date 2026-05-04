@@ -104,6 +104,11 @@ workoutPrograms
 notifications
 workoutSplitTemplates
 liftLogs
+programAssignments
+activityEvents
+workoutSessions
+contactMessages
+siteLinks
 ```
 
 Important IDs:
@@ -129,8 +134,12 @@ Current server actions:
 
 - `createMemberWithMembership`
 - `updateMemberProfile`
+- `updateProfileMetrics`
 - `renewMemberMembership`
 - `logLiftSet`
+- `startWorkoutSession`
+- `endWorkoutSession`
+- `submitContactMessage`
 - `createCatalogExercise`
 - `createCustomWorkoutProgram`
 
@@ -138,10 +147,19 @@ Current read models:
 
 - `getMembersWithMemberships`
 - `getMemberDetail`
+- `getGymWorkspaces`
+- `getTitanWorkspace`
+- `getRoleSummary`
 - `getExerciseCatalog`
 - `getOwnerNotifications`
+- `getMemberNotifications`
 - `getWorkoutPrograms`
 - `getLiftLogsForMember`
+- `getProgramAssignmentForMember`
+- `getActivityEvents`
+- `getProfileMetrics`
+- `getSiteLinks`
+- `getActiveWorkoutSessions`
 
 If Firebase Admin cannot initialize, read models fall back to:
 

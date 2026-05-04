@@ -1,56 +1,25 @@
 import Link from "next/link";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
+import { getActivityEvents } from "@/lib/firebase/read-models";
+import type { ActivityEvent } from "@/types/domain";
 
 type ActivityPageProps = {
   searchParams: Promise<{ role?: string }>;
 };
 
-const ownerEvents = [
-  {
-    icon: UsersRound,
-    title: 'New member added - "Aarav Sharma"',
-    detail: "Membership record created for Titan V2 Fitness.",
-    time: "Today, 10:30 AM"
-  },
-  {
-    icon: Dumbbell,
-    title: "New workout plan created - Custom split v1",
-    detail: "Owner-created custom plan is ready for assignment.",
-    time: "Today, 9:45 AM"
-  },
-  {
-    icon: Bell,
-    title: 'Membership expiring soon - "Meera Iyer"',
-    detail: "Renewal follow-up required before the current plan ends.",
-    time: "Yesterday, 6:20 PM"
-  }
-];
+const eventIcons: Record<ActivityEvent["icon"], typeof Activity> = {
+  activity: Activity,
+  bell: Bell,
+  dumbbell: Dumbbell,
+  users: UsersRound
+};
 
-const memberEvents = [
-  {
-    icon: Bell,
-    title: "Membership status updated",
-    detail: "Your active membership now shows the latest renewal window.",
-    time: "Today, 11:10 AM"
-  },
-  {
-    icon: Dumbbell,
-    title: "New workout plan assigned",
-    detail: "PPL + Upper/Lower is available in your member portal.",
-    time: "Yesterday, 5:15 PM"
-  },
-  {
-    icon: Activity,
-    title: "Profile details reviewed",
-    detail: "Your basic fitness profile is ready for owner review.",
-    time: "Mon, 8:00 AM"
-  }
-];
+export const dynamic = "force-dynamic";
 
 export default async function ActivityPage({ searchParams }: ActivityPageProps) {
   const { role } = await searchParams;
   const activeRole = role === "member" ? "member" : "owner";
-  const events = activeRole === "member" ? memberEvents : ownerEvents;
+  const { events } = await getActivityEvents(activeRole, "member-aarav");
 
   return (
     <main className="page">
@@ -91,7 +60,7 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
         </div>
         <div className="activity-feed">
           {events.map((event) => {
-            const Icon = event.icon;
+            const Icon = eventIcons[event.icon];
             return (
               <article className="activity-item" key={event.title}>
                 <span className="activity-icon">
@@ -100,7 +69,7 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
                 <div>
                   <h2>{event.title}</h2>
                   <p>{event.detail}</p>
-                  <span>{event.time}</span>
+                  <span>{new Date(event.createdAt).toLocaleString("en-IN")}</span>
                 </div>
               </article>
             );

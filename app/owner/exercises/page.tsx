@@ -1,6 +1,5 @@
 import { Dumbbell, Video } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { muscleGroups } from "@/lib/mock-data";
 import { createCatalogExercise } from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
 
@@ -12,6 +11,7 @@ export default async function ExerciseCatalogPage() {
     catalog: exerciseCatalogByMuscle,
     isPersisted
   } = await getExerciseCatalog();
+  const muscleGroups = exerciseCatalogByMuscle.map((group) => group.muscleGroup);
 
   return (
     <main className="page">

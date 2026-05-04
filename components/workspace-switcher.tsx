@@ -1,6 +1,9 @@
-import { currentWorkspace, gyms, roles } from "@/lib/mock-data";
+import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
 
-export function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "owner" }) {
+export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "owner" }) {
+  const [{ gyms }, roles] = await Promise.all([getGymWorkspaces(), getRoleSummary()]);
+  const currentWorkspace = gyms.find((workspace) => workspace.slug === "titan-v2-fitness") ?? gyms[0];
+
   return (
     <div className="workspace-switcher" aria-label="Workspace selector">
       <label>
@@ -14,7 +17,7 @@ export function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "owner"
         </select>
       </label>
       <span className="member-meta">
-        {mode === "admin" ? roles.admin.access : roles.owner.access}
+        {mode === "admin" ? "All workspaces" : roles.ownerAccess}
       </span>
     </div>
   );

@@ -2,31 +2,48 @@ import { Bell, CalendarDays } from "@/components/icons";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
 import { StatusPill } from "@/components/status-pill";
-import { getLiftLogsForMember } from "@/lib/firebase/read-models";
-import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 import {
-  assignments,
-  gym,
-  members,
-  memberships,
-  notifications,
-  programs
-} from "@/lib/mock-data";
+  getActiveWorkoutSessions,
+  getExerciseCatalog,
+  getLiftLogsForMember,
+  getMemberDetail,
+  getMemberNotifications,
+  getProgramAssignmentForMember,
+  getTitanWorkspace,
+  getWorkoutPrograms
+} from "@/lib/firebase/read-models";
+import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 
 export const dynamic = "force-dynamic";
 
 export default async function MemberDashboard() {
-  const member = members[0];
-  const membership = memberships.find((item) => item.memberId === member.id)!;
+  const currentMemberId = "member-aarav";
+  const [
+    { gym },
+    { member, membership },
+    { assignment },
+    { programs },
+    { notifications: memberNotifications },
+    { liftLogs },
+    { exercises },
+    { sessions }
+  ] = await Promise.all([
+    getTitanWorkspace(),
+    getMemberDetail(currentMemberId),
+    getProgramAssignmentForMember(currentMemberId),
+    getWorkoutPrograms(),
+    getMemberNotifications(currentMemberId),
+    getLiftLogsForMember(currentMemberId),
+    getExerciseCatalog(),
+    getActiveWorkoutSessions()
+  ]);
+
+  if (!member || !membership) {
+    return null;
+  }
+
   const status = getMembershipStatus(membership, gym.expiryWarningDays);
-  const assignment = assignments.find(
-    (item) => item.memberId === member.id && item.status === "active"
-  );
-  const program = programs.find((item) => item.id === assignment?.programId)!;
-  const memberNotifications = notifications.filter(
-    (notification) => notification.recipientId === member.id
-  );
-  const { liftLogs } = await getLiftLogsForMember(member.id);
+  const program = programs.find((item) => item.id === assignment?.programId) ?? programs[0];
 
   return (
     <main className="page">
@@ -70,6 +87,8 @@ export default async function MemberDashboard() {
       </section>
 
       <MemberWorkoutConsole
+        exercises={exercises}
+        initialActiveSessionCount={sessions.length}
         initialLiftLogs={liftLogs}
         memberId={member.id}
         program={program}

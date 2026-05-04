@@ -2,7 +2,6 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { exercises } from "@/lib/mock-data";
 import { collectionPaths, TITAN_GYM_ID, TITAN_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 
@@ -148,6 +147,35 @@ export async function updateMemberProfile(formData: FormData) {
   revalidatePath("/member");
 }
 
+export async function updateProfileMetrics(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const memberId = requireText(formData, "memberId");
+  const fullName = requireText(formData, "fullName");
+  const email = requireText(formData, "email");
+  const now = new Date().toISOString();
+
+  await db.collection(collectionPaths.profiles).doc(memberId).set(
+    {
+      id: memberId,
+      fullName,
+      email,
+      phone: String(formData.get("phone") ?? "").trim(),
+      age: Number(formData.get("age") ?? 0),
+      heightCm: Number(formData.get("heightCm") ?? 0),
+      weightKg: Number(formData.get("weightKg") ?? 0),
+      role: "member",
+      defaultGymId: TITAN_GYM_ID,
+      isActive: true,
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
+  revalidatePath("/profile");
+  revalidatePath("/member");
+}
+
 export async function renewMemberMembership(formData: FormData) {
   await ensureTitanWorkspace();
   const db = requireFirebase();
@@ -230,6 +258,69 @@ export async function logLiftSet(formData: FormData) {
   revalidatePath(`/owner/members/${memberId}`);
 }
 
+export async function startWorkoutSession(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const memberId = requireText(formData, "memberId");
+  const sessionId = requireText(formData, "sessionId");
+  const now = new Date().toISOString();
+
+  await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
+    {
+      id: sessionId,
+      gymId: TITAN_GYM_ID,
+      memberId,
+      startedAt: now,
+      status: "active",
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
+  revalidatePath("/member");
+  revalidatePath("/owner");
+}
+
+export async function endWorkoutSession(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const sessionId = requireText(formData, "sessionId");
+  const now = new Date().toISOString();
+
+  await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
+    {
+      endedAt: now,
+      status: "completed",
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
+  revalidatePath("/member");
+  revalidatePath("/owner");
+}
+
+export async function submitContactMessage(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const messageId = randomUUID();
+  const now = new Date().toISOString();
+
+  await db.collection(collectionPaths.contactMessages).doc(messageId).set({
+    id: messageId,
+    gymId: TITAN_GYM_ID,
+    name: requireText(formData, "name"),
+    number: requireText(formData, "number"),
+    requirement: requireText(formData, "requirement"),
+    email: String(formData.get("email") ?? "").trim(),
+    status: "new",
+    createdAt: now,
+    updatedAt: now
+  });
+
+  revalidatePath("/about");
+}
+
 export async function createCatalogExercise(formData: FormData) {
   await ensureTitanWorkspace();
   const db = requireFirebase();
@@ -257,43 +348,12 @@ export async function createCatalogExercise(formData: FormData) {
 
 async function resolveExerciseRecordId(sourceExerciseId: string) {
   const db = requireFirebase();
-  const sourceExercise = exercises.find((exercise) => exercise.id === sourceExerciseId);
-
-  if (!sourceExercise) {
-    return sourceExerciseId;
-  }
-
-  const existing = await db
+  const sourceExercise = await db
     .collection(collectionPaths.exerciseCatalog)
-    .where("gymId", "==", TITAN_GYM_ID)
-    .where("name", "==", sourceExercise.name)
-    .limit(1)
+    .doc(sourceExerciseId)
     .get();
 
-  if (!existing.empty) {
-    return existing.docs[0].id;
-  }
-
-  const exerciseId = randomUUID();
-  const now = new Date().toISOString();
-  await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
-    id: exerciseId,
-    gymId: TITAN_GYM_ID,
-    name: sourceExercise.name,
-    muscleGroup: sourceExercise.muscleGroup,
-    equipment: sourceExercise.equipment,
-    instructions: sourceExercise.instructions,
-    videoSource: sourceExercise.videoSource,
-    videoUrl: sourceExercise.videoUrl,
-    thumbnailUrl: sourceExercise.thumbnailUrl,
-    ownerOnly: true,
-    isActive: true,
-    createdBy: TITAN_OWNER_ID,
-    createdAt: now,
-    updatedAt: now
-  });
-
-  return exerciseId;
+  return sourceExercise.exists ? sourceExercise.id : sourceExerciseId;
 }
 
 export async function createCustomWorkoutProgram(formData: FormData) {

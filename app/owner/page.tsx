@@ -7,12 +7,13 @@ import { StatusPill } from "@/components/status-pill";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import {
   getExerciseCatalog,
+  getActiveWorkoutSessions,
   getMembersWithMemberships,
   getOwnerNotifications,
+  getTitanWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 import { getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
-import { currentWorkspace, gym } from "@/lib/mock-data";
 
 export const dynamic = "force-dynamic";
 
@@ -21,12 +22,16 @@ export default async function OwnerDashboard() {
     { members, memberships },
     { notifications: ownerNotifications },
     { exercises },
-    { programs }
+    { programs },
+    { gym },
+    { sessions }
   ] = await Promise.all([
     getMembersWithMemberships(),
     getOwnerNotifications(),
     getExerciseCatalog(),
-    getWorkoutPrograms()
+    getWorkoutPrograms(),
+    getTitanWorkspace(),
+    getActiveWorkoutSessions()
   ]);
 
   const memberMemberships = members
@@ -49,7 +54,7 @@ export default async function OwnerDashboard() {
     <main className="page">
       <section className="dashboard-header">
         <div className="header-copy">
-          <p className="eyebrow">Owner dashboard / {currentWorkspace.name}</p>
+          <p className="eyebrow">Owner dashboard / {gym.name}</p>
           <h1>Run the floor with fewer blind spots.</h1>
           <p>
             Monitor memberships, renewal alerts, and assigned training programs
@@ -108,6 +113,7 @@ export default async function OwnerDashboard() {
 
       <OwnerAiCapacityPanel
         activeMembers={counts.active}
+        activeHeadcount={sessions.length}
         programCount={programs.length}
       />
 
@@ -122,7 +128,12 @@ export default async function OwnerDashboard() {
             </Link>
           </div>
           {memberMemberships.map(({ member, membership }) => (
-            <MemberRow member={member} membership={membership} key={member.id} />
+            <MemberRow
+              member={member}
+              membership={membership}
+              key={member.id}
+              warningDays={gym.expiryWarningDays}
+            />
           ))}
         </div>
 

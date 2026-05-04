@@ -1,16 +1,24 @@
 import type {
+  ActivityEvent,
   Difficulty,
   Exercise,
+  GymWorkspace,
   LiftLog,
   Member,
   Membership,
   MuscleGroup,
   Notification,
+  ProfileMetrics,
+  ProgramAssignment,
+  SiteLink,
+  WorkoutSession,
   WorkoutProgram
 } from "@/types/domain";
 import {
+  assignments as mockAssignments,
   exerciseCatalogByMuscle as mockExerciseCatalogByMuscle,
   exercises as mockExercises,
+  gyms as mockGyms,
   memberships as mockMemberships,
   members as mockMembers,
   notifications as mockNotifications,
@@ -27,6 +35,103 @@ function getLatestMembership(memberships: Membership[], memberId: string) {
   return memberships
     .filter((membership) => membership.memberId === memberId)
     .sort(byLatestMembershipEndDate)[0];
+}
+
+function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspace {
+  return {
+    id: docId,
+    name: String(data.name ?? "Stored gym"),
+    slug: String(data.slug ?? docId),
+    ownerName: String(data.ownerName ?? "Gym owner"),
+    ownerUserId: String(data.ownerUserId ?? ""),
+    status: String(data.status ?? "pilot") as GymWorkspace["status"],
+    expiryWarningDays: Number(data.expiryWarningDays ?? 7),
+    memberCount: Number(data.memberCount ?? 0)
+  };
+}
+
+export async function getGymWorkspaces(): Promise<{
+  gyms: GymWorkspace[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { gyms: mockGyms, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const [gymSnapshot, memberSnapshot] = await Promise.all([
+      db.collection(collectionPaths.gyms).get(),
+      db
+        .collection(collectionPaths.profiles)
+        .where("role", "==", "member")
+        .where("isActive", "==", true)
+        .get()
+    ]);
+
+    if (gymSnapshot.empty) {
+      return { gyms: mockGyms, isPersisted: false };
+    }
+
+    const gyms = gymSnapshot.docs.map((doc) => {
+      const workspace = mapWorkspace(doc.id, doc.data());
+      return {
+        ...workspace,
+        memberCount: memberSnapshot.docs.filter(
+          (memberDoc) => memberDoc.data().defaultGymId === workspace.id
+        ).length
+      };
+    });
+
+    return { gyms, isPersisted: true };
+  } catch {
+    return { gyms: mockGyms, isPersisted: false };
+  }
+}
+
+export async function getTitanWorkspace(): Promise<{
+  gym: GymWorkspace;
+  isPersisted: boolean;
+}> {
+  const { gyms, isPersisted } = await getGymWorkspaces();
+  return {
+    gym: gyms.find((workspace) => workspace.slug === TITAN_GYM_ID || workspace.id === TITAN_GYM_ID) ?? gyms[0],
+    isPersisted
+  };
+}
+
+export async function getRoleSummary(): Promise<{
+  adminName: string;
+  ownerName: string;
+  ownerAccess: string;
+  isPersisted: boolean;
+}> {
+  const fallback = {
+    adminName: "FitSplit Admin",
+    ownerName: "Titan V2 Owner",
+    ownerAccess: "Titan V2 Fitness"
+  };
+
+  if (!hasFirebaseAdminConfig()) {
+    return { ...fallback, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const [adminSnapshot, ownerDoc, gymDoc] = await Promise.all([
+      db.collection(collectionPaths.profiles).where("role", "==", "admin").limit(1).get(),
+      db.collection(collectionPaths.profiles).doc("owner-titan-v2").get(),
+      db.collection(collectionPaths.gyms).doc(TITAN_GYM_ID).get()
+    ]);
+    return {
+      adminName: String(adminSnapshot.docs[0]?.data().fullName ?? fallback.adminName),
+      ownerName: String(ownerDoc.data()?.fullName ?? fallback.ownerName),
+      ownerAccess: String(gymDoc.data()?.name ?? fallback.ownerAccess),
+      isPersisted: true
+    };
+  } catch {
+    return { ...fallback, isPersisted: false };
+  }
 }
 
 export async function getMembersWithMemberships(): Promise<{
@@ -302,6 +407,49 @@ export async function getOwnerNotifications(): Promise<{
   return { notifications, isPersisted: true };
 }
 
+export async function getMemberNotifications(memberId: string): Promise<{
+  notifications: Notification[];
+  isPersisted: boolean;
+}> {
+  const fallback = mockNotifications.filter(
+    (notification) => notification.recipientId === memberId
+  );
+
+  if (!hasFirebaseAdminConfig()) {
+    return { notifications: fallback, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.notifications)
+      .where("recipientId", "==", memberId)
+      .get();
+    const notifications: Notification[] = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          recipientRole: String(data.recipientRole ?? "member") as Notification["recipientRole"],
+          recipientId: String(data.recipientId ?? memberId),
+          type: String(data.type ?? "program_assigned") as Notification["type"],
+          title: String(data.title ?? "Notification"),
+          body: String(data.body ?? ""),
+          createdAt: String(data.createdAt ?? new Date().toISOString()),
+          readAt: data.readAt ? String(data.readAt) : undefined
+        };
+      })
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+    return {
+      notifications: notifications.length ? notifications : fallback,
+      isPersisted: notifications.length > 0
+    };
+  } catch {
+    return { notifications: fallback, isPersisted: false };
+  }
+}
+
 export async function getWorkoutPrograms(): Promise<{
   programs: WorkoutProgram[];
   isPersisted: boolean;
@@ -411,4 +559,252 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
     .sort((left, right) => right.loggedAt.localeCompare(left.loggedAt));
 
   return { liftLogs, isPersisted: true };
+}
+
+export async function getProgramAssignmentForMember(memberId: string): Promise<{
+  assignment: ProgramAssignment | null;
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return {
+      assignment:
+        mockAssignments.find(
+          (assignment) => assignment.memberId === memberId && assignment.status === "active"
+        ) ?? null,
+      isPersisted: false
+    };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.programAssignments)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
+
+    if (snapshot.empty) {
+      return {
+        assignment:
+          mockAssignments.find(
+            (assignment) => assignment.memberId === memberId && assignment.status === "active"
+          ) ?? null,
+        isPersisted: false
+      };
+    }
+
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    return {
+      assignment: {
+        id: doc.id,
+        memberId: String(data.memberId ?? ""),
+        programId: String(data.programId ?? ""),
+        assignedAt: String(data.assignedAt ?? new Date().toISOString()),
+        status: String(data.status ?? "active") as ProgramAssignment["status"]
+      },
+      isPersisted: true
+    };
+  } catch {
+    return {
+      assignment:
+        mockAssignments.find(
+          (assignment) => assignment.memberId === memberId && assignment.status === "active"
+        ) ?? null,
+      isPersisted: false
+    };
+  }
+}
+
+export async function getActivityEvents(audience: "owner" | "member", memberId?: string): Promise<{
+  events: ActivityEvent[];
+  isPersisted: boolean;
+}> {
+  const fallback: ActivityEvent[] =
+    audience === "member"
+      ? [
+          {
+            id: "fallback-member-membership",
+            audience: "member",
+            memberId,
+            title: "Membership status updated",
+            detail: "Your active membership now shows the latest renewal window.",
+            icon: "bell",
+            createdAt: "2026-05-04T11:10:00+05:30"
+          },
+          {
+            id: "fallback-member-program",
+            audience: "member",
+            memberId,
+            title: "New workout plan assigned",
+            detail: "PPL + Upper/Lower is available in your member portal.",
+            icon: "dumbbell",
+            createdAt: "2026-05-03T17:15:00+05:30"
+          }
+        ]
+      : [
+          {
+            id: "fallback-owner-member",
+            audience: "owner",
+            title: 'New member added - "Aarav Sharma"',
+            detail: "Membership record created for Titan V2 Fitness.",
+            icon: "users",
+            createdAt: "2026-05-04T10:30:00+05:30"
+          },
+          {
+            id: "fallback-owner-plan",
+            audience: "owner",
+            title: "New workout plan created - Custom split v1",
+            detail: "Owner-created custom plan is ready for assignment.",
+            icon: "dumbbell",
+            createdAt: "2026-05-04T09:45:00+05:30"
+          }
+        ];
+
+  if (!hasFirebaseAdminConfig()) {
+    return { events: fallback, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.activityEvents)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("audience", "==", audience)
+      .get();
+    const events = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          audience: String(data.audience ?? audience) as ActivityEvent["audience"],
+          memberId: data.memberId ? String(data.memberId) : undefined,
+          title: String(data.title ?? "Activity"),
+          detail: String(data.detail ?? ""),
+          icon: String(data.icon ?? "activity") as ActivityEvent["icon"],
+          createdAt: String(data.createdAt ?? new Date().toISOString())
+        };
+      })
+      .filter((event) => audience === "owner" || !memberId || event.memberId === memberId)
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+
+    return {
+      events: events.length ? events : fallback,
+      isPersisted: events.length > 0
+    };
+  } catch {
+    return { events: fallback, isPersisted: false };
+  }
+}
+
+export async function getProfileMetrics(memberId: string): Promise<{
+  profile: ProfileMetrics;
+  isPersisted: boolean;
+}> {
+  const fallbackMember = mockMembers.find((member) => member.id === memberId) ?? mockMembers[0];
+  const fallback: ProfileMetrics = {
+    fullName: fallbackMember.fullName,
+    email: fallbackMember.email,
+    phone: fallbackMember.phone,
+    age: 29,
+    heightCm: 174,
+    weightKg: 72
+  };
+
+  if (!hasFirebaseAdminConfig()) {
+    return { profile: fallback, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const doc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+
+    if (!doc.exists) {
+      return { profile: fallback, isPersisted: false };
+    }
+
+    const data = doc.data() ?? {};
+    return {
+      profile: {
+        fullName: String(data.fullName ?? fallback.fullName),
+        email: String(data.email ?? fallback.email),
+        phone: String(data.phone ?? fallback.phone),
+        age: data.age ? Number(data.age) : fallback.age,
+        heightCm: data.heightCm ? Number(data.heightCm) : fallback.heightCm,
+        weightKg: data.weightKg ? Number(data.weightKg) : fallback.weightKg
+      },
+      isPersisted: true
+    };
+  } catch {
+    return { profile: fallback, isPersisted: false };
+  }
+}
+
+export async function getSiteLinks(): Promise<{
+  links: SiteLink[];
+  isPersisted: boolean;
+}> {
+  const fallback: SiteLink[] = [
+    { id: "instagram", label: "Instagram profile", href: "#" },
+    { id: "linkedin", label: "LinkedIn profile", href: "#" },
+    { id: "youtube", label: "YouTube profile", href: "#" },
+    { id: "email", label: "mehul@example.com", href: "mailto:mehul@example.com" }
+  ];
+
+  if (!hasFirebaseAdminConfig()) {
+    return { links: fallback, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db.collection(collectionPaths.siteLinks).get();
+    const links = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          label: String(data.label ?? doc.id),
+          href: String(data.href ?? "#")
+        };
+      })
+      .sort((left, right) => left.id.localeCompare(right.id));
+
+    return { links: links.length ? links : fallback, isPersisted: links.length > 0 };
+  } catch {
+    return { links: fallback, isPersisted: false };
+  }
+}
+
+export async function getActiveWorkoutSessions(): Promise<{
+  sessions: WorkoutSession[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { sessions: [], isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.workoutSessions)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("status", "==", "active")
+      .get();
+    const sessions: WorkoutSession[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        memberId: String(data.memberId ?? ""),
+        startedAt: String(data.startedAt ?? new Date().toISOString()),
+        endedAt: data.endedAt ? String(data.endedAt) : undefined,
+        status: "active"
+      };
+    });
+
+    return { sessions, isPersisted: true };
+  } catch {
+    return { sessions: [], isPersisted: false };
+  }
 }

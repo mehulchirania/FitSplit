@@ -1,5 +1,4 @@
-import { exercises } from "@/lib/mock-data";
-import type { WorkoutExercise } from "@/types/domain";
+import type { Exercise, WorkoutExercise } from "@/types/domain";
 import { Video } from "./icons";
 
 function getPrescription(item: WorkoutExercise) {
@@ -10,7 +9,13 @@ function getPrescription(item: WorkoutExercise) {
   return `${item.sets ?? "-"} x ${item.reps ?? "-"}`;
 }
 
-export function ExerciseList({ items }: { items: WorkoutExercise[] }) {
+export function ExerciseList({
+  exercises,
+  items
+}: {
+  exercises: Exercise[];
+  items: WorkoutExercise[];
+}) {
   return (
     <div className="exercise-list">
       {items.map((item, index) => {

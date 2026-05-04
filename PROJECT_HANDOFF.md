@@ -53,7 +53,7 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
 - Firestore was seeded with Titan V2 Fitness demo data on 2026-05-04.
-- Live Firestore document counts after seeding: `gyms` 1, `profiles` 6, `memberships` 4, `exerciseCatalog` 49, `workoutPrograms` 5, `notifications` 3, `workoutSplitTemplates` 5, `liftLogs` 2.
+- Live Firestore document counts after seeding: `gyms` 1, `profiles` 6, `memberships` 4, `exerciseCatalog` 49, `workoutPrograms` 5, `notifications` 3, `workoutSplitTemplates` 5, `liftLogs` 2, `programAssignments` 2, `activityEvents` 4, `workoutSessions` 0, `contactMessages` 0, `siteLinks` 4.
 - Storage rules file exists but Storage setup was previously blocked until console setup.
 - App Hosting config exists in `apphosting.yaml`.
 - Firebase Admin on App Hosting uses application default credentials. Local development can use service account env vars.
@@ -181,6 +181,11 @@ workoutPrograms
 notifications
 workoutSplitTemplates
 liftLogs
+programAssignments
+activityEvents
+workoutSessions
+contactMessages
+siteLinks
 ```
 
 Important IDs:
@@ -206,8 +211,12 @@ Server actions in `lib/firebase/actions.ts`:
 
 - `createMemberWithMembership`
 - `updateMemberProfile`
+- `updateProfileMetrics`
 - `renewMemberMembership`
 - `logLiftSet`
+- `startWorkoutSession`
+- `endWorkoutSession`
+- `submitContactMessage`
 - `createCatalogExercise`
 - `createCustomWorkoutProgram`
 
@@ -225,10 +234,19 @@ Read models in `lib/firebase/read-models.ts`:
 
 - `getMembersWithMemberships`
 - `getMemberDetail`
+- `getGymWorkspaces`
+- `getTitanWorkspace`
+- `getRoleSummary`
 - `getExerciseCatalog`
 - `getOwnerNotifications`
+- `getMemberNotifications`
 - `getWorkoutPrograms`
 - `getLiftLogsForMember`
+- `getProgramAssignmentForMember`
+- `getActivityEvents`
+- `getProfileMetrics`
+- `getSiteLinks`
+- `getActiveWorkoutSessions`
 
 If Firebase Admin env vars are missing, the app falls back to mock data from:
 
@@ -336,6 +354,11 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Converted remaining page/component static data to Firestore-backed read models. Only `lib/firebase/read-models.ts` now imports `mock-data`, strictly for fallback when Firebase Admin is unavailable.
+- Added and seeded Firestore collections for `programAssignments`, `activityEvents`, and `siteLinks`.
+- Added Firestore-ready collections/rules for `workoutSessions` and `contactMessages`; these populate from Start Workout/End Workout and About form submissions.
+- Made home, admin, member, activity, profile, about, owner workspace, and exercise lookup data dynamic.
+- Updated `ExerciseList` and member workout AI logic to use Firestore exercise catalog data passed from read models.
 - Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.
 - Added in-workout rest countdown timer with 1, 1.5, 2, and 3 minute presets.
 - Updated demo seed data with two Barbell Bench Press lift logs for Aarav.

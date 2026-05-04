@@ -1,9 +1,16 @@
 import Link from "next/link";
 import { Bell, CalendarDays, UsersRound } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
-import { gyms, roles } from "@/lib/mock-data";
+import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
 
-export default function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminPage() {
+  const [{ gyms }, roles] = await Promise.all([
+    getGymWorkspaces(),
+    getRoleSummary()
+  ]);
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -21,11 +28,11 @@ export default function AdminPage() {
           <div className="membership-window">
             <span>
               Admin
-              <strong>{roles.admin.name}</strong>
+              <strong>{roles.adminName}</strong>
             </span>
             <span>
               Owner scope
-              <strong>{roles.owner.access}</strong>
+              <strong>{roles.ownerAccess}</strong>
             </span>
           </div>
         </aside>
@@ -39,7 +46,7 @@ export default function AdminPage() {
         </article>
         <article className="stat-card">
           <CalendarDays />
-          <strong>7</strong>
+          <strong>{gyms[0]?.expiryWarningDays ?? 7}</strong>
           <span>Expiry warning days</span>
         </article>
         <article className="stat-card">
@@ -62,7 +69,7 @@ export default function AdminPage() {
             <div>
               <span className="member-name">{workspace.name}</span>
               <span className="member-meta">
-                Owner: {workspace.ownerName} / Slug: {workspace.slug}
+                Owner: {workspace.ownerName || roles.ownerName} / Slug: {workspace.slug}
               </span>
             </div>
             <span className="status-pill status-neutral">{workspace.status}</span>

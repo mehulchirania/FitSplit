@@ -21,7 +21,10 @@ const members = [
     phone: "+91 98765 43210",
     joinedAt: "2026-02-01",
     avatarInitials: "AS",
-    goal: "Build lean muscle"
+    goal: "Build lean muscle",
+    age: 29,
+    heightCm: 174,
+    weightKg: 72
   },
   {
     id: "member-meera",
@@ -30,7 +33,10 @@ const members = [
     phone: "+91 98765 42109",
     joinedAt: "2026-01-15",
     avatarInitials: "MI",
-    goal: "Improve strength"
+    goal: "Improve strength",
+    age: 32,
+    heightCm: 162,
+    weightKg: 61
   },
   {
     id: "member-kabir",
@@ -39,7 +45,10 @@ const members = [
     phone: "+91 98765 41098",
     joinedAt: "2025-12-10",
     avatarInitials: "KK",
-    goal: "Fat loss and conditioning"
+    goal: "Fat loss and conditioning",
+    age: 35,
+    heightCm: 178,
+    weightKg: 86
   },
   {
     id: "member-nisha",
@@ -48,7 +57,10 @@ const members = [
     phone: "+91 98765 40987",
     joinedAt: "2026-03-02",
     avatarInitials: "NR",
-    goal: "Beginner fitness"
+    goal: "Beginner fitness",
+    age: 26,
+    heightCm: 158,
+    weightKg: 55
   }
 ];
 
@@ -143,6 +155,67 @@ const liftLogs = [
     sessionId: "demo-session-this-week",
     loggedAt: "2026-05-04T18:20:00+05:30"
   }
+];
+
+const programAssignments = [
+  {
+    id: "assignment-aarav",
+    memberId: "member-aarav",
+    programId: "split_02",
+    assignedAt: "2026-04-25T10:00:00+05:30",
+    status: "active"
+  },
+  {
+    id: "assignment-meera",
+    memberId: "member-meera",
+    programId: "split_custom_template",
+    assignedAt: "2026-04-20T16:00:00+05:30",
+    status: "active"
+  }
+];
+
+const activityEvents = [
+  {
+    id: "activity-owner-member-aarav",
+    audience: "owner",
+    title: 'New member added - "Aarav Sharma"',
+    detail: "Membership record created for Titan V2 Fitness.",
+    icon: "users",
+    createdAt: "2026-05-04T10:30:00+05:30"
+  },
+  {
+    id: "activity-owner-custom-plan",
+    audience: "owner",
+    title: "New workout plan created - Custom split v1",
+    detail: "Owner-created custom plan is ready for assignment.",
+    icon: "dumbbell",
+    createdAt: "2026-05-04T09:45:00+05:30"
+  },
+  {
+    id: "activity-member-membership-aarav",
+    audience: "member",
+    memberId: "member-aarav",
+    title: "Membership status updated",
+    detail: "Your active membership now shows the latest renewal window.",
+    icon: "bell",
+    createdAt: "2026-05-04T11:10:00+05:30"
+  },
+  {
+    id: "activity-member-program-aarav",
+    audience: "member",
+    memberId: "member-aarav",
+    title: "New workout plan assigned",
+    detail: "PPL + Upper/Lower is available in your member portal.",
+    icon: "dumbbell",
+    createdAt: "2026-05-03T17:15:00+05:30"
+  }
+];
+
+const siteLinks = [
+  { id: "01-instagram", label: "Instagram profile", href: "#" },
+  { id: "02-linkedin", label: "LinkedIn profile", href: "#" },
+  { id: "03-youtube", label: "YouTube profile", href: "#" },
+  { id: "04-email", label: "mehul@example.com", href: "mailto:mehul@example.com" }
 ];
 
 const muscleThumbnails = {
@@ -404,6 +477,32 @@ for (const liftLog of liftLogs) {
     ...liftLog,
     gymId,
     createdAt: liftLog.loggedAt,
+    updatedAt: now
+  });
+}
+
+for (const assignment of programAssignments) {
+  await setDoc("programAssignments", assignment.id, {
+    ...assignment,
+    gymId,
+    createdBy: ownerId,
+    createdAt: assignment.assignedAt,
+    updatedAt: now
+  });
+}
+
+for (const event of activityEvents) {
+  await setDoc("activityEvents", event.id, {
+    ...event,
+    gymId,
+    createdBy: ownerId,
+    updatedAt: now
+  });
+}
+
+for (const link of siteLinks) {
+  await setDoc("siteLinks", link.id, {
+    ...link,
     updatedAt: now
   });
 }

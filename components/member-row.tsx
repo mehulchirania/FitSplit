@@ -1,17 +1,18 @@
 import Link from "next/link";
 import { formatDate, getMembershipStatus } from "@/lib/memberships";
-import { gym } from "@/lib/mock-data";
 import type { Member, Membership } from "@/types/domain";
 import { StatusPill } from "./status-pill";
 
 export function MemberRow({
   member,
-  membership
+  membership,
+  warningDays = 7
 }: {
   member: Member;
   membership: Membership;
+  warningDays?: number;
 }) {
-  const status = getMembershipStatus(membership, gym.expiryWarningDays);
+  const status = getMembershipStatus(membership, warningDays);
 
   return (
     <div className="member-row">

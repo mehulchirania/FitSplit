@@ -2,9 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { logLiftSet } from "@/lib/firebase/actions";
-import { exercises } from "@/lib/mock-data";
-import type { LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
+import {
+  endWorkoutSession,
+  logLiftSet,
+  startWorkoutSession
+} from "@/lib/firebase/actions";
+import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import { Activity, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 
@@ -87,7 +90,11 @@ function getInjuryRule(injury: string) {
   };
 }
 
-function isContraindicated(item: WorkoutExercise, injury: string) {
+function isContraindicated(
+  item: WorkoutExercise,
+  injury: string,
+  exercises: Exercise[]
+) {
   const exercise = exercises.find((entry) => entry.id === item.exerciseId);
   const rule = getInjuryRule(injury);
 
@@ -102,7 +109,7 @@ function isContraindicated(item: WorkoutExercise, injury: string) {
   );
 }
 
-function findAlternative(usedIds: Set<string>, injury: string) {
+function findAlternative(usedIds: Set<string>, injury: string, exercises: Exercise[]) {
   const rule = getInjuryRule(injury);
   return exercises.find(
     (exercise) =>
@@ -112,17 +119,21 @@ function findAlternative(usedIds: Set<string>, injury: string) {
   );
 }
 
-function createModification(program: WorkoutProgram, injury: string): Modification {
+function createModification(
+  program: WorkoutProgram,
+  injury: string,
+  exercises: Exercise[]
+): Modification {
   const activeDay = program.days.find((day) => day.exercises.length > 0) ?? program.days[0];
   const usedIds = new Set(activeDay.exercises.map((item) => item.exerciseId));
   const swaps: Modification["swaps"] = [];
   const routine = activeDay.exercises.map((item) => {
-    if (!isContraindicated(item, injury)) {
+    if (!isContraindicated(item, injury, exercises)) {
       return item;
     }
 
     const original = exercises.find((exercise) => exercise.id === item.exerciseId);
-    const alternative = findAlternative(usedIds, injury);
+    const alternative = findAlternative(usedIds, injury, exercises);
 
     if (!original || !alternative) {
       return item;
@@ -180,15 +191,19 @@ function formatTimer(seconds: number) {
   return `${minutes}:${remainingSeconds}`;
 }
 
-function getExerciseName(exerciseId: string) {
+function getExerciseName(exerciseId: string, exercises: Exercise[]) {
   return exercises.find((exercise) => exercise.id === exerciseId)?.name ?? "Exercise";
 }
 
 export function MemberWorkoutConsole({
+  exercises,
+  initialActiveSessionCount,
   initialLiftLogs,
   memberId,
   program
 }: {
+  exercises: Exercise[];
+  initialActiveSessionCount: number;
   initialLiftLogs: LiftLog[];
   memberId: string;
   program: WorkoutProgram;
@@ -213,8 +228,8 @@ export function MemberWorkoutConsole({
 
   useEffect(() => {
     setIsActive(window.localStorage.getItem(sessionKey) === "active");
-    setActiveCount(getStoredActiveCount());
-  }, []);
+    setActiveCount(Math.max(initialActiveSessionCount, getStoredActiveCount()));
+  }, [initialActiveSessionCount]);
 
   useEffect(() => {
     if (!isTimerRunning) {
@@ -236,7 +251,7 @@ export function MemberWorkoutConsole({
     return () => window.clearInterval(intervalId);
   }, [isTimerRunning]);
 
-  function startWorkout() {
+  async function startWorkout() {
     if (isActive) {
       return;
     }
@@ -244,9 +259,14 @@ export function MemberWorkoutConsole({
     window.localStorage.setItem(sessionKey, "active");
     setIsActive(true);
     setActiveCount(setStoredActiveCount(getStoredActiveCount() + 1));
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("sessionId", `active-${memberId}`);
+    await startWorkoutSession(formData);
+    router.refresh();
   }
 
-  function endWorkout() {
+  async function endWorkout() {
     if (!isActive) {
       return;
     }
@@ -254,6 +274,10 @@ export function MemberWorkoutConsole({
     window.localStorage.removeItem(sessionKey);
     setIsActive(false);
     setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
+    const formData = new FormData();
+    formData.set("sessionId", `active-${memberId}`);
+    await endWorkoutSession(formData);
+    router.refresh();
   }
 
   function updateInjury() {
@@ -261,7 +285,7 @@ export function MemberWorkoutConsole({
       return;
     }
 
-    setModification(createModification(program, injury.trim()));
+    setModification(createModification(program, injury.trim(), exercises));
   }
 
   function setRestPreset(seconds: number) {
@@ -335,7 +359,7 @@ export function MemberWorkoutConsole({
                 <p className="eyebrow">Day {day.dayNumber}</p>
                 <h2>{day.title}</h2>
                 <p>{modification ? modification.summary : day.focus}</p>
-                <ExerciseList items={day.exercises} />
+                <ExerciseList exercises={exercises} items={day.exercises} />
               </article>
             ))}
         </div>
@@ -353,7 +377,7 @@ export function MemberWorkoutConsole({
               <select name="exerciseId">
                 {uniqueLoggableExercises.map((item) => (
                   <option key={item.exerciseId} value={item.exerciseId}>
-                    {getExerciseName(item.exerciseId)}
+                    {getExerciseName(item.exerciseId, exercises)}
                   </option>
                 ))}
               </select>
@@ -383,7 +407,7 @@ export function MemberWorkoutConsole({
             </div>
             {liftLogs.slice(0, 8).map((log) => (
               <div key={log.id} role="row">
-                <span>{getExerciseName(log.exerciseId)}</span>
+                <span>{getExerciseName(log.exerciseId, exercises)}</span>
                 <span>{log.weight} kg</span>
                 <span>{log.sets}</span>
                 <span>{log.reps}</span>

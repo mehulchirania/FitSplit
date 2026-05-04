@@ -125,3 +125,36 @@ export type LiftLog = {
   sessionId: string;
   loggedAt: string;
 };
+
+export type ActivityEvent = {
+  id: string;
+  audience: "owner" | "member";
+  memberId?: string;
+  title: string;
+  detail: string;
+  icon: "activity" | "bell" | "dumbbell" | "users";
+  createdAt: string;
+};
+
+export type SiteLink = {
+  id: string;
+  label: string;
+  href: string;
+};
+
+export type ProfileMetrics = {
+  fullName: string;
+  email: string;
+  phone: string;
+  age?: number;
+  heightCm?: number;
+  weightKg?: number;
+};
+
+export type WorkoutSession = {
+  id: string;
+  memberId: string;
+  startedAt: string;
+  endedAt?: string;
+  status: "active" | "completed";
+};

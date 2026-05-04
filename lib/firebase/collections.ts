@@ -6,7 +6,12 @@ export const collectionPaths = {
   workoutPrograms: "workoutPrograms",
   notifications: "notifications",
   workoutSplitTemplates: "workoutSplitTemplates",
-  liftLogs: "liftLogs"
+  liftLogs: "liftLogs",
+  programAssignments: "programAssignments",
+  activityEvents: "activityEvents",
+  workoutSessions: "workoutSessions",
+  contactMessages: "contactMessages",
+  siteLinks: "siteLinks"
 } as const;
 
 export const TITAN_GYM_ID = "titan-v2-fitness";

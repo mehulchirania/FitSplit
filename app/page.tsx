@@ -1,5 +1,10 @@
 import Link from "next/link";
 import { Activity, Bell, CalendarDays, Dumbbell, UsersRound } from "@/components/icons";
+import {
+  getMembersWithMemberships,
+  getOwnerNotifications,
+  getWorkoutPrograms
+} from "@/lib/firebase/read-models";
 
 const workstreams = [
   {
@@ -19,7 +24,15 @@ const workstreams = [
   }
 ];
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [{ members }, { notifications }, { programs }] = await Promise.all([
+    getMembersWithMemberships(),
+    getOwnerNotifications(),
+    getWorkoutPrograms()
+  ]);
+
   return (
     <main className="home">
       <section className="hero-band">
@@ -43,15 +56,15 @@ export default function Home() {
         <div className="hero-panel" aria-label="Pilot gym snapshot">
           <div className="metric-strip">
             <span>
-              <strong>4</strong>
+              <strong>{members.length}</strong>
               Pilot members
             </span>
             <span>
-              <strong>2</strong>
+              <strong>{notifications.length}</strong>
               Renewal alerts
             </span>
             <span>
-              <strong>1</strong>
+              <strong>{programs.length}</strong>
               Active program
             </span>
           </div>

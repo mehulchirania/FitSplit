@@ -1,7 +1,13 @@
 import { ProfileForm } from "@/components/profile-form";
 import { UsersRound } from "@/components/icons";
+import { getProfileMetrics } from "@/lib/firebase/read-models";
 
-export default function ProfilePage() {
+export const dynamic = "force-dynamic";
+
+export default async function ProfilePage() {
+  const memberId = "member-aarav";
+  const { profile, isPersisted } = await getProfileMetrics(memberId);
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -18,7 +24,9 @@ export default function ProfilePage() {
             <h2>
               <UsersRound /> Member profile
             </h2>
-            <span className="status-pill status-neutral">Demo form</span>
+            <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
+              {isPersisted ? "Firestore profile" : "Fallback profile"}
+            </span>
           </div>
           <p>
             Height and weight are reactive here so BMI updates instantly while
@@ -27,7 +35,7 @@ export default function ProfilePage() {
         </aside>
       </section>
 
-      <ProfileForm />
+      <ProfileForm memberId={memberId} profile={profile} />
     </main>
   );
 }

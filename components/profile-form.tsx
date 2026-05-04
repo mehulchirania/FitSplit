@@ -1,10 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { updateProfileMetrics } from "@/lib/firebase/actions";
+import type { ProfileMetrics } from "@/types/domain";
 
-export function ProfileForm() {
-  const [height, setHeight] = useState("174");
-  const [weight, setWeight] = useState("72");
+export function ProfileForm({
+  memberId,
+  profile
+}: {
+  memberId: string;
+  profile: ProfileMetrics;
+}) {
+  const [height, setHeight] = useState(String(profile.heightCm ?? ""));
+  const [weight, setWeight] = useState(String(profile.weightKg ?? ""));
 
   const bmi = useMemo(() => {
     const heightCm = Number(height);
@@ -40,30 +48,31 @@ export function ProfileForm() {
 
   return (
     <section className="content-grid">
-      <form className="form-panel">
+      <form action={updateProfileMetrics} className="form-panel">
         <h2>Basic details</h2>
+        <input name="memberId" type="hidden" value={memberId} />
         <div className="form-grid">
           <label>
             Full name
-            <input defaultValue="Aarav Sharma" name="fullName" />
+            <input defaultValue={profile.fullName} name="fullName" />
           </label>
           <label>
             Email
-            <input defaultValue="aarav@example.com" name="email" type="email" />
+            <input defaultValue={profile.email} name="email" type="email" />
           </label>
           <label>
             Phone
-            <input defaultValue="+91 98765 43210" name="phone" />
+            <input defaultValue={profile.phone} name="phone" />
           </label>
           <label>
             Age
-            <input defaultValue="29" min="1" name="age" type="number" />
+            <input defaultValue={profile.age} min="1" name="age" type="number" />
           </label>
           <label>
             Height
             <input
               min="1"
-              name="height"
+              name="heightCm"
               onChange={(event) => setHeight(event.target.value)}
               type="number"
               value={height}
@@ -73,14 +82,14 @@ export function ProfileForm() {
             Weight
             <input
               min="1"
-              name="weight"
+              name="weightKg"
               onChange={(event) => setWeight(event.target.value)}
               type="number"
               value={weight}
             />
           </label>
         </div>
-        <button className="button button-primary" type="button">
+        <button className="button button-primary" type="submit">
           Save profile
         </button>
       </form>

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import { Activity, Bell } from "@/components/icons";
+import { submitContactMessage } from "@/lib/firebase/actions";
+import { getSiteLinks } from "@/lib/firebase/read-models";
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  const { links } = await getSiteLinks();
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -30,7 +36,7 @@ export default function AboutPage() {
       </section>
 
       <section className="content-grid">
-        <form className="form-panel">
+        <form action={submitContactMessage} className="form-panel">
           <h2>Get in touch</h2>
           <div className="form-grid">
             <label>
@@ -50,7 +56,7 @@ export default function AboutPage() {
               <input name="email" placeholder="you@example.com" type="email" />
             </label>
           </div>
-          <button className="button button-primary" type="button">
+          <button className="button button-primary" type="submit">
             Send message
           </button>
         </form>
@@ -61,10 +67,17 @@ export default function AboutPage() {
               <Bell /> Links
             </h2>
           </div>
-          <Link href="#">Instagram profile</Link>
-          <Link href="#">LinkedIn profile</Link>
-          <Link href="#">YouTube profile</Link>
-          <a href="mailto:mehul@example.com">mehul@example.com</a>
+          {links.map((link) =>
+            link.href.startsWith("mailto:") ? (
+              <a href={link.href} key={link.id}>
+                {link.label}
+              </a>
+            ) : (
+              <Link href={link.href} key={link.id}>
+                {link.label}
+              </Link>
+            )
+          )}
         </aside>
       </section>
 

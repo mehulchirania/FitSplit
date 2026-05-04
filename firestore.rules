@@ -67,5 +67,33 @@ service cloud.firestore {
         || isMemberSelf(request.resource.data.memberId);
       allow update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
     }
+
+    match /programAssignments/{assignmentId} {
+      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+    }
+
+    match /activityEvents/{eventId} {
+      allow read: if signedIn();
+      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+    }
+
+    match /workoutSessions/{sessionId} {
+      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+      allow create: if isAdmin()
+        || isOwnerForGym(request.resource.data.gymId)
+        || isMemberSelf(request.resource.data.memberId);
+      allow update: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+    }
+
+    match /contactMessages/{messageId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
+    }
+
+    match /siteLinks/{linkId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
   }
 }

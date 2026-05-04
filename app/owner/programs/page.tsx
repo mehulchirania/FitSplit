@@ -15,7 +15,7 @@ const splitLabels: Record<string, string> = {
 };
 
 export default async function ProgramsPage() {
-  const [{ catalog }, { programs, isPersisted }] = await Promise.all([
+  const [{ catalog, exercises }, { programs, isPersisted }] = await Promise.all([
     getExerciseCatalog(),
     getWorkoutPrograms()
   ]);
@@ -79,7 +79,10 @@ export default async function ProgramsPage() {
             </span>
           </div>
           <div className="notification-list">
-            <ExerciseList items={previewProgram.days[0]?.exercises ?? []} />
+            <ExerciseList
+              exercises={exercises}
+              items={previewProgram.days[0]?.exercises ?? []}
+            />
           </div>
         </section>
       ) : null}

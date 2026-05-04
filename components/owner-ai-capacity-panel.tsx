@@ -22,13 +22,15 @@ function getStoredActiveCount() {
 }
 
 export function OwnerAiCapacityPanel({
+  activeHeadcount: initialActiveHeadcount,
   activeMembers,
   programCount
 }: {
+  activeHeadcount: number;
   activeMembers: number;
   programCount: number;
 }) {
-  const [activeHeadcount, setActiveHeadcount] = useState(0);
+  const [activeHeadcount, setActiveHeadcount] = useState(initialActiveHeadcount);
   const activeSemiPersonalPlans = Math.max(2, Math.ceil(activeMembers * 0.45));
   const trainerHoursSaved = activeSemiPersonalPlans * 3;
   const maxPeak = useMemo(
@@ -41,14 +43,14 @@ export function OwnerAiCapacityPanel({
       setActiveHeadcount(getStoredActiveCount());
     }
 
-    syncCount();
+    setActiveHeadcount(Math.max(initialActiveHeadcount, getStoredActiveCount()));
     window.addEventListener("storage", syncCount);
     window.addEventListener("fitsplit-capacity-change", syncCount);
     return () => {
       window.removeEventListener("storage", syncCount);
       window.removeEventListener("fitsplit-capacity-change", syncCount);
     };
-  }, []);
+  }, [initialActiveHeadcount]);
 
   return (
     <section className="content-grid">
