@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   return (
-    <main className="page" style={{ minHeight: "80vh", minHeight: "80dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <main className="page" style={{ minHeight: "80dvh", display: "flex", alignItems: "center", justifyContent: "center" }}>
       <LoginForm />
     </main>
   );

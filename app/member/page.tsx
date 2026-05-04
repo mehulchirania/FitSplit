@@ -1,9 +1,11 @@
-import { Bell, Dumbbell } from "@/components/icons";
+import { Bell, Dumbbell, Calendar } from "@/components/icons";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
 import { EditableMetrics } from "@/components/editable-metrics";
+import { AttendanceCalendar } from "@/components/attendance-calendar";
 import {
   getActiveWorkoutSessions,
+  getAttendanceRecords,
   getExerciseCatalog,
   getLiftLogsForMember,
   getMemberDetail,
@@ -28,7 +30,8 @@ export default async function MemberDashboard() {
     { notifications: memberNotifications },
     { liftLogs },
     { exercises },
-    { sessions }
+    { sessions },
+    { records: attendanceRecords }
   ] = await Promise.all([
     getTitanWorkspace(),
     getMemberDetail(currentMemberId),
@@ -37,7 +40,8 @@ export default async function MemberDashboard() {
     getMemberNotifications(currentMemberId),
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(),
-    getActiveWorkoutSessions()
+    getActiveWorkoutSessions(),
+    getAttendanceRecords(currentMemberId)
   ]);
 
   if (!member) {
@@ -45,6 +49,11 @@ export default async function MemberDashboard() {
   }
 
   const program = programs.find((item) => item.id === assignment?.programId) ?? programs[0];
+  const attendanceCount = attendanceRecords.filter(r => {
+    const d = new Date(r.checkInAt);
+    const now = new Date();
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  }).length;
 
   return (
     <main className="page">
@@ -68,8 +77,8 @@ export default async function MemberDashboard() {
               <strong>{program.title}</strong>
             </span>
             <span>
-              Weekly days
-              <strong>{program.daysPerWeek}</strong>
+              Monthly Attendance
+              <strong>{attendanceCount} days</strong>
             </span>
             <span>
               Goal
@@ -96,7 +105,17 @@ export default async function MemberDashboard() {
           </div>
           <NotificationList items={memberNotifications} />
         </aside>
+
+        <aside className="list-panel">
+          <div className="panel-title">
+            <h2>
+              <Calendar /> Attendance
+            </h2>
+          </div>
+          <AttendanceCalendar records={attendanceRecords} />
+        </aside>
       </section>
     </main>
   );
 }
+

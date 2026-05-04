@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Dumbbell } from "@/components/icons";
+import { Dumbbell, Calendar } from "@/components/icons";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
+import { AttendanceCalendar } from "@/components/attendance-calendar";
 import { updateMemberProfile, resetPassword } from "@/lib/firebase/actions";
 import {
+  getAttendanceRecords,
   getExerciseCatalog,
   getMemberDetail,
   getProgramAssignmentForMember,
@@ -24,12 +26,14 @@ export default async function MemberDetailPage({
     { member },
     { assignment },
     { programs },
-    { exercises }
+    { exercises },
+    { records: attendanceRecords }
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
     getWorkoutPrograms(),
-    getExerciseCatalog()
+    getExerciseCatalog(),
+    getAttendanceRecords(memberId)
   ]);
 
   if (!member) {
@@ -155,17 +159,28 @@ export default async function MemberDetailPage({
         </ConfirmActionForm>
       </section>
 
-      {program ? (
-        <section className="list-panel" style={{ marginTop: 16 }}>
+      <section className="content-grid" style={{ marginTop: 16 }}>
+        <div className="list-panel">
           <div className="panel-title">
             <h2>
-              <Dumbbell /> Assigned weekly schedule
+              <Calendar /> Attendance history
             </h2>
-            <span className="status-pill status-neutral">{program.title}</span>
           </div>
-          <WeeklyProgramSchedule exercises={exercises} program={program} />
-        </section>
-      ) : null}
+          <AttendanceCalendar records={attendanceRecords} />
+        </div>
+
+        {program ? (
+          <div className="list-panel">
+            <div className="panel-title">
+              <h2>
+                <Dumbbell /> Assigned weekly schedule
+              </h2>
+              <span className="status-pill status-neutral">{program.title}</span>
+            </div>
+            <WeeklyProgramSchedule exercises={exercises} program={program} />
+          </div>
+        ) : null}
+      </section>
     </main>
   );
 }

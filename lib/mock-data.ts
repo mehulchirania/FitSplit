@@ -1,5 +1,6 @@
 import workoutsData from "./workouts.json";
 import type {
+  AttendanceRecord,
   Exercise,
   GymWorkspace,
   Member,
@@ -8,7 +9,8 @@ import type {
   Notification,
   ProgramAssignment,
   WorkoutExercise,
-  WorkoutProgram
+  WorkoutProgram,
+  WorkoutSession
 } from "@/types/domain";
 
 type CatalogExercise = {
@@ -370,3 +372,34 @@ export const notifications: Notification[] = [
     readAt: "2026-04-25T10:20:00+05:30"
   }
 ];
+
+export const attendanceRecords: AttendanceRecord[] = [
+  { id: "att-1", memberId: "member-aarav", checkInAt: "2026-04-01T08:00:00+05:30", checkOutAt: "2026-04-01T09:30:00+05:30" },
+  { id: "att-2", memberId: "member-aarav", checkInAt: "2026-04-03T08:15:00+05:30", checkOutAt: "2026-04-03T09:45:00+05:30" },
+  { id: "att-3", memberId: "member-aarav", checkInAt: "2026-04-05T08:05:00+05:30", checkOutAt: "2026-04-05T09:35:00+05:30" },
+  { id: "att-4", memberId: "member-aarav", checkInAt: "2026-04-08T08:10:00+05:30", checkOutAt: "2026-04-08T09:40:00+05:30" },
+  { id: "att-5", memberId: "member-aarav", checkInAt: "2026-04-10T08:00:00+05:30", checkOutAt: "2026-04-10T09:30:00+05:30" },
+  { id: "att-6", memberId: "member-aarav", checkInAt: "2026-04-12T08:20:00+05:30", checkOutAt: "2026-04-12T09:50:00+05:30" },
+  { id: "att-7", memberId: "member-aarav", checkInAt: "2026-04-15T08:00:00+05:30", checkOutAt: "2026-04-15T09:30:00+05:30" },
+  { id: "att-8", memberId: "member-aarav", checkInAt: "2026-04-17T08:15:00+05:30", checkOutAt: "2026-04-17T09:45:00+05:30" },
+  { id: "att-9", memberId: "member-aarav", checkInAt: "2026-04-19T08:05:00+05:30", checkOutAt: "2026-04-19T09:35:00+05:30" },
+  { id: "att-10", memberId: "member-aarav", checkInAt: "2026-04-22T08:10:00+05:30", checkOutAt: "2026-04-22T09:40:00+05:30" },
+  { id: "att-11", memberId: "member-aarav", checkInAt: "2026-04-24T08:00:00+05:30", checkOutAt: "2026-04-24T09:30:00+05:30" },
+  { id: "att-12", memberId: "member-aarav", checkInAt: "2026-04-26T08:20:00+05:30", checkOutAt: "2026-04-26T09:50:00+05:30" },
+  { id: "att-13", memberId: "member-aarav", checkInAt: "2026-04-29T08:00:00+05:30", checkOutAt: "2026-04-29T09:30:00+05:30" },
+  { id: "att-14", memberId: "member-aarav", checkInAt: "2026-05-01T08:15:00+05:30", checkOutAt: "2026-05-01T09:45:00+05:30" },
+  { id: "att-15", memberId: "member-aarav", checkInAt: "2026-05-03T08:05:00+05:30", checkOutAt: "2026-05-03T09:35:00+05:30" },
+  
+  { id: "att-m1", memberId: "member-mehul", checkInAt: "2026-05-01T18:00:00+05:30", checkOutAt: "2026-05-01T19:30:00+05:30" },
+  { id: "att-m2", memberId: "member-mehul", checkInAt: "2026-05-02T18:15:00+05:30", checkOutAt: "2026-05-02T19:45:00+05:30" },
+  { id: "att-m3", memberId: "member-mehul", checkInAt: "2026-05-03T18:05:00+05:30", checkOutAt: "2026-05-03T19:35:00+05:30" },
+  { id: "att-m4", memberId: "member-mehul", checkInAt: "2026-05-04T18:10:00+05:30", checkOutAt: "2026-05-04T19:40:00+05:30" }
+];
+
+export const workoutSessions: WorkoutSession[] = attendanceRecords.map(att => ({
+  id: `session-${att.id}`,
+  memberId: att.memberId,
+  startedAt: att.checkInAt,
+  endedAt: att.checkOutAt,
+  status: "completed"
+}));

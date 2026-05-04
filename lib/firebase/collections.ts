@@ -11,7 +11,9 @@ export const collectionPaths = {
   activityEvents: "activityEvents",
   workoutSessions: "workoutSessions",
   contactMessages: "contactMessages",
-  siteLinks: "siteLinks"
+  siteLinks: "siteLinks",
+  attendanceRecords: "attendanceRecords"
+
 } as const;
 
 export const TITAN_GYM_ID = "titan-v2-fitness";

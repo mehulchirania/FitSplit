@@ -1,5 +1,6 @@
 import type {
   ActivityEvent,
+  AttendanceRecord,
   Difficulty,
   Exercise,
   GymWorkspace,
@@ -13,14 +14,17 @@ import type {
   WorkoutSession,
   WorkoutProgram
 } from "@/types/domain";
+
 import {
   assignments as mockAssignments,
+  attendanceRecords as mockAttendanceRecords,
   exerciseCatalogByMuscle as mockExerciseCatalogByMuscle,
   exercises as mockExercises,
   gyms as mockGyms,
   members as mockMembers,
   notifications as mockNotifications,
-  programs as mockPrograms
+  programs as mockPrograms,
+  workoutSessions as mockWorkoutSessions
 } from "@/lib/mock-data";
 import { collectionPaths, TITAN_GYM_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
@@ -814,3 +818,41 @@ export async function getActiveWorkoutSessions(): Promise<{
     return { sessions: [], isPersisted: false };
   }
 }
+
+export async function getAttendanceRecords(memberId: string): Promise<{
+  records: AttendanceRecord[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return {
+      records: mockAttendanceRecords.filter(r => r.memberId === memberId),
+      isPersisted: false
+    };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.attendanceRecords)
+      .where("memberId", "==", memberId)
+      .get();
+    
+    const records: AttendanceRecord[] = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        memberId: String(data.memberId),
+        checkInAt: String(data.checkInAt),
+        checkOutAt: data.checkOutAt ? String(data.checkOutAt) : undefined
+      };
+    });
+
+    return { records, isPersisted: true };
+  } catch {
+    return {
+      records: mockAttendanceRecords.filter(r => r.memberId === memberId),
+      isPersisted: false
+    };
+  }
+}
+

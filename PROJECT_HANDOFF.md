@@ -2,6 +2,30 @@
 
 Use this file as the starting context for future Codex chats.
 
+## ⚡ Latest Update — May 2026 (Session 3): Attendance, BMI Analytics & Build Stability
+
+### Attendance Calendar
+- **Attendance Tracking:** New `attendanceRecords` collection/type for gym check-ins.
+- **Member Dashboard:** Added "Monthly Attendance" stat in summary panel and a full **Attendance Calendar** grid in the dashboard.
+- **Owner Access:** Owners can now view a member's full attendance history on the member detail page.
+- **Mock Data:** Populated Aarav and Mehul with 15+ attendance records for April/May.
+
+### BMI & Metrics UX
+- **Dynamic BMI Coloring:** The BMI pill now changes color based on health categories:
+  - Underweight (< 18.5): **Yellow** (`status-warning`)
+  - Normal (18.5 – 24.9): **Green** (`status-active`)
+  - Overweight (25 – 29.9): **Yellow** (`status-warning`)
+  - Obese (≥ 30): **Red** (`status-danger`)
+- **BMI Info Popover:** Added a `?` info button next to BMI that reveals a categorical chart/popover for user education.
+- **Editable Metrics:** BMI and metrics (Age, Weight, Height) are fully inline editable from the member dashboard.
+
+### Build & Stability
+- **Build Fix:** Resolved a duplicate `minHeight` property error in `app/page.tsx` that was blocking Firebase deployments.
+- **Firestore Paths:** Added `attendanceRecords` to the central `collectionPaths` registry.
+- **Type Safety:** Added `AttendanceRecord` and `WorkoutSession` to domain types and mock models.
+
+---
+
 ## ⚡ Latest Update — May 2026 (Session 2): Admin, Program Assign & Workout Clock
 
 ### Admin Panel Fix

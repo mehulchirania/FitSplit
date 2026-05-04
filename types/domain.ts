@@ -161,3 +161,11 @@ export type WorkoutSession = {
   endedAt?: string;
   status: "active" | "completed";
 };
+
+export type AttendanceRecord = {
+  id: string;
+  memberId: string;
+  checkInAt: string;
+  checkOutAt?: string;
+};
+

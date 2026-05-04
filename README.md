@@ -36,7 +36,9 @@ fitsplit-29215
 
 - ✅ Firebase Blaze enabled, Firestore seeded with demo data
 - ✅ Mock authentication fully working (no Firebase Auth required for local dev)
-- ✅ Member dashboard personalized with BMI, weight, height, age (inline editable)
+- ✅ Member dashboard personalized with BMI (dynamic coloring), metrics, and attendance
+- ✅ Attendance calendar implemented for members (monthly summary + full calendar view)
+- ✅ Attendance tracking accessible by owner/admin in member detail view
 - ✅ AI trainer enhanced with injury-aware stretch injection, push/pull logic fixed
 - ✅ Dialog positioning fixed (centered modal via `position: fixed`)
 - ✅ Workout session start/end and lift logging work in local mock mode (no Firebase config required)
