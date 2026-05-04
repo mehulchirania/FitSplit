@@ -6,7 +6,12 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FitSplit",
-  description: "Gym membership and workout management for focused fitness teams."
+  description: "Gym membership and workout management for focused fitness teams.",
+  manifest: "/manifest.json",
+  icons: {
+    icon: "/icon-512.png",
+    apple: "/icon-512.png"
+  }
 };
 
 export default function RootLayout({
@@ -17,6 +22,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Points to your manifest file */}
+        <link rel="manifest" href="/manifest.json" />
+
+        {/* Uses the exact same image for the browser tab */}
+        <link rel="icon" type="image/png" href="/icon-512.png" />
+
+        {/* Tells iPhones to use the same image for the home screen */}
+        <link rel="apple-touch-icon" href="/icon-512.png" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

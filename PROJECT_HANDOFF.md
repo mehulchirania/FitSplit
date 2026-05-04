@@ -330,6 +330,7 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Added FitSplit PWA/browser icon assets: `public/icon-512.png`, `public/manifest.json`, and root layout manifest/favicon/apple-touch links.
 - Seeded live Firestore for project `fitsplit-29215` with full Titan V2 Fitness demo data: gym workspace, admin/owner/member profiles, memberships, exercise catalog, workout programs, notifications, and split templates.
 - Added `scripts/seed-demo-firestore.mjs` and `npm.cmd run seed:demo` for repeatable demo seeding.
 - Added editable member profile form on `/owner/members/[memberId]` backed by `updateMemberProfile`.
@@ -366,6 +367,13 @@ npm.cmd run build
 ```
 
 These passed after wiring member renewal:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
+```
+
+These passed after adding PWA icon/manifest:
 
 ```bash
 npm.cmd run build
