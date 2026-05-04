@@ -155,7 +155,7 @@ svg {
 .member-meta,
 .stat-card span,
 .catalog-item span,
-.membership-window span {
+.detail-window span {
   color: var(--text-soft);
 }
 
@@ -570,7 +570,7 @@ p {
   margin-bottom: 0;
 }
 
-.membership-window {
+.detail-window {
   border-top: 1px solid var(--border);
   display: grid;
   gap: 12px;
@@ -579,12 +579,12 @@ p {
   padding-top: 16px;
 }
 
-.membership-window span {
+.detail-window span {
   display: block;
   font-size: 0.82rem;
 }
 
-.membership-window strong {
+.detail-window strong {
   color: var(--text);
   display: block;
   margin-top: 4px;
@@ -1169,6 +1169,60 @@ textarea {
   background: var(--bg-muted);
 }
 
+.weekly-schedule {
+  display: grid;
+  gap: 14px;
+  padding: 14px;
+}
+
+.day-tabs {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+.day-tabs button {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  padding: 10px 12px;
+  text-align: left;
+  transition: border-color var(--fast), background-color var(--fast), transform var(--fast);
+}
+
+.day-tabs button:hover,
+.day-tabs button.is-selected {
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 34%, var(--border));
+  transform: translateY(-1px);
+}
+
+.day-tabs span {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 820;
+}
+
+.day-tabs strong {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.selected-workout-day {
+  display: grid;
+  gap: 12px;
+}
+
+.selected-workout-day h2,
+.selected-workout-day p {
+  margin: 0;
+}
+
 .app-footer {
   color: var(--text-soft);
   font-size: 0.9rem;
@@ -1312,7 +1366,7 @@ textarea {
   }
 
   .metric-strip,
-  .membership-window,
+  .detail-window,
   .ai-band {
     grid-template-columns: 1fr;
   }

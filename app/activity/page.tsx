@@ -26,11 +26,11 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
       <section className="dashboard-header compact-header">
         <div className="header-copy">
           <p className="eyebrow">Activity</p>
-          <h1>{activeRole === "member" ? "Your account activity." : "Workspace activity feed."}</h1>
+          <h1>{activeRole === "member" ? "Your account activity." : "Gym activity feed."}</h1>
           <p>
             {activeRole === "member"
-              ? "Personal membership and workout updates for the current member view."
-              : "Global system events across the Titan V2 Fitness owner workspace."}
+              ? "Personal profile and workout updates for the current member view."
+              : "Global system events across the Titan V2 Fitness owner gym."}
           </p>
           <div className="quick-actions">
             <Link

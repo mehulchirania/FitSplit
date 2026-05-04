@@ -24,14 +24,6 @@ function requireText(formData: FormData, key: string, label = key) {
   return value;
 }
 
-function addMonths(dateValue: string, months: number) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day));
-  date.setUTCMonth(date.getUTCMonth() + months);
-  date.setUTCDate(date.getUTCDate() - 1);
-  return date.toISOString().slice(0, 10);
-}
-
 function getActionFormData(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
@@ -82,7 +74,7 @@ async function ensureTitanWorkspace() {
   );
 }
 
-export async function createMemberWithMembership(
+export async function createMemberProfile(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
 ): Promise<FormActionState> {
@@ -91,17 +83,8 @@ export async function createMemberWithMembership(
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const memberId = randomUUID();
-    const membershipId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
-    const startDate = requireText(formData, "startDate", "Start date");
-    const durationMonths = Number(formData.get("durationMonths") ?? 1);
-
-    if (![1, 3, 6, 12].includes(durationMonths)) {
-      throw new Error("Duration must be 1, 3, 6, or 12 months.");
-    }
-
-    const endDate = addMonths(startDate, durationMonths);
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.profiles).doc(memberId).set({
@@ -119,20 +102,7 @@ export async function createMemberWithMembership(
         .slice(0, 2)
         .toUpperCase(),
       isActive: true,
-      createdAt: now,
-      updatedAt: now
-    });
-
-    await db.collection(collectionPaths.memberships).doc(membershipId).set({
-      id: membershipId,
-      gymId: TITAN_GYM_ID,
-      memberId,
-      planName: `${durationMonths} Month Membership`,
-      startDate,
-      endDate,
-      durationMonths,
-      paymentReference: String(formData.get("paymentReference") ?? "").trim(),
-      createdBy: TITAN_OWNER_ID,
+      joinedAt: now.slice(0, 10),
       createdAt: now,
       updatedAt: now
     });
@@ -140,9 +110,9 @@ export async function createMemberWithMembership(
     revalidatePath("/owner");
     revalidatePath("/owner/members");
 
-    return success(`${fullName} was added with a membership ending ${endDate}.`);
+    return success(`${fullName} was added as a FitSplit member.`);
   } catch (error) {
-    console.error("Unable to create member with membership", error);
+    console.error("Unable to create member profile", error);
 
     return failure(error, "Unable to add member. Please try again.");
   }
@@ -231,65 +201,6 @@ export async function updateProfileMetrics(
   } catch (error) {
     console.error("Unable to update profile metrics", error);
     return failure(error, "Unable to update profile. Please try again.");
-  }
-}
-
-export async function renewMemberMembership(
-  previousStateOrFormData: FormActionState | FormData,
-  maybeFormData?: FormData
-): Promise<FormActionState> {
-  try {
-    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await ensureTitanWorkspace();
-    const db = requireFirebase();
-    const membershipId = randomUUID();
-    const notificationId = randomUUID();
-    const memberId = requireText(formData, "memberId", "Member");
-    const startDate = requireText(formData, "startDate", "Start date");
-    const durationMonths = Number(formData.get("durationMonths") ?? 1);
-
-    if (![1, 3, 6, 12].includes(durationMonths)) {
-      throw new Error("Duration must be 1, 3, 6, or 12 months.");
-    }
-
-    const endDate = addMonths(startDate, durationMonths);
-    const paymentReference = String(formData.get("paymentReference") ?? "").trim();
-    const now = new Date().toISOString();
-
-    await db.collection(collectionPaths.memberships).doc(membershipId).set({
-      id: membershipId,
-      gymId: TITAN_GYM_ID,
-      memberId,
-      planName: `${durationMonths} Month Renewal`,
-      startDate,
-      endDate,
-      durationMonths,
-      paymentReference,
-      createdBy: TITAN_OWNER_ID,
-      createdAt: now,
-      updatedAt: now,
-      type: "renewal"
-    });
-
-    await db.collection(collectionPaths.notifications).doc(notificationId).set({
-      id: notificationId,
-      recipientRole: "member",
-      recipientId: memberId,
-      type: "membership_renewed",
-      title: "Membership renewed",
-      body: `Your membership has been renewed until ${endDate}.`,
-      createdAt: now
-    });
-
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/member");
-
-    return success(`Membership was renewed until ${endDate}.`);
-  } catch (error) {
-    console.error("Unable to renew member membership", error);
-    return failure(error, "Unable to renew membership. Please try again.");
   }
 }
 

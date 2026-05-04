@@ -1,16 +1,16 @@
 import Link from "next/link";
-import { Activity, Bell, CalendarDays, Dumbbell, UsersRound } from "@/components/icons";
+import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import {
-  getMembersWithMemberships,
+  getMembers,
   getOwnerNotifications,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
 const workstreams = [
   {
-    title: "Memberships",
-    body: "Track start dates, calculated end dates, expiring members, and expired members.",
-    icon: CalendarDays
+    title: "Members",
+    body: "Create training profiles and keep each member connected to the right weekly schedule.",
+    icon: UsersRound
   },
   {
     title: "Workout Programs",
@@ -19,7 +19,7 @@ const workstreams = [
   },
   {
     title: "Owner Alerts",
-    body: "Surface renewals that need attention before revenue quietly slips away.",
+    body: "Surface program changes, member activity, and gym-capacity events that need attention.",
     icon: Bell
   }
 ];
@@ -28,7 +28,7 @@ export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [{ members }, { notifications }, { programs }] = await Promise.all([
-    getMembersWithMemberships(),
+    getMembers(),
     getOwnerNotifications(),
     getWorkoutPrograms()
   ]);
@@ -40,8 +40,8 @@ export default async function Home() {
           <p className="eyebrow">Single-gym pilot</p>
           <h1>FitSplit</h1>
           <p>
-            A focused gym management app for memberships, assigned workout plans,
-            exercise videos, renewal alerts, and an automated Semi-Personal
+            A focused gym management app for assigned workout plans, exercise
+            videos, member training profiles, and an automated Semi-Personal
             Trainer layer.
           </p>
           <div className="hero-actions">
@@ -61,7 +61,7 @@ export default async function Home() {
             </span>
             <span>
               <strong>{notifications.length}</strong>
-              Renewal alerts
+              Owner alerts
             </span>
             <span>
               <strong>{programs.length}</strong>

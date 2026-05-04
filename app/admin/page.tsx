@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, CalendarDays, UsersRound } from "@/components/icons";
+import { Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
 
@@ -15,17 +15,16 @@ export default async function AdminPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Admin / all workspaces</p>
-          <h1>Workspace control.</h1>
+          <p className="eyebrow">Admin / all gyms</p>
+          <h1>Gym control.</h1>
           <p>
-            Admin users can access every gym workspace. The current pilot
-            workspace is Titan V2 Fitness, with the Titan owner scoped only to
-            that gym.
+            Admin users can access every gym. The current pilot gym is Titan V2
+            Fitness, with the Titan owner scoped only to that gym.
           </p>
         </div>
         <aside className="summary-panel">
           <WorkspaceSwitcher mode="admin" />
-          <div className="membership-window">
+          <div className="detail-window">
             <span>
               Admin
               <strong>{roles.adminName}</strong>
@@ -42,12 +41,12 @@ export default async function AdminPage() {
         <article className="stat-card">
           <UsersRound />
           <strong>{gyms.length}</strong>
-          <span>Workspaces</span>
+          <span>Gyms</span>
         </article>
         <article className="stat-card">
-          <CalendarDays />
-          <strong>{gyms[0]?.expiryWarningDays ?? 7}</strong>
-          <span>Expiry warning days</span>
+          <Dumbbell />
+          <strong>Training</strong>
+          <span>FitSplit focus</span>
         </article>
         <article className="stat-card">
           <Bell />
@@ -58,7 +57,7 @@ export default async function AdminPage() {
 
       <section className="list-panel">
         <div className="panel-title">
-          <h2>Gym workspaces</h2>
+          <h2>Gyms</h2>
           <Link className="button button-secondary" href="/owner">
             Open owner view
           </Link>

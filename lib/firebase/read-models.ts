@@ -5,7 +5,6 @@ import type {
   GymWorkspace,
   LiftLog,
   Member,
-  Membership,
   MuscleGroup,
   Notification,
   ProfileMetrics,
@@ -19,23 +18,12 @@ import {
   exerciseCatalogByMuscle as mockExerciseCatalogByMuscle,
   exercises as mockExercises,
   gyms as mockGyms,
-  memberships as mockMemberships,
   members as mockMembers,
   notifications as mockNotifications,
   programs as mockPrograms
 } from "@/lib/mock-data";
 import { collectionPaths, TITAN_GYM_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
-
-function byLatestMembershipEndDate(left: Membership, right: Membership) {
-  return right.endDate.localeCompare(left.endDate);
-}
-
-function getLatestMembership(memberships: Membership[], memberId: string) {
-  return memberships
-    .filter((membership) => membership.memberId === memberId)
-    .sort(byLatestMembershipEndDate)[0];
-}
 
 function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspace {
   return {
@@ -48,6 +36,24 @@ function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspac
     expiryWarningDays: Number(data.expiryWarningDays ?? 7),
     memberCount: Number(data.memberCount ?? 0)
   };
+}
+
+function trainingNotificationCopy(title: string, body: string) {
+  const combined = `${title} ${body}`.toLowerCase();
+
+  if (combined.includes("membership") || combined.includes("renew")) {
+    return {
+      title: "Training profile follow-up",
+      body: "Review this member's profile and assigned workout plan in FitSplit."
+    };
+  }
+
+  return { title, body };
+}
+
+function sanitizeNotification(notification: Notification): Notification {
+  const copy = trainingNotificationCopy(notification.title, notification.body);
+  return { ...notification, title: copy.title, body: copy.body };
 }
 
 export async function getGymWorkspaces(): Promise<{
@@ -134,13 +140,12 @@ export async function getRoleSummary(): Promise<{
   }
 }
 
-export async function getMembersWithMemberships(): Promise<{
+export async function getMembers(): Promise<{
   members: Member[];
-  memberships: Membership[];
   isPersisted: boolean;
 }> {
   if (!hasFirebaseAdminConfig()) {
-    return { members: mockMembers, memberships: mockMemberships, isPersisted: false };
+    return { members: mockMembers, isPersisted: false };
   }
 
   let profileSnapshot;
@@ -155,60 +160,37 @@ export async function getMembersWithMemberships(): Promise<{
       .where("isActive", "==", true)
       .get();
   } catch {
-    return { members: mockMembers, memberships: mockMemberships, isPersisted: false };
+    return { members: mockMembers, isPersisted: false };
   }
 
   if (profileSnapshot.empty) {
-    return { members: mockMembers, memberships: mockMemberships, isPersisted: false };
+    return { members: mockMembers, isPersisted: false };
   }
-
-  const membershipSnapshot = await db
-    .collection(collectionPaths.memberships)
-    .where("gymId", "==", TITAN_GYM_ID)
-    .get();
-
-  const memberships: Membership[] = membershipSnapshot.docs
-    .map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        memberId: String(data.memberId),
-        planName: String(data.planName ?? "Stored membership"),
-        startDate: String(data.startDate),
-        endDate: String(data.endDate),
-        durationMonths: Number(data.durationMonths ?? 1),
-        paymentReference: String(data.paymentReference ?? "")
-      };
-    })
-    .sort(byLatestMembershipEndDate);
 
   const members: Member[] = profileSnapshot.docs.map((doc) => {
     const data = doc.data();
-    const membership = getLatestMembership(memberships, doc.id);
     return {
       id: doc.id,
       fullName: String(data.fullName),
       email: String(data.email),
       phone: String(data.phone ?? ""),
-      joinedAt: membership?.startDate ?? new Date().toISOString().slice(0, 10),
+      joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
       avatarInitials: String(data.avatarInitials ?? "MB"),
       goal: String(data.goal ?? "Stored in Firebase")
     };
   });
 
-  return { members, memberships, isPersisted: true };
+  return { members, isPersisted: true };
 }
 
 export async function getMemberDetail(memberId: string): Promise<{
   member: Member | null;
-  membership: Membership | null;
   isPersisted: boolean;
 }> {
   if (!hasFirebaseAdminConfig()) {
     const member = mockMembers.find((item) => item.id === memberId) ?? null;
     return {
       member,
-      membership: getLatestMembership(mockMemberships, memberId) ?? null,
       isPersisted: false
     };
   }
@@ -223,7 +205,6 @@ export async function getMemberDetail(memberId: string): Promise<{
     const member = mockMembers.find((item) => item.id === memberId) ?? null;
     return {
       member,
-      membership: getLatestMembership(mockMemberships, memberId) ?? null,
       isPersisted: false
     };
   }
@@ -232,7 +213,6 @@ export async function getMemberDetail(memberId: string): Promise<{
     const member = mockMembers.find((item) => item.id === memberId) ?? null;
     return {
       member,
-      membership: getLatestMembership(mockMemberships, memberId) ?? null,
       isPersisted: false
     };
   }
@@ -240,42 +220,20 @@ export async function getMemberDetail(memberId: string): Promise<{
   const data = profileDoc.data() ?? {};
 
   if (data.defaultGymId !== TITAN_GYM_ID || data.role !== "member") {
-    return { member: null, membership: null, isPersisted: true };
+    return { member: null, isPersisted: true };
   }
 
-  const membershipSnapshot = await db
-    .collection(collectionPaths.memberships)
-    .where("gymId", "==", TITAN_GYM_ID)
-    .where("memberId", "==", memberId)
-    .get();
-
-  const memberships: Membership[] = membershipSnapshot.docs
-    .map((doc) => {
-      const membershipData = doc.data();
-      return {
-        id: doc.id,
-        memberId,
-        planName: String(membershipData.planName ?? "Stored membership"),
-        startDate: String(membershipData.startDate),
-        endDate: String(membershipData.endDate),
-        durationMonths: Number(membershipData.durationMonths ?? 1),
-        paymentReference: String(membershipData.paymentReference ?? "")
-      };
-    })
-    .sort(byLatestMembershipEndDate);
-
-  const membership = memberships[0] ?? null;
   const member: Member = {
     id: profileDoc.id,
     fullName: String(data.fullName),
     email: String(data.email),
     phone: String(data.phone ?? ""),
-    joinedAt: membership?.startDate ?? new Date().toISOString().slice(0, 10),
+    joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? "MB"),
     goal: String(data.goal ?? "Stored in Firebase")
   };
 
-  return { member, membership, isPersisted: true };
+  return { member, isPersisted: true };
 }
 
 export async function getExerciseCatalog(): Promise<{
@@ -357,7 +315,7 @@ export async function getOwnerNotifications(): Promise<{
     return {
       notifications: mockNotifications.filter(
         (notification) => notification.recipientRole === "owner"
-      ),
+      ).map(sanitizeNotification),
       isPersisted: false
     };
   }
@@ -374,7 +332,7 @@ export async function getOwnerNotifications(): Promise<{
     return {
       notifications: mockNotifications.filter(
         (notification) => notification.recipientRole === "owner"
-      ),
+      ).map(sanitizeNotification),
       isPersisted: false
     };
   }
@@ -383,7 +341,7 @@ export async function getOwnerNotifications(): Promise<{
     return {
       notifications: mockNotifications.filter(
         (notification) => notification.recipientRole === "owner"
-      ),
+      ).map(sanitizeNotification),
       isPersisted: false
     };
   }
@@ -391,13 +349,18 @@ export async function getOwnerNotifications(): Promise<{
   const notifications: Notification[] = snapshot.docs
     .map((doc) => {
       const data = doc.data();
-      return {
-        id: doc.id,
-        recipientRole: String(data.recipientRole ?? "owner") as Notification["recipientRole"],
-        recipientId: String(data.recipientId ?? ""),
-        type: String(data.type ?? "membership_expiring_soon") as Notification["type"],
-        title: String(data.title ?? "Notification"),
-        body: String(data.body ?? ""),
+        const copy = trainingNotificationCopy(
+          String(data.title ?? "Notification"),
+          String(data.body ?? "")
+        );
+
+        return {
+          id: doc.id,
+          recipientRole: String(data.recipientRole ?? "owner") as Notification["recipientRole"],
+          recipientId: String(data.recipientId ?? ""),
+          type: String(data.type ?? "membership_expiring_soon") as Notification["type"],
+          title: copy.title,
+          body: copy.body,
         createdAt: String(data.createdAt ?? new Date().toISOString()),
         readAt: data.readAt ? String(data.readAt) : undefined
       };
@@ -413,7 +376,7 @@ export async function getMemberNotifications(memberId: string): Promise<{
 }> {
   const fallback = mockNotifications.filter(
     (notification) => notification.recipientId === memberId
-  );
+  ).map(sanitizeNotification);
 
   if (!hasFirebaseAdminConfig()) {
     return { notifications: fallback, isPersisted: false };
@@ -428,13 +391,18 @@ export async function getMemberNotifications(memberId: string): Promise<{
     const notifications: Notification[] = snapshot.docs
       .map((doc) => {
         const data = doc.data();
-        return {
-          id: doc.id,
-          recipientRole: String(data.recipientRole ?? "member") as Notification["recipientRole"],
-          recipientId: String(data.recipientId ?? memberId),
-          type: String(data.type ?? "program_assigned") as Notification["type"],
-          title: String(data.title ?? "Notification"),
-          body: String(data.body ?? ""),
+          const copy = trainingNotificationCopy(
+            String(data.title ?? "Notification"),
+            String(data.body ?? "")
+          );
+
+          return {
+            id: doc.id,
+            recipientRole: String(data.recipientRole ?? "member") as Notification["recipientRole"],
+            recipientId: String(data.recipientId ?? memberId),
+            type: String(data.type ?? "program_assigned") as Notification["type"],
+            title: copy.title,
+            body: copy.body,
           createdAt: String(data.createdAt ?? new Date().toISOString()),
           readAt: data.readAt ? String(data.readAt) : undefined
         };
@@ -626,11 +594,11 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
     audience === "member"
       ? [
           {
-            id: "fallback-member-membership",
+            id: "fallback-member-training",
             audience: "member",
             memberId,
-            title: "Membership status updated",
-            detail: "Your active membership now shows the latest renewal window.",
+            title: "Training profile updated",
+            detail: "Your member profile now reflects the latest owner update.",
             icon: "bell",
             createdAt: "2026-05-04T11:10:00+05:30"
           },
@@ -649,7 +617,7 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
             id: "fallback-owner-member",
             audience: "owner",
             title: 'New member added - "Aarav Sharma"',
-            detail: "Membership record created for Titan V2 Fitness.",
+            detail: "Training profile created for Titan V2 Fitness.",
             icon: "users",
             createdAt: "2026-05-04T10:30:00+05:30"
           },

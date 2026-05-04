@@ -1,14 +1,14 @@
 "use client";
 
-import { createMemberWithMembership } from "@/lib/firebase/actions";
+import { createMemberProfile } from "@/lib/firebase/actions";
 import { ConfirmActionForm } from "./confirm-action-form";
 
-export function AddMemberForm({ defaultStartDate }: { defaultStartDate: string }) {
+export function AddMemberForm() {
   return (
     <ConfirmActionForm
-      action={createMemberWithMembership}
+      action={createMemberProfile}
       className="form-panel"
-      confirmMessage="This will create a member profile and membership record in Firebase."
+      confirmMessage="This will create a FitSplit member profile in Firebase."
       confirmTitle="Add this member?"
       pendingLabel="Saving member..."
       submitLabel="Save member to Firebase"
@@ -41,23 +41,6 @@ export function AddMemberForm({ defaultStartDate }: { defaultStartDate: string }
         <label>
           Goal
           <input name="goal" placeholder="Build muscle, fat loss, strength" />
-        </label>
-        <label>
-          Start date
-          <input name="startDate" type="date" defaultValue={defaultStartDate} required />
-        </label>
-        <label>
-          Duration
-          <select name="durationMonths" defaultValue="3" required>
-            <option value="1">1 month</option>
-            <option value="3">3 months</option>
-            <option value="6">6 months</option>
-            <option value="12">12 months</option>
-          </select>
-        </label>
-        <label>
-          Payment reference
-          <input name="paymentReference" placeholder="UPI, cash, receipt" />
         </label>
       </div>
     </ConfirmActionForm>

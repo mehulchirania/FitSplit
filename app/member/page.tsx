@@ -1,7 +1,6 @@
-import { Bell, CalendarDays } from "@/components/icons";
+import { Bell, Dumbbell } from "@/components/icons";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
-import { StatusPill } from "@/components/status-pill";
 import {
   getActiveWorkoutSessions,
   getExerciseCatalog,
@@ -12,7 +11,6 @@ import {
   getTitanWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
-import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +18,7 @@ export default async function MemberDashboard() {
   const currentMemberId = "member-aarav";
   const [
     { gym },
-    { member, membership },
+    { member },
     { assignment },
     { programs },
     { notifications: memberNotifications },
@@ -38,11 +36,10 @@ export default async function MemberDashboard() {
     getActiveWorkoutSessions()
   ]);
 
-  if (!member || !membership) {
+  if (!member) {
     return null;
   }
 
-  const status = getMembershipStatus(membership, gym.expiryWarningDays);
   const program = programs.find((item) => item.id === assignment?.programId) ?? programs[0];
 
   return (
@@ -52,35 +49,35 @@ export default async function MemberDashboard() {
           <p className="eyebrow">Member dashboard</p>
           <h1>Today&apos;s plan is already set.</h1>
           <p>
-            {member.fullName} can see membership dates, renewal status, and an
+            {member.fullName} can see the assigned weekly schedule and use an
             AI Semi-Personal Trainer that adjusts workouts when limitations are
-            logged.
+            logged. Memberships stay in your existing tracking app.
           </p>
         </div>
 
         <aside className="summary-panel">
           <div className="panel-title">
             <h2>
-              <CalendarDays /> Membership
+              <Dumbbell /> Assigned program
             </h2>
-            <StatusPill status={status} />
+            <span className="status-pill status-active">Training active</span>
           </div>
-          <div className="membership-window">
+          <div className="detail-window">
             <span>
-              Starts
-              <strong>{formatDate(membership.startDate)}</strong>
+              Program
+              <strong>{program.title}</strong>
             </span>
             <span>
-              Ends
-              <strong>{formatDate(membership.endDate)}</strong>
+              Weekly days
+              <strong>{program.days.length}</strong>
             </span>
             <span>
-              Days remaining
-              <strong>{getDaysRemaining(membership.endDate)}</strong>
+              Goal
+              <strong>{program.goal}</strong>
             </span>
             <span>
-              Plan
-              <strong>{membership.planName}</strong>
+              Gym
+              <strong>{gym.name}</strong>
             </span>
           </div>
         </aside>

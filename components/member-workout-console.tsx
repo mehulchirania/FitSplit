@@ -16,6 +16,7 @@ import { ExerciseList } from "@/components/exercise-list";
 
 const sessionKey = "fitsplit-active-workout";
 const activeCountKey = "fitsplit-active-workouts";
+const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 type Modification = {
   injury: string;
@@ -56,6 +57,11 @@ function getBusyness(count: number) {
   }
 
   return { label: "Busy", tone: "status-expired", dot: "Red" };
+}
+
+function getDefaultDayIndex(dayCount: number) {
+  const mondayFirstIndex = (new Date().getDay() + 6) % 7;
+  return Math.min(Math.max(mondayFirstIndex, 0), Math.max(dayCount - 1, 0));
 }
 
 function getInjuryRule(injury: string) {
@@ -130,11 +136,10 @@ function findAlternative(usedIds: Set<string>, injury: string, exercises: Exerci
 }
 
 function createModification(
-  program: WorkoutProgram,
+  activeDay: WorkoutProgram["days"][number],
   injury: string,
   exercises: Exercise[]
 ): Modification {
-  const activeDay = program.days.find((day) => day.exercises.length > 0) ?? program.days[0];
   const usedIds = new Set(activeDay.exercises.map((item) => item.exerciseId));
   const swaps: Modification["swaps"] = [];
   const routine = activeDay.exercises.map((item) => {
@@ -230,11 +235,15 @@ export function MemberWorkoutConsole({
   const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
   const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
   const [isEventPending, setIsEventPending] = useState(false);
+  const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
+    getDefaultDayIndex(program.days.length)
+  );
   const busyness = useMemo(() => getBusyness(activeCount), [activeCount]);
-  const visibleWorkout = modification
-    ? [{ ...program.days[0], exercises: modification.routine }]
-    : program.days;
-  const loggableExercises = visibleWorkout.flatMap((day) => day.exercises);
+  const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
+  const visibleWorkoutDay = modification && selectedDay
+    ? { ...selectedDay, exercises: modification.routine }
+    : selectedDay;
+  const loggableExercises = visibleWorkoutDay?.exercises ?? [];
   const uniqueLoggableExercises = Array.from(
     new Map(loggableExercises.map((item) => [item.exerciseId, item])).values()
   );
@@ -322,7 +331,11 @@ export function MemberWorkoutConsole({
       return;
     }
 
-    setModification(createModification(program, injury.trim(), exercises));
+    if (!selectedDay) {
+      return;
+    }
+
+    setModification(createModification(selectedDay, injury.trim(), exercises));
   }
 
   function setRestPreset(seconds: number) {
@@ -424,14 +437,34 @@ export function MemberWorkoutConsole({
         </div>
 
         <div className="notification-list">
-          {visibleWorkout.map((day) => (
-              <article key={day.id}>
-                <p className="eyebrow">Day {day.dayNumber}</p>
-                <h2>{day.title}</h2>
-                <p>{modification ? modification.summary : day.focus}</p>
-                <ExerciseList exercises={exercises} items={day.exercises} />
+          <div className="weekly-schedule">
+            <div className="day-tabs" aria-label="Weekly workout days">
+              {program.days.map((day, index) => (
+                <button
+                  className={selectedDayIndex === index ? "is-selected" : ""}
+                  key={day.id}
+                  onClick={() => {
+                    setSelectedDayIndex(index);
+                    setModification(null);
+                  }}
+                  type="button"
+                >
+                  <span>{dayNames[index] ?? `Day ${day.dayNumber}`}</span>
+                  <strong>{day.title}</strong>
+                </button>
+              ))}
+            </div>
+            {visibleWorkoutDay ? (
+              <article className="selected-workout-day" key={visibleWorkoutDay.id}>
+                <p className="eyebrow">
+                  {dayNames[selectedDayIndex] ?? `Day ${visibleWorkoutDay.dayNumber}`}
+                </p>
+                <h2>{visibleWorkoutDay.title}</h2>
+                <p>{modification ? modification.summary : visibleWorkoutDay.focus}</p>
+                <ExerciseList exercises={exercises} items={visibleWorkoutDay.exercises} />
               </article>
-            ))}
+            ) : null}
+          </div>
         </div>
 
         <div className="lift-log-panel">

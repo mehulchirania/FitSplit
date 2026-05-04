@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FitSplit",
-  description: "Gym membership and workout management for focused fitness teams.",
+  description: "Workout programming and gym operations for focused fitness teams.",
   manifest: "/manifest.json",
   icons: {
     icon: [
@@ -49,6 +49,7 @@ export default function RootLayout({
         <div className="app-shell">
           <AppTopbar />
           {children}
+          <footer className="app-footer">{"Developed with \u2764\uFE0F by Mehul"}</footer>
         </div>
       </body>
     </html>

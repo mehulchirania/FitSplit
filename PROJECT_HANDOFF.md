@@ -51,7 +51,8 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - App Hosting local-source deploy succeeded.
 - Live App Hosting URL returned HTTP 200 after deploy.
 - A production add-member error with digest `2009792147` was traced in Cloud Run logs to `fullName is required.` from `createMemberWithMembership`; the add-member form is now required-field guarded and uses a friendly `useActionState` success/error message instead of crashing the page.
-- Confirmation/status dialogs are now used for Firestore-backed actions: add member, edit member, renew membership, profile save, contact submit, catalog exercise save, custom workout plan save, Start Workout, End Workout, and Log Lift.
+- Confirmation/status dialogs are now used for Firestore-backed actions: add member, edit member, profile save, contact submit, catalog exercise save, custom workout plan save, Start Workout, End Workout, and Log Lift.
+- Product direction update: membership tracking is intentionally handled outside FitSplit in the user's existing gym app. FitSplit now focuses on member training profiles, workout programs, custom exercises, weekly schedules, AI modifications, and live capacity.
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
 - Firestore was seeded with Titan V2 Fitness demo data on 2026-05-04.
@@ -211,10 +212,9 @@ lib/firebase/read-models.ts
 
 Server actions in `lib/firebase/actions.ts`:
 
-- `createMemberWithMembership`
+- `createMemberProfile`
 - `updateMemberProfile`
 - `updateProfileMetrics`
-- `renewMemberMembership`
 - `logLiftSet`
 - `startWorkoutSession`
 - `endWorkoutSession`
@@ -234,7 +234,7 @@ components/custom-plan-builder.tsx
 
 Read models in `lib/firebase/read-models.ts`:
 
-- `getMembersWithMemberships`
+- `getMembers`
 - `getMemberDetail`
 - `getGymWorkspaces`
 - `getTitanWorkspace`
@@ -363,6 +363,12 @@ Manual App Hosting deployment from local source is working and should be used un
 - Added reusable `components/confirm-action-form.tsx` for confirmation before submit and success/error status after server actions.
 - Updated Firestore server actions to return a shared `{ status, message }` state and to catch user-facing validation/write failures instead of throwing raw app errors.
 - Added confirmation and post-update status dialogs for member workout events: Start Workout, End Workout, and Log Lift.
+- Removed membership-dependent UI and stopped creating membership/renewal records from FitSplit. Existing Firestore `memberships` seed data is legacy only and is no longer read by active pages.
+- Renamed the gym selector UI to `Select Gym`; it is a dropdown with Titan V2 Fitness as the current pilot option.
+- Moved custom exercise creation into a `Custom Workouts` section on `/owner/exercises` and renamed its submit action to `Save custom exercise`.
+- Added a global footer across every page with `Developed with ❤️ by Mehul`.
+- Improved primary navigation flow to Dashboard, Members, Workout Programs, Custom Workouts, and Exercise Catalog.
+- Added weekly schedule day tabs for assigned programs. Member and owner member-detail views default to the current weekday, so Monday opens the Monday workout first.
 - Made home, admin, member, activity, profile, about, owner workspace, and exercise lookup data dynamic.
 - Updated `ExerciseList` and member workout AI logic to use Firestore exercise catalog data passed from read models.
 - Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.
@@ -407,7 +413,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Storage rules deploy was previously blocked because Firebase Storage had not been initialized in console.
 - No real Firebase Auth flow yet.
 - No Firebase custom claims or server-side role checks yet.
-- Renewal saving now writes to Firestore, but there is not yet a user-facing success toast or form error state.
+- Membership renewal saving was removed from FitSplit UI because membership tracking now stays in the user's existing gym app.
 
 ## Last Known Verified Commands
 

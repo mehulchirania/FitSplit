@@ -5,9 +5,9 @@ export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "
   const currentWorkspace = gyms.find((workspace) => workspace.slug === "titan-v2-fitness") ?? gyms[0];
 
   return (
-    <div className="workspace-switcher" aria-label="Workspace selector">
+    <div className="workspace-switcher" aria-label="Gym selector">
       <label>
-        Workspace
+        Select Gym
         <select defaultValue={currentWorkspace.id} disabled={mode === "owner"}>
           {gyms.map((workspace) => (
             <option key={workspace.id} value={workspace.id}>
@@ -17,7 +17,7 @@ export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "
         </select>
       </label>
       <span className="member-meta">
-        {mode === "admin" ? "All workspaces" : roles.ownerAccess}
+        {mode === "admin" ? "Admin can add more gyms later" : roles.ownerAccess}
       </span>
     </div>
   );

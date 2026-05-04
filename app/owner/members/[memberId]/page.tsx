@@ -1,26 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { CalendarDays, Dumbbell } from "@/components/icons";
-import { ExerciseList } from "@/components/exercise-list";
-import { StatusPill } from "@/components/status-pill";
-import { renewMemberMembership, updateMemberProfile } from "@/lib/firebase/actions";
+import { Dumbbell } from "@/components/icons";
+import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
+import { updateMemberProfile } from "@/lib/firebase/actions";
 import {
   getExerciseCatalog,
   getMemberDetail,
   getProgramAssignmentForMember,
-  getTitanWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
-import { formatDate, getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 
 export const dynamic = "force-dynamic";
-
-function getNextDate(dateValue: string) {
-  const [year, month, day] = dateValue.split("-").map(Number);
-  const date = new Date(Date.UTC(year, month - 1, day + 1));
-  return date.toISOString().slice(0, 10);
-}
 
 export default async function MemberDetailPage({
   params
@@ -29,26 +20,22 @@ export default async function MemberDetailPage({
 }) {
   const { memberId } = await params;
   const [
-    { member, membership, isPersisted },
-    { gym },
+    { member, isPersisted },
     { assignment },
     { programs },
     { exercises }
   ] = await Promise.all([
     getMemberDetail(memberId),
-    getTitanWorkspace(),
     getProgramAssignmentForMember(memberId),
     getWorkoutPrograms(),
     getExerciseCatalog()
   ]);
 
-  if (!member || !membership) {
+  if (!member) {
     notFound();
   }
 
-  const status = getMembershipStatus(membership, gym.expiryWarningDays);
   const program = programs.find((item) => item.id === assignment?.programId);
-  const nextStartDate = getNextDate(membership.endDate);
 
   return (
     <main className="page">
@@ -57,8 +44,9 @@ export default async function MemberDetailPage({
           <p className="eyebrow">Member record</p>
           <h1>{member.fullName}</h1>
           <p>
-            {member.goal}. Use this workspace to renew membership windows,
-            review assigned training, and prepare the future AI draft flow.
+            {member.goal}. Use this workspace to update training profile
+            details, review assigned weekly programming, and prepare future AI
+            draft flows.
           </p>
           <div className="quick-actions">
             <Link className="button button-primary" href="/owner/members">
@@ -76,26 +64,28 @@ export default async function MemberDetailPage({
         <aside className="summary-panel">
           <div className="panel-title">
             <h2>
-              <CalendarDays /> Membership
+              <Dumbbell /> Training assignment
             </h2>
-            <StatusPill status={status} />
+            <span className="status-pill status-active">
+              {program ? "Program assigned" : "Needs program"}
+            </span>
           </div>
-          <div className="membership-window">
+          <div className="detail-window">
             <span>
-              Starts
-              <strong>{formatDate(membership.startDate)}</strong>
+              Current program
+              <strong>{program?.title ?? "Not assigned"}</strong>
             </span>
             <span>
-              Ends
-              <strong>{formatDate(membership.endDate)}</strong>
+              Weekly days
+              <strong>{program?.days.length ?? 0}</strong>
             </span>
             <span>
-              Days remaining
-              <strong>{getDaysRemaining(membership.endDate)}</strong>
+              Assigned
+              <strong>{assignment ? "Active" : "Pending"}</strong>
             </span>
             <span>
-              Payment ref
-              <strong>{membership.paymentReference}</strong>
+              Goal
+              <strong>{member.goal}</strong>
             </span>
           </div>
         </aside>
@@ -132,36 +122,16 @@ export default async function MemberDetailPage({
           </div>
         </ConfirmActionForm>
 
-        <ConfirmActionForm
-          action={renewMemberMembership}
-          className="form-panel"
-          confirmMessage="This will create a new renewal record and notify the member."
-          confirmTitle="Confirm membership renewal?"
-          pendingLabel="Saving renewal..."
-          submitLabel="Save renewal"
-        >
-          <h2>Renew membership</h2>
-          <input name="memberId" type="hidden" value={member.id} />
-          <div className="form-grid">
-            <label>
-              New start date
-              <input name="startDate" type="date" defaultValue={nextStartDate} required />
-            </label>
-            <label>
-              Duration
-              <select name="durationMonths" defaultValue="3" required>
-                <option value="1">1 month</option>
-                <option value="3">3 months</option>
-                <option value="6">6 months</option>
-                <option value="12">12 months</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            Offline payment reference
-            <input name="paymentReference" placeholder="UPI, cash note, receipt number" />
-          </label>
-        </ConfirmActionForm>
+        <aside className="form-panel">
+          <h2>Program assignment</h2>
+          <p>
+            Assignment controls will sit here next. Membership renewal is
+            intentionally handled outside FitSplit in your existing gym app.
+          </p>
+          <Link className="button button-secondary" href="/owner/programs">
+            Open programs
+          </Link>
+        </aside>
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>
@@ -181,13 +151,11 @@ export default async function MemberDetailPage({
         <section className="list-panel" style={{ marginTop: 16 }}>
           <div className="panel-title">
             <h2>
-              <Dumbbell /> Assigned program
+              <Dumbbell /> Assigned weekly schedule
             </h2>
             <span className="status-pill status-neutral">{program.title}</span>
           </div>
-          <div className="notification-list">
-            <ExerciseList exercises={exercises} items={program.days[0].exercises} />
-          </div>
+          <WeeklyProgramSchedule exercises={exercises} program={program} />
         </section>
       ) : null}
     </main>

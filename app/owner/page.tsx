@@ -1,54 +1,36 @@
 import Link from "next/link";
-import { Bell, CalendarDays, Dumbbell, UsersRound } from "@/components/icons";
+import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
-import { StatusPill } from "@/components/status-pill";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import {
   getExerciseCatalog,
   getActiveWorkoutSessions,
-  getMembersWithMemberships,
+  getMembers,
   getOwnerNotifications,
   getTitanWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
-import { getDaysRemaining, getMembershipStatus } from "@/lib/memberships";
 
 export const dynamic = "force-dynamic";
 
 export default async function OwnerDashboard() {
   const [
-    { members, memberships },
+    { members },
     { notifications: ownerNotifications },
     { exercises },
     { programs },
     { gym },
     { sessions }
   ] = await Promise.all([
-    getMembersWithMemberships(),
+    getMembers(),
     getOwnerNotifications(),
     getExerciseCatalog(),
     getWorkoutPrograms(),
     getTitanWorkspace(),
     getActiveWorkoutSessions()
   ]);
-
-  const memberMemberships = members
-    .map((member) => ({
-      member,
-      membership: memberships.find((membership) => membership.memberId === member.id)!
-    }))
-    .filter((item) => item.membership);
-
-  const counts = memberMemberships.reduce(
-    (total, item) => {
-      const status = getMembershipStatus(item.membership, gym.expiryWarningDays);
-      total[status] += 1;
-      return total;
-    },
-    { active: 0, expiring_soon: 0, expired: 0 }
-  );
 
   return (
     <main className="page">
@@ -57,9 +39,10 @@ export default async function OwnerDashboard() {
           <p className="eyebrow">Owner dashboard / {gym.name}</p>
           <h1>Run the floor with fewer blind spots.</h1>
           <p>
-            Monitor memberships, renewal alerts, and assigned training programs
-            for the Titan V2 Fitness pilot workspace, with AI positioned as an
-            automated Semi-Personal Trainer that protects retention.
+            Monitor members, assigned training programs, live capacity, and
+            owner-created workout systems for the Titan V2 Fitness pilot gym.
+            FitSplit focuses on training delivery while your existing app keeps
+            handling membership tracking.
           </p>
           <div className="quick-actions">
             <Link className="button button-primary" href="/owner/members">
@@ -77,27 +60,22 @@ export default async function OwnerDashboard() {
             <h2>
               <Bell /> Attention
             </h2>
-            <StatusPill status="expiring_soon" />
+            <span className="status-pill status-neutral">Activity</span>
           </div>
           <NotificationList items={ownerNotifications} />
         </aside>
       </section>
 
-      <section className="stats-grid" aria-label="Membership summary">
+      <section className="stats-grid" aria-label="Owner summary">
         <article className="stat-card">
           <UsersRound />
           <strong>{members.length}</strong>
           <span>Total members</span>
         </article>
         <article className="stat-card">
-          <CalendarDays />
-          <strong>{counts.active}</strong>
-          <span>Active memberships</span>
-        </article>
-        <article className="stat-card">
-          <Bell />
-          <strong>{counts.expiring_soon}</strong>
-          <span>Expiring soon</span>
+          <Activity />
+          <strong>{sessions.length}</strong>
+          <span>Active workouts now</span>
         </article>
         <article className="stat-card">
           <Dumbbell />
@@ -112,7 +90,7 @@ export default async function OwnerDashboard() {
       </section>
 
       <OwnerAiCapacityPanel
-        activeMembers={counts.active}
+        activeMembers={members.length}
         activeHeadcount={sessions.length}
         programCount={programs.length}
       />
@@ -127,31 +105,26 @@ export default async function OwnerDashboard() {
               View all
             </Link>
           </div>
-          {memberMemberships.map(({ member, membership }) => (
-            <MemberRow
-              member={member}
-              membership={membership}
-              key={member.id}
-              warningDays={gym.expiryWarningDays}
-            />
+          {members.map((member) => (
+            <MemberRow member={member} key={member.id} />
           ))}
         </div>
 
         <aside className="member-focus">
-          <p className="eyebrow">Next renewal</p>
-          <h2>Meera Iyer</h2>
+          <p className="eyebrow">Training flow</p>
+          <h2>Members → Programs → Weekly schedule</h2>
           <p>
-            Membership ends in {getDaysRemaining("2026-05-09")} days. The owner
-            should confirm renewal payment and update the new plan window.
+            Add or edit a member, review their assigned program, then use the
+            Programs and Catalog areas to keep workouts ready for weekly use.
           </p>
-          <div className="membership-window">
+          <div className="detail-window">
             <span>
-              Current plan
-              <strong>1 Month Renewal</strong>
+              Next step
+              <strong>Open member record</strong>
             </span>
             <span>
               Action
-              <strong>Renew or follow up</strong>
+              <strong>Review assigned plan</strong>
             </span>
           </div>
         </aside>

@@ -5,21 +5,25 @@ import { usePathname } from "next/navigation";
 
 const adminLinks = [
   { href: "/admin", label: "Admin" },
-  { href: "/owner", label: "Owner Dashboard" },
-  { href: "/owner/members", label: "Member Management" },
-  { href: "/owner/programs", label: "Programs" },
-  { href: "/owner/exercises", label: "Catalog" }
+  { href: "/owner", label: "Dashboard" },
+  { href: "/owner/members", label: "Members" },
+  { href: "/owner/programs", label: "Workout Programs" },
+  { href: "/owner/exercises#custom-workouts", label: "Custom Workouts" },
+  { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
 const ownerLinks = [
-  { href: "/owner", label: "Owner Dashboard" },
-  { href: "/owner/members", label: "Member Management" },
-  { href: "/owner/programs", label: "Programs" },
-  { href: "/owner/exercises", label: "Catalog" }
+  { href: "/owner", label: "Dashboard" },
+  { href: "/owner/members", label: "Members" },
+  { href: "/owner/programs", label: "Workout Programs" },
+  { href: "/owner/exercises#custom-workouts", label: "Custom Workouts" },
+  { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
 const memberLinks = [
-  { href: "/member", label: "My Portal" }
+  { href: "/member", label: "Today" },
+  { href: "/profile", label: "Profile" },
+  { href: "/activity?role=member", label: "Activity" }
 ];
 
 export function MainNav() {

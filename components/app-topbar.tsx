@@ -52,7 +52,7 @@ export function AppTopbar() {
             />
             <span>
               <strong>FitSplit</strong>
-              <small>Gym operations</small>
+              <small>Training operations</small>
             </span>
           </Link>
         </div>
@@ -108,6 +108,12 @@ export function AppTopbar() {
             </div>
 
             <nav className="drawer-links" aria-label="Menu links">
+              <Link href="/owner" onClick={() => setIsDrawerOpen(false)}>
+                Owner Flow
+              </Link>
+              <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
+                Member Today
+              </Link>
               <Link href="/activity" onClick={() => setIsDrawerOpen(false)}>
                 Activity
               </Link>

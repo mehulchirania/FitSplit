@@ -28,54 +28,13 @@ export default async function ExerciseCatalogPage() {
             {isPersisted ? "Reading from Firestore" : "Using JSON catalog"}
           </span>
         </div>
-        <ConfirmActionForm
-          action={createCatalogExercise}
-          className="form-panel"
-          confirmMessage="This will add the exercise to the owner-only Firestore catalog."
-          confirmTitle="Save catalog exercise?"
-          pendingLabel="Saving exercise..."
-          submitLabel="Save exercise to Firebase"
-        >
+        <aside className="summary-panel">
           <WorkspaceSwitcher />
-          <h2>Add catalog exercise</h2>
-          <div className="form-grid">
-            <label>
-              Exercise name
-              <input name="name" placeholder="Incline dumbbell press" required />
-            </label>
-            <label>
-              Muscle group
-              <select name="muscleGroup" defaultValue="Chest" required>
-                {muscleGroups.map((muscleGroup) => (
-                  <option key={muscleGroup} value={muscleGroup}>
-                    {muscleGroup}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Equipment
-              <input name="equipment" placeholder="Dumbbells, cable, machine" />
-            </label>
-            <label>
-              Video source
-              <select name="videoSource" defaultValue="none">
-                <option value="none">None</option>
-                <option value="youtube">YouTube</option>
-                <option value="vimeo">Vimeo</option>
-                <option value="upload">Firebase Storage path</option>
-              </select>
-            </label>
-          </div>
-          <label>
-            Video URL or upload path
-            <input name="videoUrl" placeholder="YouTube, Vimeo, or Firebase Storage path" />
-          </label>
-          <label>
-            Coaching instructions
-            <textarea name="instructions" placeholder="Setup, tempo, range of motion, cues" />
-          </label>
-        </ConfirmActionForm>
+          <p>
+            Browse the owner-only catalog below. Add new custom exercises in the
+            Custom Workouts section before using them in programs.
+          </p>
+        </aside>
       </section>
 
       <section className="stats-grid">
@@ -89,6 +48,62 @@ export default async function ExerciseCatalogPage() {
           <strong>{muscleGroups.length}</strong>
           <span>Muscle groups</span>
         </article>
+      </section>
+
+      <section className="list-panel" id="custom-workouts" style={{ marginBottom: 16 }}>
+        <div className="panel-title">
+          <h2>Custom Workouts</h2>
+          <span className="status-pill status-neutral">Owner-created exercises</span>
+        </div>
+        <div className="notification-list">
+          <ConfirmActionForm
+            action={createCatalogExercise}
+            className="form-panel"
+            confirmMessage="This will add the custom exercise to the owner-only Firestore catalog."
+            confirmTitle="Save custom exercise?"
+            pendingLabel="Saving custom exercise..."
+            submitLabel="Save custom exercise"
+          >
+            <h2>Add custom exercise</h2>
+            <div className="form-grid">
+              <label>
+                Exercise name
+                <input name="name" placeholder="Incline dumbbell press" required />
+              </label>
+              <label>
+                Muscle group
+                <select name="muscleGroup" defaultValue="Chest" required>
+                  {muscleGroups.map((muscleGroup) => (
+                    <option key={muscleGroup} value={muscleGroup}>
+                      {muscleGroup}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Equipment
+                <input name="equipment" placeholder="Dumbbells, cable, machine" />
+              </label>
+              <label>
+                Video source
+                <select name="videoSource" defaultValue="none">
+                  <option value="none">None</option>
+                  <option value="youtube">YouTube</option>
+                  <option value="vimeo">Vimeo</option>
+                  <option value="upload">Firebase Storage path</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Video URL or upload path
+              <input name="videoUrl" placeholder="YouTube, Vimeo, or Firebase Storage path" />
+            </label>
+            <label>
+              Coaching instructions
+              <textarea name="instructions" placeholder="Setup, tempo, range of motion, cues" />
+            </label>
+          </ConfirmActionForm>
+        </div>
       </section>
 
       <section className="catalog-grid">

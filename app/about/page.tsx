@@ -16,9 +16,9 @@ export default async function AboutPage() {
           <p className="eyebrow">About</p>
           <h1>FitSplit for focused gym operations.</h1>
           <p>
-            FitSplit helps a gym owner manage memberships, renewal alerts,
-            workout programs, exercise catalogs, and an automated Semi-Personal
-            Trainer experience for member-facing schedules.
+            FitSplit helps a gym owner manage members, workout programs,
+            exercise catalogs, and an automated Semi-Personal Trainer
+            experience for member-facing schedules.
           </p>
         </div>
         <aside className="summary-panel">
@@ -30,8 +30,8 @@ export default async function AboutPage() {
           </div>
           <p>
             Built as a single-gym pilot with Firebase-backed data and room to
-            expand into multi-workspace operations where AI acts like a
-            Semi-Personal Trainer for every member.
+            expand into multi-gym operations where AI acts like a Semi-Personal
+            Trainer for every member.
           </p>
         </aside>
       </section>
@@ -85,8 +85,6 @@ export default async function AboutPage() {
           )}
         </aside>
       </section>
-
-      <footer className="app-footer">Developed with ❤️ by Mehul</footer>
     </main>
   );
 }
