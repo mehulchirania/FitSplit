@@ -6,7 +6,7 @@ import { getExerciseCatalog, getWorkoutPrograms } from "@/lib/firebase/read-mode
 export const dynamic = "force-dynamic";
 
 export default async function ProgramsPage() {
-  const [{ catalog, exercises }, { programs, isPersisted }] = await Promise.all([
+  const [{ catalog, exercises }, { programs }] = await Promise.all([
     getExerciseCatalog(),
     getWorkoutPrograms()
   ]);
@@ -24,9 +24,6 @@ export default async function ProgramsPage() {
         <aside className="builder-stack">
           <WorkspaceSwitcher />
           <CustomPlanBuilder catalog={catalog} />
-          <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-            {isPersisted ? "Reading programs from Firestore" : "Using mock seed data"}
-          </span>
         </aside>
       </section>
 
