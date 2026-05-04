@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppTopbar } from "@/components/app-topbar";
+import { BackButton } from "@/components/back-button";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body>
         <div className="app-shell">
           <AppTopbar />
+          <BackButton />
           {children}
           <footer className="app-footer">{"Developed with \u2764\uFE0F by Mehul"}</footer>
         </div>

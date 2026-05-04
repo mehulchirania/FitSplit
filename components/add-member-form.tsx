@@ -11,7 +11,7 @@ export function AddMemberForm() {
       confirmMessage="This will create a FitSplit member profile in Firebase."
       confirmTitle="Add this member?"
       pendingLabel="Saving member..."
-      submitLabel="Save member to Firebase"
+      submitLabel="Save member"
     >
       <h2>Add member</h2>
       <div className="form-grid">

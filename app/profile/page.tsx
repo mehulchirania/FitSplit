@@ -1,12 +1,22 @@
 import { ProfileForm } from "@/components/profile-form";
 import { UsersRound } from "@/components/icons";
-import { getProfileMetrics } from "@/lib/firebase/read-models";
+import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog } from "@/lib/firebase/read-models";
+import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
   const memberId = "member-aarav";
-  const { profile, isPersisted } = await getProfileMetrics(memberId);
+  
+  const [
+    { profile, isPersisted },
+    { liftLogs },
+    { exercises }
+  ] = await Promise.all([
+    getProfileMetrics(memberId),
+    getLiftLogsForMember(memberId),
+    getExerciseCatalog()
+  ]);
 
   return (
     <main className="page">
@@ -36,6 +46,8 @@ export default async function ProfilePage() {
       </section>
 
       <ProfileForm memberId={memberId} profile={profile} />
+      
+      <ProgressiveOverloadChart liftLogs={liftLogs} exercises={exercises} />
     </main>
   );
 }

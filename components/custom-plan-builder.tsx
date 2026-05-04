@@ -41,7 +41,7 @@ export function CustomPlanBuilder({ catalog }: { catalog: CatalogGroup[] }) {
       confirmMessage="This will create a new custom workout program from the selected exercises."
       confirmTitle="Save custom plan?"
       pendingLabel="Saving custom plan..."
-      submitLabel="Save custom plan to Firebase"
+      submitLabel="Save custom plan"
     >
       <h2>Custom owner plan</h2>
       <label>

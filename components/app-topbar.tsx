@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { BackButton } from "@/components/back-button";
 import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, UserRound } from "@/components/icons";
@@ -43,7 +42,6 @@ export function AppTopbar() {
           >
             <Menu />
           </button>
-          <BackButton />
           <Link className="brand" href="/">
             <img
               alt="FitSplit"

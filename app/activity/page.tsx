@@ -1,11 +1,6 @@
-import Link from "next/link";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { getActivityEvents } from "@/lib/firebase/read-models";
 import type { ActivityEvent } from "@/types/domain";
-
-type ActivityPageProps = {
-  searchParams: Promise<{ role?: string }>;
-};
 
 const eventIcons: Record<ActivityEvent["icon"], typeof Activity> = {
   activity: Activity,
@@ -16,43 +11,32 @@ const eventIcons: Record<ActivityEvent["icon"], typeof Activity> = {
 
 export const dynamic = "force-dynamic";
 
-export default async function ActivityPage({ searchParams }: ActivityPageProps) {
-  const { role } = await searchParams;
-  const activeRole = role === "member" ? "member" : "owner";
-  const { events } = await getActivityEvents(activeRole, "member-aarav");
+export default async function ActivityPage() {
+  const [{ events: ownerEvents }, { events: memberEvents }] = await Promise.all([
+    getActivityEvents("owner"),
+    getActivityEvents("member")
+  ]);
+  const events = [...ownerEvents, ...memberEvents].sort((left, right) =>
+    right.createdAt.localeCompare(left.createdAt)
+  );
 
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
           <p className="eyebrow">Activity</p>
-          <h1>{activeRole === "member" ? "Your account activity." : "Gym activity feed."}</h1>
+          <h1>Full gym activity feed.</h1>
           <p>
-            {activeRole === "member"
-              ? "Personal profile and workout updates for the current member view."
-              : "Global system events across the Titan V2 Fitness owner gym."}
+            All owner, member, workout, assignment, and system events across
+            Titan V2 Fitness, independent of which device is being used.
           </p>
-          <div className="quick-actions">
-            <Link
-              className={`button ${activeRole === "owner" ? "button-primary" : "button-secondary"}`}
-              href="/activity?role=owner"
-            >
-              Owner view
-            </Link>
-            <Link
-              className={`button ${activeRole === "member" ? "button-primary" : "button-secondary"}`}
-              href="/activity?role=member"
-            >
-              Member view
-            </Link>
-          </div>
         </div>
       </section>
 
       <section className="list-panel">
         <div className="panel-title">
           <h2>
-            <Activity /> {activeRole === "member" ? "Personal feed" : "System feed"}
+            <Activity /> All activity
           </h2>
           <span className="status-pill status-neutral">
             {events.length} updates
@@ -62,12 +46,15 @@ export default async function ActivityPage({ searchParams }: ActivityPageProps) 
           {events.map((event) => {
             const Icon = eventIcons[event.icon];
             return (
-              <article className="activity-item" key={event.title}>
+              <article className="activity-item" key={event.id}>
                 <span className="activity-icon">
                   <Icon />
                 </span>
                 <div>
-                  <h2>{event.title}</h2>
+                  <div className="toolbar">
+                    <h2>{event.title}</h2>
+                    <span className="status-pill status-neutral">{event.audience}</span>
+                  </div>
                   <p>{event.detail}</p>
                   <span>{new Date(event.createdAt).toLocaleString("en-IN")}</span>
                 </div>

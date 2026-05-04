@@ -211,6 +211,23 @@ svg {
   min-width: 74px;
 }
 
+.back-row {
+  margin: 0 auto;
+  max-width: 1220px;
+  padding: 14px clamp(18px, 4vw, 56px) 0;
+}
+
+.back-button {
+  gap: 8px;
+  min-height: 34px;
+  padding: 7px 11px;
+}
+
+.back-button svg {
+  height: 15px;
+  width: 15px;
+}
+
 .home,
 .page {
   animation: page-in 460ms var(--slow) both;
