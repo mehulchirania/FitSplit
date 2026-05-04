@@ -33,9 +33,9 @@ export default async function AboutPage() {
             <span className="status-pill status-active">Titan V2 Fitness</span>
           </div>
           <p>
-            Built as a single-gym pilot with Firebase-backed data and room to
-            expand into multi-gym operations where AI acts like a Semi-Personal
-            Trainer for every member.
+            Built as a single-gym pilot with room to expand into multi-gym
+            operations where AI acts like a Semi-Personal Trainer for every
+            member.
           </p>
         </aside>
       </section>

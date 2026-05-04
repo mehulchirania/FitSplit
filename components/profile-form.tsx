@@ -52,7 +52,7 @@ export function ProfileForm({
       <ConfirmActionForm
         action={updateProfileMetrics}
         className="form-panel"
-        confirmMessage="This will update your profile details and BMI inputs in Firebase."
+        confirmMessage="This will update your profile details and BMI inputs."
         confirmTitle="Save profile changes?"
         pendingLabel="Saving profile..."
         submitLabel="Save profile"

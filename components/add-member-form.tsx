@@ -8,7 +8,7 @@ export function AddMemberForm() {
     <ConfirmActionForm
       action={createMemberProfile}
       className="form-panel"
-      confirmMessage="This will create a FitSplit member profile in Firebase."
+      confirmMessage="This will create a FitSplit member profile."
       confirmTitle="Add this member?"
       pendingLabel="Saving member..."
       submitLabel="Save member"

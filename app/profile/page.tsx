@@ -9,7 +9,7 @@ export default async function ProfilePage() {
   const memberId = "member-aarav";
   
   const [
-    { profile, isPersisted },
+    { profile },
     { liftLogs },
     { exercises }
   ] = await Promise.all([
@@ -34,9 +34,7 @@ export default async function ProfilePage() {
             <h2>
               <UsersRound /> Member profile
             </h2>
-            <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-              {isPersisted ? "Firestore profile" : "Fallback profile"}
-            </span>
+            <span className="status-pill status-active">Editable</span>
           </div>
           <p>
             Height and weight are reactive here so BMI updates instantly while

@@ -9,8 +9,7 @@ export const dynamic = "force-dynamic";
 export default async function ExerciseCatalogPage() {
   const {
     exercises,
-    catalog: exerciseCatalogByMuscle,
-    isPersisted
+    catalog: exerciseCatalogByMuscle
   } = await getExerciseCatalog();
   const muscleGroups = exerciseCatalogByMuscle.map((group) => group.muscleGroup);
 
@@ -24,9 +23,6 @@ export default async function ExerciseCatalogPage() {
             Titan V2 Fitness owners build programs from this private catalog.
             Members only see exercises that are part of their assigned plan.
           </p>
-          <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-            {isPersisted ? "Reading from Firestore" : "Using JSON catalog"}
-          </span>
         </div>
         <aside className="summary-panel">
           <WorkspaceSwitcher />
@@ -59,7 +55,7 @@ export default async function ExerciseCatalogPage() {
           <ConfirmActionForm
             action={createCatalogExercise}
             className="form-panel"
-            confirmMessage="This will add the custom exercise to the owner-only Firestore catalog."
+            confirmMessage="This will add the custom exercise to the owner-only catalog."
             confirmTitle="Save custom exercise?"
             pendingLabel="Saving custom exercise..."
             submitLabel="Save custom exercise"
@@ -90,13 +86,13 @@ export default async function ExerciseCatalogPage() {
                   <option value="none">None</option>
                   <option value="youtube">YouTube</option>
                   <option value="vimeo">Vimeo</option>
-                  <option value="upload">Firebase Storage path</option>
+                  <option value="upload">Upload path</option>
                 </select>
               </label>
             </div>
             <label>
               Video URL or upload path
-              <input name="videoUrl" placeholder="YouTube, Vimeo, or Firebase Storage path" />
+              <input name="videoUrl" placeholder="YouTube, Vimeo, or upload path" />
             </label>
             <label>
               Coaching instructions

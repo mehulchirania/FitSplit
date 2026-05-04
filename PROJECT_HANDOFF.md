@@ -379,6 +379,9 @@ Manual App Hosting deployment from local source is working and should be used un
 - Removed `Custom Workouts` from the top navigation; custom exercise creation remains inside the Exercise Catalog page.
 - Optimized the hamburger drawer spacing and changed the brand tagline to `Your fitness companion`.
 - Reworked About page links into compact social icon links above the global footer using default public destinations.
+- Removed user-facing Firebase/Firestore wording from page status pills, form confirmations, and save buttons.
+- Activity page now shows the combined gym-wide feed across owner and member audiences instead of a member-specific feed tied to the demo/local user.
+- Moved the back button out of the brand/topbar cluster into a contextual row below the topbar for better navigation ergonomics.
 - Made home, admin, member, activity, profile, about, owner workspace, and exercise lookup data dynamic.
 - Updated `ExerciseList` and member workout AI logic to use Firestore exercise catalog data passed from read models.
 - Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.

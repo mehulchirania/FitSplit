@@ -137,7 +137,7 @@ export function ProgressiveOverloadChart({
                   padding: '12px'
                 }}
                 itemStyle={{ color: 'var(--brand)', fontWeight: 'bold' }}
-                formatter={(value: number) => [`${value} lbs`, 'Max Weight']}
+                formatter={(value) => [`${Number(value ?? 0)} lbs`, "Max Weight"]}
               />
               <Line
                 type="monotone"

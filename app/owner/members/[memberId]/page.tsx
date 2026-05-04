@@ -21,7 +21,7 @@ export default async function MemberDetailPage({
 }) {
   const { memberId } = await params;
   const [
-    { member, isPersisted },
+    { member },
     { assignment },
     { programs },
     { exercises }
@@ -56,9 +56,6 @@ export default async function MemberDetailPage({
             <Link className="button button-secondary" href="/owner/programs">
               Assign program
             </Link>
-            <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-              {isPersisted ? "Reading from Firestore" : "Using mock seed data"}
-            </span>
           </div>
         </div>
 

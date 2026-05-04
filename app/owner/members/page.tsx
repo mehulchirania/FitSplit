@@ -6,7 +6,7 @@ import { getMembers } from "@/lib/firebase/read-models";
 export const dynamic = "force-dynamic";
 
 export default async function MembersPage() {
-  const { members, isPersisted } = await getMembers();
+  const { members } = await getMembers();
 
   return (
     <main className="page">
@@ -18,9 +18,6 @@ export default async function MembersPage() {
             Owners can create member profiles, edit goals, and open each record
             to review assigned workout programming.
           </p>
-          <span className={`status-pill ${isPersisted ? "status-active" : "status-neutral"}`}>
-            {isPersisted ? "Reading from Firestore" : "Using mock seed data"}
-          </span>
         </div>
         <AddMemberForm />
       </section>
