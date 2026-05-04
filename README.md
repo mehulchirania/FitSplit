@@ -62,6 +62,8 @@ fitsplit-29215
 - Member injury/limitation logging with deterministic AI-style exercise swaps
 - Start Workout and End Workout controls for active-session attendance tracking
 - Member Gym Busyness widget based on active workouts
+- Firestore-backed historical lift log for progressive overload
+- In-workout rest countdown timer
 - Owner AI business-value analytics for Semi-Personal Training plans and trainer hours saved
 - Owner live capacity panel with active headcount and peak usage chart
 - About page with contact form, social placeholders, email link, and footer
@@ -101,6 +103,7 @@ exerciseCatalog
 workoutPrograms
 notifications
 workoutSplitTemplates
+liftLogs
 ```
 
 Important IDs:
@@ -127,6 +130,7 @@ Current server actions:
 - `createMemberWithMembership`
 - `updateMemberProfile`
 - `renewMemberMembership`
+- `logLiftSet`
 - `createCatalogExercise`
 - `createCustomWorkoutProgram`
 
@@ -137,6 +141,7 @@ Current read models:
 - `getExerciseCatalog`
 - `getOwnerNotifications`
 - `getWorkoutPrograms`
+- `getLiftLogsForMember`
 
 If Firebase Admin cannot initialize, read models fall back to:
 

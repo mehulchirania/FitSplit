@@ -122,6 +122,29 @@ const notifications = [
   }
 ];
 
+const liftLogs = [
+  {
+    id: "lift-aarav-bench-last-week",
+    memberId: "member-aarav",
+    exerciseId: "ch_01",
+    weight: 60,
+    sets: 3,
+    reps: "8",
+    sessionId: "demo-session-last-week",
+    loggedAt: "2026-04-27T18:20:00+05:30"
+  },
+  {
+    id: "lift-aarav-bench-this-week",
+    memberId: "member-aarav",
+    exerciseId: "ch_01",
+    weight: 62.5,
+    sets: 3,
+    reps: "8",
+    sessionId: "demo-session-this-week",
+    loggedAt: "2026-05-04T18:20:00+05:30"
+  }
+];
+
 const muscleThumbnails = {
   Chest:
     "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=900&q=80",
@@ -374,6 +397,15 @@ for (const split of workoutsData.training_splits) {
 
 for (const notification of notifications) {
   await setDoc("notifications", notification.id, notification);
+}
+
+for (const liftLog of liftLogs) {
+  await setDoc("liftLogs", liftLog.id, {
+    ...liftLog,
+    gymId,
+    createdAt: liftLog.loggedAt,
+    updatedAt: now
+  });
 }
 
 console.log("Seeded FitSplit demo Firestore records.");

@@ -1,6 +1,7 @@
 import type {
   Difficulty,
   Exercise,
+  LiftLog,
   Member,
   Membership,
   MuscleGroup,
@@ -343,4 +344,71 @@ export async function getWorkoutPrograms(): Promise<{
     .sort((left, right) => left.title.localeCompare(right.title));
 
   return { programs, isPersisted: true };
+}
+
+export async function getLiftLogsForMember(memberId: string): Promise<{
+  liftLogs: LiftLog[];
+  isPersisted: boolean;
+}> {
+  const fallbackLogs: LiftLog[] = [
+    {
+      id: "demo-bench-last-week",
+      memberId,
+      exerciseId: "ch_01",
+      weight: 60,
+      sets: 3,
+      reps: "8",
+      sessionId: "demo-session-last-week",
+      loggedAt: "2026-04-27T18:20:00+05:30"
+    },
+    {
+      id: "demo-bench-this-week",
+      memberId,
+      exerciseId: "ch_01",
+      weight: 62.5,
+      sets: 3,
+      reps: "8",
+      sessionId: "demo-session-this-week",
+      loggedAt: "2026-05-04T18:20:00+05:30"
+    }
+  ];
+
+  if (!hasFirebaseAdminConfig()) {
+    return { liftLogs: fallbackLogs, isPersisted: false };
+  }
+
+  let snapshot;
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    snapshot = await db
+      .collection(collectionPaths.liftLogs)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("memberId", "==", memberId)
+      .get();
+  } catch {
+    return { liftLogs: fallbackLogs, isPersisted: false };
+  }
+
+  if (snapshot.empty) {
+    return { liftLogs: fallbackLogs, isPersisted: false };
+  }
+
+  const liftLogs: LiftLog[] = snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        memberId: String(data.memberId ?? memberId),
+        exerciseId: String(data.exerciseId ?? ""),
+        weight: Number(data.weight ?? 0),
+        sets: Number(data.sets ?? 1),
+        reps: String(data.reps ?? ""),
+        sessionId: String(data.sessionId ?? ""),
+        loggedAt: String(data.loggedAt ?? data.createdAt ?? new Date().toISOString())
+      };
+    })
+    .sort((left, right) => right.loggedAt.localeCompare(left.loggedAt));
+
+  return { liftLogs, isPersisted: true };
 }

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { logLiftSet } from "@/lib/firebase/actions";
 import { exercises } from "@/lib/mock-data";
-import type { WorkoutExercise, WorkoutProgram } from "@/types/domain";
+import type { LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import { Activity, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 
@@ -170,17 +172,69 @@ function createModification(program: WorkoutProgram, injury: string): Modificati
   };
 }
 
-export function MemberWorkoutConsole({ program }: { program: WorkoutProgram }) {
+function formatTimer(seconds: number) {
+  const minutes = Math.floor(seconds / 60)
+    .toString()
+    .padStart(2, "0");
+  const remainingSeconds = (seconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${remainingSeconds}`;
+}
+
+function getExerciseName(exerciseId: string) {
+  return exercises.find((exercise) => exercise.id === exerciseId)?.name ?? "Exercise";
+}
+
+export function MemberWorkoutConsole({
+  initialLiftLogs,
+  memberId,
+  program
+}: {
+  initialLiftLogs: LiftLog[];
+  memberId: string;
+  program: WorkoutProgram;
+}) {
+  const router = useRouter();
   const [isActive, setIsActive] = useState(false);
   const [activeCount, setActiveCount] = useState(0);
   const [injury, setInjury] = useState("");
   const [modification, setModification] = useState<Modification | null>(null);
+  const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
+  const [timerSeconds, setTimerSeconds] = useState(120);
+  const [remainingSeconds, setRemainingSeconds] = useState(120);
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const busyness = useMemo(() => getBusyness(activeCount), [activeCount]);
+  const visibleWorkout = modification
+    ? [{ ...program.days[0], exercises: modification.routine }]
+    : program.days;
+  const loggableExercises = visibleWorkout.flatMap((day) => day.exercises);
+  const uniqueLoggableExercises = Array.from(
+    new Map(loggableExercises.map((item) => [item.exerciseId, item])).values()
+  );
 
   useEffect(() => {
     setIsActive(window.localStorage.getItem(sessionKey) === "active");
     setActiveCount(getStoredActiveCount());
   }, []);
+
+  useEffect(() => {
+    if (!isTimerRunning) {
+      return;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRemainingSeconds((current) => {
+        if (current <= 1) {
+          window.clearInterval(intervalId);
+          setIsTimerRunning(false);
+          return 0;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [isTimerRunning]);
 
   function startWorkout() {
     if (isActive) {
@@ -208,6 +262,30 @@ export function MemberWorkoutConsole({ program }: { program: WorkoutProgram }) {
     }
 
     setModification(createModification(program, injury.trim()));
+  }
+
+  function setRestPreset(seconds: number) {
+    setTimerSeconds(seconds);
+    setRemainingSeconds(seconds);
+    setIsTimerRunning(false);
+  }
+
+  async function handleLiftLog(formData: FormData) {
+    await logLiftSet(formData);
+
+    const newLog: LiftLog = {
+      id: `optimistic-${Date.now()}`,
+      memberId,
+      exerciseId: String(formData.get("exerciseId") ?? ""),
+      weight: Number(formData.get("weight") ?? 0),
+      sets: Number(formData.get("sets") ?? 1),
+      reps: String(formData.get("reps") ?? ""),
+      sessionId: String(formData.get("sessionId") ?? ""),
+      loggedAt: new Date().toISOString()
+    };
+
+    setLiftLogs((current) => [newLog, ...current].slice(0, 12));
+    router.refresh();
   }
 
   return (
@@ -252,16 +330,66 @@ export function MemberWorkoutConsole({ program }: { program: WorkoutProgram }) {
         </div>
 
         <div className="notification-list">
-          {(modification ? [{ ...program.days[0], exercises: modification.routine }] : program.days).map(
-            (day) => (
+          {visibleWorkout.map((day) => (
               <article key={day.id}>
                 <p className="eyebrow">Day {day.dayNumber}</p>
                 <h2>{day.title}</h2>
                 <p>{modification ? modification.summary : day.focus}</p>
                 <ExerciseList items={day.exercises} />
               </article>
-            )
-          )}
+            ))}
+        </div>
+
+        <div className="lift-log-panel">
+          <div className="panel-title">
+            <h2>Progressive overload</h2>
+            <span className="status-pill status-neutral">Historical lift data</span>
+          </div>
+          <form action={handleLiftLog} className="lift-log-form">
+            <input name="memberId" type="hidden" value={memberId} />
+            <input name="sessionId" type="hidden" value={`session-${memberId}`} />
+            <label>
+              Exercise
+              <select name="exerciseId">
+                {uniqueLoggableExercises.map((item) => (
+                  <option key={item.exerciseId} value={item.exerciseId}>
+                    {getExerciseName(item.exerciseId)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Weight
+              <input min="0" name="weight" placeholder="60" step="0.5" type="number" />
+            </label>
+            <label>
+              Sets
+              <input defaultValue="3" min="1" name="sets" type="number" />
+            </label>
+            <label>
+              Reps
+              <input name="reps" placeholder="8, 8, 7" />
+            </label>
+            <button className="button button-primary" type="submit">
+              Log lift
+            </button>
+          </form>
+          <div className="lift-log-table" role="table" aria-label="Historical lift data">
+            <div role="row">
+              <span>Exercise</span>
+              <span>Weight</span>
+              <span>Sets</span>
+              <span>Reps</span>
+            </div>
+            {liftLogs.slice(0, 8).map((log) => (
+              <div key={log.id} role="row">
+                <span>{getExerciseName(log.exerciseId)}</span>
+                <span>{log.weight} kg</span>
+                <span>{log.sets}</span>
+                <span>{log.reps}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -276,6 +404,42 @@ export function MemberWorkoutConsole({ program }: { program: WorkoutProgram }) {
           <strong>{activeCount}</strong>
           <span>{busyness.dot} capacity status</span>
           <p>Based on members who have started but not ended a workout.</p>
+        </div>
+
+        <div className="rest-timer-card">
+          <p className="eyebrow">In-workout rest timer</p>
+          <strong>{formatTimer(remainingSeconds)}</strong>
+          <div className="timer-presets">
+            {[60, 90, 120, 180].map((seconds) => (
+              <button
+                className={timerSeconds === seconds ? "is-selected" : ""}
+                key={seconds}
+                onClick={() => setRestPreset(seconds)}
+                type="button"
+              >
+                {seconds / 60}m
+              </button>
+            ))}
+          </div>
+          <div className="quick-actions">
+            <button
+              className="button button-primary"
+              onClick={() => setIsTimerRunning(true)}
+              type="button"
+            >
+              Start Rest
+            </button>
+            <button
+              className="button button-secondary"
+              onClick={() => {
+                setIsTimerRunning(false);
+                setRemainingSeconds(timerSeconds);
+              }}
+              type="button"
+            >
+              Reset
+            </button>
+          </div>
         </div>
 
         <div className="injury-card">

@@ -59,5 +59,13 @@ service cloud.firestore {
       allow create: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
       allow delete: if isAdmin();
     }
+
+    match /liftLogs/{liftLogId} {
+      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+      allow create: if isAdmin()
+        || isOwnerForGym(request.resource.data.gymId)
+        || isMemberSelf(request.resource.data.memberId);
+      allow update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
+    }
   }
 }

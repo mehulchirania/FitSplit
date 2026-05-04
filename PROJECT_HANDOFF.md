@@ -53,7 +53,7 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
 - Firestore was seeded with Titan V2 Fitness demo data on 2026-05-04.
-- Live Firestore document counts after seeding: `gyms` 1, `profiles` 6, `memberships` 4, `exerciseCatalog` 49, `workoutPrograms` 5, `notifications` 3, `workoutSplitTemplates` 5.
+- Live Firestore document counts after seeding: `gyms` 1, `profiles` 6, `memberships` 4, `exerciseCatalog` 49, `workoutPrograms` 5, `notifications` 3, `workoutSplitTemplates` 5, `liftLogs` 2.
 - Storage rules file exists but Storage setup was previously blocked until console setup.
 - App Hosting config exists in `apphosting.yaml`.
 - Firebase Admin on App Hosting uses application default credentials. Local development can use service account env vars.
@@ -180,6 +180,7 @@ exerciseCatalog
 workoutPrograms
 notifications
 workoutSplitTemplates
+liftLogs
 ```
 
 Important IDs:
@@ -206,6 +207,7 @@ Server actions in `lib/firebase/actions.ts`:
 - `createMemberWithMembership`
 - `updateMemberProfile`
 - `renewMemberMembership`
+- `logLiftSet`
 - `createCatalogExercise`
 - `createCustomWorkoutProgram`
 
@@ -226,6 +228,7 @@ Read models in `lib/firebase/read-models.ts`:
 - `getExerciseCatalog`
 - `getOwnerNotifications`
 - `getWorkoutPrograms`
+- `getLiftLogsForMember`
 
 If Firebase Admin env vars are missing, the app falls back to mock data from:
 
@@ -333,6 +336,10 @@ Manual App Hosting deployment from local source is working and should be used un
 
 ## Recent Updates
 
+- Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.
+- Added in-workout rest countdown timer with 1, 1.5, 2, and 3 minute presets.
+- Updated demo seed data with two Barbell Bench Press lift logs for Aarav.
+- Deployed Firestore rules for `liftLogs`.
 - Added member-side AI Semi-Personal Trainer workflow: Update Injury/Limitation trigger, deterministic catalog-based exercise swaps, and fallback recovery routine.
 - Added mandatory Start Workout and End Workout controls on the member workout screen, using local active-session state as an attendance proxy.
 - Added member Gym Busyness widget based on active workout count.

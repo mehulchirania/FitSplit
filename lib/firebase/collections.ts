@@ -5,7 +5,8 @@ export const collectionPaths = {
   exerciseCatalog: "exerciseCatalog",
   workoutPrograms: "workoutPrograms",
   notifications: "notifications",
-  workoutSplitTemplates: "workoutSplitTemplates"
+  workoutSplitTemplates: "workoutSplitTemplates",
+  liftLogs: "liftLogs"
 } as const;
 
 export const TITAN_GYM_ID = "titan-v2-fitness";

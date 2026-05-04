@@ -932,7 +932,9 @@ textarea {
 .injury-card,
 .ai-modification-panel,
 .busyness-widget,
-.capacity-headcount {
+.capacity-headcount,
+.rest-timer-card,
+.lift-log-panel {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -956,7 +958,8 @@ textarea {
 .workout-session-panel p,
 .injury-card p,
 .ai-modification-panel p,
-.busyness-widget p {
+.busyness-widget p,
+.rest-timer-card p {
   margin: 0;
 }
 
@@ -966,7 +969,8 @@ textarea {
 }
 
 .busyness-widget strong,
-.capacity-headcount strong {
+.capacity-headcount strong,
+.rest-timer-card > strong {
   font-size: clamp(2.8rem, 7vw, 4.6rem);
   line-height: 0.95;
 }
@@ -984,6 +988,67 @@ textarea {
   font-size: 0.82rem;
   font-weight: 780;
   padding: 8px 10px;
+}
+
+.timer-presets {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.timer-presets button {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 8px 10px;
+}
+
+.timer-presets button.is-selected {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: #ffffff;
+}
+
+.lift-log-form {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(180px, 1.3fr) repeat(3, minmax(90px, 0.6fr)) auto;
+}
+
+.lift-log-table {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: grid;
+  margin-top: 12px;
+  overflow: hidden;
+}
+
+.lift-log-table div {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(70px, 0.55fr));
+  padding: 10px 12px;
+}
+
+.lift-log-table div:first-child {
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.lift-log-table div + div {
+  border-top: 1px solid var(--border);
+}
+
+.lift-log-table span {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .compact-stats {
@@ -1154,6 +1219,11 @@ textarea {
   }
 
   .workout-session-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .lift-log-form,
+  .lift-log-table div {
     grid-template-columns: 1fr;
   }
 

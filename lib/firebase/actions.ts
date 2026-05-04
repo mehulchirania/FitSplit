@@ -196,6 +196,40 @@ export async function renewMemberMembership(formData: FormData) {
   revalidatePath("/member");
 }
 
+export async function logLiftSet(formData: FormData) {
+  await ensureTitanWorkspace();
+  const db = requireFirebase();
+  const liftLogId = randomUUID();
+  const memberId = requireText(formData, "memberId");
+  const exerciseId = requireText(formData, "exerciseId");
+  const weight = Number(formData.get("weight") ?? 0);
+  const sets = Number(formData.get("sets") ?? 1);
+  const reps = requireText(formData, "reps");
+  const sessionId = String(formData.get("sessionId") ?? "").trim() || randomUUID();
+  const now = new Date().toISOString();
+
+  if (weight < 0 || sets < 1) {
+    throw new Error("Lift log values are invalid.");
+  }
+
+  await db.collection(collectionPaths.liftLogs).doc(liftLogId).set({
+    id: liftLogId,
+    gymId: TITAN_GYM_ID,
+    memberId,
+    exerciseId,
+    weight,
+    sets,
+    reps,
+    sessionId,
+    loggedAt: now,
+    createdAt: now,
+    updatedAt: now
+  });
+
+  revalidatePath("/member");
+  revalidatePath(`/owner/members/${memberId}`);
+}
+
 export async function createCatalogExercise(formData: FormData) {
   await ensureTitanWorkspace();
   const db = requireFirebase();

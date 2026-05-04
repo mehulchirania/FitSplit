@@ -114,3 +114,14 @@ export type Notification = {
   createdAt: string;
   readAt?: string;
 };
+
+export type LiftLog = {
+  id: string;
+  memberId: string;
+  exerciseId: string;
+  weight: number;
+  sets: number;
+  reps: string;
+  sessionId: string;
+  loggedAt: string;
+};
