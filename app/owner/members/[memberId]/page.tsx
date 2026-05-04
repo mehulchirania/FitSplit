@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell } from "@/components/icons";
+import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { updateMemberProfile } from "@/lib/firebase/actions";
 import {
@@ -122,16 +123,11 @@ export default async function MemberDetailPage({
           </div>
         </ConfirmActionForm>
 
-        <aside className="form-panel">
-          <h2>Program assignment</h2>
-          <p>
-            Assignment controls will sit here next. Membership renewal is
-            intentionally handled outside FitSplit in your existing gym app.
-          </p>
-          <Link className="button button-secondary" href="/owner/programs">
-            Open programs
-          </Link>
-        </aside>
+        <ProgramAssignmentForm
+          currentProgramId={assignment?.programId}
+          member={member}
+          programs={programs}
+        />
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>

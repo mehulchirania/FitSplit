@@ -586,6 +586,44 @@ export async function getProgramAssignmentForMember(memberId: string): Promise<{
   }
 }
 
+export async function getActiveProgramAssignments(): Promise<{
+  assignments: ProgramAssignment[];
+  isPersisted: boolean;
+}> {
+  const fallback = mockAssignments.filter((assignment) => assignment.status === "active");
+
+  if (!hasFirebaseAdminConfig()) {
+    return { assignments: fallback, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.programAssignments)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("status", "==", "active")
+      .get();
+
+    const assignments: ProgramAssignment[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        memberId: String(data.memberId ?? ""),
+        programId: String(data.programId ?? ""),
+        assignedAt: String(data.assignedAt ?? new Date().toISOString()),
+        status: String(data.status ?? "active") as ProgramAssignment["status"]
+      };
+    });
+
+    return {
+      assignments: assignments.length ? assignments : fallback,
+      isPersisted: assignments.length > 0
+    };
+  } catch {
+    return { assignments: fallback, isPersisted: false };
+  }
+}
+
 export async function getActivityEvents(audience: "owner" | "member", memberId?: string): Promise<{
   events: ActivityEvent[];
   isPersisted: boolean;

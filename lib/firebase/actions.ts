@@ -164,6 +164,81 @@ export async function updateMemberProfile(
   }
 }
 
+export async function assignProgramToMember(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const assignmentId = randomUUID();
+    const notificationId = randomUUID();
+    const activityId = randomUUID();
+    const memberId = requireText(formData, "memberId", "Member");
+    const programId = requireText(formData, "programId", "Workout program");
+    const memberName = String(formData.get("memberName") ?? "Member").trim();
+    const programTitle = String(formData.get("programTitle") ?? "Workout program").trim();
+    const now = new Date().toISOString();
+
+    const existingAssignments = await db
+      .collection(collectionPaths.programAssignments)
+      .where("gymId", "==", TITAN_GYM_ID)
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .get();
+
+    await Promise.all(
+      existingAssignments.docs.map((doc) =>
+        doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true })
+      )
+    );
+
+    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set({
+      id: assignmentId,
+      gymId: TITAN_GYM_ID,
+      memberId,
+      programId,
+      assignedAt: now,
+      status: "active",
+      createdBy: TITAN_OWNER_ID,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+      id: notificationId,
+      recipientRole: "member",
+      recipientId: memberId,
+      type: "program_assigned",
+      title: "Workout program assigned",
+      body: `${programTitle} is now available in your weekly schedule.`,
+      createdAt: now
+    });
+
+    await db.collection(collectionPaths.activityEvents).doc(activityId).set({
+      id: activityId,
+      gymId: TITAN_GYM_ID,
+      audience: "owner",
+      title: `Program assigned - ${programTitle}`,
+      detail: `${memberName} now has ${programTitle} as the active weekly schedule.`,
+      icon: "dumbbell",
+      createdAt: now
+    });
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/member");
+    revalidatePath("/activity");
+
+    return success(`${programTitle} was assigned to ${memberName}.`);
+  } catch (error) {
+    console.error("Unable to assign program to member", error);
+    return failure(error, "Unable to assign workout program. Please try again.");
+  }
+}
+
 export async function updateProfileMetrics(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData

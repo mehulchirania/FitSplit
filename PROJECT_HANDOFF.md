@@ -214,6 +214,7 @@ Server actions in `lib/firebase/actions.ts`:
 
 - `createMemberProfile`
 - `updateMemberProfile`
+- `assignProgramToMember`
 - `updateProfileMetrics`
 - `logLiftSet`
 - `startWorkoutSession`
@@ -245,6 +246,7 @@ Read models in `lib/firebase/read-models.ts`:
 - `getWorkoutPrograms`
 - `getLiftLogsForMember`
 - `getProgramAssignmentForMember`
+- `getActiveProgramAssignments`
 - `getActivityEvents`
 - `getProfileMetrics`
 - `getSiteLinks`
@@ -369,6 +371,14 @@ Manual App Hosting deployment from local source is working and should be used un
 - Added a global footer across every page with `Developed with ❤️ by Mehul`.
 - Improved primary navigation flow to Dashboard, Members, Workout Programs, Custom Workouts, and Exercise Catalog.
 - Added weekly schedule day tabs for assigned programs. Member and owner member-detail views default to the current weekday, so Monday opens the Monday workout first.
+- Added real owner-side program assignment on member detail pages. Owners can select a workout plan, confirm assignment, and the app writes `programAssignments`, member notification, and owner activity records.
+- Added a global back-arrow button in the top navigation.
+- Program cards on `/owner/programs` now open full modal dialogs with an `X` close button and weekly schedule tabs.
+- Reworked the owner dashboard into a training ops command center: total members, assigned plans, plan gaps, active workouts, program count, catalog count, assignment coverage, and action links.
+- Live capacity now shows current status, active workout sessions, member names when available, and a refresh button instead of only a static chart.
+- Removed `Custom Workouts` from the top navigation; custom exercise creation remains inside the Exercise Catalog page.
+- Optimized the hamburger drawer spacing and changed the brand tagline to `Your fitness companion`.
+- Reworked About page links into compact social icon links above the global footer using default public destinations.
 - Made home, admin, member, activity, profile, about, owner workspace, and exercise lookup data dynamic.
 - Updated `ExerciseList` and member workout AI logic to use Firestore exercise catalog data passed from read models.
 - Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.

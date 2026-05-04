@@ -5,8 +5,9 @@ import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import {
-  getExerciseCatalog,
+  getActiveProgramAssignments,
   getActiveWorkoutSessions,
+  getExerciseCatalog,
   getMembers,
   getOwnerNotifications,
   getTitanWorkspace,
@@ -22,34 +23,44 @@ export default async function OwnerDashboard() {
     { exercises },
     { programs },
     { gym },
-    { sessions }
+    { sessions },
+    { assignments }
   ] = await Promise.all([
     getMembers(),
     getOwnerNotifications(),
     getExerciseCatalog(),
     getWorkoutPrograms(),
     getTitanWorkspace(),
-    getActiveWorkoutSessions()
+    getActiveWorkoutSessions(),
+    getActiveProgramAssignments()
   ]);
+
+  const assignedMemberIds = new Set(assignments.map((assignment) => assignment.memberId));
+  const assignedMembers = members.filter((member) => assignedMemberIds.has(member.id));
+  const unassignedMembers = members.filter((member) => !assignedMemberIds.has(member.id));
+  const assignmentRate = members.length
+    ? Math.round((assignedMembers.length / members.length) * 100)
+    : 0;
 
   return (
     <main className="page">
       <section className="dashboard-header">
         <div className="header-copy">
           <p className="eyebrow">Owner dashboard / {gym.name}</p>
-          <h1>Run the floor with fewer blind spots.</h1>
+          <h1>Training ops command center.</h1>
           <p>
-            Monitor members, assigned training programs, live capacity, and
-            owner-created workout systems for the Titan V2 Fitness pilot gym.
-            FitSplit focuses on training delivery while your existing app keeps
-            handling membership tracking.
+            See who has a plan, who still needs one, what is happening on the
+            floor right now, and where to act next for Titan V2 Fitness.
           </p>
           <div className="quick-actions">
             <Link className="button button-primary" href="/owner/members">
-              Manage members
+              Assign member plans
             </Link>
             <Link className="button button-secondary" href="/owner/programs">
-              Edit programs
+              Review programs
+            </Link>
+            <Link className="button button-secondary" href="/owner/exercises">
+              Open catalog
             </Link>
           </div>
         </div>
@@ -60,9 +71,9 @@ export default async function OwnerDashboard() {
             <h2>
               <Bell /> Attention
             </h2>
-            <span className="status-pill status-neutral">Activity</span>
+            <span className="status-pill status-neutral">{ownerNotifications.length} updates</span>
           </div>
-          <NotificationList items={ownerNotifications} />
+          <NotificationList items={ownerNotifications.slice(0, 3)} />
         </aside>
       </section>
 
@@ -73,6 +84,16 @@ export default async function OwnerDashboard() {
           <span>Total members</span>
         </article>
         <article className="stat-card">
+          <Dumbbell />
+          <strong>{assignedMembers.length}</strong>
+          <span>Members with assigned plans</span>
+        </article>
+        <article className="stat-card">
+          <Bell />
+          <strong>{unassignedMembers.length}</strong>
+          <span>Need workout assignment</span>
+        </article>
+        <article className="stat-card">
           <Activity />
           <strong>{sessions.length}</strong>
           <span>Active workouts now</span>
@@ -80,18 +101,21 @@ export default async function OwnerDashboard() {
         <article className="stat-card">
           <Dumbbell />
           <strong>{programs.length}</strong>
-          <span>Workout split templates</span>
+          <span>Workout plans</span>
         </article>
         <article className="stat-card">
           <Dumbbell />
           <strong>{exercises.length}</strong>
-          <span>Owner catalog exercises</span>
+          <span>Catalog exercises</span>
         </article>
       </section>
 
       <OwnerAiCapacityPanel
-        activeMembers={members.length}
         activeHeadcount={sessions.length}
+        activeMembers={members.length}
+        activeSessions={sessions}
+        assignmentRate={assignmentRate}
+        members={members}
         programCount={programs.length}
       />
 
@@ -99,33 +123,41 @@ export default async function OwnerDashboard() {
         <div className="list-panel">
           <div className="panel-title">
             <h2>
-              <UsersRound /> Members
+              <UsersRound /> Members needing plans
             </h2>
             <Link className="button button-secondary" href="/owner/members">
               View all
             </Link>
           </div>
-          {members.map((member) => (
+          {(unassignedMembers.length ? unassignedMembers : members.slice(0, 4)).map((member) => (
             <MemberRow member={member} key={member.id} />
           ))}
         </div>
 
         <aside className="member-focus">
-          <p className="eyebrow">Training flow</p>
-          <h2>Members → Programs → Weekly schedule</h2>
+          <p className="eyebrow">Today&apos;s owner checklist</p>
+          <h2>{assignmentRate}% assignment coverage</h2>
           <p>
-            Add or edit a member, review their assigned program, then use the
-            Programs and Catalog areas to keep workouts ready for weekly use.
+            Start with members who need plans, then open Workout Programs to
+            review plan details before assigning.
           </p>
           <div className="detail-window">
             <span>
-              Next step
-              <strong>Open member record</strong>
+              Priority
+              <strong>{unassignedMembers.length} plan gaps</strong>
             </span>
             <span>
-              Action
-              <strong>Review assigned plan</strong>
+              Capacity
+              <strong>{sessions.length} active now</strong>
             </span>
+          </div>
+          <div className="quick-actions" style={{ marginTop: 14 }}>
+            <Link className="button button-primary" href="/owner/members">
+              Assign plans
+            </Link>
+            <Link className="button button-secondary" href="/owner/programs">
+              Review programs
+            </Link>
           </div>
         </aside>
       </section>

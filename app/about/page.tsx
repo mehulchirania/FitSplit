@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Activity, Bell } from "@/components/icons";
+import { Activity, Mail } from "@/components/icons";
 import { submitContactMessage } from "@/lib/firebase/actions";
-import { getSiteLinks } from "@/lib/firebase/read-models";
+
+const socialLinks = [
+  { label: "Instagram", mark: "IG", href: "https://www.instagram.com" },
+  { label: "LinkedIn", mark: "IN", href: "https://www.linkedin.com" },
+  { label: "YouTube", mark: "YT", href: "https://www.youtube.com" },
+  { label: "Email", mark: "@", href: "mailto:mehul@example.com" }
+];
 
 export const dynamic = "force-dynamic";
 
 export default async function AboutPage() {
-  const { links } = await getSiteLinks();
-
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -66,25 +70,31 @@ export default async function AboutPage() {
           </div>
         </ConfirmActionForm>
 
-        <aside className="list-panel links-panel">
+        <aside className="summary-panel">
           <div className="panel-title">
             <h2>
-              <Bell /> Links
+              <Mail /> Contact
             </h2>
           </div>
-          {links.map((link) =>
-            link.href.startsWith("mailto:") ? (
-              <a href={link.href} key={link.id}>
-                {link.label}
-              </a>
-            ) : (
-              <Link href={link.href} key={link.id}>
-                {link.label}
-              </Link>
-            )
-          )}
+          <p>
+            Use the form for gym setup, customization, workout data, or AI
+            Semi-Personal Trainer requirements.
+          </p>
         </aside>
       </section>
+
+      <nav className="social-links" aria-label="Social links">
+        {socialLinks.map((link) => (
+          <Link
+            aria-label={link.label}
+            href={link.href}
+            key={link.label}
+            target={link.href.startsWith("mailto:") ? undefined : "_blank"}
+          >
+            {link.mark}
+          </Link>
+        ))}
+      </nav>
     </main>
   );
 }

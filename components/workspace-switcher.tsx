@@ -8,7 +8,7 @@ export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "
     <div className="workspace-switcher" aria-label="Gym selector">
       <label>
         Select Gym
-        <select defaultValue={currentWorkspace.id} disabled={mode === "owner"}>
+        <select defaultValue={currentWorkspace.id}>
           {gyms.map((workspace) => (
             <option key={workspace.id} value={workspace.id}>
               {workspace.name}

@@ -8,7 +8,6 @@ const adminLinks = [
   { href: "/owner", label: "Dashboard" },
   { href: "/owner/members", label: "Members" },
   { href: "/owner/programs", label: "Workout Programs" },
-  { href: "/owner/exercises#custom-workouts", label: "Custom Workouts" },
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
@@ -16,7 +15,6 @@ const ownerLinks = [
   { href: "/owner", label: "Dashboard" },
   { href: "/owner/members", label: "Members" },
   { href: "/owner/programs", label: "Workout Programs" },
-  { href: "/owner/exercises#custom-workouts", label: "Custom Workouts" },
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
