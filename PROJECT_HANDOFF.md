@@ -50,6 +50,7 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - App Hosting URL: `https://fitsplit--fitsplit-29215.us-central1.hosted.app`.
 - App Hosting local-source deploy succeeded.
 - Live App Hosting URL returned HTTP 200 after deploy.
+- A production add-member error with digest `2009792147` was traced in Cloud Run logs to `fullName is required.` from `createMemberWithMembership`; the add-member form is now required-field guarded and uses a friendly `useActionState` success/error message instead of crashing the page.
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
 - Firestore was seeded with Titan V2 Fitness demo data on 2026-05-04.
@@ -357,6 +358,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Converted remaining page/component static data to Firestore-backed read models. Only `lib/firebase/read-models.ts` now imports `mock-data`, strictly for fallback when Firebase Admin is unavailable.
 - Added and seeded Firestore collections for `programAssignments`, `activityEvents`, and `siteLinks`.
 - Added Firestore-ready collections/rules for `workoutSessions` and `contactMessages`; these populate from Start Workout/End Workout and About form submissions.
+- Fixed owner add-member failure handling. `/owner/members` now uses `components/add-member-form.tsx`, requires Full name, Email, Start date, and Duration in the browser, validates duration server-side, and returns visible success/error messages from the Firebase server action.
 - Made home, admin, member, activity, profile, about, owner workspace, and exercise lookup data dynamic.
 - Updated `ExerciseList` and member workout AI logic to use Firestore exercise catalog data passed from read models.
 - Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.

@@ -13,11 +13,16 @@ function requireFirebase() {
   return getFirebaseAdminServices().db;
 }
 
-function requireText(formData: FormData, key: string) {
+type FormActionState = {
+  status: "idle" | "success" | "error";
+  message: string;
+};
+
+function requireText(formData: FormData, key: string, label = key) {
   const value = String(formData.get(key) ?? "").trim();
 
   if (!value) {
-    throw new Error(`${key} is required.`);
+    throw new Error(`${label} is required.`);
   }
 
   return value;
@@ -63,53 +68,75 @@ async function ensureTitanWorkspace() {
   );
 }
 
-export async function createMemberWithMembership(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const memberId = randomUUID();
-  const membershipId = randomUUID();
-  const fullName = requireText(formData, "fullName");
-  const email = requireText(formData, "email");
-  const startDate = requireText(formData, "startDate");
-  const durationMonths = Number(formData.get("durationMonths") ?? 1);
-  const endDate = addMonths(startDate, durationMonths);
-  const now = new Date().toISOString();
+export async function createMemberWithMembership(
+  _previousState: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  try {
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const memberId = randomUUID();
+    const membershipId = randomUUID();
+    const fullName = requireText(formData, "fullName", "Full name");
+    const email = requireText(formData, "email", "Email");
+    const startDate = requireText(formData, "startDate", "Start date");
+    const durationMonths = Number(formData.get("durationMonths") ?? 1);
 
-  await db.collection(collectionPaths.profiles).doc(memberId).set({
-    id: memberId,
-    fullName,
-    email,
-    phone: String(formData.get("phone") ?? "").trim(),
-    role: "member",
-    defaultGymId: TITAN_GYM_ID,
-    goal: String(formData.get("goal") ?? "General fitness").trim(),
-    avatarInitials: fullName
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase(),
-    isActive: true,
-    createdAt: now,
-    updatedAt: now
-  });
+    if (![1, 3, 6, 12].includes(durationMonths)) {
+      throw new Error("Duration must be 1, 3, 6, or 12 months.");
+    }
 
-  await db.collection(collectionPaths.memberships).doc(membershipId).set({
-    id: membershipId,
-    gymId: TITAN_GYM_ID,
-    memberId,
-    planName: `${durationMonths} Month Membership`,
-    startDate,
-    endDate,
-    durationMonths,
-    paymentReference: String(formData.get("paymentReference") ?? "").trim(),
-    createdBy: TITAN_OWNER_ID,
-    createdAt: now,
-    updatedAt: now
-  });
+    const endDate = addMonths(startDate, durationMonths);
+    const now = new Date().toISOString();
 
-  revalidatePath("/owner");
-  revalidatePath("/owner/members");
+    await db.collection(collectionPaths.profiles).doc(memberId).set({
+      id: memberId,
+      fullName,
+      email,
+      phone: String(formData.get("phone") ?? "").trim(),
+      role: "member",
+      defaultGymId: TITAN_GYM_ID,
+      goal: String(formData.get("goal") ?? "General fitness").trim(),
+      avatarInitials: fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      isActive: true,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await db.collection(collectionPaths.memberships).doc(membershipId).set({
+      id: membershipId,
+      gymId: TITAN_GYM_ID,
+      memberId,
+      planName: `${durationMonths} Month Membership`,
+      startDate,
+      endDate,
+      durationMonths,
+      paymentReference: String(formData.get("paymentReference") ?? "").trim(),
+      createdBy: TITAN_OWNER_ID,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+
+    return {
+      status: "success",
+      message: `${fullName} was added with a membership ending ${endDate}.`
+    };
+  } catch (error) {
+    console.error("Unable to create member with membership", error);
+
+    return {
+      status: "error",
+      message: error instanceof Error ? error.message : "Unable to add member. Please try again."
+    };
+  }
 }
 
 export async function updateMemberProfile(formData: FormData) {

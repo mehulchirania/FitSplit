@@ -880,6 +880,27 @@ textarea {
   resize: vertical;
 }
 
+.form-message {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.88rem;
+  font-weight: 780;
+  margin: 0;
+  padding: 10px 12px;
+}
+
+.form-message-success {
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 24%, var(--border));
+  color: var(--brand-strong);
+}
+
+.form-message-error {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 26%, var(--border));
+  color: var(--danger);
+}
+
 .activity-feed {
   display: grid;
   gap: 12px;
