@@ -51,6 +51,7 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - App Hosting local-source deploy succeeded.
 - Live App Hosting URL returned HTTP 200 after deploy.
 - A production add-member error with digest `2009792147` was traced in Cloud Run logs to `fullName is required.` from `createMemberWithMembership`; the add-member form is now required-field guarded and uses a friendly `useActionState` success/error message instead of crashing the page.
+- Confirmation/status dialogs are now used for Firestore-backed actions: add member, edit member, renew membership, profile save, contact submit, catalog exercise save, custom workout plan save, Start Workout, End Workout, and Log Lift.
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
 - Firestore was seeded with Titan V2 Fitness demo data on 2026-05-04.
@@ -359,6 +360,9 @@ Manual App Hosting deployment from local source is working and should be used un
 - Added and seeded Firestore collections for `programAssignments`, `activityEvents`, and `siteLinks`.
 - Added Firestore-ready collections/rules for `workoutSessions` and `contactMessages`; these populate from Start Workout/End Workout and About form submissions.
 - Fixed owner add-member failure handling. `/owner/members` now uses `components/add-member-form.tsx`, requires Full name, Email, Start date, and Duration in the browser, validates duration server-side, and returns visible success/error messages from the Firebase server action.
+- Added reusable `components/confirm-action-form.tsx` for confirmation before submit and success/error status after server actions.
+- Updated Firestore server actions to return a shared `{ status, message }` state and to catch user-facing validation/write failures instead of throwing raw app errors.
+- Added confirmation and post-update status dialogs for member workout events: Start Workout, End Workout, and Log Lift.
 - Made home, admin, member, activity, profile, about, owner workspace, and exercise lookup data dynamic.
 - Updated `ExerciseList` and member workout AI logic to use Firestore exercise catalog data passed from read models.
 - Added Firestore-backed historical lift logging for progressive overload via `liftLogs`, `logLiftSet`, and `getLiftLogsForMember`.

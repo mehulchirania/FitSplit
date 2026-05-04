@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Plus } from "@/components/icons";
 import { createCustomWorkoutProgram } from "@/lib/firebase/actions";
 import type { Exercise, MuscleGroup } from "@/types/domain";
+import { ConfirmActionForm } from "./confirm-action-form";
 
 type CatalogGroup = {
   muscleGroup: MuscleGroup;
@@ -34,11 +35,18 @@ export function CustomPlanBuilder({ catalog }: { catalog: CatalogGroup[] }) {
   }
 
   return (
-    <form action={createCustomWorkoutProgram} className="form-panel">
+    <ConfirmActionForm
+      action={createCustomWorkoutProgram}
+      className="form-panel"
+      confirmMessage="This will create a new custom workout program from the selected exercises."
+      confirmTitle="Save custom plan?"
+      pendingLabel="Saving custom plan..."
+      submitLabel="Save custom plan to Firebase"
+    >
       <h2>Custom owner plan</h2>
       <label>
         Program title
-        <input name="title" defaultValue="Custom Owner Plan" />
+        <input name="title" defaultValue="Custom Owner Plan" required />
       </label>
       <label>
         Description
@@ -50,7 +58,7 @@ export function CustomPlanBuilder({ catalog }: { catalog: CatalogGroup[] }) {
       <div className="form-grid">
         <label>
           Day title
-          <input name="dayTitle" defaultValue="Custom Day 1" />
+          <input name="dayTitle" defaultValue="Custom Day 1" required />
         </label>
         <label>
           Goal
@@ -107,9 +115,6 @@ export function CustomPlanBuilder({ catalog }: { catalog: CatalogGroup[] }) {
       <input name="difficulty" type="hidden" value="beginner" />
       <input name="daysPerWeek" type="hidden" value="1" />
       <input name="restSeconds" type="hidden" value="75" />
-      <button className="button button-primary" type="submit">
-        Save custom plan to Firebase
-      </button>
-    </form>
+    </ConfirmActionForm>
   );
 }

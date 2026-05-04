@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CalendarDays, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { StatusPill } from "@/components/status-pill";
@@ -101,17 +102,24 @@ export default async function MemberDetailPage({
       </section>
 
       <section className="content-grid">
-        <form action={updateMemberProfile} className="form-panel">
+        <ConfirmActionForm
+          action={updateMemberProfile}
+          className="form-panel"
+          confirmMessage="This will update the member profile information visible to the owner and member."
+          confirmTitle="Save member edits?"
+          pendingLabel="Saving details..."
+          submitLabel="Save member details"
+        >
           <h2>Edit member</h2>
           <input name="memberId" type="hidden" value={member.id} />
           <div className="form-grid">
             <label>
               Full name
-              <input name="fullName" defaultValue={member.fullName} />
+              <input name="fullName" defaultValue={member.fullName} required />
             </label>
             <label>
               Email
-              <input name="email" type="email" defaultValue={member.email} />
+              <input name="email" type="email" defaultValue={member.email} required />
             </label>
             <label>
               Phone
@@ -122,22 +130,26 @@ export default async function MemberDetailPage({
               <input name="goal" defaultValue={member.goal} />
             </label>
           </div>
-          <button className="button button-primary" type="submit">
-            Save member details
-          </button>
-        </form>
+        </ConfirmActionForm>
 
-        <form action={renewMemberMembership} className="form-panel">
+        <ConfirmActionForm
+          action={renewMemberMembership}
+          className="form-panel"
+          confirmMessage="This will create a new renewal record and notify the member."
+          confirmTitle="Confirm membership renewal?"
+          pendingLabel="Saving renewal..."
+          submitLabel="Save renewal"
+        >
           <h2>Renew membership</h2>
           <input name="memberId" type="hidden" value={member.id} />
           <div className="form-grid">
             <label>
               New start date
-              <input name="startDate" type="date" defaultValue={nextStartDate} />
+              <input name="startDate" type="date" defaultValue={nextStartDate} required />
             </label>
             <label>
               Duration
-              <select name="durationMonths" defaultValue="3">
+              <select name="durationMonths" defaultValue="3" required>
                 <option value="1">1 month</option>
                 <option value="3">3 months</option>
                 <option value="6">6 months</option>
@@ -149,10 +161,7 @@ export default async function MemberDetailPage({
             Offline payment reference
             <input name="paymentReference" placeholder="UPI, cash note, receipt number" />
           </label>
-          <button className="button button-primary" type="submit">
-            Save renewal
-          </button>
-        </form>
+        </ConfirmActionForm>
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>

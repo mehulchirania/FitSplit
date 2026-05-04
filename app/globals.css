@@ -800,6 +800,35 @@ p {
   gap: 6px;
 }
 
+.dialog-backdrop {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.48);
+  display: grid;
+  inset: 0;
+  justify-items: center;
+  padding: 18px;
+  position: fixed;
+  z-index: 100;
+}
+
+.confirm-dialog {
+  animation: page-in 220ms var(--slow) both;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 12px;
+  max-width: 420px;
+  padding: 20px;
+  width: min(100%, 420px);
+}
+
+.confirm-dialog h2,
+.confirm-dialog p {
+  margin: 0;
+}
+
 @keyframes slideIn {
   from {
     opacity: 0;

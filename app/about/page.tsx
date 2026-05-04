@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Activity, Bell } from "@/components/icons";
 import { submitContactMessage } from "@/lib/firebase/actions";
 import { getSiteLinks } from "@/lib/firebase/read-models";
@@ -36,7 +37,14 @@ export default async function AboutPage() {
       </section>
 
       <section className="content-grid">
-        <form action={submitContactMessage} className="form-panel">
+        <ConfirmActionForm
+          action={submitContactMessage}
+          className="form-panel"
+          confirmMessage="This will save your message so the FitSplit team can follow up."
+          confirmTitle="Send this message?"
+          pendingLabel="Sending message..."
+          submitLabel="Send message"
+        >
           <h2>Get in touch</h2>
           <div className="form-grid">
             <label>
@@ -56,10 +64,7 @@ export default async function AboutPage() {
               <input name="email" placeholder="you@example.com" type="email" />
             </label>
           </div>
-          <button className="button button-primary" type="submit">
-            Send message
-          </button>
-        </form>
+        </ConfirmActionForm>
 
         <aside className="list-panel links-panel">
           <div className="panel-title">

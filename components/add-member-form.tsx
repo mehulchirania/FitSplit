@@ -1,21 +1,18 @@
 "use client";
 
-import { useActionState } from "react";
 import { createMemberWithMembership } from "@/lib/firebase/actions";
-
-const initialState = {
-  status: "idle" as const,
-  message: ""
-};
+import { ConfirmActionForm } from "./confirm-action-form";
 
 export function AddMemberForm({ defaultStartDate }: { defaultStartDate: string }) {
-  const [state, formAction, isPending] = useActionState(
-    createMemberWithMembership,
-    initialState
-  );
-
   return (
-    <form action={formAction} className="form-panel">
+    <ConfirmActionForm
+      action={createMemberWithMembership}
+      className="form-panel"
+      confirmMessage="This will create a member profile and membership record in Firebase."
+      confirmTitle="Add this member?"
+      pendingLabel="Saving member..."
+      submitLabel="Save member to Firebase"
+    >
       <h2>Add member</h2>
       <div className="form-grid">
         <label>
@@ -63,14 +60,6 @@ export function AddMemberForm({ defaultStartDate }: { defaultStartDate: string }
           <input name="paymentReference" placeholder="UPI, cash, receipt" />
         </label>
       </div>
-      {state.message ? (
-        <p className={`form-message form-message-${state.status}`} role="status">
-          {state.message}
-        </p>
-      ) : null}
-      <button className="button button-primary" disabled={isPending} type="submit">
-        {isPending ? "Saving member..." : "Save member to Firebase"}
-      </button>
-    </form>
+    </ConfirmActionForm>
   );
 }

@@ -1,3 +1,4 @@
+import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell, Video } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { createCatalogExercise } from "@/lib/firebase/actions";
@@ -27,17 +28,24 @@ export default async function ExerciseCatalogPage() {
             {isPersisted ? "Reading from Firestore" : "Using JSON catalog"}
           </span>
         </div>
-        <form action={createCatalogExercise} className="form-panel">
+        <ConfirmActionForm
+          action={createCatalogExercise}
+          className="form-panel"
+          confirmMessage="This will add the exercise to the owner-only Firestore catalog."
+          confirmTitle="Save catalog exercise?"
+          pendingLabel="Saving exercise..."
+          submitLabel="Save exercise to Firebase"
+        >
           <WorkspaceSwitcher />
           <h2>Add catalog exercise</h2>
           <div className="form-grid">
             <label>
               Exercise name
-              <input name="name" placeholder="Incline dumbbell press" />
+              <input name="name" placeholder="Incline dumbbell press" required />
             </label>
             <label>
               Muscle group
-              <select name="muscleGroup" defaultValue="Chest">
+              <select name="muscleGroup" defaultValue="Chest" required>
                 {muscleGroups.map((muscleGroup) => (
                   <option key={muscleGroup} value={muscleGroup}>
                     {muscleGroup}
@@ -67,10 +75,7 @@ export default async function ExerciseCatalogPage() {
             Coaching instructions
             <textarea name="instructions" placeholder="Setup, tempo, range of motion, cues" />
           </label>
-          <button className="button button-primary" type="submit">
-            Save exercise to Firebase
-          </button>
-        </form>
+        </ConfirmActionForm>
       </section>
 
       <section className="stats-grid">

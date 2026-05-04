@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
 import type { ProfileMetrics } from "@/types/domain";
+import { ConfirmActionForm } from "./confirm-action-form";
 
 export function ProfileForm({
   memberId,
@@ -48,17 +49,24 @@ export function ProfileForm({
 
   return (
     <section className="content-grid">
-      <form action={updateProfileMetrics} className="form-panel">
+      <ConfirmActionForm
+        action={updateProfileMetrics}
+        className="form-panel"
+        confirmMessage="This will update your profile details and BMI inputs in Firebase."
+        confirmTitle="Save profile changes?"
+        pendingLabel="Saving profile..."
+        submitLabel="Save profile"
+      >
         <h2>Basic details</h2>
         <input name="memberId" type="hidden" value={memberId} />
         <div className="form-grid">
           <label>
             Full name
-            <input defaultValue={profile.fullName} name="fullName" />
+            <input defaultValue={profile.fullName} name="fullName" required />
           </label>
           <label>
             Email
-            <input defaultValue={profile.email} name="email" type="email" />
+            <input defaultValue={profile.email} name="email" type="email" required />
           </label>
           <label>
             Phone
@@ -89,10 +97,7 @@ export function ProfileForm({
             />
           </label>
         </div>
-        <button className="button button-primary" type="submit">
-          Save profile
-        </button>
-      </form>
+      </ConfirmActionForm>
 
       <aside className="summary-panel bmi-panel">
         <p className="eyebrow">Calculated BMI</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import {
   endWorkoutSession,
@@ -8,6 +9,8 @@ import {
   startWorkoutSession
 } from "@/lib/firebase/actions";
 import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
+import type { FormActionState } from "@/types/action-state";
+import { initialFormActionState } from "@/types/action-state";
 import { Activity, Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 
@@ -19,6 +22,13 @@ type Modification = {
   summary: string;
   swaps: Array<{ from: string; to: string; reason: string }>;
   routine: WorkoutExercise[];
+};
+
+type PendingEvent = {
+  confirmLabel: string;
+  message: string;
+  run: () => Promise<FormActionState>;
+  title: string;
 };
 
 function getStoredActiveCount() {
@@ -217,6 +227,9 @@ export function MemberWorkoutConsole({
   const [timerSeconds, setTimerSeconds] = useState(120);
   const [remainingSeconds, setRemainingSeconds] = useState(120);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
+  const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
+  const [isEventPending, setIsEventPending] = useState(false);
   const busyness = useMemo(() => getBusyness(activeCount), [activeCount]);
   const visibleWorkout = modification
     ? [{ ...program.days[0], exercises: modification.routine }]
@@ -251,33 +264,57 @@ export function MemberWorkoutConsole({
     return () => window.clearInterval(intervalId);
   }, [isTimerRunning]);
 
-  async function startWorkout() {
+  function startWorkout() {
     if (isActive) {
       return;
     }
 
-    window.localStorage.setItem(sessionKey, "active");
-    setIsActive(true);
-    setActiveCount(setStoredActiveCount(getStoredActiveCount() + 1));
-    const formData = new FormData();
-    formData.set("memberId", memberId);
-    formData.set("sessionId", `active-${memberId}`);
-    await startWorkoutSession(formData);
-    router.refresh();
+    setPendingEvent({
+      confirmLabel: "Start workout",
+      message: "This will mark your workout as active and update live gym capacity.",
+      title: "Start workout session?",
+      run: async () => {
+        const formData = new FormData();
+        formData.set("memberId", memberId);
+        formData.set("sessionId", `active-${memberId}`);
+        const result = await startWorkoutSession(initialFormActionState, formData);
+
+        if (result.status === "success") {
+          window.localStorage.setItem(sessionKey, "active");
+          setIsActive(true);
+          setActiveCount(setStoredActiveCount(getStoredActiveCount() + 1));
+          router.refresh();
+        }
+
+        return result;
+      }
+    });
   }
 
-  async function endWorkout() {
+  function endWorkout() {
     if (!isActive) {
       return;
     }
 
-    window.localStorage.removeItem(sessionKey);
-    setIsActive(false);
-    setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
-    const formData = new FormData();
-    formData.set("sessionId", `active-${memberId}`);
-    await endWorkoutSession(formData);
-    router.refresh();
+    setPendingEvent({
+      confirmLabel: "End workout",
+      message: "This will close your active workout session and update live gym capacity.",
+      title: "End workout session?",
+      run: async () => {
+        const formData = new FormData();
+        formData.set("sessionId", `active-${memberId}`);
+        const result = await endWorkoutSession(initialFormActionState, formData);
+
+        if (result.status === "success") {
+          window.localStorage.removeItem(sessionKey);
+          setIsActive(false);
+          setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
+          router.refresh();
+        }
+
+        return result;
+      }
+    });
   }
 
   function updateInjury() {
@@ -294,22 +331,55 @@ export function MemberWorkoutConsole({
     setIsTimerRunning(false);
   }
 
-  async function handleLiftLog(formData: FormData) {
-    await logLiftSet(formData);
+  function handleLiftLog(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-    const newLog: LiftLog = {
-      id: `optimistic-${Date.now()}`,
-      memberId,
-      exerciseId: String(formData.get("exerciseId") ?? ""),
-      weight: Number(formData.get("weight") ?? 0),
-      sets: Number(formData.get("sets") ?? 1),
-      reps: String(formData.get("reps") ?? ""),
-      sessionId: String(formData.get("sessionId") ?? ""),
-      loggedAt: new Date().toISOString()
-    };
+    if (!event.currentTarget.reportValidity()) {
+      return;
+    }
 
-    setLiftLogs((current) => [newLog, ...current].slice(0, 12));
-    router.refresh();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const exerciseName = getExerciseName(String(formData.get("exerciseId") ?? ""), exercises);
+
+    setPendingEvent({
+      confirmLabel: "Log lift",
+      message: `This will save a lift entry for ${exerciseName}.`,
+      title: "Log this lift?",
+      run: async () => {
+        const result = await logLiftSet(initialFormActionState, formData);
+
+        if (result.status === "success") {
+          const newLog: LiftLog = {
+            id: `optimistic-${Date.now()}`,
+            memberId,
+            exerciseId: String(formData.get("exerciseId") ?? ""),
+            weight: Number(formData.get("weight") ?? 0),
+            sets: Number(formData.get("sets") ?? 1),
+            reps: String(formData.get("reps") ?? ""),
+            sessionId: String(formData.get("sessionId") ?? ""),
+            loggedAt: new Date().toISOString()
+          };
+
+          setLiftLogs((current) => [newLog, ...current].slice(0, 12));
+          router.refresh();
+        }
+
+        return result;
+      }
+    });
+  }
+
+  async function confirmPendingEvent() {
+    if (!pendingEvent) {
+      return;
+    }
+
+    setIsEventPending(true);
+    const result = await pendingEvent.run();
+    setIsEventPending(false);
+    setPendingEvent(null);
+    setEventStatus(result);
   }
 
   return (
@@ -369,7 +439,7 @@ export function MemberWorkoutConsole({
             <h2>Progressive overload</h2>
             <span className="status-pill status-neutral">Historical lift data</span>
           </div>
-          <form action={handleLiftLog} className="lift-log-form">
+          <form className="lift-log-form" onSubmit={handleLiftLog}>
             <input name="memberId" type="hidden" value={memberId} />
             <input name="sessionId" type="hidden" value={`session-${memberId}`} />
             <label>
@@ -384,15 +454,15 @@ export function MemberWorkoutConsole({
             </label>
             <label>
               Weight
-              <input min="0" name="weight" placeholder="60" step="0.5" type="number" />
+              <input min="0" name="weight" placeholder="60" required step="0.5" type="number" />
             </label>
             <label>
               Sets
-              <input defaultValue="3" min="1" name="sets" type="number" />
+              <input defaultValue="3" min="1" name="sets" required type="number" />
             </label>
             <label>
               Reps
-              <input name="reps" placeholder="8, 8, 7" />
+              <input name="reps" placeholder="8, 8, 7" required />
             </label>
             <button className="button button-primary" type="submit">
               Log lift
@@ -497,6 +567,63 @@ export function MemberWorkoutConsole({
           </div>
         ) : null}
       </aside>
+
+      {pendingEvent ? (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            aria-describedby="event-confirm-dialog-message"
+            aria-modal="true"
+            className="confirm-dialog"
+            role="dialog"
+          >
+            <h2>{pendingEvent.title}</h2>
+            <p id="event-confirm-dialog-message">{pendingEvent.message}</p>
+            <div className="quick-actions">
+              <button
+                className="button button-secondary"
+                disabled={isEventPending}
+                onClick={() => setPendingEvent(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="button button-primary"
+                disabled={isEventPending}
+                onClick={confirmPendingEvent}
+                type="button"
+              >
+                {isEventPending ? "Updating..." : pendingEvent.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {eventStatus ? (
+        <div className="dialog-backdrop" role="presentation">
+          <div
+            aria-live="polite"
+            aria-modal="true"
+            className="confirm-dialog"
+            role="dialog"
+          >
+            <h2>{eventStatus.status === "success" ? "Update complete" : "Update failed"}</h2>
+            <p className={`form-message form-message-${eventStatus.status}`}>
+              {eventStatus.message}
+            </p>
+            <div className="quick-actions">
+              <button
+                className="button button-primary"
+                onClick={() => setEventStatus(null)}
+                type="button"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

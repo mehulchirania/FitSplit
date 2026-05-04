@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { collectionPaths, TITAN_GYM_ID, TITAN_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
+import type { FormActionState } from "@/types/action-state";
 
 function requireFirebase() {
   if (!hasFirebaseAdminConfig()) {
@@ -12,11 +13,6 @@ function requireFirebase() {
 
   return getFirebaseAdminServices().db;
 }
-
-type FormActionState = {
-  status: "idle" | "success" | "error";
-  message: string;
-};
 
 function requireText(formData: FormData, key: string, label = key) {
   const value = String(formData.get(key) ?? "").trim();
@@ -34,6 +30,24 @@ function addMonths(dateValue: string, months: number) {
   date.setUTCMonth(date.getUTCMonth() + months);
   date.setUTCDate(date.getUTCDate() - 1);
   return date.toISOString().slice(0, 10);
+}
+
+function getActionFormData(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+) {
+  return maybeFormData ?? (previousStateOrFormData as FormData);
+}
+
+function success(message: string): FormActionState {
+  return { status: "success", message };
+}
+
+function failure(error: unknown, fallback: string): FormActionState {
+  return {
+    status: "error",
+    message: error instanceof Error ? error.message : fallback
+  };
 }
 
 async function ensureTitanWorkspace() {
@@ -69,10 +83,11 @@ async function ensureTitanWorkspace() {
 }
 
 export async function createMemberWithMembership(
-  _previousState: FormActionState,
-  formData: FormData
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const memberId = randomUUID();
@@ -125,252 +140,335 @@ export async function createMemberWithMembership(
     revalidatePath("/owner");
     revalidatePath("/owner/members");
 
-    return {
-      status: "success",
-      message: `${fullName} was added with a membership ending ${endDate}.`
-    };
+    return success(`${fullName} was added with a membership ending ${endDate}.`);
   } catch (error) {
     console.error("Unable to create member with membership", error);
 
-    return {
-      status: "error",
-      message: error instanceof Error ? error.message : "Unable to add member. Please try again."
-    };
+    return failure(error, "Unable to add member. Please try again.");
   }
 }
 
-export async function updateMemberProfile(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const memberId = requireText(formData, "memberId");
-  const fullName = requireText(formData, "fullName");
-  const email = requireText(formData, "email");
-  const now = new Date().toISOString();
+export async function updateMemberProfile(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const memberId = requireText(formData, "memberId", "Member");
+    const fullName = requireText(formData, "fullName", "Full name");
+    const email = requireText(formData, "email", "Email");
+    const now = new Date().toISOString();
 
-  await db.collection(collectionPaths.profiles).doc(memberId).set(
-    {
-      id: memberId,
-      fullName,
-      email,
-      phone: String(formData.get("phone") ?? "").trim(),
-      role: "member",
-      defaultGymId: TITAN_GYM_ID,
-      goal: String(formData.get("goal") ?? "General fitness").trim(),
-      avatarInitials: fullName
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-      isActive: true,
-      updatedAt: now
-    },
-    { merge: true }
-  );
+    await db.collection(collectionPaths.profiles).doc(memberId).set(
+      {
+        id: memberId,
+        fullName,
+        email,
+        phone: String(formData.get("phone") ?? "").trim(),
+        role: "member",
+        defaultGymId: TITAN_GYM_ID,
+        goal: String(formData.get("goal") ?? "General fitness").trim(),
+        avatarInitials: fullName
+          .split(" ")
+          .map((part) => part[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+        isActive: true,
+        updatedAt: now
+      },
+      { merge: true }
+    );
 
-  revalidatePath("/owner");
-  revalidatePath("/owner/members");
-  revalidatePath(`/owner/members/${memberId}`);
-  revalidatePath("/member");
-}
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/member");
 
-export async function updateProfileMetrics(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const memberId = requireText(formData, "memberId");
-  const fullName = requireText(formData, "fullName");
-  const email = requireText(formData, "email");
-  const now = new Date().toISOString();
-
-  await db.collection(collectionPaths.profiles).doc(memberId).set(
-    {
-      id: memberId,
-      fullName,
-      email,
-      phone: String(formData.get("phone") ?? "").trim(),
-      age: Number(formData.get("age") ?? 0),
-      heightCm: Number(formData.get("heightCm") ?? 0),
-      weightKg: Number(formData.get("weightKg") ?? 0),
-      role: "member",
-      defaultGymId: TITAN_GYM_ID,
-      isActive: true,
-      updatedAt: now
-    },
-    { merge: true }
-  );
-
-  revalidatePath("/profile");
-  revalidatePath("/member");
-}
-
-export async function renewMemberMembership(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const membershipId = randomUUID();
-  const notificationId = randomUUID();
-  const memberId = requireText(formData, "memberId");
-  const startDate = requireText(formData, "startDate");
-  const durationMonths = Number(formData.get("durationMonths") ?? 1);
-
-  if (![1, 3, 6, 12].includes(durationMonths)) {
-    throw new Error("durationMonths must be 1, 3, 6, or 12.");
+    return success(`${fullName}'s member details were updated.`);
+  } catch (error) {
+    console.error("Unable to update member profile", error);
+    return failure(error, "Unable to update member details. Please try again.");
   }
-
-  const endDate = addMonths(startDate, durationMonths);
-  const paymentReference = String(formData.get("paymentReference") ?? "").trim();
-  const now = new Date().toISOString();
-
-  await db.collection(collectionPaths.memberships).doc(membershipId).set({
-    id: membershipId,
-    gymId: TITAN_GYM_ID,
-    memberId,
-    planName: `${durationMonths} Month Renewal`,
-    startDate,
-    endDate,
-    durationMonths,
-    paymentReference,
-    createdBy: TITAN_OWNER_ID,
-    createdAt: now,
-    updatedAt: now,
-    type: "renewal"
-  });
-
-  await db.collection(collectionPaths.notifications).doc(notificationId).set({
-    id: notificationId,
-    recipientRole: "member",
-    recipientId: memberId,
-    type: "membership_renewed",
-    title: "Membership renewed",
-    body: `Your membership has been renewed until ${endDate}.`,
-    createdAt: now
-  });
-
-  revalidatePath("/owner");
-  revalidatePath("/owner/members");
-  revalidatePath(`/owner/members/${memberId}`);
-  revalidatePath("/member");
 }
 
-export async function logLiftSet(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const liftLogId = randomUUID();
-  const memberId = requireText(formData, "memberId");
-  const exerciseId = requireText(formData, "exerciseId");
-  const weight = Number(formData.get("weight") ?? 0);
-  const sets = Number(formData.get("sets") ?? 1);
-  const reps = requireText(formData, "reps");
-  const sessionId = String(formData.get("sessionId") ?? "").trim() || randomUUID();
-  const now = new Date().toISOString();
+export async function updateProfileMetrics(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const memberId = requireText(formData, "memberId", "Member");
+    const fullName = requireText(formData, "fullName", "Full name");
+    const email = requireText(formData, "email", "Email");
+    const now = new Date().toISOString();
 
-  if (weight < 0 || sets < 1) {
-    throw new Error("Lift log values are invalid.");
+    await db.collection(collectionPaths.profiles).doc(memberId).set(
+      {
+        id: memberId,
+        fullName,
+        email,
+        phone: String(formData.get("phone") ?? "").trim(),
+        age: Number(formData.get("age") ?? 0),
+        heightCm: Number(formData.get("heightCm") ?? 0),
+        weightKg: Number(formData.get("weightKg") ?? 0),
+        role: "member",
+        defaultGymId: TITAN_GYM_ID,
+        isActive: true,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/profile");
+    revalidatePath("/member");
+
+    return success("Profile details were updated.");
+  } catch (error) {
+    console.error("Unable to update profile metrics", error);
+    return failure(error, "Unable to update profile. Please try again.");
   }
-
-  await db.collection(collectionPaths.liftLogs).doc(liftLogId).set({
-    id: liftLogId,
-    gymId: TITAN_GYM_ID,
-    memberId,
-    exerciseId,
-    weight,
-    sets,
-    reps,
-    sessionId,
-    loggedAt: now,
-    createdAt: now,
-    updatedAt: now
-  });
-
-  revalidatePath("/member");
-  revalidatePath(`/owner/members/${memberId}`);
 }
 
-export async function startWorkoutSession(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const memberId = requireText(formData, "memberId");
-  const sessionId = requireText(formData, "sessionId");
-  const now = new Date().toISOString();
+export async function renewMemberMembership(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const membershipId = randomUUID();
+    const notificationId = randomUUID();
+    const memberId = requireText(formData, "memberId", "Member");
+    const startDate = requireText(formData, "startDate", "Start date");
+    const durationMonths = Number(formData.get("durationMonths") ?? 1);
 
-  await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
-    {
-      id: sessionId,
+    if (![1, 3, 6, 12].includes(durationMonths)) {
+      throw new Error("Duration must be 1, 3, 6, or 12 months.");
+    }
+
+    const endDate = addMonths(startDate, durationMonths);
+    const paymentReference = String(formData.get("paymentReference") ?? "").trim();
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.memberships).doc(membershipId).set({
+      id: membershipId,
       gymId: TITAN_GYM_ID,
       memberId,
-      startedAt: now,
-      status: "active",
+      planName: `${durationMonths} Month Renewal`,
+      startDate,
+      endDate,
+      durationMonths,
+      paymentReference,
+      createdBy: TITAN_OWNER_ID,
+      createdAt: now,
+      updatedAt: now,
+      type: "renewal"
+    });
+
+    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+      id: notificationId,
+      recipientRole: "member",
+      recipientId: memberId,
+      type: "membership_renewed",
+      title: "Membership renewed",
+      body: `Your membership has been renewed until ${endDate}.`,
+      createdAt: now
+    });
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/member");
+
+    return success(`Membership was renewed until ${endDate}.`);
+  } catch (error) {
+    console.error("Unable to renew member membership", error);
+    return failure(error, "Unable to renew membership. Please try again.");
+  }
+}
+
+export async function logLiftSet(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const liftLogId = randomUUID();
+    const memberId = requireText(formData, "memberId", "Member");
+    const exerciseId = requireText(formData, "exerciseId", "Exercise");
+    const weight = Number(formData.get("weight") ?? 0);
+    const sets = Number(formData.get("sets") ?? 1);
+    const reps = requireText(formData, "reps", "Reps");
+    const sessionId = String(formData.get("sessionId") ?? "").trim() || randomUUID();
+    const now = new Date().toISOString();
+
+    if (weight < 0 || sets < 1) {
+      throw new Error("Lift log values are invalid.");
+    }
+
+    await db.collection(collectionPaths.liftLogs).doc(liftLogId).set({
+      id: liftLogId,
+      gymId: TITAN_GYM_ID,
+      memberId,
+      exerciseId,
+      weight,
+      sets,
+      reps,
+      sessionId,
+      loggedAt: now,
+      createdAt: now,
       updatedAt: now
-    },
-    { merge: true }
-  );
+    });
 
-  revalidatePath("/member");
-  revalidatePath("/owner");
+    revalidatePath("/member");
+    revalidatePath(`/owner/members/${memberId}`);
+
+    return success("Lift entry was logged.");
+  } catch (error) {
+    console.error("Unable to log lift set", error);
+    return failure(error, "Unable to log lift. Please try again.");
+  }
 }
 
-export async function endWorkoutSession(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const sessionId = requireText(formData, "sessionId");
-  const now = new Date().toISOString();
+export async function startWorkoutSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const memberId = requireText(formData, "memberId", "Member");
+    const sessionId = requireText(formData, "sessionId", "Session");
+    const now = new Date().toISOString();
 
-  await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
-    {
-      endedAt: now,
-      status: "completed",
+    await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
+      {
+        id: sessionId,
+        gymId: TITAN_GYM_ID,
+        memberId,
+        startedAt: now,
+        status: "active",
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/member");
+    revalidatePath("/owner");
+
+    return success("Workout session was started.");
+  } catch (error) {
+    console.error("Unable to start workout session", error);
+    return failure(error, "Unable to start workout. Please try again.");
+  }
+}
+
+export async function endWorkoutSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const sessionId = requireText(formData, "sessionId", "Session");
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
+      {
+        endedAt: now,
+        status: "completed",
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/member");
+    revalidatePath("/owner");
+
+    return success("Workout session was ended.");
+  } catch (error) {
+    console.error("Unable to end workout session", error);
+    return failure(error, "Unable to end workout. Please try again.");
+  }
+}
+
+export async function submitContactMessage(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const messageId = randomUUID();
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.contactMessages).doc(messageId).set({
+      id: messageId,
+      gymId: TITAN_GYM_ID,
+      name: requireText(formData, "name", "Name"),
+      number: requireText(formData, "number", "Number"),
+      requirement: requireText(formData, "requirement", "Requirement"),
+      email: String(formData.get("email") ?? "").trim(),
+      status: "new",
+      createdAt: now,
       updatedAt: now
-    },
-    { merge: true }
-  );
+    });
 
-  revalidatePath("/member");
-  revalidatePath("/owner");
+    revalidatePath("/about");
+
+    return success("Message was sent.");
+  } catch (error) {
+    console.error("Unable to submit contact message", error);
+    return failure(error, "Unable to send message. Please try again.");
+  }
 }
 
-export async function submitContactMessage(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const messageId = randomUUID();
-  const now = new Date().toISOString();
+export async function createCatalogExercise(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const exerciseId = randomUUID();
+    const now = new Date().toISOString();
+    const name = requireText(formData, "name", "Exercise name");
 
-  await db.collection(collectionPaths.contactMessages).doc(messageId).set({
-    id: messageId,
-    gymId: TITAN_GYM_ID,
-    name: requireText(formData, "name"),
-    number: requireText(formData, "number"),
-    requirement: requireText(formData, "requirement"),
-    email: String(formData.get("email") ?? "").trim(),
-    status: "new",
-    createdAt: now,
-    updatedAt: now
-  });
+    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
+      id: exerciseId,
+      gymId: TITAN_GYM_ID,
+      name,
+      muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
+      equipment: String(formData.get("equipment") ?? "").trim(),
+      instructions: String(formData.get("instructions") ?? "").trim(),
+      videoSource: String(formData.get("videoSource") ?? "none"),
+      videoUrl: String(formData.get("videoUrl") ?? "").trim(),
+      ownerOnly: true,
+      isActive: true,
+      createdBy: TITAN_OWNER_ID,
+      createdAt: now,
+      updatedAt: now
+    });
 
-  revalidatePath("/about");
-}
+    revalidatePath("/owner/exercises");
 
-export async function createCatalogExercise(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const exerciseId = randomUUID();
-  const now = new Date().toISOString();
-
-  await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
-    id: exerciseId,
-    gymId: TITAN_GYM_ID,
-    name: requireText(formData, "name"),
-    muscleGroup: requireText(formData, "muscleGroup"),
-    equipment: String(formData.get("equipment") ?? "").trim(),
-    instructions: String(formData.get("instructions") ?? "").trim(),
-    videoSource: String(formData.get("videoSource") ?? "none"),
-    videoUrl: String(formData.get("videoUrl") ?? "").trim(),
-    ownerOnly: true,
-    isActive: true,
-    createdBy: TITAN_OWNER_ID,
-    createdAt: now,
-    updatedAt: now
-  });
-
-  revalidatePath("/owner/exercises");
+    return success(`${name} was added to the exercise catalog.`);
+  } catch (error) {
+    console.error("Unable to create catalog exercise", error);
+    return failure(error, "Unable to save exercise. Please try again.");
+  }
 }
 
 async function resolveExerciseRecordId(sourceExerciseId: string) {
@@ -383,48 +481,65 @@ async function resolveExerciseRecordId(sourceExerciseId: string) {
   return sourceExercise.exists ? sourceExercise.id : sourceExerciseId;
 }
 
-export async function createCustomWorkoutProgram(formData: FormData) {
-  await ensureTitanWorkspace();
-  const db = requireFirebase();
-  const programId = randomUUID();
-  const now = new Date().toISOString();
-  const exerciseIds = formData
-    .getAll("exerciseIds")
-    .map((value) => String(value).trim())
-    .filter(Boolean);
-  const databaseExerciseIds = await Promise.all(
-    exerciseIds.map((exerciseId) => resolveExerciseRecordId(exerciseId))
-  );
+export async function createCustomWorkoutProgram(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    await ensureTitanWorkspace();
+    const db = requireFirebase();
+    const programId = randomUUID();
+    const now = new Date().toISOString();
+    const title = requireText(formData, "title", "Program title");
+    const exerciseIds = formData
+      .getAll("exerciseIds")
+      .map((value) => String(value).trim())
+      .filter(Boolean);
 
-  await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
-    id: programId,
-    gymId: TITAN_GYM_ID,
-    title: requireText(formData, "title"),
-    description: String(formData.get("description") ?? "").trim(),
-    goal: String(formData.get("goal") ?? "Custom member plan").trim(),
-    difficulty: String(formData.get("difficulty") ?? "beginner"),
-    daysPerWeek: Number(formData.get("daysPerWeek") ?? 1),
-    splitType: "custom",
-    isActive: true,
-    createdBy: TITAN_OWNER_ID,
-    days: [
-      {
-        id: randomUUID(),
-        title: requireText(formData, "dayTitle"),
-        dayNumber: 1,
-        focus: "Owner-created custom day",
-        exercises: databaseExerciseIds.map((exerciseId, index) => ({
-          exerciseId,
-          sortOrder: index + 1,
-          sets: Number(formData.get("sets") ?? 3),
-          reps: String(formData.get("reps") ?? "8-12"),
-          restSeconds: Number(formData.get("restSeconds") ?? 75)
-        }))
-      }
-    ],
-    createdAt: now,
-    updatedAt: now
-  });
+    if (!exerciseIds.length) {
+      throw new Error("Add at least one exercise before saving a custom plan.");
+    }
 
-  revalidatePath("/owner/programs");
+    const databaseExerciseIds = await Promise.all(
+      exerciseIds.map((exerciseId) => resolveExerciseRecordId(exerciseId))
+    );
+
+    await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
+      id: programId,
+      gymId: TITAN_GYM_ID,
+      title,
+      description: String(formData.get("description") ?? "").trim(),
+      goal: String(formData.get("goal") ?? "Custom member plan").trim(),
+      difficulty: String(formData.get("difficulty") ?? "beginner"),
+      daysPerWeek: Number(formData.get("daysPerWeek") ?? 1),
+      splitType: "custom",
+      isActive: true,
+      createdBy: TITAN_OWNER_ID,
+      days: [
+        {
+          id: randomUUID(),
+          title: requireText(formData, "dayTitle", "Day title"),
+          dayNumber: 1,
+          focus: "Owner-created custom day",
+          exercises: databaseExerciseIds.map((exerciseId, index) => ({
+            exerciseId,
+            sortOrder: index + 1,
+            sets: Number(formData.get("sets") ?? 3),
+            reps: String(formData.get("reps") ?? "8-12"),
+            restSeconds: Number(formData.get("restSeconds") ?? 75)
+          }))
+        }
+      ],
+      createdAt: now,
+      updatedAt: now
+    });
+
+    revalidatePath("/owner/programs");
+
+    return success(`${title} was saved to workout programs.`);
+  } catch (error) {
+    console.error("Unable to create custom workout program", error);
+    return failure(error, "Unable to save custom plan. Please try again.");
+  }
 }
