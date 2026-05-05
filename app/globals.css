@@ -3603,6 +3603,197 @@ html[data-theme="light"] .ui-cards .ui-card:hover {
 /* ============================================================
    LOGIN EXPERIENCE
    ============================================================ */
+.intro-page {
+  scroll-behavior: smooth;
+}
+
+.intro-hero {
+  align-items: center;
+  display: grid;
+  min-height: 100dvh;
+  overflow: hidden;
+  padding: clamp(24px, 5vw, 72px);
+  position: relative;
+}
+
+.intro-hero::before {
+  background:
+    linear-gradient(90deg, rgb(0 0 0 / 0.54), rgb(0 0 0 / 0.20)),
+    url("https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1800&q=82")
+      center / cover no-repeat;
+  content: "";
+  inset: 0;
+  position: absolute;
+}
+
+html[data-theme="light"] .intro-hero::before {
+  background:
+    linear-gradient(90deg, rgb(255 255 255 / 0.74), rgb(255 255 255 / 0.34)),
+    url("https://images.unsplash.com/photo-1571902943202-507ec2618e8f?auto=format&fit=crop&w=1800&q=82")
+      center / cover no-repeat;
+}
+
+.intro-hero-copy {
+  backdrop-filter: blur(26px) saturate(150%);
+  -webkit-backdrop-filter: blur(26px) saturate(150%);
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.13);
+  border-radius: 30px;
+  box-shadow: 0 28px 90px rgb(0 0 0 / 0.34), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  max-width: 720px;
+  padding: clamp(26px, 5vw, 54px);
+  position: relative;
+  z-index: 1;
+}
+
+html[data-theme="light"] .intro-hero-copy {
+  background: rgb(255 255 255 / 0.72);
+  border-color: rgb(0 0 0 / 0.08);
+}
+
+.intro-hero-logo {
+  border-radius: 24px;
+  box-shadow: 0 18px 52px rgb(0 0 0 / 0.3);
+  height: 84px;
+  margin-bottom: 28px;
+  width: 84px;
+}
+
+.intro-hero h1 {
+  font-size: clamp(3.2rem, 9vw, 7.4rem);
+  line-height: 0.88;
+  margin-bottom: 22px;
+  max-width: 680px;
+}
+
+.intro-hero p:not(.eyebrow) {
+  font-size: clamp(1rem, 1.8vw, 1.16rem);
+  max-width: 620px;
+}
+
+.intro-hero-button {
+  margin-top: 16px;
+}
+
+.intro-section,
+.intro-login-band {
+  margin: 0 auto;
+  max-width: 1180px;
+  padding: clamp(54px, 8vw, 100px) clamp(18px, 4vw, 42px);
+}
+
+.intro-section-heading {
+  margin-bottom: 24px;
+  max-width: 720px;
+}
+
+.intro-section-heading h2,
+.intro-login-copy h2 {
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.98;
+  margin-bottom: 12px;
+}
+
+.intro-carousel {
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 30px;
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.28), inset 0 1px 0 rgb(255 255 255 / 0.08);
+  display: grid;
+  gap: 0;
+  grid-template-columns: minmax(0, 1fr) minmax(330px, 0.78fr);
+  overflow: hidden;
+}
+
+html[data-theme="light"] .intro-carousel {
+  background: rgb(255 255 255 / 0.72);
+  border-color: rgb(0 0 0 / 0.08);
+  box-shadow: 0 18px 60px rgb(0 0 0 / 0.09);
+}
+
+.intro-carousel-image {
+  background-position: center;
+  background-size: cover;
+  min-height: 470px;
+  transition: background-image 320ms ease;
+}
+
+.intro-carousel-copy {
+  align-content: center;
+  display: grid;
+  padding: clamp(26px, 4vw, 46px);
+}
+
+.intro-carousel-copy h2 {
+  font-size: clamp(2rem, 4vw, 3.6rem);
+  line-height: 0.98;
+  margin-bottom: 14px;
+}
+
+.intro-carousel-controls {
+  align-items: center;
+  border-top: 1px solid rgb(255 255 255 / 0.10);
+  display: flex;
+  gap: 14px;
+  grid-column: 1 / -1;
+  justify-content: space-between;
+  padding: 14px;
+}
+
+html[data-theme="light"] .intro-carousel-controls {
+  border-top-color: rgb(0 0 0 / 0.08);
+}
+
+.intro-carousel-controls button {
+  background: rgb(255 255 255 / 0.08);
+  border: 1px solid rgb(255 255 255 / 0.12);
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 850;
+  min-height: 38px;
+  padding: 8px 13px;
+}
+
+html[data-theme="light"] .intro-carousel-controls button {
+  background: rgb(255 255 255 / 0.72);
+  border-color: rgb(0 0 0 / 0.08);
+}
+
+.intro-carousel-dots {
+  display: flex;
+  gap: 8px;
+}
+
+.intro-carousel-dots button {
+  height: 10px;
+  min-height: 10px;
+  padding: 0;
+  width: 10px;
+}
+
+.intro-carousel-dots button.is-active {
+  background: var(--text);
+  width: 32px;
+}
+
+.intro-login-band {
+  align-items: start;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 0.78fr) minmax(360px, 0.72fr);
+}
+
+.intro-login-copy {
+  position: sticky;
+  top: 120px;
+}
+
+.intro-login-cta {
+  display: flex;
+  justify-content: center;
+  padding-top: 24px;
+}
+
 .login-page {
   align-items: center;
   display: flex;
@@ -3631,6 +3822,14 @@ html[data-theme="light"] .ui-cards .ui-card:hover {
   position: relative;
   width: 100%;
   z-index: 1;
+}
+
+.intro-login-band .login-shell {
+  display: block;
+}
+
+.intro-login-band .login-brand-panel {
+  display: none;
 }
 
 .login-brand-panel,
@@ -3845,6 +4044,24 @@ html[data-theme="light"] .login-form input {
 }
 
 @media (max-width: 860px) {
+  .intro-hero {
+    min-height: 86dvh;
+    padding: 18px;
+  }
+
+  .intro-carousel,
+  .intro-login-band {
+    grid-template-columns: 1fr;
+  }
+
+  .intro-carousel-image {
+    min-height: 280px;
+  }
+
+  .intro-login-copy {
+    position: static;
+  }
+
   .login-page {
     align-items: start;
     overflow: auto;

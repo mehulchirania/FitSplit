@@ -2,6 +2,16 @@
 
 ## Latest Update - 2026-05-05: Firebase Auth Integration
 
+- Main page revamp: `/` is now an intro landing page before login.
+- Added a hero section with FitSplit branding, stock gym background image, and an “Explore features” smooth-scroll CTA.
+- Added `components/feature-carousel.tsx` with auto-advancing feature slides, stock gym imagery, previous/next controls, and dot navigation.
+- Added a “Login now” CTA after the carousel that scrolls to the login section.
+- Existing login form remains available below the intro content, with member/staff local demo credentials preserved.
+- Added landing/carousel/login page CSS in `app/globals.css`.
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+
 - Follow-up UI fix: login page now always renders the login experience at `/` instead of redirecting logged-in local users through the loader.
 - Rebuilt `components/login-form.tsx` into a dedicated two-panel glass login UI with member/staff tabs, clear local demo credentials, cleaner labels, and proper error/success states.
 - Added login-specific responsive CSS in `app/globals.css`; tablet/mobile layout now keeps the form visible above the fold.
