@@ -1,11 +1,14 @@
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
+import { requireRole } from "@/lib/auth";
 import { getExerciseCatalog, getWorkoutPrograms } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProgramsPage() {
+  await requireRole(["admin", "owner"]);
+
   const [{ catalog, exercises }, { programs }] = await Promise.all([
     getExerciseCatalog(),
     getWorkoutPrograms()

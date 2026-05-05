@@ -15,7 +15,9 @@ export function MemberRow({
           {member.goal}
         </span>
       </div>
-      <span className="status-pill status-active">Active profile</span>
+      <span className={`status-pill ${member.isActive ? "status-active" : "status-expired"}`}>
+        {member.isActive ? "Active profile" : "Suspended"}
+      </span>
       <Link className="button button-secondary" href={`/owner/members/${member.id}`}>
         Edit
       </Link>

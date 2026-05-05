@@ -4,6 +4,7 @@ import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { requireRole } from "@/lib/auth";
 import {
   getActiveProgramAssignments,
   getActiveWorkoutSessions,
@@ -17,6 +18,8 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function OwnerDashboard() {
+  await requireRole(["admin", "owner"]);
+
   const [
     { members },
     { notifications: ownerNotifications },

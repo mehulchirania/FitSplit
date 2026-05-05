@@ -1,12 +1,15 @@
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell, Video } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { requireRole } from "@/lib/auth";
 import { createCatalogExercise } from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
 export default async function ExerciseCatalogPage() {
+  await requireRole(["admin", "owner"]);
+
   const {
     exercises,
     catalog: exerciseCatalogByMuscle

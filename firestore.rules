@@ -55,7 +55,10 @@ service cloud.firestore {
     }
 
     match /notifications/{notificationId} {
-      allow read, update: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.recipientUserId);
+      allow read, update: if isAdmin()
+        || isOwnerForGym(resource.data.gymId)
+        || isMemberSelf(resource.data.recipientUserId)
+        || isMemberSelf(resource.data.recipientId);
       allow create: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
       allow delete: if isAdmin();
     }
@@ -89,6 +92,14 @@ service cloud.firestore {
     match /contactMessages/{messageId} {
       allow create: if true;
       allow read, update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
+    }
+
+    match /attendanceRecords/{attendanceRecordId} {
+      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+      allow create: if isAdmin()
+        || isOwnerForGym(request.resource.data.gymId)
+        || isMemberSelf(request.resource.data.memberId);
+      allow update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
     }
 
     match /siteLinks/{linkId} {

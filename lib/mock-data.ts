@@ -95,7 +95,8 @@ export const members: Member[] = [
     phone: "+91 98765 43210",
     joinedAt: "2026-02-01",
     avatarInitials: "AS",
-    goal: "Build lean muscle"
+    goal: "Build lean muscle",
+    isActive: true
   },
   {
     id: "member-meera",
@@ -104,7 +105,8 @@ export const members: Member[] = [
     phone: "+91 98765 42109",
     joinedAt: "2026-01-15",
     avatarInitials: "MI",
-    goal: "Improve strength"
+    goal: "Improve strength",
+    isActive: true
   },
   {
     id: "member-kabir",
@@ -113,7 +115,8 @@ export const members: Member[] = [
     phone: "+91 98765 41098",
     joinedAt: "2025-12-10",
     avatarInitials: "KK",
-    goal: "Fat loss and conditioning"
+    goal: "Fat loss and conditioning",
+    isActive: true
   },
   {
     id: "member-nisha",
@@ -122,7 +125,8 @@ export const members: Member[] = [
     phone: "+91 98765 40987",
     joinedAt: "2026-03-02",
     avatarInitials: "NR",
-    goal: "Beginner fitness"
+    goal: "Beginner fitness",
+    isActive: true
   },
   {
     id: "member-mehul",
@@ -132,6 +136,7 @@ export const members: Member[] = [
     joinedAt: "2026-05-01",
     avatarInitials: "MC",
     goal: "Improve strength and mobility",
+    isActive: true,
     age: 28,
     heightCm: 180,
     weightKg: 78

@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
-import type { FormEvent, ReactNode } from "react";
+import type { CSSProperties, FormEvent, ReactNode } from "react";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 
@@ -19,6 +19,7 @@ export function ConfirmActionForm({
   confirmMessage,
   confirmTitle = "Confirm update",
   pendingLabel = "Saving...",
+  style,
   submitLabel
 }: {
   action: ConfirmAction;
@@ -29,6 +30,7 @@ export function ConfirmActionForm({
   confirmMessage: string;
   confirmTitle?: string;
   pendingLabel?: string;
+  style?: CSSProperties;
   submitLabel: string;
 }) {
   const [state, formAction, isPending] = useActionState(action, initialFormActionState);
@@ -64,7 +66,7 @@ export function ConfirmActionForm({
 
   return (
     <>
-      <form action={formAction} className={className} onSubmit={handleSubmit} ref={formRef}>
+      <form action={formAction} className={className} onSubmit={handleSubmit} ref={formRef} style={style}>
         {children}
         {state.message ? (
           <p className={`form-message form-message-${state.status}`} role="status">

@@ -1,15 +1,15 @@
 import { ProfileForm } from "@/components/profile-form";
 import { UsersRound } from "@/components/icons";
+import { requireAuth } from "@/lib/auth";
 import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog } from "@/lib/firebase/read-models";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 import { ProfileAiSummary } from "@/components/profile-ai-summary";
-import { cookies } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
 export default async function ProfilePage() {
-  const cookieStore = await cookies();
-  const memberId = cookieStore.get("fitsplit-member-id")?.value || "member-aarav";
+  const currentUser = await requireAuth();
+  const memberId = currentUser.memberId ?? currentUser.uid;
   
   const [
     { profile },

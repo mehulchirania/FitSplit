@@ -1,4 +1,5 @@
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
+import { requireAuth } from "@/lib/auth";
 import { getActivityEvents } from "@/lib/firebase/read-models";
 import type { ActivityEvent } from "@/types/domain";
 
@@ -12,10 +13,14 @@ const eventIcons: Record<ActivityEvent["icon"], typeof Activity> = {
 export const dynamic = "force-dynamic";
 
 export default async function ActivityPage() {
-  const [{ events: ownerEvents }, { events: memberEvents }] = await Promise.all([
-    getActivityEvents("owner"),
-    getActivityEvents("member")
-  ]);
+  const currentUser = await requireAuth();
+  const [{ events: ownerEvents }, { events: memberEvents }] =
+    currentUser.role === "member"
+      ? await Promise.all([
+          Promise.resolve({ events: [] }),
+          getActivityEvents("member", currentUser.memberId ?? currentUser.uid)
+        ])
+      : await Promise.all([getActivityEvents("owner"), getActivityEvents("member")]);
   const events = [...ownerEvents, ...memberEvents].sort((left, right) =>
     right.createdAt.localeCompare(left.createdAt)
   );
@@ -25,10 +30,11 @@ export default async function ActivityPage() {
       <section className="dashboard-header compact-header">
         <div className="header-copy">
           <p className="eyebrow">Activity</p>
-          <h1>Full gym activity feed.</h1>
+          <h1>{currentUser.role === "member" ? "Your activity feed." : "Full gym activity feed."}</h1>
           <p>
-            All owner, member, workout, assignment, and system events across
-            Titan V2 Fitness, independent of which device is being used.
+            {currentUser.role === "member"
+              ? "Your workout, assignment, profile, and account events stay attached to your FitSplit account."
+              : "All owner, member, workout, assignment, and system events across Titan V2 Fitness, independent of which device is being used."}
           </p>
         </div>
       </section>

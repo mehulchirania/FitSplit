@@ -26,7 +26,7 @@ import {
   programs as mockPrograms,
   workoutSessions as mockWorkoutSessions
 } from "@/lib/mock-data";
-import { collectionPaths, TITAN_GYM_ID } from "./collections";
+import { collectionPaths, TITAN_GYM_ID, TITAN_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 
 function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspace {
@@ -38,7 +38,13 @@ function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspac
     ownerUserId: String(data.ownerUserId ?? ""),
     status: String(data.status ?? "pilot") as GymWorkspace["status"],
     expiryWarningDays: Number(data.expiryWarningDays ?? 7),
-    memberCount: Number(data.memberCount ?? 0)
+    memberCount: Number(data.memberCount ?? 0),
+    location: data.location ? String(data.location) : undefined,
+    phone: data.phone ? String(data.phone) : undefined,
+    email: data.email ? String(data.email) : undefined,
+    instagram: data.instagram ? String(data.instagram) : undefined,
+    linkedin: data.linkedin ? String(data.linkedin) : undefined,
+    youtube: data.youtube ? String(data.youtube) : undefined
   };
 }
 
@@ -110,6 +116,70 @@ export async function getTitanWorkspace(): Promise<{
   };
 }
 
+export async function getGymDetail(gymId: string): Promise<{
+  gym: GymWorkspace | null;
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    const gym = mockGyms.find(g => g.id === gymId || g.slug === gymId) ?? null;
+    return { gym, isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const doc = await db.collection(collectionPaths.gyms).doc(gymId).get();
+    
+    if (!doc.exists) {
+      // Try by slug
+      const slugQuery = await db.collection(collectionPaths.gyms).where("slug", "==", gymId).limit(1).get();
+      if (slugQuery.empty) return { gym: null, isPersisted: true };
+      const slugDoc = slugQuery.docs[0];
+      if (!slugDoc) return { gym: null, isPersisted: true };
+      return { gym: mapWorkspace(slugDoc.id, slugDoc.data()), isPersisted: true };
+    }
+
+    return { gym: mapWorkspace(doc.id, doc.data() ?? {}), isPersisted: true };
+  } catch {
+    return { gym: null, isPersisted: false };
+  }
+}
+
+export async function getOwnersForGym(gymId: string): Promise<{
+  owners: Member[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { owners: [], isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.profiles)
+      .where("defaultGymId", "==", gymId)
+      .where("role", "==", "owner")
+      .get();
+    
+    const owners: Member[] = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        fullName: String(data.fullName),
+        email: String(data.email),
+        phone: String(data.phone ?? ""),
+        joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
+        avatarInitials: String(data.avatarInitials ?? "OW"),
+        goal: "Gym Management",
+        isActive: data.isActive !== false
+      };
+    });
+
+    return { owners, isPersisted: true };
+  } catch {
+    return { owners: [], isPersisted: false };
+  }
+}
+
 export async function getRoleSummary(): Promise<{
   adminName: string;
   ownerName: string;
@@ -130,7 +200,7 @@ export async function getRoleSummary(): Promise<{
     const { db } = getFirebaseAdminServices();
     const [adminSnapshot, ownerDoc, gymDoc] = await Promise.all([
       db.collection(collectionPaths.profiles).where("role", "==", "admin").limit(1).get(),
-      db.collection(collectionPaths.profiles).doc("owner-titan-v2").get(),
+      db.collection(collectionPaths.profiles).doc(TITAN_OWNER_ID).get(),
       db.collection(collectionPaths.gyms).doc(TITAN_GYM_ID).get()
     ]);
     return {
@@ -180,7 +250,8 @@ export async function getMembers(): Promise<{
       phone: String(data.phone ?? ""),
       joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
       avatarInitials: String(data.avatarInitials ?? "MB"),
-      goal: String(data.goal ?? "Stored in Firebase")
+      goal: String(data.goal ?? "Stored in Firebase"),
+      isActive: data.isActive !== false
     };
   });
 
@@ -234,7 +305,8 @@ export async function getMemberDetail(memberId: string): Promise<{
     phone: String(data.phone ?? ""),
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? "MB"),
-    goal: String(data.goal ?? "Stored in Firebase")
+    goal: String(data.goal ?? "Stored in Firebase"),
+    isActive: data.isActive !== false
   };
 
   return { member, isPersisted: true };
@@ -855,4 +927,3 @@ export async function getAttendanceRecords(memberId: string): Promise<{
     };
   }
 }
-

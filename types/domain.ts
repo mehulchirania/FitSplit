@@ -22,9 +22,15 @@ export type GymWorkspace = {
   slug: string;
   ownerName: string;
   ownerUserId: string;
-  status: "active" | "pilot" | "paused";
+  status: "active" | "pilot" | "paused" | "inactive";
   expiryWarningDays: number;
   memberCount: number;
+  location?: string;
+  phone?: string;
+  email?: string;
+  instagram?: string;
+  linkedin?: string;
+  youtube?: string;
 };
 
 export type Member = {
@@ -35,6 +41,7 @@ export type Member = {
   joinedAt: string;
   avatarInitials: string;
   goal: string;
+  isActive: boolean;
   age?: number;
   weightKg?: number;
   heightCm?: number;

@@ -3,6 +3,7 @@ import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { AttendanceCalendar } from "@/components/attendance-calendar";
+import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
   getAttendanceRecords,
@@ -15,13 +16,11 @@ import {
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
-import { cookies } from "next/headers";
-
 export const dynamic = "force-dynamic";
 
 export default async function MemberDashboard() {
-  const cookieStore = await cookies();
-  const currentMemberId = cookieStore.get("fitsplit-member-id")?.value || "member-aarav";
+  const currentUser = await requireRole(["member"]);
+  const currentMemberId = currentUser.memberId ?? currentUser.uid;
   const [
     { gym },
     { member },
@@ -106,4 +105,3 @@ export default async function MemberDashboard() {
     </main>
   );
 }
-

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import type { Role } from "@/types/domain";
 
 const adminLinks = [
   { href: "/admin", label: "Admin" },
@@ -18,14 +19,14 @@ const ownerLinks = [
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
-export function MainNav() {
+export function MainNav({ role }: { role?: Role }) {
   const pathname = usePathname();
   
-  if (pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
+  if (!role || role === "member" || pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
     return null;
   }
 
-  const links = pathname.startsWith("/admin")
+  const links = role === "admin" || pathname.startsWith("/admin")
     ? adminLinks
     : ownerLinks;
 

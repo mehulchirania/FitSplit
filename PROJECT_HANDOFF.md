@@ -1,5 +1,67 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Firebase Auth Integration
+
+- Follow-up UI fix: login page now always renders the login experience at `/` instead of redirecting logged-in local users through the loader.
+- Rebuilt `components/login-form.tsx` into a dedicated two-panel glass login UI with member/staff tabs, clear local demo credentials, cleaner labels, and proper error/success states.
+- Added login-specific responsive CSS in `app/globals.css`; tablet/mobile layout now keeps the form visible above the fold.
+- Added a mount scroll reset so returning to `/` does not preserve a previous page scroll offset and clip the login hero.
+- Verified visually in the in-app browser at `http://localhost:3000` for both Member and Staff tabs.
+- Verification passed:
+  - `npm.cmd run typecheck`
+
+- Follow-up fix: added a local demo-session fallback when Firebase Admin credentials are not configured locally.
+- Local login now works without Firebase Admin credentials:
+  - Staff tab: `admin` / `password` -> `/admin`
+  - Member tab: `9688227039` / `123456` -> `/member`
+- Real Firebase Auth remains the production path when Admin credentials are configured.
+- Verified in the in-app browser on `http://localhost:3000`:
+  - Staff login reaches `/admin`.
+  - Member login reaches `/member`.
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+
+- Follow-up fix: login page was hanging locally because `.env.local` had only `FIREBASE_PROJECT_ID`, so Firebase Admin SDK tried Application Default Credentials that are not configured on this machine.
+- `lib/firebase/admin.ts` now treats Admin as configured only when a service account/private key is present or when running in a Google runtime / ADC environment.
+- Fixed new Antigravity compile errors:
+  - Added `Settings` icon export.
+  - Allowed `style` on `ConfirmActionForm`.
+  - Imported `Role` in Firebase actions.
+  - Added `isActive` to mock members.
+  - Hardened `getGymDetail` data typing.
+- Local login page now renders and submit returns the setup message instead of hanging:
+  - `Firebase Admin is not configured on the server yet.`
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+
+- Replaced the mock password/cookie login flow with Firebase Auth email/password sign-in.
+- `components/login-form.tsx` now resolves demo usernames/mobile numbers to Firebase Auth emails, signs in with the Firebase Web SDK, sends the ID token to the server, and supports Firebase password reset emails.
+- `lib/auth.ts` now creates/verifies Firebase Admin session cookies and exposes `requireAuth` / `requireRole` guards.
+- Protected routes now enforce roles server-side:
+  - `/admin` requires admin.
+  - `/owner/*` requires admin or owner.
+  - `/member` requires member.
+  - `/profile` and `/activity` require a signed-in user.
+- Role-aware top navigation now hides owner/admin links from members.
+- Member dashboard/profile now use the authenticated member ID instead of the old `fitsplit-member-id` fallback cookie.
+- Added `scripts/seed-firebase-auth.mjs` and `npm run seed:auth` to create demo Firebase Auth accounts:
+  - `admin`
+  - `titan-owner-1`
+  - `dummy-gym-owner-1`
+  - demo member emails/phones, including Mehul.
+- Firestore profile seeding now includes `authEmail` and `username` fields used by login resolution.
+- New member creation now creates a matching Firebase Auth user and custom claims.
+- Firestore rules were updated for `recipientId` notifications and `attendanceRecords`.
+- Local `.env.local` was converted from UTF-16 to UTF-8 and public Firebase web config was added for local browser sign-in.
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+- Attempted `npm.cmd run seed:auth`, but local Firebase Admin credentials are missing. Run one of these before seeding:
+  - `gcloud auth application-default login`
+  - or set `FIREBASE_CLIENT_EMAIL` and `FIREBASE_PRIVATE_KEY`.
+
 ## Latest Update - 2026-05-05: Login Keyboard Submit Fix
 
 - Fixed login keyboard behavior where pressing Enter in the password field did not submit the login form.

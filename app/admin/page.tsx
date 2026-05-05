@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { requireRole } from "@/lib/auth";
+import { createOwnerProfile } from "@/lib/firebase/actions";
 import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
+import { ConfirmActionForm } from "@/components/confirm-action-form";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
+  await requireRole(["admin"]);
+
   const [{ gyms }, roles] = await Promise.all([
     getGymWorkspaces(),
     getRoleSummary()
@@ -51,25 +56,56 @@ export default async function AdminPage() {
       <section className="list-panel">
         <div className="panel-title">
           <h2>Gyms</h2>
-          <Link className="button button-secondary" href="/owner">
-            Open owner view
-          </Link>
         </div>
         {gyms.map((workspace) => (
-          <Link href="/owner" key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>
+          <Link href={`/admin/gyms/${workspace.id}`} key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>
             <article className="member-row">
-              <span className="avatar">TV</span>
+              <span className="avatar">{workspace.name.substring(0, 2).toUpperCase()}</span>
               <div>
                 <span className="member-name" style={{ color: "var(--primary)" }}>{workspace.name}</span>
                 <span className="member-meta">
-                  Owner: {workspace.ownerName || roles.ownerName} / Slug: {workspace.slug}
+                  Slug: {workspace.slug} / ID: {workspace.id}
                 </span>
               </div>
-              <span className="status-pill status-neutral">{workspace.status}</span>
+              <span className={`status-pill ${workspace.status === 'active' ? 'status-active' : 'status-neutral'}`}>
+                {workspace.status}
+              </span>
               <span className="status-pill status-active">{workspace.memberCount} members</span>
+              <div className="button button-secondary">Manage Gym</div>
             </article>
           </Link>
         ))}
+      </section>
+
+      <section className="content-grid" style={{ marginTop: 16 }}>
+        <ConfirmActionForm
+          action={createOwnerProfile}
+          className="form-panel"
+          confirmMessage="This will create a new owner profile and allow them to manage the selected gym."
+          confirmTitle="Create Gym Owner?"
+          pendingLabel="Creating owner..."
+          submitLabel="Create Owner"
+        >
+          <h2>Add Gym Owner</h2>
+          <div className="form-grid">
+            <label>
+              Full name
+              <input name="fullName" placeholder="e.g. John Smith" required />
+            </label>
+            <label>
+              Email address
+              <input name="email" type="email" placeholder="e.g. owner@gym.com" required />
+            </label>
+            <label>
+              Assign to Gym
+              <select name="gymId" required style={{ width: '100%', padding: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)' }}>
+                {gyms.map(gym => (
+                  <option key={gym.id} value={gym.id}>{gym.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+        </ConfirmActionForm>
       </section>
     </main>
   );

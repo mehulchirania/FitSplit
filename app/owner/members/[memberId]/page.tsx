@@ -5,7 +5,8 @@ import { Dumbbell, Calendar } from "@/components/icons";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { AttendanceCalendar } from "@/components/attendance-calendar";
-import { updateMemberProfile, resetPassword } from "@/lib/firebase/actions";
+import { requireRole } from "@/lib/auth";
+import { updateMemberProfile, resetPassword, toggleMemberAccess } from "@/lib/firebase/actions";
 import {
   getAttendanceRecords,
   getExerciseCatalog,
@@ -21,6 +22,8 @@ export default async function MemberDetailPage({
 }: {
   params: Promise<{ memberId: string }>;
 }) {
+  await requireRole(["admin", "owner"]);
+
   const { memberId } = await params;
   const [
     { member },
@@ -144,18 +147,40 @@ export default async function MemberDetailPage({
         </aside>
         
         <ConfirmActionForm
-          action={resetPassword}
+          action={toggleMemberAccess}
           className="form-panel"
-          confirmMessage="This will reset the user's password to the default 'password'. Are you sure?"
-          confirmTitle="Reset Password"
-          pendingLabel="Resetting..."
-          submitLabel="Reset Password"
+          confirmMessage={member.isActive ? "This will disable the member's login access." : "This will re-enable the member's login access."}
+          confirmTitle={member.isActive ? "Suspend member access?" : "Restore member access?"}
+          pendingLabel="Updating access..."
+          submitLabel={member.isActive ? "Suspend Access" : "Restore Access"}
         >
-          <h2>Account Security</h2>
+          <h2>Access Control</h2>
           <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
-            If a member has forgotten their password or you received a reset request notification, you can reset their password to the default.
+            {member.isActive 
+              ? "Currently active. Suspending will prevent the member from logging in." 
+              : "Currently suspended. Restoring will allow the member to log in again."}
           </p>
           <input name="memberId" type="hidden" value={member.id} />
+          <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
+        </ConfirmActionForm>
+
+        <ConfirmActionForm
+          action={resetPassword}
+          className="form-panel"
+          confirmMessage="This will reset the member's login PIN to a new value. Are you sure?"
+          confirmTitle="Reset Member PIN"
+          pendingLabel="Resetting..."
+          submitLabel="Reset PIN"
+        >
+          <h2>Account PIN</h2>
+          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
+            If a member has forgotten their PIN, you can reset it here. The default reset PIN is '123456'.
+          </p>
+          <input name="userId" type="hidden" value={member.id} />
+          <label>
+            New 6-digit PIN
+            <input name="newPin" defaultValue="123456" maxLength={6} required />
+          </label>
         </ConfirmActionForm>
       </section>
 

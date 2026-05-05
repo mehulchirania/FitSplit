@@ -8,8 +8,17 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, UserRound } from "@/components/icons";
 
 import { logoutUser } from "@/lib/auth";
+import type { Role } from "@/types/domain";
 
-export function AppTopbar({ initials, gymName }: { initials?: string; gymName?: string }) {
+export function AppTopbar({
+  gymName,
+  initials,
+  role
+}: {
+  gymName?: string;
+  initials?: string;
+  role?: Role;
+}) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -70,7 +79,7 @@ export function AppTopbar({ initials, gymName }: { initials?: string; gymName?: 
           </Link>
         </div>
 
-        <MainNav />
+        <MainNav role={role} />
 
         <div className="profile-menu" ref={profileRef} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
           {gymName && (
@@ -128,12 +137,16 @@ export function AppTopbar({ initials, gymName }: { initials?: string; gymName?: 
             </div>
 
             <nav className="drawer-links" aria-label="Menu links">
-              <Link href="/owner" onClick={() => setIsDrawerOpen(false)}>
-                Owner Flow
-              </Link>
-              <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
-                Member Today
-              </Link>
+              {role === "admin" || role === "owner" ? (
+                <Link href="/owner" onClick={() => setIsDrawerOpen(false)}>
+                  Owner Flow
+                </Link>
+              ) : null}
+              {role === "member" ? (
+                <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
+                  Member Today
+                </Link>
+              ) : null}
               <Link href="/activity" onClick={() => setIsDrawerOpen(false)}>
                 Activity
               </Link>

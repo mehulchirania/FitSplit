@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppTopbar } from "@/components/app-topbar";
 import { BackButton } from "@/components/back-button";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { getCurrentUser } from "@/lib/auth";
 import { getTitanWorkspace } from "@/lib/firebase/read-models";
 import "./globals.css";
 
@@ -18,25 +19,26 @@ export const metadata: Metadata = {
   }
 };
 
-import { cookies } from "next/headers";
-
 export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const username = cookieStore.get("fitsplit-username")?.value;
-  const { gym } = await getTitanWorkspace();
+  const [currentUser, { gym }] = await Promise.all([
+    getCurrentUser(),
+    getTitanWorkspace()
+  ]);
   
   let initials = "";
-  if (username) {
-    if (username === "mehulchirania" || username === "+91 9688227039") initials = "MC";
-    else if (username.includes("owner")) initials = "OW";
-    else if (username === "admin") initials = "AD";
-    else initials = "AA"; // aarav
+  if (currentUser) {
+    initials = currentUser.fullName
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
   }
-  const gymName = username ? gym?.name : undefined;
+  const gymName = currentUser ? gym?.name : undefined;
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -74,7 +76,7 @@ export default async function RootLayout({
       <body>
         <div className="app-shell">
           <ScrollReveal />
-          <AppTopbar initials={initials} gymName={gymName} />
+          <AppTopbar initials={initials} gymName={gymName} role={currentUser?.role} />
           <BackButton />
           {children}
           <footer className="app-footer">{"Developed with 💪 by Mehul"}</footer>

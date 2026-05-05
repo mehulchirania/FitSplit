@@ -8,7 +8,15 @@ function privateKey() {
 }
 
 export function hasFirebaseAdminConfig() {
-  return Boolean(process.env.FIREBASE_PROJECT_ID);
+  const hasServiceAccount = Boolean(process.env.FIREBASE_CLIENT_EMAIL && privateKey());
+  const hasApplicationDefault = Boolean(
+    process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+      process.env.K_SERVICE ||
+      process.env.FUNCTION_TARGET ||
+      process.env.FIREBASE_CONFIG
+  );
+
+  return Boolean(process.env.FIREBASE_PROJECT_ID && (hasServiceAccount || hasApplicationDefault));
 }
 
 export function createFirebaseAdminApp() {
