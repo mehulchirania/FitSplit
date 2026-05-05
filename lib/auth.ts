@@ -347,6 +347,14 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
       return { status: "error" as const, message: roleError };
     }
 
+    if (hasFirebaseAdminConfig()) {
+      return {
+        status: "success" as const,
+        email: demoLogin.authEmail,
+        role: demoLogin.role
+      };
+    }
+
     return {
       status: "success" as const,
       email: demoLogin.authEmail,
@@ -495,15 +503,11 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
       (decodedSession.email ? await getProfileByEmail(decodedSession.email) : null);
 
     if (!profile || !profile.isActive) {
-      await clearAuthCookies();
       return null;
     }
 
-    const user = authUserFromProfile(profile);
-    await setSessionCompatibilityCookies(user);
-    return user;
+    return authUserFromProfile(profile);
   } catch {
-    await clearAuthCookies();
     return null;
   }
 }

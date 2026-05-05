@@ -1,10 +1,51 @@
 import { applicationDefault, cert, initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
+import fs from "node:fs";
+import path from "node:path";
+
+function loadEnvLocal() {
+  const envPath = path.join(process.cwd(), ".env.local");
+
+  if (!fs.existsSync(envPath)) {
+    return;
+  }
+
+  const lines = fs.readFileSync(envPath, "utf8").split(/\r?\n/);
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const separatorIndex = trimmed.indexOf("=");
+
+    if (separatorIndex === -1) {
+      continue;
+    }
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] ??= value;
+  }
+}
+
+loadEnvLocal();
 
 const projectId = process.env.FIREBASE_PROJECT_ID || "fitsplit-29215";
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-const password = process.env.FITSPLIT_DEMO_PASSWORD || "password";
+const staffPassword = process.env.FITSPLIT_DEMO_PASSWORD || "password";
+const memberPin = process.env.FITSPLIT_MEMBER_DEMO_PIN || "123456";
 
 const users = [
   {
@@ -82,6 +123,7 @@ const auth = getAuth();
 
 for (const user of users) {
   const { gymId, role, ...authUser } = user;
+  const password = role === "member" ? memberPin : staffPassword;
 
   try {
     await auth.updateUser(user.uid, {
@@ -110,4 +152,6 @@ for (const user of users) {
   });
 }
 
-console.log(`Seeded ${users.length} Firebase Auth users. Demo password: ${password}`);
+console.log(`Seeded ${users.length} Firebase Auth users.`);
+console.log(`Staff demo password: ${staffPassword}`);
+console.log(`Member demo PIN: ${memberPin}`);

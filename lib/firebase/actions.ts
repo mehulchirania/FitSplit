@@ -10,7 +10,9 @@ import type { Role } from "@/types/domain";
 
 function requireFirebase() {
   if (!hasFirebaseAdminConfig()) {
-    throw new Error("Firebase Admin is not configured. Add .env.local values first.");
+    throw new Error(
+      "Firebase Admin is not configured. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY in .env.local."
+    );
   }
 
   return getFirebaseAdminServices().db;
@@ -18,7 +20,9 @@ function requireFirebase() {
 
 function requireFirebaseServices() {
   if (!hasFirebaseAdminConfig()) {
-    throw new Error("Firebase Admin is not configured. Add .env.local values first.");
+    throw new Error(
+      "Firebase Admin is not configured. Set GOOGLE_APPLICATION_CREDENTIALS or FIREBASE_CLIENT_EMAIL/FIREBASE_PRIVATE_KEY in .env.local."
+    );
   }
 
   return getFirebaseAdminServices();
