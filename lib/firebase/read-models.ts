@@ -169,7 +169,8 @@ export async function getOwnersForGym(gymId: string): Promise<{
         phone: String(data.phone ?? ""),
         joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
         avatarInitials: String(data.avatarInitials ?? "OW"),
-        goal: "Gym Management",
+        goal: String(data.staffType ?? "owner"),
+        staffType: String(data.staffType ?? "owner") as Member["staffType"],
         isActive: data.isActive !== false
       };
     });

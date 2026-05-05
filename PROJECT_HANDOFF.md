@@ -1,5 +1,17 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Gym Staff Access Controls
+
+- Reworked `/admin/gyms/[gymId]` from "Gym Owners" to "Gym Staff".
+- Staff records now support `owner`, `trainer`, and `staff` categories through the admin add-staff form.
+- Added a compact access toggle on the gym detail page.
+- Gym access toggle now enables/disables Firebase Auth access for all owner/staff and member profiles in that gym, not just the gym status label.
+- Added a delete action beside reset password for gym staff; deleting removes the Firestore profile and Firebase Auth user.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local `/admin/gyms/titan-v2-fitness` render check for Gym Staff, access toggle, reset, and delete controls
+
 ## Latest Update - 2026-05-05: Auth Hardening and Firestore Rules
 
 - Local Firebase Admin is now the required path for auth-backed local server actions.

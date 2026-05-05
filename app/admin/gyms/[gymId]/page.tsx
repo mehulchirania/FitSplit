@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { UsersRound, Bell, Settings } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { setGymStatus, updateGymDetails, resetPassword } from "@/lib/firebase/actions";
+import { deleteGymStaffProfile, setGymStatus, updateGymDetails, resetPassword } from "@/lib/firebase/actions";
 import { getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function GymManagementPage({
   await requireRole(["admin"]);
 
   const { gymId } = await params;
-  const [{ gym }, { owners }] = await Promise.all([
+  const [{ gym }, { owners: staff }] = await Promise.all([
     getGymDetail(gymId),
     getOwnersForGym(gymId)
   ]);
@@ -25,6 +25,8 @@ export default async function GymManagementPage({
     notFound();
   }
 
+  const isGymAccessEnabled = gym.status !== "inactive" && gym.status !== "paused";
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -32,7 +34,7 @@ export default async function GymManagementPage({
           <p className="eyebrow">Admin / Gym Management</p>
           <h1>{gym.name}</h1>
           <p>
-            Control gym-wide settings, manage owners, and monitor rollout status.
+            Control gym-wide settings, manage staff, and monitor rollout status.
           </p>
           <div className="quick-actions">
             <Link className="button button-secondary" href="/admin">
@@ -43,7 +45,7 @@ export default async function GymManagementPage({
         <aside className="summary-panel">
           <div className="panel-title">
             <h2><Settings /> Gym Status</h2>
-            <span className={`status-pill ${gym.status === 'active' ? 'status-active' : 'status-neutral'}`}>
+            <span className={`status-pill ${isGymAccessEnabled ? 'status-active' : 'status-neutral'}`}>
               {gym.status}
             </span>
           </div>
@@ -53,8 +55,8 @@ export default async function GymManagementPage({
               <strong>{gym.memberCount}</strong>
             </span>
             <span>
-              Owners
-              <strong>{owners.length}</strong>
+              Staff
+              <strong>{staff.length}</strong>
             </span>
           </div>
         </aside>
@@ -106,50 +108,80 @@ export default async function GymManagementPage({
           </div>
         </ConfirmActionForm>
 
-        <ConfirmActionForm
-          action={setGymStatus}
-          className="form-panel"
-          confirmMessage={`This will set the gym status to ${gym.status === 'active' ? 'inactive' : 'active'}.`}
-          confirmTitle="Change Gym Status?"
-          pendingLabel="Updating..."
-          submitLabel={gym.status === 'active' ? "Deactivate Gym" : "Activate Gym"}
-        >
-          <h2>Availability</h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
-            Deactivating a gym will prevent owners and members from accessing their dashboards for this workspace.
+        <div className="form-panel">
+          <div className="panel-title">
+            <div>
+              <h2>Access Control</h2>
+              <p className="member-meta">
+                Toggle workspace access for all gym staff and members.
+              </p>
+            </div>
+            <ConfirmActionForm
+              action={setGymStatus}
+              confirmMessage={`This will ${isGymAccessEnabled ? 'disable' : 'enable'} access for this gym's staff and members.`}
+              confirmTitle={isGymAccessEnabled ? "Disable Gym Access?" : "Enable Gym Access?"}
+              pendingLabel="Updating..."
+              submitLabel={isGymAccessEnabled ? "Enabled" : "Disabled"}
+              submitClassName={`access-toggle ${isGymAccessEnabled ? 'is-on' : 'is-off'}`}
+              style={{
+                padding: 0,
+                background: "none",
+                border: "none",
+                width: "auto"
+              }}
+            >
+              <input name="gymId" type="hidden" value={gym.id} />
+              <input name="status" type="hidden" value={isGymAccessEnabled ? 'inactive' : 'active'} />
+            </ConfirmActionForm>
+          </div>
+          <p style={{ marginTop: 12, color: "var(--text-muted)" }}>
+            Disabled gyms block owner, trainer, staff, and member logins by deactivating their profiles and Firebase Auth access.
           </p>
-          <input name="gymId" type="hidden" value={gym.id} />
-          <input name="status" type="hidden" value={gym.status === 'active' ? 'inactive' : 'active'} />
-        </ConfirmActionForm>
+        </div>
       </section>
 
       <section className="list-panel" style={{ marginTop: 16 }}>
         <div className="panel-title">
-          <h2><UsersRound /> Gym Owners</h2>
+          <h2><UsersRound /> Gym Staff</h2>
         </div>
         <div className="activity-feed">
-          {owners.map((owner) => (
-            <article className="member-row" key={owner.id}>
-              <span className="avatar">{owner.avatarInitials}</span>
+          {staff.map((staffMember) => (
+            <article className="member-row" key={staffMember.id}>
+              <span className="avatar">{staffMember.avatarInitials}</span>
               <div style={{ flex: 1 }}>
-                <span className="member-name">{owner.fullName}</span>
-                <span className="member-meta">{owner.email}</span>
+                <span className="member-name">{staffMember.fullName}</span>
+                <span className="member-meta">{staffMember.email}</span>
               </div>
+              <span className="status-pill status-neutral">{staffMember.staffType ?? "owner"}</span>
+              <span className={`status-pill ${staffMember.isActive ? "status-active" : "status-danger"}`}>
+                {staffMember.isActive ? "active" : "disabled"}
+              </span>
               <ConfirmActionForm
                 action={resetPassword}
-                confirmMessage={`Reset password for ${owner.fullName}? Default is 'password'.`}
-                confirmTitle="Reset Owner Password"
+                confirmMessage={`Reset password for ${staffMember.fullName}? Default is 'password'.`}
+                confirmTitle="Reset Staff Password"
                 pendingLabel="Resetting..."
                 submitLabel="Reset Pwd"
                 style={{ padding: 0, background: 'none', border: 'none' }}
               >
-                <input name="userId" type="hidden" value={owner.id} />
+                <input name="userId" type="hidden" value={staffMember.id} />
                 <input name="newPassword" type="hidden" value="password" />
+              </ConfirmActionForm>
+              <ConfirmActionForm
+                action={deleteGymStaffProfile}
+                confirmMessage={`Delete ${staffMember.fullName}? This removes their Firebase Auth login and staff profile.`}
+                confirmTitle="Delete Gym Staff?"
+                pendingLabel="Deleting..."
+                submitLabel="Delete"
+                style={{ padding: 0, background: 'none', border: 'none' }}
+              >
+                <input name="userId" type="hidden" value={staffMember.id} />
+                <input name="gymId" type="hidden" value={gym.id} />
               </ConfirmActionForm>
             </article>
           ))}
-          {owners.length === 0 && (
-            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No owners assigned to this gym yet.</p>
+          {staff.length === 0 && (
+            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No staff assigned to this gym yet.</p>
           )}
         </div>
       </section>

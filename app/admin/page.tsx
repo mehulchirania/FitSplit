@@ -81,12 +81,12 @@ export default async function AdminPage() {
         <ConfirmActionForm
           action={createOwnerProfile}
           className="form-panel"
-          confirmMessage="This will create a new owner profile and allow them to manage the selected gym."
-          confirmTitle="Create Gym Owner?"
-          pendingLabel="Creating owner..."
-          submitLabel="Create Owner"
+          confirmMessage="This will create a new gym staff profile and allow them to access the selected gym workspace."
+          confirmTitle="Create Gym Staff?"
+          pendingLabel="Creating staff..."
+          submitLabel="Create Staff"
         >
-          <h2>Add Gym Owner</h2>
+          <h2>Add Gym Staff</h2>
           <div className="form-grid">
             <label>
               Full name
@@ -95,6 +95,14 @@ export default async function AdminPage() {
             <label>
               Email address
               <input name="email" type="email" placeholder="e.g. owner@gym.com" required />
+            </label>
+            <label>
+              Staff category
+              <select name="staffType" required style={{ width: '100%', padding: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)' }}>
+                <option value="owner">Owner</option>
+                <option value="trainer">Trainer</option>
+                <option value="staff">Staff</option>
+              </select>
             </label>
             <label>
               Assign to Gym

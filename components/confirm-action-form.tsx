@@ -20,6 +20,7 @@ export function ConfirmActionForm({
   confirmTitle = "Confirm update",
   pendingLabel = "Saving...",
   style,
+  submitClassName,
   submitLabel
 }: {
   action: ConfirmAction;
@@ -31,6 +32,7 @@ export function ConfirmActionForm({
   confirmTitle?: string;
   pendingLabel?: string;
   style?: CSSProperties;
+  submitClassName?: string;
   submitLabel: string;
 }) {
   const [state, formAction, isPending] = useActionState(action, initialFormActionState);
@@ -73,7 +75,7 @@ export function ConfirmActionForm({
             {state.message}
           </p>
         ) : null}
-        <button className="button button-primary" disabled={isPending} type="submit">
+        <button className={submitClassName ?? "button button-primary"} disabled={isPending} type="submit">
           {isPending ? pendingLabel : submitLabel}
         </button>
       </form>

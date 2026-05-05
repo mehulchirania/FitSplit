@@ -42,6 +42,7 @@ export type Member = {
   avatarInitials: string;
   goal: string;
   isActive: boolean;
+  staffType?: "owner" | "trainer" | "staff";
   age?: number;
   weightKg?: number;
   heightCm?: number;
@@ -175,4 +176,3 @@ export type AttendanceRecord = {
   checkInAt: string;
   checkOutAt?: string;
 };
-

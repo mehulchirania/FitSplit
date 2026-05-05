@@ -3258,6 +3258,49 @@ html[data-theme="dark"] .hero-band::before {
   color: var(--brand-strong);
 }
 
+.access-toggle {
+  position: relative;
+  min-width: 82px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px 12px 7px 30px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease;
+}
+
+.access-toggle::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateY(-50%);
+}
+
+.access-toggle:hover {
+  transform: translateY(-1px);
+}
+
+.access-toggle.is-on {
+  border-color: color-mix(in srgb, var(--brand-strong) 44%, var(--border));
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.access-toggle.is-off {
+  border-color: color-mix(in srgb, var(--danger) 32%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--bg-elevated));
+  color: var(--danger);
+}
+
 .day-tabs button.is-selected,
 .day-tabs button:hover {
   border-color: color-mix(in srgb, var(--brand) 34%, var(--border));

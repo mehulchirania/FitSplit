@@ -611,6 +611,8 @@ export async function createOwnerProfile(
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
     const gymId = requireText(formData, "gymId", "Gym ID");
+    const staffType = String(formData.get("staffType") ?? "owner").trim();
+    const normalizedStaffType = ["owner", "trainer", "staff"].includes(staffType) ? staffType : "owner";
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.profiles).doc(ownerId).set({
@@ -620,6 +622,7 @@ export async function createOwnerProfile(
       authEmail: email.toLowerCase(),
       username: email.toLowerCase(),
       role: "owner",
+      staffType: normalizedStaffType,
       defaultGymId: gymId,
       isActive: true,
       createdAt: now,
@@ -638,9 +641,39 @@ export async function createOwnerProfile(
     revalidatePath("/admin");
     revalidatePath(`/admin/gyms/${gymId}`);
 
-    return success(`Owner ${fullName} created successfully.`);
+    return success(`${fullName} was added as gym ${normalizedStaffType}.`);
   } catch (error) {
-    return failure(error, "Unable to create owner profile.");
+    return failure(error, "Unable to create gym staff profile.");
+  }
+}
+
+export async function deleteGymStaffProfile(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth, db } = requireFirebaseServices();
+    const userId = requireText(formData, "userId", "User ID");
+    const gymId = requireText(formData, "gymId", "Gym ID");
+
+    await db.collection(collectionPaths.profiles).doc(userId).delete();
+
+    try {
+      await auth.deleteUser(userId);
+    } catch (error: any) {
+      if (error?.code !== "auth/user-not-found") {
+        throw error;
+      }
+    }
+
+    revalidatePath("/admin");
+    revalidatePath(`/admin/gyms/${gymId}`);
+
+    return success("Gym staff access was deleted.");
+  } catch (error) {
+    return failure(error, "Unable to delete gym staff.");
   }
 }
 
@@ -683,19 +716,50 @@ export async function setGymStatus(
   try {
     await requireRole(["admin"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    const db = requireFirebase();
+    const { auth, db } = requireFirebaseServices();
     const gymId = requireText(formData, "gymId", "Gym ID");
     const status = requireText(formData, "status", "Status") as any;
+    const isActive = status === "active";
+    const now = new Date().toISOString();
 
     await db.collection(collectionPaths.gyms).doc(gymId).update({
       status,
-      updatedAt: new Date().toISOString()
+      updatedAt: now
     });
+
+    const profileSnapshot = await db
+      .collection(collectionPaths.profiles)
+      .where("defaultGymId", "==", gymId)
+      .where("role", "in", ["owner", "member"])
+      .get();
+
+    const batch = db.batch();
+
+    for (const profileDoc of profileSnapshot.docs) {
+      batch.update(profileDoc.ref, {
+        isActive,
+        updatedAt: now
+      });
+    }
+
+    await batch.commit();
+
+    await Promise.all(
+      profileSnapshot.docs.map(async (profileDoc) => {
+        try {
+          await auth.updateUser(profileDoc.id, { disabled: !isActive });
+        } catch (error: any) {
+          if (error?.code !== "auth/user-not-found") {
+            throw error;
+          }
+        }
+      })
+    );
 
     revalidatePath("/admin");
     revalidatePath(`/admin/gyms/${gymId}`);
 
-    return success(`Gym status set to ${status}.`);
+    return success(`Gym ${isActive ? "activated" : "deactivated"}. Staff and member access ${isActive ? "enabled" : "disabled"}.`);
   } catch (error) {
     return failure(error, "Unable to update gym status.");
   }
