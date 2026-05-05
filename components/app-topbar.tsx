@@ -1,13 +1,15 @@
 "use client";
 
+import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Menu, UserRound } from "@/components/icons";
 
 import { logoutUser } from "@/lib/auth";
+import { getFirebaseClientServices } from "@/lib/firebase/client";
 import type { Role } from "@/types/domain";
 
 export function AppTopbar({
@@ -21,6 +23,7 @@ export function AppTopbar({
 }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoggingOut, startLogoutTransition] = useTransition();
   const profileRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
 
@@ -48,6 +51,19 @@ export function AppTopbar({
   }, [isDrawerOpen]);
   if (pathname === "/") {
     return null;
+  }
+
+  function handleLogout() {
+    startLogoutTransition(async () => {
+      try {
+        const { auth } = getFirebaseClientServices();
+        await signOut(auth);
+      } catch {
+        // The server logout below still clears the FitSplit session.
+      }
+
+      await logoutUser();
+    });
   }
 
   return (
@@ -100,9 +116,14 @@ export function AppTopbar({
               <Link href="/profile" onClick={() => setIsProfileOpen(false)}>
                 View Profile
               </Link>
-              <form action={logoutUser}>
-                <button type="submit" style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, color: "var(--danger)", cursor: "pointer" }}>Log Out</button>
-              </form>
+              <button
+                disabled={isLoggingOut}
+                onClick={handleLogout}
+                type="button"
+                style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, color: "var(--danger)", cursor: "pointer" }}
+              >
+                {isLoggingOut ? "Logging out..." : "Log Out"}
+              </button>
             </div>
           ) : null}
         </div>

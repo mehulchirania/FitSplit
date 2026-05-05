@@ -105,6 +105,18 @@ function assertCanManageMember(
   }
 }
 
+function assertCanManageGym(user: Awaited<ReturnType<typeof requireAuth>>, gymId: string) {
+  if (user.role === "admin") {
+    return;
+  }
+
+  if (user.role === "owner" && user.gymId === gymId) {
+    return;
+  }
+
+  throw new Error("You can only manage records for your assigned gym.");
+}
+
 export async function ensureTitanWorkspace() {
   const db = requireFirebase();
   const gymRef = db.collection(collectionPaths.gyms).doc(TITAN_GYM_ID);
@@ -127,7 +139,8 @@ export async function ensureTitanWorkspace() {
     {
       id: TITAN_OWNER_ID,
       fullName: "titan-owner-1",
-      email: "owner@titanv2.local",
+      email: "titan-owner-1@fitsplit.app",
+      authEmail: "titan-owner-1@fitsplit.app",
       username: "titan-owner-1",
       role: "owner",
       defaultGymId: TITAN_GYM_ID,
@@ -180,7 +193,7 @@ export async function ensureTitanWorkspace() {
   }, "password", true);
   
   await upsertAuthUser(auth, { 
-    email: "owner@titanv2.local", 
+    email: "titan-owner-1@fitsplit.app", 
     fullName: "titan-owner-1", 
     uid: TITAN_OWNER_ID, 
     role: "owner", 
@@ -203,14 +216,17 @@ export async function createMemberProfile(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    const user = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensureTitanWorkspace();
     const { auth, db } = requireFirebaseServices();
     const memberId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
+    const gymId = String(formData.get("gymId") ?? user.gymId ?? TITAN_GYM_ID).trim() || TITAN_GYM_ID;
     const now = new Date().toISOString();
+
+    assertCanManageGym(user, gymId);
 
     await db.collection(collectionPaths.profiles).doc(memberId).set({
       id: memberId,
@@ -220,7 +236,7 @@ export async function createMemberProfile(
       username: email.toLowerCase(),
       phone: String(formData.get("phone") ?? "").trim(),
       role: "member",
-      defaultGymId: TITAN_GYM_ID,
+      defaultGymId: gymId,
       goal: String(formData.get("goal") ?? "General fitness").trim(),
       avatarInitials: fullName
         .split(" ")
@@ -239,7 +255,7 @@ export async function createMemberProfile(
       fullName, 
       uid: memberId, 
       role: "member", 
-      gymId: TITAN_GYM_ID, 
+      gymId, 
       isActive: true 
     }, "123456");
 

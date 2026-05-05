@@ -1,5 +1,26 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Auth Hardening and Firestore Rules
+
+- Local Firebase Admin is now the required path for auth-backed local server actions.
+- `scripts/seed-firebase-auth.mjs` now loads `.env.local` before seeding Firebase Auth users.
+- Seeded demo Auth users with staff password `password` and member PIN `123456`.
+- Demo login resolution now uses real Firebase Auth when Admin credentials are configured.
+- Fixed server-render session handling so invalid Firebase session cookies do not attempt cookie mutation during page render.
+- Normalized `titan-owner-1` login to `titan-owner-1@fitsplit.app`.
+- Member creation is now gym-scoped to the authenticated owner/admin instead of hard-coding Titan.
+- Logout now signs out the Firebase browser session before clearing the server session.
+- Hardened and deployed Firestore rules:
+  - admin can manage all gyms and records.
+  - owners are scoped to their assigned gym.
+  - members are scoped to their own profile, workout sessions, logs, assignments, attendance, and notifications.
+- Verification passed:
+  - `npm.cmd run seed:auth`
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local admin/member/owner redirect checks
+  - `firebase.cmd deploy --only firestore:rules --project fitsplit-29215`
+
 ## Latest Update - 2026-05-05: Hosted Demo Login Fix
 
 - Fixed hosted login failure where demo usernames such as `admin`, `titan-owner-1`, and member mobile logins were routed through real Firebase Auth on Firebase App Hosting.

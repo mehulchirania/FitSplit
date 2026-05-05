@@ -10,96 +10,157 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/profiles/$(request.auth.uid));
     }
 
+    function role() {
+      return signedIn() && request.auth.token.role != null
+        ? request.auth.token.role
+        : profile().data.role;
+    }
+
+    function currentGymId() {
+      return signedIn() && request.auth.token.gymId != null
+        ? request.auth.token.gymId
+        : profile().data.defaultGymId;
+    }
+
+    function memberId() {
+      return signedIn() && request.auth.token.memberId != null
+        ? request.auth.token.memberId
+        : request.auth.uid;
+    }
+
     function isAdmin() {
-      return signedIn() && profile().data.role == "admin";
+      return signedIn() && role() == "admin";
     }
 
     function isOwnerForGym(gymId) {
       return signedIn()
-        && profile().data.role == "owner"
-        && profile().data.defaultGymId == gymId;
+        && role() == "owner"
+        && currentGymId() == gymId;
     }
 
     function isMemberSelf(userId) {
-      return signedIn() && request.auth.uid == userId;
+      return signedIn() && role() == "member" && memberId() == userId;
+    }
+
+    function profileGym(data) {
+      return data.defaultGymId != null ? data.defaultGymId : data.gymId;
+    }
+
+    function memberOwned(data) {
+      return data.memberId != null && isMemberSelf(data.memberId);
+    }
+
+    function ownerScoped(data) {
+      return data.gymId != null && isOwnerForGym(data.gymId);
+    }
+
+    function adminOrOwnerScoped(data) {
+      return isAdmin() || ownerScoped(data);
+    }
+
+    function adminOrOwnerOrMemberScoped(data) {
+      return adminOrOwnerScoped(data) || memberOwned(data);
     }
 
     match /gyms/{gymId} {
-      allow read: if signedIn();
-      allow write: if isAdmin() || isOwnerForGym(gymId);
+      allow read: if isAdmin() || isOwnerForGym(gymId);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || isOwnerForGym(gymId);
     }
 
     match /profiles/{userId} {
-      allow read: if isAdmin() || isOwnerForGym(resource.data.defaultGymId) || isMemberSelf(userId);
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.defaultGymId) || isMemberSelf(userId);
-    }
-
-    match /memberships/{membershipId} {
-      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow read: if isAdmin()
+        || isOwnerForGym(profileGym(resource.data))
+        || isMemberSelf(userId);
+      allow create, delete: if isAdmin()
+        || (request.resource.data.role == "member" && isOwnerForGym(profileGym(request.resource.data)));
+      allow update: if isAdmin()
+        || isOwnerForGym(profileGym(resource.data))
+        || (
+          isMemberSelf(userId)
+          && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(["age", "heightCm", "weightKg", "goal", "phone", "updatedAt"])
+        );
     }
 
     match /exerciseCatalog/{exerciseId} {
-      allow read: if signedIn();
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow read: if isAdmin() || ownerScoped(resource.data);
+      allow create: if adminOrOwnerScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /workoutPrograms/{programId} {
-      allow read: if signedIn();
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow read: if isAdmin() || ownerScoped(resource.data);
+      allow create: if adminOrOwnerScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /workoutSplitTemplates/{templateId} {
-      allow read: if signedIn();
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow read: if isAdmin() || ownerScoped(resource.data);
+      allow create: if adminOrOwnerScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /notifications/{notificationId} {
-      allow read, update: if isAdmin()
-        || isOwnerForGym(resource.data.gymId)
+      allow read: if isAdmin()
+        || ownerScoped(resource.data)
         || isMemberSelf(resource.data.recipientUserId)
         || isMemberSelf(resource.data.recipientId);
-      allow create: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow create: if adminOrOwnerScoped(request.resource.data);
+      allow update: if isAdmin()
+        || ownerScoped(resource.data)
+        || (
+          (isMemberSelf(resource.data.recipientUserId) || isMemberSelf(resource.data.recipientId))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read", "readAt", "updatedAt"])
+        );
       allow delete: if isAdmin();
     }
 
     match /liftLogs/{liftLogId} {
-      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
-      allow create: if isAdmin()
-        || isOwnerForGym(request.resource.data.gymId)
-        || isMemberSelf(request.resource.data.memberId);
-      allow update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
     }
 
     match /programAssignments/{assignmentId} {
-      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /activityEvents/{eventId} {
-      allow read: if signedIn();
-      allow write: if isAdmin() || isOwnerForGym(request.resource.data.gymId);
+      allow read: if isAdmin()
+        || ownerScoped(resource.data)
+        || (
+          resource.data.memberId != null
+          && memberOwned(resource.data)
+        )
+        || (
+          resource.data.recipientId != null
+          && isMemberSelf(resource.data.recipientId)
+        );
+      allow create: if adminOrOwnerScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /workoutSessions/{sessionId} {
-      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
-      allow create: if isAdmin()
-        || isOwnerForGym(request.resource.data.gymId)
-        || isMemberSelf(request.resource.data.memberId);
-      allow update: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update: if adminOrOwnerOrMemberScoped(resource.data)
+        && request.resource.data.memberId == resource.data.memberId
+        && request.resource.data.gymId == resource.data.gymId;
+      allow delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /contactMessages/{messageId} {
       allow create: if true;
-      allow read, update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
+      allow read, update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /attendanceRecords/{attendanceRecordId} {
-      allow read: if isAdmin() || isOwnerForGym(resource.data.gymId) || isMemberSelf(resource.data.memberId);
-      allow create: if isAdmin()
-        || isOwnerForGym(request.resource.data.gymId)
-        || isMemberSelf(request.resource.data.memberId);
-      allow update, delete: if isAdmin() || isOwnerForGym(resource.data.gymId);
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     match /siteLinks/{linkId} {
