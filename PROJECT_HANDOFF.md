@@ -1,5 +1,16 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Landing Navigation Polish
+
+- Added a sticky glass landing navbar on `/` with immediate access to About us, Demo, Contact, and Login so daily users do not have to scroll to the bottom first.
+- Reduced the hero headline scale for "Manage your members' workouts in one place." on desktop and mobile.
+- Kept the landing palette consistent with a black/white/grey base and subtle cyan accent instead of the earlier green-to-black hue shift.
+- Reworked landing scroll animation to fade sections in and out instead of using vertical motion/scale.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local `/` HTTP 200 check on `http://localhost:3000`
+
 ## Latest Update - 2026-05-05: Trainer-Focused Landing Page
 
 - Rebuilt `/` as a high-conversion FitSplit landing page focused on gym owners/trainers and members.

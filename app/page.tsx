@@ -36,7 +36,21 @@ const productPanels = [
 export default function Home() {
   return (
     <main className="landing-page">
-      <section className="landing-hero">
+      <nav className="landing-nav" aria-label="FitSplit landing navigation">
+        <a className="landing-nav-brand" href="#top" aria-label="FitSplit home">
+          <img alt="" src="/icon-512.png" />
+          <span>FitSplit</span>
+        </a>
+        <div className="landing-nav-links">
+          <a href="#roles">About us</a>
+          <a href="#demo">Demo</a>
+          <a href="#contact">Contact</a>
+          <a className="landing-nav-login" href="#login">
+            Login
+          </a>
+        </div>
+      </nav>
+      <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
           <div className="landing-brand-lockup">
             <img alt="FitSplit" src="/icon-512.png" />
@@ -114,7 +128,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="landing-section">
+      <section className="landing-section" id="roles">
         <div className="landing-section-heading">
           <p className="eyebrow">Who it is for</p>
           <h2>Built for the person assigning workouts and the member doing them.</h2>
@@ -220,7 +234,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="landing-final-cta">
+      <section className="landing-final-cta" id="contact">
         <p className="eyebrow">Ready to deliver better workouts?</p>
         <h2>Start managing workout plans with FitSplit.</h2>
         <div className="landing-actions">
