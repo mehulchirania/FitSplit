@@ -339,13 +339,9 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     return { status: "error" as const, message: "Enter your username, mobile number, or email." };
   }
 
-  if (!hasFirebaseAdminConfig()) {
-    const demoLogin = findDemoLogin(cleanIdentifier);
+  const demoLogin = findDemoLogin(cleanIdentifier);
 
-    if (!demoLogin) {
-      return { status: "error" as const, message: "No demo FitSplit account found." };
-    }
-
+  if (demoLogin) {
     const roleError = validateExpectedRole(demoLogin.role, expectedRole);
     if (roleError) {
       return { status: "error" as const, message: roleError };
@@ -359,8 +355,11 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     };
   }
 
+  if (!hasFirebaseAdminConfig()) {
+    return { status: "error" as const, message: "No demo FitSplit account found." };
+  }
+
   const keys = normalizedLookupKeys(cleanIdentifier);
-  const demoLogin = findDemoLogin(cleanIdentifier);
   
   // Ensure basic demo profiles exist in Firestore
   try {
@@ -383,7 +382,7 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
 
   return {
     status: "success" as const,
-    email: demoLogin?.authEmail ?? profile.authEmail ?? profile.email,
+    email: profile.authEmail ?? profile.email,
     role: profile.role
   };
 }
@@ -393,13 +392,6 @@ export async function createLocalDemoSession(
   password: string,
   expectedRole?: "member" | "staff"
 ) {
-  if (hasFirebaseAdminConfig()) {
-    return {
-      status: "error" as const,
-      message: "Local demo sessions are only available when Firebase Admin is not configured."
-    };
-  }
-
   const demoLogin = findDemoLogin(identifier);
 
   if (!demoLogin) {
@@ -468,8 +460,10 @@ export async function createSession(idToken: string) {
 }
 
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
-  if (!hasFirebaseAdminConfig()) {
-    const cookieStore = await cookies();
+  const cookieStore = await cookies();
+  const session = cookieStore.get(sessionCookieName)?.value;
+
+  if (!hasFirebaseAdminConfig() || !session) {
     const role = cookieStore.get("fitsplit-role")?.value as Role | undefined;
     const email = cookieStore.get("fitsplit-username")?.value;
     const gymId = cookieStore.get("fitsplit-gym-id")?.value;
@@ -491,13 +485,6 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
       gymId,
       memberId: role === "member" ? memberId : undefined
     };
-  }
-
-  const cookieStore = await cookies();
-  const session = cookieStore.get(sessionCookieName)?.value;
-
-  if (!session) {
-    return null;
   }
 
   try {

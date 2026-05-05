@@ -1,5 +1,15 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Hosted Demo Login Fix
+
+- Fixed hosted login failure where demo usernames such as `admin`, `titan-owner-1`, and member mobile logins were routed through real Firebase Auth on Firebase App Hosting.
+- Demo credentials now resolve to the local demo-session path first, even when Firebase Admin is configured in the hosted environment.
+- Route guards now accept the demo compatibility cookies when no Firebase session cookie is present, so hosted demo users can reach `/admin`, `/owner`, and `/member`.
+- Real Firebase Auth remains available for non-demo accounts.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+
 ## Latest Update - 2026-05-05: Firebase Auth Integration
 
 - Main page revamp: `/` is now an intro landing page before login.
