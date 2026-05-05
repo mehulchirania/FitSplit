@@ -78,26 +78,22 @@ export default async function OwnerDashboard() {
         programCount={programs.length}
       />
 
-      <section className="stats-grid" aria-label="Owner summary" style={{ marginTop: 16 }}>
-        <article className="stat-card">
-          <UsersRound />
-          <strong>{members.length}</strong>
-          <span>Total members</span>
+      <section className="ui-cards" aria-label="Owner summary" style={{ marginTop: 16 }}>
+        <article className="ui-card blue">
+          <p className="tip"><UsersRound /> {members.length}</p>
+          <p className="second-text">Total members</p>
         </article>
-        <article className="stat-card">
-          <Dumbbell />
-          <strong>{assignedMembers.length}</strong>
-          <span>Assigned plans</span>
+        <article className="ui-card green">
+          <p className="tip"><Dumbbell /> {assignedMembers.length}</p>
+          <p className="second-text">Assigned plans</p>
         </article>
-        <article className="stat-card">
-          <Bell />
-          <strong>{unassignedMembers.length}</strong>
-          <span>Need assignment</span>
+        <article className="ui-card red">
+          <p className="tip"><Bell /> {unassignedMembers.length}</p>
+          <p className="second-text">Need assignment</p>
         </article>
-        <article className="stat-card">
-          <Activity />
-          <strong>{sessions.length}</strong>
-          <span>Active workouts</span>
+        <article className="ui-card purple">
+          <p className="tip"><Activity /> {sessions.length}</p>
+          <p className="second-text">Active workouts</p>
         </article>
       </section>
 

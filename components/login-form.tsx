@@ -1,15 +1,32 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { loginUser, requestPasswordReset } from "@/lib/auth";
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginUser, null);
   const [resetState, forgotPasswordAction] = useActionState(requestPasswordReset, null);
+  const [username, setUsername] = useState("");
+  const loginButtonRef = useRef<HTMLButtonElement>(null);
+
+  function handleLoginKeyDown(event: KeyboardEvent<HTMLFormElement>) {
+    if (event.key !== "Enter") {
+      return;
+    }
+
+    const target = event.target as HTMLElement;
+
+    if (target.tagName === "TEXTAREA") {
+      return;
+    }
+
+    event.preventDefault();
+    loginButtonRef.current?.click();
+  }
 
   return (
-    <form
-      action={formAction}
+    <div
       className="form-panel"
       style={{
         maxWidth: 420,
@@ -38,7 +55,7 @@ export function LoginForm() {
         </h1>
       </div>
 
-      <div className="builder-stack" style={{ gap: "14px" }}>
+      <form action={formAction} className="builder-stack" onKeyDown={handleLoginKeyDown} style={{ gap: "14px" }}>
         <label style={{ display: "grid", gap: "6px" }}>
           <span className="eyebrow" style={{ margin: 0 }}>Username / Mobile Number</span>
           <input
@@ -46,6 +63,7 @@ export function LoginForm() {
             name="username"
             required
             autoComplete="username"
+            onChange={(event) => setUsername(event.target.value)}
             placeholder="Enter username/mobile number"
             style={{
               padding: "12px 14px",
@@ -99,19 +117,23 @@ export function LoginForm() {
           type="submit"
           disabled={isPending}
           className="button button-primary"
+          ref={loginButtonRef}
           style={{ marginTop: "8px", width: "100%", padding: "14px", fontSize: "1rem" }}
         >
           {isPending ? "Logging in..." : "Log in"}
         </button>
+      </form>
 
+      <form action={forgotPasswordAction} className="builder-stack" style={{ gap: "14px", marginTop: "14px" }}>
+        <input name="username" type="hidden" value={username} />
         <button 
-          formAction={forgotPasswordAction}
           className="button"
           style={{ width: "100%", padding: "12px", background: "none", border: "none", color: "var(--brand)", fontSize: "0.88rem", cursor: "pointer" }}
+          type="submit"
         >
           Forgot Password?
         </button>
-      </div>
-    </form>
+      </form>
+    </div>
   );
 }

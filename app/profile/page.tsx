@@ -32,17 +32,19 @@ export default async function ProfilePage() {
             and future AI-assisted workout planning.
           </p>
         </div>
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>
-              <UsersRound /> Member profile
-            </h2>
-            <span className="status-pill status-active">Editable</span>
-          </div>
-          <p>
-            Height and weight are reactive here so BMI updates instantly while
-            editing.
-          </p>
+        <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 15 }}>
+          <article className="ui-card purple">
+            <p className="tip" style={{ fontSize: "1.2em" }}>
+              {profile.weightKg ? `${profile.weightKg} kg` : "N/A"}
+            </p>
+            <p className="second-text">Current Weight</p>
+          </article>
+          <article className="ui-card red">
+            <p className="tip" style={{ fontSize: "1.2em" }}>
+              {profile.heightCm ? `${profile.heightCm} cm` : "N/A"}
+            </p>
+            <p className="second-text">Current Height</p>
+          </article>
         </aside>
       </section>
 

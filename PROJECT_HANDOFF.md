@@ -1,5 +1,55 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Login Keyboard Submit Fix
+
+- Fixed login keyboard behavior where pressing Enter in the password field did not submit the login form.
+- Split Forgot Password into its own form so it no longer competes with the main login submit action.
+- Added an Enter key handler on the login form that explicitly triggers the login submit button for reliable keyboard access.
+- Verified in the in-app browser:
+  - Enter from the password field logs in and navigates to `/admin`.
+  - Enter while the Log in button is focused also logs in and navigates to `/admin`.
+- Verification passed:
+  - `npm.cmd run typecheck`
+
+## Latest Update - 2026-05-05: Login Reveal Fix
+
+- Fixed login page invisibility caused by scroll reveal applying `reveal-on-scroll` to the `/` login form.
+- `components/scroll-reveal.tsx` now excludes the login route and clears reveal classes when returning to `/`.
+- Verified in the in-app browser at `http://localhost:3001/`: login form is visible and the red Next dev issue badge is gone after restarting the dev server.
+- Verification passed:
+  - `npm.cmd run typecheck`
+
+## Latest Update - 2026-05-05: Neutral Theme, Floating Nav, Scroll Reveal
+
+- Shifted the visual theme away from green into a neutral black/white/grey palette for both light and dark modes.
+- Added a floating glassmorphism sticky topbar treatment with rounded container, blur, shadow, and neutral hover states.
+- Added `components/scroll-reveal.tsx`, mounted in `app/layout.tsx`, using IntersectionObserver to reveal hero sections, panels, forms, cards, and lists as the user scrolls.
+- Updated `public/manifest.json` and the layout `theme-color` to neutral app chrome colors.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+- Local dev server restarted on `http://localhost:3001`; `/owner`, `/member`, `/profile`, and `/owner/programs` return HTTP 200.
+
+## Latest Update - 2026-05-05: UI Refresh
+
+- Added a cohesive glassmorphism visual refresh in `app/globals.css` across the app shell, topbar, hero/dashboard headers, cards, stat blocks, forms, day tabs, dialogs, drawer, and lists.
+- Reworked the existing colorful `ui-card` experiment into calmer glass stat cards with accent strips, consistent typography, and no blur-on-hover clutter.
+- Added branded hero-style header treatment with a subtle FitSplit icon watermark and accent rail.
+- Fixed the profile header metric cards to read `weightKg` and `heightCm` from the actual profile model.
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+- Local dev server restarted cleanly on `http://localhost:3001`; `/owner`, `/member`, and `/profile` return HTTP 200.
+
+## Latest Update - 2026-05-05: App Route Loader
+
+- Added `components/hamster-loader.tsx` as a reusable animated loading indicator based on the Uiverse loader supplied by the user.
+- Added `app/loading.tsx` so Next.js can show the loader during route-level loading states.
+- Added global loader styles and keyframes in `app/globals.css`, including a reduced-motion pause rule.
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+
 Use this file as the starting context for future Codex chats.
 
 ## ⚡ Latest Update — May 2026 (Session 3): Attendance, BMI Analytics & Build Stability
@@ -541,6 +591,14 @@ Manual App Hosting deployment from local source is working and should be used un
 - Membership renewal saving was removed from FitSplit UI because membership tracking now stays in the user's existing gym app.
 
 ## Last Known Verified Commands
+
+Latest local UI fix:
+
+- Admin page could render only the topbar because the scroll reveal helper was mutating server-rendered page elements before hydration completed.
+- `components/scroll-reveal.tsx` is now non-mutating and only clears the legacy reveal root class.
+- Restarted the local Next dev server on `http://localhost:3000`.
+- Verified `/admin` in the in-app browser: `Gym control.` heading and admin dashboard content are visible after reload.
+- `npm.cmd run typecheck` passed.
 
 These passed after Firebase migration:
 

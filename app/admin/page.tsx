@@ -33,21 +33,18 @@ export default async function AdminPage() {
         </aside>
       </section>
 
-      <section className="stats-grid">
-        <article className="stat-card">
-          <UsersRound />
-          <strong>{gyms.length}</strong>
-          <span>Gyms</span>
+      <section className="ui-cards" style={{ marginTop: 16 }}>
+        <article className="ui-card purple">
+          <p className="tip"><UsersRound /> {gyms.length}</p>
+          <p className="second-text">Gyms</p>
         </article>
-        <article className="stat-card">
-          <Dumbbell />
-          <strong>Training</strong>
-          <span>FitSplit focus</span>
+        <article className="ui-card blue">
+          <p className="tip"><Dumbbell /> Training</p>
+          <p className="second-text">FitSplit focus</p>
         </article>
-        <article className="stat-card">
-          <Bell />
-          <strong>Pilot</strong>
-          <span>Current rollout stage</span>
+        <article className="ui-card green">
+          <p className="tip"><Bell /> Pilot</p>
+          <p className="second-text">Current rollout stage</p>
         </article>
       </section>
 

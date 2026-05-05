@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppTopbar } from "@/components/app-topbar";
 import { BackButton } from "@/components/back-button";
+import { ScrollReveal } from "@/components/scroll-reveal";
 import { getTitanWorkspace } from "@/lib/firebase/read-models";
 import "./globals.css";
 
@@ -41,7 +42,7 @@ export default async function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#178a4a" />
+        <meta name="theme-color" content="#111111" />
 
         {/* Google Fonts: Inter */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -72,6 +73,7 @@ export default async function RootLayout({
       </head>
       <body>
         <div className="app-shell">
+          <ScrollReveal />
           <AppTopbar initials={initials} gymName={gymName} />
           <BackButton />
           {children}

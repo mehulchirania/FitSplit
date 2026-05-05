@@ -64,27 +64,15 @@ export default async function MemberDashboard() {
           <EditableMetrics member={member} />
         </div>
 
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>
-              <Dumbbell /> Assigned program
-            </h2>
-            <span className="status-pill status-active">Training active</span>
-          </div>
-          <div className="detail-window">
-            <span>
-              Program
-              <strong>{program.title}</strong>
-            </span>
-            <span>
-              Monthly Attendance
-              <strong>{attendanceCount} days</strong>
-            </span>
-            <span>
-              Goal
-              <strong>{program.goal}</strong>
-            </span>
-          </div>
+        <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 15 }}>
+          <article className="ui-card blue">
+            <p className="tip" style={{ fontSize: "1.2em" }}><Dumbbell /> {program.title}</p>
+            <p className="second-text">Assigned Program</p>
+          </article>
+          <article className="ui-card green">
+            <p className="tip" style={{ fontSize: "1.2em" }}><Calendar /> {attendanceCount} days</p>
+            <p className="second-text">Monthly Attendance</p>
+          </article>
         </aside>
       </section>
 
