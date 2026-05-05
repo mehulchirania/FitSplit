@@ -1,5 +1,36 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Premium SaaS Landing V2
+
+- Rebuilt `/` into the requested modern FitSplit SaaS landing flow:
+  - Hero
+  - Who it is for
+  - How it works
+  - Interactive plan builder preview
+  - Product previews
+  - Feature bento grid
+  - Before vs After
+  - About + Contact
+  - CTA
+  - Footer
+- Added `components/landing-nav.tsx` with a fixed glassmorphism navbar, desktop links, and mobile hamburger menu.
+- Removed Contact from the top nav; contact details now live inside the About + Contact section.
+- Updated hero copy to: "Assign better workouts. Track member progress. Keep training simple."
+- Expanded the interactive demo to support Goal, Days, and Level, with dynamic split, exercise cards, sets/reps, rest time, and assigned-member preview.
+- Added About copy and developer card for Mehul Chirania with Bengaluru, India and phone contact.
+- Footer now uses the exact requested text: `© 2026 FitSplit. Made with 💪 by Mehul Chirania.`
+- Follow-up fix: restarted the local Next dev server after CSS 404s caused the landing page to render unstyled.
+- Follow-up fix: tightened hero typography/spacing and added mobile-safe width/wrapping rules for the hero and preview cards.
+- Follow-up logo update: copied the new dark/light logo assets from `lib/images` into `public/fitsplit-logo-dark.png` and `public/fitsplit-logo-light.png` for browser use.
+- Follow-up logo update: replaced the old neon icon in the landing nav, landing hero, About developer card, app topbar, and manifest icon.
+- Follow-up hero update: changed the first viewport from two competing cards into a centered brand-first introduction with the product mockup below it.
+- Follow-up layout update: removed the unnecessary slant from the hero product mockup and aligned the supporting cards.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local `/` HTTP 200 check on `http://localhost:3000`
+  - local landing CSS asset HTTP 200 check
+
 ## Latest Update - 2026-05-05: Landing Navigation Polish
 
 - Added a sticky glass landing navbar on `/` with immediate access to About us, Demo, Contact, and Login so daily users do not have to scroll to the bottom first.

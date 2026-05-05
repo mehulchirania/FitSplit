@@ -80,14 +80,20 @@ export function AppTopbar({
             <Menu />
           </button>
           <Link className="brand" href="/">
-            <img
-              alt="FitSplit"
-              className="brand-icon"
-              height="48"
-              src="/icon-512.png"
-              width="48"
-              style={{ width: "48px", height: "48px" }}
-            />
+            <span className="theme-logo brand-icon-wrap" aria-hidden="true">
+              <img
+                alt=""
+                className="brand-icon theme-logo-dark"
+                src="/fitsplit-logo-dark.png"
+                style={{ width: "48px", height: "48px" }}
+              />
+              <img
+                alt=""
+                className="brand-icon theme-logo-light"
+                src="/fitsplit-logo-light.png"
+                style={{ width: "48px", height: "48px" }}
+              />
+            </span>
             <span>
               <strong style={{ fontSize: "1.3rem" }}>FitSplit</strong>
               <small>Your fitness companion</small>

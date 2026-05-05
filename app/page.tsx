@@ -1,148 +1,129 @@
+import { LandingNav } from "@/components/landing-nav";
 import { LoginForm } from "@/components/login-form";
 import { SamplePlanDemo } from "@/components/sample-plan-demo";
 
 export const dynamic = "force-dynamic";
 
-const trainerFeatures = [
-  "Create PPL, Upper/Lower, Bro Split, and custom workout plans",
-  "Assign structured weekly plans to each member",
-  "Review lift logs, progress signals, and workout completion"
-];
-
-const memberFeatures = [
-  "Open the app and see today's assigned workout",
-  "Follow clear exercise lists with sets, reps, and rest flow",
-  "Track daily performance without leaving the workout screen"
-];
-
 const productPanels = [
   {
-    eyebrow: "Trainer dashboard",
-    title: "Member workload at a glance",
-    rows: ["38 active members", "12 plans assigned this week", "7 progress updates pending"]
+    eyebrow: "Trainer Dashboard",
+    title: "Training operations at a glance",
+    metric: "38",
+    metricLabel: "active members",
+    rows: ["12 plans assigned", "7 progress updates", "4 members training now"]
   },
   {
-    eyebrow: "Member workout",
+    eyebrow: "Member Workout Screen",
     title: "Today: Push strength",
-    rows: ["Incline dumbbell press", "Machine shoulder press", "Cable tricep pressdown"]
+    metric: "02:00",
+    metricLabel: "rest timer",
+    rows: ["Incline press · 4 x 8", "Set tracking", "Daily plan view"]
   },
   {
-    eyebrow: "Progress tracking",
-    title: "Bench press trend",
-    rows: ["Last week: 60kg x 8", "Today: 62.5kg x 8", "Next target: 65kg"]
+    eyebrow: "Progress Tracking",
+    title: "Consistency that trainers can see",
+    metric: "86%",
+    metricLabel: "weekly completion",
+    rows: ["6 day streak", "Lift history", "Progress graph"]
   }
+];
+
+const features = [
+  ["Workout plan builder", "Create structured splits from reusable exercises and weekly templates."],
+  ["Member assignment", "Assign the right plan to each member without sending screenshots or PDFs."],
+  ["Progress tracking", "See logs, completion, rest flow, and lift history from one place."],
+  ["Role-based access", "Owners, trainers, and members see only the tools they need."],
+  ["No billing clutter", "FitSplit stays focused on workout delivery, not payments or memberships."],
+  ["Mobile workout view", "Members get a clean daily workout screen built for the gym floor."]
 ];
 
 export default function Home() {
   return (
     <main className="landing-page">
-      <nav className="landing-nav" aria-label="FitSplit landing navigation">
-        <a className="landing-nav-brand" href="#top" aria-label="FitSplit home">
-          <img alt="" src="/icon-512.png" />
-          <span>FitSplit</span>
-        </a>
-        <div className="landing-nav-links">
-          <a href="#roles">About us</a>
-          <a href="#demo">Demo</a>
-          <a href="#contact">Contact</a>
-          <a className="landing-nav-login" href="#login">
-            Login
-          </a>
-        </div>
-      </nav>
+      <LandingNav />
+
       <section className="landing-hero" id="top">
         <div className="landing-hero-copy">
-          <div className="landing-brand-lockup">
-            <img alt="FitSplit" src="/icon-512.png" />
+          <div className="landing-hero-brand" aria-label="FitSplit">
+            <span className="theme-logo" aria-hidden="true">
+              <img alt="" className="theme-logo-dark" src="/fitsplit-logo-dark.png" />
+              <img alt="" className="theme-logo-light" src="/fitsplit-logo-light.png" />
+            </span>
             <span>FitSplit</span>
           </div>
-          <p className="eyebrow">Workout delivery for gyms</p>
-          <h1>Manage your members' workouts in one place.</h1>
+          <p className="eyebrow">Workout management for gyms and trainers</p>
+          <h1>Assign better workouts. Track member progress. Keep training simple.</h1>
           <p>
-            FitSplit helps gym owners and trainers create workout plans, assign them to members,
-            and track training progress without mixing payments, memberships, or scattered chats.
+            FitSplit helps gym owners and trainers create, assign, and monitor workout plans while members get a clean app experience to follow their daily training.
           </p>
           <div className="landing-actions">
             <a className="button button-primary" href="#login">
-              Start as Trainer
+              Start Demo
             </a>
             <a className="button button-secondary" href="#login">
-              Member Login
+              View Member Experience
             </a>
           </div>
-          <div className="landing-proof-strip" aria-label="FitSplit proof points">
-            <span>Built for Titan V2 Fitness pilot</span>
-            <span>Role-based trainer/member access</span>
-            <span>Workout planning only</span>
-          </div>
+          <div className="landing-microcopy">Workout management without billing complexity.</div>
         </div>
 
-        <div className="landing-hero-preview" aria-label="FitSplit product preview">
-          <div className="preview-shell-header">
-            <span>Trainer workspace</span>
-            <strong>Live week</strong>
-          </div>
-          <div className="preview-metrics">
-            <div>
-              <span>Members</span>
-              <strong>38</strong>
+        <div className="landing-hero-showcase">
+          <div className="landing-hero-preview" aria-label="FitSplit app mockup">
+            <div className="preview-shell-header">
+              <span>FitSplit Command</span>
+              <strong>⌘ Search member or plan</strong>
             </div>
-            <div>
-              <span>Plans</span>
-              <strong>12</strong>
+            <div className="hero-command-card">
+              <span>Assign plan</span>
+              <strong>PPL x 2 → Rahul Sharma</strong>
             </div>
-            <div>
-              <span>Logs</span>
-              <strong>124</strong>
+            <div className="preview-metrics">
+              <div>
+                <span>Members</span>
+                <strong>38</strong>
+              </div>
+              <div>
+                <span>Assigned</span>
+                <strong>12</strong>
+              </div>
+              <div>
+                <span>Streak</span>
+                <strong>86%</strong>
+              </div>
             </div>
-          </div>
-          <div className="preview-plan-card">
-            <span className="status-pill status-active">Assigned today</span>
-            <h2>Push strength</h2>
-            <p>Incline press, shoulder press, triceps, rest timer, lift logging.</p>
-          </div>
-          <div className="preview-progress-card">
-            <span>Bench press</span>
-            <div className="preview-bars">
-              <i style={{ height: "42%" }} />
-              <i style={{ height: "58%" }} />
-              <i style={{ height: "72%" }} />
-              <i style={{ height: "86%" }} />
+            <div className="preview-plan-card">
+              <span className="status-pill status-active">Live workout</span>
+              <h2>Push strength</h2>
+              <p>Incline press, shoulder press, triceps, rest timer, lift logging.</p>
+            </div>
+            <div className="preview-progress-card">
+              <span>Weekly consistency</span>
+              <div className="preview-bars">
+                <i style={{ height: "48%" }} />
+                <i style={{ height: "70%" }} />
+                <i style={{ height: "62%" }} />
+                <i style={{ height: "92%" }} />
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      <section className="landing-section landing-proof">
-        <div>
-          <strong>1 pilot gym</strong>
-          <span>Designed around real owner workflows</span>
-        </div>
-        <div>
-          <strong>5 proven splits</strong>
-          <span>PPL, Bro Split, Upper/Lower, and custom plans</span>
-        </div>
-        <div>
-          <strong>2 clear roles</strong>
-          <span>Trainer control, member simplicity</span>
-        </div>
-      </section>
-
-      <section className="landing-section" id="roles">
+      <section className="landing-section" id="about">
         <div className="landing-section-heading">
           <p className="eyebrow">Who it is for</p>
-          <h2>Built for the person assigning workouts and the member doing them.</h2>
+          <h2>One system for trainers assigning plans and members following them.</h2>
         </div>
         <div className="landing-role-grid">
           <article>
             <span>Gym Owners / Trainers</span>
-            <h3>Build programs once, deliver them cleanly.</h3>
-            <p>Create structured splits, assign them to members, and see training activity from one workspace.</p>
+            <h3>Create, assign, and review progress.</h3>
+            <p>Create plans, assign them to members, track progress, and keep every workout visible.</p>
           </article>
           <article>
             <span>Members</span>
-            <h3>Open the app and know exactly what to train.</h3>
-            <p>Members see their assigned weekly schedule, today's exercises, rest timer, and lift log.</p>
+            <h3>Follow the plan without confusion.</h3>
+            <p>View assigned workouts, log sets, follow the daily plan, and keep training simple.</p>
           </article>
         </div>
       </section>
@@ -150,59 +131,42 @@ export default function Home() {
       <section className="landing-section">
         <div className="landing-section-heading">
           <p className="eyebrow">How it works</p>
-          <h2>Two simple flows, one shared training system.</h2>
+          <h2>Trainer control on one side. Member clarity on the other.</h2>
         </div>
-        <div className="landing-flow-grid">
+        <div className="landing-timeline">
           <article>
-            <h3>Trainer flow</h3>
-            <ol>
-              <li>Create workout plans from the exercise catalog.</li>
-              <li>Assign plans to the right member.</li>
-              <li>Track lift logs and completion signals.</li>
-            </ol>
+            <h3>Trainer</h3>
+            <p>Create plan</p>
+            <p>Assign member</p>
+            <p>Review progress</p>
           </article>
           <article>
-            <h3>Member flow</h3>
-            <ol>
-              <li>Log in with member access.</li>
-              <li>View today's assigned workout.</li>
-              <li>Track performance set by set.</li>
-            </ol>
+            <h3>Member</h3>
+            <p>Login</p>
+            <p>Follow workout</p>
+            <p>Log performance</p>
           </article>
         </div>
       </section>
 
-      <section className="landing-section">
-        <div className="landing-section-heading">
-          <p className="eyebrow">Role-based features</p>
-          <h2>Less admin noise. More training delivery.</h2>
-        </div>
-        <div className="landing-feature-grid">
-          <article>
-            <h3>For trainers</h3>
-            {trainerFeatures.map((feature) => (
-              <p key={feature}>{feature}</p>
-            ))}
-          </article>
-          <article>
-            <h3>For members</h3>
-            {memberFeatures.map((feature) => (
-              <p key={feature}>{feature}</p>
-            ))}
-          </article>
-        </div>
+      <section className="landing-section" id="demo">
+        <SamplePlanDemo />
       </section>
 
       <section className="landing-section">
         <div className="landing-section-heading">
-          <p className="eyebrow">Product preview</p>
-          <h2>Proof that this is a gym tool, not a generic fitness feed.</h2>
+          <p className="eyebrow">Product previews</p>
+          <h2>Realistic views for the workflows gyms repeat every day.</h2>
         </div>
         <div className="landing-product-grid">
           {productPanels.map((panel) => (
             <article key={panel.eyebrow}>
               <p className="eyebrow">{panel.eyebrow}</p>
               <h3>{panel.title}</h3>
+              <div className="preview-ring">
+                <strong>{panel.metric}</strong>
+                <span>{panel.metricLabel}</span>
+              </div>
               <div>
                 {panel.rows.map((row) => (
                   <span key={row}>{row}</span>
@@ -213,50 +177,100 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="landing-section" id="demo">
-        <SamplePlanDemo />
-      </section>
-
-      <section className="landing-section landing-testimonials">
+      <section className="landing-section">
         <div className="landing-section-heading">
-          <p className="eyebrow">Trainer-focused proof</p>
-          <h2>Designed for gyms that already coach members manually.</h2>
+          <p className="eyebrow">Features</p>
+          <h2>A focused bento grid for workout delivery, not admin bloat.</h2>
         </div>
-        <div className="landing-role-grid">
+        <div className="landing-bento-grid">
+          {features.map(([title, copy], index) => (
+            <article className={index === 0 || index === 2 ? "is-wide" : ""} key={title}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <h3>{title}</h3>
+              <p>{copy}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className="landing-section">
+        <div className="landing-section-heading">
+          <p className="eyebrow">Before vs After</p>
+          <h2>Replace scattered coaching with one clean training workspace.</h2>
+        </div>
+        <div className="before-after-grid">
           <article>
-            <p>"FitSplit gives every member a clear plan without forcing us into a payment system we do not need."</p>
-            <strong>Titan V2 Fitness pilot</strong>
+            <h3>Before FitSplit</h3>
+            <p>WhatsApp messages</p>
+            <p>Paper workout sheets</p>
+            <p>No tracking</p>
+            <p>Confused members</p>
           </article>
           <article>
-            <p>"The value is simple: trainers assign the plan, members follow it, progress stays visible."</p>
-            <strong>Owner workflow note</strong>
+            <h3>After FitSplit</h3>
+            <p>Assigned workout plans</p>
+            <p>Clean member login</p>
+            <p>Progress visibility</p>
+            <p>Trainer control</p>
           </article>
         </div>
       </section>
 
-      <section className="landing-final-cta" id="contact">
-        <p className="eyebrow">Ready to deliver better workouts?</p>
-        <h2>Start managing workout plans with FitSplit.</h2>
+      <section className="landing-section about-contact-section">
+        <div className="landing-section-heading">
+          <p className="eyebrow">About + Contact</p>
+          <h2>Built for practical gym workflows.</h2>
+        </div>
+        <div className="about-contact-grid">
+          <article>
+            <p>
+              FitSplit is built by Mehul Chirania, a software developer focused on creating simple, practical tools for real gym workflows.
+            </p>
+            <p>
+              The app is designed for gym owners and trainers who want a clean way to assign workout plans, manage member training, and track progress — without membership billing, payment systems, or unnecessary admin complexity.
+            </p>
+            <p>
+              For demo access or feedback, contact Mehul Chirania.
+            </p>
+            <a href="tel:9688227039">9688227039</a>
+          </article>
+          <aside>
+            <span className="theme-logo" aria-hidden="true">
+              <img alt="" className="theme-logo-dark" src="/fitsplit-logo-dark.png" />
+              <img alt="" className="theme-logo-light" src="/fitsplit-logo-light.png" />
+            </span>
+            <h3>Mehul Chirania</h3>
+            <p>Developer of FitSplit</p>
+            <span>Software Developer</span>
+            <span>Bengaluru, India</span>
+          </aside>
+        </div>
+      </section>
+
+      <section className="landing-final-cta">
+        <p className="eyebrow">Ready to make workout delivery easier?</p>
+        <h2>Give trainers one place to assign plans and members one simple app to follow them.</h2>
         <div className="landing-actions">
           <a className="button button-primary" href="#login">
-            Start Managing Workouts
+            Start Demo
           </a>
-          <a className="button button-secondary" href="#demo">
-            Try Demo
+          <a className="button button-secondary" href="#login">
+            Member Login
           </a>
         </div>
+        <p>Workout management only. No billing or membership setup required.</p>
       </section>
 
       <section className="intro-login-band" id="login">
         <div className="intro-login-copy">
           <p className="eyebrow">Trainer or member access</p>
           <h2>Log in to your FitSplit workspace.</h2>
-          <p>
-            Trainers manage assigned plans. Members view and track the workouts already assigned to them.
-          </p>
+          <p>Trainers manage assigned plans. Members view and track the workouts already assigned to them.</p>
         </div>
         <LoginForm />
       </section>
+
+      <footer className="landing-footer">© 2026 FitSplit. Made with 💪 by Mehul Chirania.</footer>
     </main>
   );
 }

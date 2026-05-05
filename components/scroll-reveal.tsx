@@ -14,6 +14,11 @@ export function ScrollReveal() {
           ".landing-flow-grid article",
           ".landing-feature-grid article",
           ".landing-product-grid article",
+          ".landing-bento-grid article",
+          ".landing-timeline article",
+          ".before-after-grid article",
+          ".about-contact-grid article",
+          ".about-contact-grid aside",
           ".landing-demo-card",
           ".landing-final-cta",
           ".intro-login-band"
