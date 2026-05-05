@@ -1,5 +1,19 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-05: Trainer-Focused Landing Page
+
+- Rebuilt `/` as a high-conversion FitSplit landing page focused on gym owners/trainers and members.
+- Added role-separated positioning:
+  - trainers create, assign, and track workout plans.
+  - members log in, view assigned workouts, and track performance.
+- Added product-preview panels for trainer dashboard, member workout screen, and progress tracking.
+- Added `components/sample-plan-demo.tsx`, an interactive sample split generator driven by goal and days per week.
+- Replaced generic carousel-led messaging with SaaS-style sections: hero, proof, who it is for, how it works, role-based features, product preview, interactive demo, testimonials, repeated CTA, and login.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local desktop/mobile screenshot checks with no horizontal overflow
+
 ## Latest Update - 2026-05-05: Gym Staff Access Controls
 
 - Reworked `/admin/gyms/[gymId]` from "Gym Owners" to "Gym Staff".
