@@ -15,16 +15,20 @@ import type { Role } from "@/types/domain";
 export function AppTopbar({
   gymName,
   initials,
-  role
+  role,
+  unreadInboxCount = 0
 }: {
   gymName?: string;
   initials?: string;
   role?: Role;
+  unreadInboxCount?: number;
 }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isTopbarHidden, setIsTopbarHidden] = useState(false);
   const [isLoggingOut, startLogoutTransition] = useTransition();
   const profileRef = useRef<HTMLDivElement>(null);
+  const lastScrollYRef = useRef(0);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -49,6 +53,29 @@ export function AppTopbar({
       document.body.style.overflow = "";
     };
   }, [isDrawerOpen]);
+
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+
+    function handleScroll() {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - lastScrollYRef.current;
+
+      if (isDrawerOpen || isProfileOpen || currentScrollY < 48) {
+        setIsTopbarHidden(false);
+      } else if (delta > 8) {
+        setIsTopbarHidden(true);
+      } else if (delta < -8) {
+        setIsTopbarHidden(false);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    }
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isDrawerOpen, isProfileOpen]);
+
   if (pathname === "/") {
     return null;
   }
@@ -62,13 +89,14 @@ export function AppTopbar({
         // The server logout below still clears the FitSplit session.
       }
 
+      window.localStorage.removeItem("fitsplit-session-start");
       await logoutUser();
     });
   }
 
   return (
     <>
-      <header className="topbar">
+      <header className={`topbar ${isTopbarHidden ? "topbar-hidden" : ""}`}>
         <div className="topbar-left">
           <button
             aria-expanded={isDrawerOpen}
@@ -76,8 +104,21 @@ export function AppTopbar({
             className="icon-button neutral-icon-button"
             onClick={() => setIsDrawerOpen(true)}
             type="button"
+            style={{ position: "relative" }}
           >
             <Menu />
+            {unreadInboxCount > 0 && (
+              <span style={{ 
+                position: "absolute", 
+                top: "6px", 
+                right: "6px", 
+                width: "10px", 
+                height: "10px", 
+                background: "var(--primary)", 
+                borderRadius: "50%",
+                border: "2px solid var(--bg-elevated)"
+              }} />
+            )}
           </button>
           <Link className="brand" href="/">
             <span className="theme-logo brand-icon-wrap" aria-hidden="true">
@@ -94,9 +135,9 @@ export function AppTopbar({
                 style={{ width: "48px", height: "48px" }}
               />
             </span>
-            <span>
+            <span className="brand-text">
               <strong style={{ fontSize: "1.3rem" }}>FitSplit</strong>
-              <small>Your fitness companion</small>
+              <small className="hide-mobile">Your fitness companion</small>
             </span>
           </Link>
         </div>
@@ -169,6 +210,21 @@ export function AppTopbar({
                   Owner Flow
                 </Link>
               ) : null}
+              {role === "admin" && (
+                <Link href="/admin/inbox" onClick={() => setIsDrawerOpen(false)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span>Inbox</span>
+                  {unreadInboxCount > 0 && (
+                    <span style={{ 
+                      background: "var(--primary)", 
+                      color: "var(--primary-foreground)", 
+                      padding: "2px 8px", 
+                      borderRadius: "99px", 
+                      fontSize: "0.75rem",
+                      fontWeight: 700
+                    }}>{unreadInboxCount}</span>
+                  )}
+                </Link>
+              )}
               {role === "member" ? (
                 <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
                   Member Today

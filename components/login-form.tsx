@@ -2,14 +2,17 @@
 
 import { FirebaseError } from "firebase/app";
 import {
-  sendPasswordResetEmail,
-  signInWithEmailAndPassword
+  sendPasswordResetEmail
 } from "firebase/auth";
-import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { createLocalDemoSession, createSession, resolveLoginIdentifier } from "@/lib/auth";
+import { loginWithCredentials, resolveLoginIdentifier } from "@/lib/auth";
 import { getFirebaseClientServices } from "@/lib/firebase/client";
+
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phonePattern = /^(\+91[\s-]?)?[6-9]\d{9}$/;
+const usernamePattern = /^[a-z0-9._-]{3,}$/i;
+const pinPattern = /^\d{4}$/;
 
 function authErrorMessage(error: unknown) {
   if (error instanceof FirebaseError) {
@@ -34,10 +37,11 @@ export function LoginForm() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
-  const loginButtonRef = useRef<HTMLButtonElement>(null);
-  const router = useRouter();
+  const formRef = useRef<HTMLFormElement>(null);
 
   const isMember = mode === "member";
+  const cleanUsername = username.trim();
+  const cleanPassword = password.trim();
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: "instant" });
@@ -51,59 +55,53 @@ export function LoginForm() {
     setMessage("");
   }
 
-  function handleLoginKeyDown(event: KeyboardEvent<HTMLFormElement>) {
-    if (event.key !== "Enter") {
-      return;
-    }
-
-    const target = event.target as HTMLElement;
-    if (target.tagName === "TEXTAREA") {
-      return;
-    }
-
-    event.preventDefault();
-    loginButtonRef.current?.click();
-  }
-
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setMessage("");
 
+    if (!cleanUsername) {
+      setError(isMember ? "Enter your registered mobile number or email." : "Enter your staff email or username.");
+      return;
+    }
+
+    if (isMember) {
+      const normalizedPhone = cleanUsername.replace(/[\s-]/g, "");
+      const isValidMemberIdentifier =
+        emailPattern.test(cleanUsername.toLowerCase()) ||
+        phonePattern.test(normalizedPhone) ||
+        usernamePattern.test(cleanUsername);
+
+      if (!isValidMemberIdentifier) {
+        setError("Use a valid email, Indian mobile number, or username for member login.");
+        return;
+      }
+
+      if (!pinPattern.test(cleanPassword)) {
+        setError("PIN must be exactly 4 numeric digits.");
+        return;
+      }
+    } else if (!cleanPassword) {
+      setError("Enter your password.");
+      return;
+    }
+
     startTransition(async () => {
       try {
-        const resolved = await resolveLoginIdentifier(username, mode);
-
-        if (resolved.status !== "success") {
-          setError(resolved.message);
-          return;
-        }
-
-        if (resolved.localOnly) {
-          const session = await createLocalDemoSession(username, password, mode);
-
-          if (session.status !== "success") {
-            setError(session.message);
-            return;
-          }
-
-          router.push(session.redirectUrl);
-          router.refresh();
-          return;
-        }
-
-        const { auth } = getFirebaseClientServices();
-        const credential = await signInWithEmailAndPassword(auth, resolved.email, password);
-        const idToken = await credential.user.getIdToken(true);
-        const session = await createSession(idToken);
+        const formData = new FormData();
+        formData.set("username", cleanUsername);
+        formData.set("password", cleanPassword);
+        formData.set("mode", mode);
+        const session = await loginWithCredentials(formData);
 
         if (session.status !== "success") {
           setError(session.message);
           return;
         }
 
-        router.push(session.redirectUrl);
-        router.refresh();
+        window.scrollTo(0, 0);
+        window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
+        window.location.assign(session.redirectUrl);
       } catch (caughtError) {
         setError(authErrorMessage(caughtError));
       }
@@ -144,7 +142,7 @@ export function LoginForm() {
         </p>
         <div className="login-demo-strip">
           <span>Local demo</span>
-          <strong>{isMember ? "9688227039 / 123456" : "admin / password"}</strong>
+          <strong>{isMember ? "registered mobile/email / 1234" : "admin / password"}</strong>
         </div>
       </div>
 
@@ -180,14 +178,15 @@ export function LoginForm() {
           </button>
         </div>
 
-        <form className="login-form" onKeyDown={handleLoginKeyDown} onSubmit={handleSubmit}>
+        <form className="login-form" onSubmit={handleSubmit} ref={formRef}>
           <label>
-            <span>{isMember ? "Mobile number or username" : "Email or username"}</span>
+            <span>{isMember ? "Mobile number or email" : "Email or username"}</span>
             <input
               autoComplete="username"
+              inputMode={isMember ? "tel" : undefined}
               name="username"
               onChange={(event) => setUsername(event.target.value)}
-              placeholder={isMember ? "9688227039" : "admin"}
+              placeholder={isMember ? "Mobile number or email" : "admin"}
               required
               type="text"
               value={username}
@@ -195,16 +194,25 @@ export function LoginForm() {
           </label>
 
           <label>
-            <span>{isMember ? "6-digit PIN" : "Password"}</span>
+            <span>{isMember ? "4-digit PIN" : "Password"}</span>
             <input
-              autoComplete="current-password"
+              autoComplete={isMember ? "one-time-code" : "current-password"}
               inputMode={isMember ? "numeric" : undefined}
-              maxLength={isMember ? 6 : undefined}
+              maxLength={isMember ? 4 : undefined}
               name="password"
-              onChange={(event) => setPassword(event.target.value)}
-              placeholder={isMember ? "123456" : "password"}
+              onChange={(event) =>
+                setPassword(isMember ? event.target.value.replace(/\D/g, "").slice(0, 4) : event.target.value)
+              }
+              onKeyDown={(event: KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  formRef.current?.requestSubmit();
+                }
+              }}
+              pattern={isMember ? "\\d{4}" : undefined}
+              placeholder={isMember ? "1234" : "password"}
               required
-              type={isMember ? "tel" : "password"}
+              type={isMember ? "password" : "password"}
               value={password}
             />
           </label>
@@ -212,7 +220,12 @@ export function LoginForm() {
           {error ? <div className="login-message error">{error}</div> : null}
           {message ? <div className="login-message success">{message}</div> : null}
 
-          <button className="button button-primary login-submit" disabled={isPending} ref={loginButtonRef} type="submit">
+          <button
+            className="button button-primary login-submit"
+            disabled={isPending}
+            onClick={() => formRef.current?.requestSubmit()}
+            type="button"
+          >
             {isPending ? "Logging in..." : "Log in"}
           </button>
 

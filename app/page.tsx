@@ -1,6 +1,7 @@
 import { LandingNav } from "@/components/landing-nav";
 import { LoginForm } from "@/components/login-form";
 import { SamplePlanDemo } from "@/components/sample-plan-demo";
+import { ContactForm } from "@/components/contact-form";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ const productPanels = [
     title: "Today: Push strength",
     metric: "02:00",
     metricLabel: "rest timer",
-    rows: ["Incline press · 4 x 8", "Set tracking", "Daily plan view"]
+    rows: ["Incline press - 4 x 8", "Set tracking", "Daily plan view"]
   },
   {
     eyebrow: "Progress Tracking",
@@ -71,11 +72,11 @@ export default function Home() {
           <div className="landing-hero-preview" aria-label="FitSplit app mockup">
             <div className="preview-shell-header">
               <span>FitSplit Command</span>
-              <strong>⌘ Search member or plan</strong>
+              <strong>Search member or plan</strong>
             </div>
             <div className="hero-command-card">
               <span>Assign plan</span>
-              <strong>PPL x 2 → Rahul Sharma</strong>
+              <strong>PPL x 2 - Rahul Sharma</strong>
             </div>
             <div className="preview-metrics">
               <div>
@@ -224,15 +225,14 @@ export default function Home() {
         <div className="about-contact-grid">
           <article>
             <p>
-              FitSplit is built by Mehul Chirania, a software developer focused on creating simple, practical tools for real gym workflows.
+              FitSplit is built for gym owners and trainers who want a clean way to assign workout plans, manage member training, and track progress without membership billing, payment systems, or unnecessary admin complexity.
             </p>
             <p>
-              The app is designed for gym owners and trainers who want a clean way to assign workout plans, manage member training, and track progress — without membership billing, payment systems, or unnecessary admin complexity.
+              Have a question or want a guided demo? Send us a message and we'll get back to you within 24 hours.
             </p>
-            <p>
-              For demo access or feedback, contact Mehul Chirania.
-            </p>
-            <a href="tel:9688227039">9688227039</a>
+            <div style={{ marginTop: "32px" }}>
+              <ContactForm />
+            </div>
           </article>
           <aside>
             <span className="theme-logo" aria-hidden="true">
@@ -269,8 +269,6 @@ export default function Home() {
         </div>
         <LoginForm />
       </section>
-
-      <footer className="landing-footer">© 2026 FitSplit. Made with 💪 by Mehul Chirania.</footer>
     </main>
   );
 }

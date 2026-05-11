@@ -1,21 +1,26 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/app-footer";
 import { AppTopbar } from "@/components/app-topbar";
 import { BackButton } from "@/components/back-button";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
+import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
-import { getTitanWorkspace } from "@/lib/firebase/read-models";
+import { getTitanWorkspace, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FitSplit",
   description: "Workout programming and gym operations for focused fitness teams.",
-  manifest: "/manifest.json",
+  manifest: "/manifest.json?v=5",
   icons: {
     icon: [
-      { url: "/favicon.ico?v=3", type: "image/x-icon" },
-      { url: "/icon-512.png?v=3", sizes: "512x512", type: "image/png" }
+      { url: "/favicon-32x32.png?v=5", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png?v=5", sizes: "16x16", type: "image/png" },
+      { url: "/icon-512.png?v=5", sizes: "512x512", type: "image/png" }
     ],
-    apple: "/icon-512.png?v=3"
+    apple: "/apple-touch-icon.png?v=5"
   }
 };
 
@@ -28,7 +33,7 @@ export default async function RootLayout({
     getCurrentUser(),
     getTitanWorkspace()
   ]);
-  
+
   let initials = "";
   if (currentUser) {
     initials = currentUser.fullName
@@ -38,29 +43,34 @@ export default async function RootLayout({
       .slice(0, 2)
       .toUpperCase();
   }
+
   const gymName = currentUser ? gym?.name : undefined;
+  const unreadInboxCount =
+    currentUser?.role === "admin" ? await getUnreadContactMessageCount() : 0;
 
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#111111" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-title" content="FitSplit" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-        {/* Google Fonts: Inter */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
 
-        {/* Points to your manifest file */}
-        <link rel="manifest" href="/manifest.json" />
-
-        {/* Uses the cropped icon for the browser tab */}
-        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=3" />
-        <link rel="shortcut icon" href="/favicon.ico?v=3" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=3" />
-
-        {/* Tells iPhones to use the same image for the home screen */}
-        <link rel="apple-touch-icon" href="/icon-512.png?v=3" />
+        <link rel="manifest" href="/manifest.json?v=5" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
+        <link rel="shortcut icon" href="/favicon-32x32.png?v=5" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=5" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -76,10 +86,18 @@ export default async function RootLayout({
       <body>
         <div className="app-shell">
           <ScrollReveal />
-          <AppTopbar initials={initials} gymName={gymName} role={currentUser?.role} />
+          <PwaInstallPrompt />
+          <SessionTimeout isAuthenticated={Boolean(currentUser)} />
+          <AppTopbar
+            initials={initials}
+            gymName={gymName}
+            role={currentUser?.role}
+            unreadInboxCount={unreadInboxCount}
+          />
           <BackButton />
           {children}
-          <footer className="app-footer">{"Developed with 💪 by Mehul"}</footer>
+          {currentUser && <AppFooter />}
+          <MobileBottomNav role={currentUser?.role} />
         </div>
       </body>
     </html>

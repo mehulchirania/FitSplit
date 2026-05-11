@@ -245,16 +245,8 @@ function createModification(
   };
 }
 
-const SESSION_START_KEY = "fitsplit-session-start";
+const WORKOUT_START_KEY = "fitsplit-workout-start";
 const MAX_SESSION_SECONDS = 4 * 60 * 60; // 4 hours
-
-function formatTimer(seconds: number) {
-  const minutes = Math.floor(seconds / 60)
-    .toString()
-    .padStart(2, "0");
-  const remainingSeconds = (seconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${remainingSeconds}`;
-}
 
 function formatElapsed(seconds: number) {
   const h = Math.floor(seconds / 3600);
@@ -266,6 +258,21 @@ function formatElapsed(seconds: number) {
 
 function getExerciseName(exerciseId: string, exercises: Exercise[]) {
   return exercises.find((exercise) => exercise.id === exerciseId)?.name ?? "Exercise";
+}
+
+function getCurrentPosition() {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    if (!("geolocation" in navigator)) {
+      reject(new Error("GPS location is not available on this device."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 12000
+    });
+  });
 }
 
 export function MemberWorkoutConsole({
@@ -288,9 +295,6 @@ export function MemberWorkoutConsole({
   const [injury, setInjury] = useState("");
   const [modification, setModification] = useState<Modification | null>(null);
   const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
-  const [timerSeconds, setTimerSeconds] = useState(120);
-  const [remainingSeconds, setRemainingSeconds] = useState(120);
-  const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
   const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
   const [isEventPending, setIsEventPending] = useState(false);
@@ -333,26 +337,6 @@ export function MemberWorkoutConsole({
     return () => window.removeEventListener("online", handleOnline);
   }, [initialActiveSessionCount]);
 
-  useEffect(() => {
-    if (!isTimerRunning) {
-      return;
-    }
-
-    const intervalId = window.setInterval(() => {
-      setRemainingSeconds((current) => {
-        if (current <= 1) {
-          window.clearInterval(intervalId);
-          setIsTimerRunning(false);
-          return 0;
-        }
-
-        return current - 1;
-      });
-    }, 1000);
-
-    return () => window.clearInterval(intervalId);
-  }, [isTimerRunning]);
-
   // Elapsed workout clock — ticks while active, auto-ends at 4 hours
   useEffect(() => {
     if (!isActive) {
@@ -361,10 +345,10 @@ export function MemberWorkoutConsole({
     }
 
     // Restore elapsed time from stored start timestamp
-    const storedStart = window.localStorage.getItem(SESSION_START_KEY);
+    const storedStart = window.localStorage.getItem(WORKOUT_START_KEY);
     const startTime = storedStart ? Number(storedStart) : Date.now();
     if (!storedStart) {
-      window.localStorage.setItem(SESSION_START_KEY, String(startTime));
+      window.localStorage.setItem(WORKOUT_START_KEY, String(startTime));
     }
 
     const tick = () => {
@@ -377,7 +361,7 @@ export function MemberWorkoutConsole({
         formData.set("sessionId", `active-${memberId}`);
         endWorkoutSession(initialFormActionState, formData).then(() => {
           window.localStorage.removeItem(sessionKey);
-          window.localStorage.removeItem(SESSION_START_KEY);
+          window.localStorage.removeItem(WORKOUT_START_KEY);
           setIsActive(false);
           setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
           setElapsedSeconds(0);
@@ -398,17 +382,21 @@ export function MemberWorkoutConsole({
 
     setPendingEvent({
       confirmLabel: "Start workout",
-      message: "This will mark your workout as active and update live gym capacity.",
+      message: "This will request GPS permission, verify gym check-in, and update live capacity.",
       title: "Start workout session?",
       run: async () => {
         const formData = new FormData();
         formData.set("memberId", memberId);
         formData.set("sessionId", `active-${memberId}`);
+        const position = await getCurrentPosition();
+        formData.set("latitude", String(position.coords.latitude));
+        formData.set("longitude", String(position.coords.longitude));
+        formData.set("deviceInfo", navigator.userAgent);
         const result = await startWorkoutSession(initialFormActionState, formData);
 
         if (result.status === "success") {
           window.localStorage.setItem(sessionKey, "active");
-          window.localStorage.setItem(SESSION_START_KEY, String(Date.now()));
+          window.localStorage.setItem(WORKOUT_START_KEY, String(Date.now()));
           setIsActive(true);
           setActiveCount(setStoredActiveCount(getStoredActiveCount() + 1));
           router.refresh();
@@ -435,7 +423,7 @@ export function MemberWorkoutConsole({
 
         if (result.status === "success") {
           window.localStorage.removeItem(sessionKey);
-          window.localStorage.removeItem(SESSION_START_KEY);
+          window.localStorage.removeItem(WORKOUT_START_KEY);
           setIsActive(false);
           setElapsedSeconds(0);
           setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
@@ -457,12 +445,6 @@ export function MemberWorkoutConsole({
     }
 
     setModification(createModification(selectedDay, injury.trim(), exercises));
-  }
-
-  function setRestPreset(seconds: number) {
-    setTimerSeconds(seconds);
-    setRemainingSeconds(seconds);
-    setIsTimerRunning(false);
   }
 
   function handleLiftLog(event: FormEvent<HTMLFormElement>) {
@@ -526,7 +508,10 @@ export function MemberWorkoutConsole({
     }
 
     setIsEventPending(true);
-    const result = await pendingEvent.run();
+    const result = await pendingEvent.run().catch((error) => ({
+      status: "error" as const,
+      message: error instanceof Error ? error.message : "Unable to complete this action."
+    }));
     setIsEventPending(false);
     setPendingEvent(null);
     setEventStatus(result);
@@ -698,42 +683,6 @@ export function MemberWorkoutConsole({
       </div>
 
       <aside className="list-panel">
-        <div className="rest-timer-card">
-          <p className="eyebrow">In-workout rest timer</p>
-          <strong>{formatTimer(remainingSeconds)}</strong>
-          <div className="timer-presets">
-            {[60, 90, 120, 180].map((seconds) => (
-              <button
-                className={timerSeconds === seconds ? "is-selected" : ""}
-                key={seconds}
-                onClick={() => setRestPreset(seconds)}
-                type="button"
-              >
-                {seconds / 60}m
-              </button>
-            ))}
-          </div>
-          <div className="quick-actions">
-            <button
-              className="button button-primary"
-              onClick={() => setIsTimerRunning(true)}
-              type="button"
-            >
-              Start Rest
-            </button>
-            <button
-              className="button button-secondary"
-              onClick={() => {
-                setIsTimerRunning(false);
-                setRemainingSeconds(timerSeconds);
-              }}
-              type="button"
-            >
-              Reset
-            </button>
-          </div>
-        </div>
-
         <div className="injury-card">
           <h2>AI Semi-Personal Trainer</h2>
           <p>

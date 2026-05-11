@@ -5,6 +5,13 @@ import { updateProfileMetrics } from "@/lib/firebase/actions";
 import type { ProfileMetrics } from "@/types/domain";
 import { ConfirmActionForm } from "./confirm-action-form";
 
+const slots = [
+  { id: "A", label: "Slot A", time: "6 AM - 10 AM" },
+  { id: "B", label: "Slot B", time: "10 AM - 12 PM" },
+  { id: "C", label: "Slot C", time: "4 PM - 6 PM" },
+  { id: "D", label: "Slot D", time: "6 PM - 9 PM" }
+] as const;
+
 export function ProfileForm({
   memberId,
   profile
@@ -70,7 +77,20 @@ export function ProfileForm({
           </label>
           <label>
             Phone
-            <input defaultValue={profile.phone} name="phone" />
+            <input defaultValue={profile.phone} inputMode="tel" name="phone" pattern="(\\+91[\\s-]?)?[6-9][0-9]{9}" />
+          </label>
+          <label>
+            Gender
+            <select defaultValue={profile.gender ?? ""} name="gender">
+              <option value="">Prefer not to say</option>
+              <option value="female">Female</option>
+              <option value="male">Male</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>
+            Date of birth
+            <input defaultValue={profile.dob} name="dob" type="date" />
           </label>
           <label>
             Age
@@ -96,7 +116,39 @@ export function ProfileForm({
               value={weight}
             />
           </label>
+          <label>
+            Primary slot
+            <select defaultValue={profile.primarySlot ?? "A"} name="primarySlot">
+              {slots.map((slot) => (
+                <option key={slot.id} value={slot.id}>{slot.label}: {slot.time}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Secondary slot
+            <select defaultValue={profile.secondarySlot ?? "D"} name="secondarySlot">
+              {slots.map((slot) => (
+                <option key={slot.id} value={slot.id}>{slot.label}: {slot.time}</option>
+              ))}
+            </select>
+          </label>
         </div>
+        <label>
+          Fitness goals
+          <textarea defaultValue={profile.fitnessGoals} name="fitnessGoals" placeholder="Fat loss, strength, muscle gain, sport-specific goals..." rows={3} />
+        </label>
+        <label>
+          Medical notes
+          <textarea defaultValue={profile.medicalNotes} name="medicalNotes" placeholder="Medical conditions your trainer should know about" rows={3} />
+        </label>
+        <label>
+          Injury and pain management
+          <textarea defaultValue={profile.injuryNotes} name="injuryNotes" placeholder="Injuries, pain areas, mobility issues, restrictions" rows={4} />
+        </label>
+        <label>
+          Assigned trainer
+          <input defaultValue={profile.assignedTrainer} name="assignedTrainer" placeholder="Trainer name" />
+        </label>
       </ConfirmActionForm>
 
       <aside className="summary-panel bmi-panel">

@@ -14,7 +14,7 @@ const legacyCookieNames = [
   "fitsplit-member-id",
   "fitsplit-gym-id"
 ] as const;
-const sessionExpiresIn = 1000 * 60 * 60 * 24 * 5;
+const sessionExpiresIn = 1000 * 60 * 60 * 2;
 
 type ProfileRecord = {
   id: string;
@@ -348,6 +348,14 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     }
 
     if (hasFirebaseAdminConfig()) {
+      // Ensure demo profiles exist in Firestore/Auth before client tries to sign in
+      try {
+        const { ensureTitanWorkspace } = await import("@/lib/firebase/actions");
+        await ensureTitanWorkspace();
+      } catch (e) {
+        console.warn("Failed to ensure Titan workspace during demo login", e);
+      }
+
       return {
         status: "success" as const,
         email: demoLogin.authEmail,
@@ -411,7 +419,7 @@ export async function createLocalDemoSession(
     return { status: "error" as const, message: roleError };
   }
 
-  const expectedPassword = demoLogin.role === "member" ? "123456" : "password";
+  const expectedPassword = demoLogin.role === "member" ? "1234" : "password";
   if (password !== expectedPassword) {
     return {
       status: "error" as const,
@@ -427,6 +435,61 @@ export async function createLocalDemoSession(
     redirectUrl: redirectForRole(user.role),
     user
   };
+}
+
+export async function loginWithCredentials(formData: FormData) {
+  const identifier = String(formData.get("username") ?? "").trim();
+  const password = String(formData.get("password") ?? "").trim();
+  const mode = String(formData.get("mode") ?? "member") as "member" | "staff";
+
+  if (!identifier || !password) {
+    return { status: "error" as const, message: "Enter your login details." };
+  }
+
+  const resolved = await resolveLoginIdentifier(identifier, mode);
+
+  if (resolved.status !== "success") {
+    return resolved;
+  }
+
+  if (resolved.localOnly) {
+    return createLocalDemoSession(identifier, password, mode);
+  }
+
+  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+
+  if (!apiKey) {
+    return { status: "error" as const, message: "Firebase client API key is not configured." };
+  }
+
+  const firebasePassword = mode === "member" ? `pin-${password}` : password;
+  const response = await fetch(
+    `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+    {
+      body: JSON.stringify({
+        email: resolved.email,
+        password: firebasePassword,
+        returnSecureToken: true
+      }),
+      headers: { "Content-Type": "application/json" },
+      method: "POST"
+    }
+  );
+
+  if (!response.ok) {
+    return {
+      status: "error" as const,
+      message: mode === "member" ? "Invalid mobile/email or PIN." : "Invalid username or password."
+    };
+  }
+
+  const payload = (await response.json()) as { idToken?: string };
+
+  if (!payload.idToken) {
+    return { status: "error" as const, message: "Unable to sign in. Please try again." };
+  }
+
+  return createSession(payload.idToken);
 }
 
 export async function createSession(idToken: string) {

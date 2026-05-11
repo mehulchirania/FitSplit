@@ -1,5 +1,24 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-06: Landing Contact + Admin Inbox
+
+- Removed the public landing-page footer credit so the credit only appears in the logged-in app footer.
+- Regenerated public logo assets from `lib/images` to remove the white halo around the dark logo on dark backgrounds.
+- Added a landing-page dark/light theme toggle in the glass navbar and improved the mobile navbar layout.
+- Added a landing contact form with required name, mobile number, message body, and optional email.
+- Contact submissions now create Firestore `contactMessages` records with `unread` status and create an admin notification record.
+- Added `/admin/inbox` for admins to view contact messages, call back, and mark messages as read.
+- Added an admin hamburger-menu Inbox link with unread badge; the hamburger button shows a notification dot when unread messages exist.
+- Fixed Gemini partial implementation issues:
+  - contact form field names now match the server action.
+  - unread count now checks `unread`, not `new`.
+  - unread count is loaded server-side in the layout instead of calling a server function from the client topbar.
+  - inbox message read action is wired through a valid server form action.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local `/` and CSS asset HTTP 200 on `http://localhost:3000`
+
 ## Latest Update - 2026-05-05: Premium SaaS Landing V2
 
 - Rebuilt `/` into the requested modern FitSplit SaaS landing flow:
@@ -764,6 +783,20 @@ Manual App Hosting deployment from local source is working and should be used un
 ## Last Known Verified Commands
 
 Latest local UI fix:
+
+- PWA/Auth upgrade pass added a cache-busted manifest, service worker, install prompt, cleaned transparent logo assets for favicon/app icon/header usage, and mobile bottom navigation.
+- Member auth now uses a 4-digit numeric PIN (`1234` for demo members) with inline client validation and 2-hour cookie/session timeout handling.
+- Workout check-in now requests GPS, sends latitude/longitude/device info to `workoutSessions.attendance`, and enforces the gym geofence when `TITAN_GYM_LATITUDE`, `TITAN_GYM_LONGITUDE`, and optional `TITAN_GYM_RADIUS_METERS` are configured.
+- Member profile now stores timing slots, gender/DOB, goals, medical notes, injury notes, and assigned trainer fields.
+- In-workout rest timer UI/code references were removed.
+- Authenticated footer now carries Pro Tips and Gym Rules. Landing page remains free of the Mehul footer credit before login.
+- Still pending for a later pass: Firebase Cloud Messaging push reminders, Firebase Storage avatar/staff image uploads, full revenue/payment dashboard modeling, and production geofence coordinates in `.env.local`/hosting config.
+- Verification passed:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
+```
 
 - Admin page could render only the topbar because the scroll reveal helper was mutating server-rendered page elements before hydration completed.
 - `components/scroll-reveal.tsx` is now non-mutating and only clears the legacy reveal root class.

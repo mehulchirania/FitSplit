@@ -174,12 +174,12 @@ export default async function MemberDetailPage({
         >
           <h2>Account PIN</h2>
           <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
-            If a member has forgotten their PIN, you can reset it here. The default reset PIN is '123456'.
+            If a member has forgotten their PIN, you can reset it here. The default reset PIN is '1234'.
           </p>
           <input name="userId" type="hidden" value={member.id} />
           <label>
-            New 6-digit PIN
-            <input name="newPin" defaultValue="123456" maxLength={6} required />
+            New 4-digit PIN
+            <input inputMode="numeric" name="newPin" pattern="\d{4}" defaultValue="1234" maxLength={4} required />
           </label>
         </ConfirmActionForm>
       </section>

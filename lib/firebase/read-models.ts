@@ -12,7 +12,8 @@ import type {
   ProgramAssignment,
   SiteLink,
   WorkoutSession,
-  WorkoutProgram
+  WorkoutProgram,
+  ContactMessage
 } from "@/types/domain";
 
 import {
@@ -792,8 +793,16 @@ export async function getProfileMetrics(memberId: string): Promise<{
     email: fallbackMember.email,
     phone: fallbackMember.phone,
     age: 29,
+    gender: "",
+    dob: "",
     heightCm: 174,
-    weightKg: 72
+    weightKg: 72,
+    fitnessGoals: fallbackMember.goal,
+    medicalNotes: "",
+    primarySlot: "A",
+    secondarySlot: "D",
+    injuryNotes: "",
+    assignedTrainer: ""
   };
 
   if (!hasFirebaseAdminConfig()) {
@@ -815,8 +824,16 @@ export async function getProfileMetrics(memberId: string): Promise<{
         email: String(data.email ?? fallback.email),
         phone: String(data.phone ?? fallback.phone),
         age: data.age ? Number(data.age) : fallback.age,
+        gender: String(data.gender ?? fallback.gender ?? ""),
+        dob: String(data.dob ?? fallback.dob ?? ""),
         heightCm: data.heightCm ? Number(data.heightCm) : fallback.heightCm,
-        weightKg: data.weightKg ? Number(data.weightKg) : fallback.weightKg
+        weightKg: data.weightKg ? Number(data.weightKg) : fallback.weightKg,
+        fitnessGoals: String(data.fitnessGoals ?? data.goal ?? fallback.fitnessGoals ?? ""),
+        medicalNotes: String(data.medicalNotes ?? fallback.medicalNotes ?? ""),
+        primarySlot: String(data.primarySlot ?? fallback.primarySlot ?? "A") as ProfileMetrics["primarySlot"],
+        secondarySlot: String(data.secondarySlot ?? fallback.secondarySlot ?? "D") as ProfileMetrics["secondarySlot"],
+        injuryNotes: String(data.injuryNotes ?? fallback.injuryNotes ?? ""),
+        assignedTrainer: String(data.assignedTrainer ?? fallback.assignedTrainer ?? "")
       },
       isPersisted: true
     };
@@ -926,5 +943,58 @@ export async function getAttendanceRecords(memberId: string): Promise<{
       records: mockAttendanceRecords.filter(r => r.memberId === memberId),
       isPersisted: false
     };
+  }
+}
+
+export async function getContactMessages(): Promise<{
+  messages: ContactMessage[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { messages: [], isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.contactMessages)
+      .orderBy("createdAt", "desc")
+      .get();
+    
+    const messages: ContactMessage[] = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        name: String(data.name),
+        mobile: String(data.mobile),
+        email: data.email ? String(data.email) : undefined,
+        body: String(data.body),
+        status: String(data.status ?? "unread") as ContactMessage["status"],
+        createdAt: String(data.createdAt),
+        updatedAt: String(data.updatedAt)
+      };
+    });
+
+    return { messages, isPersisted: true };
+  } catch {
+    return { messages: [], isPersisted: false };
+  }
+}
+
+export async function getUnreadContactMessageCount(): Promise<number> {
+  if (!hasFirebaseAdminConfig()) {
+    return 0;
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.contactMessages)
+      .where("status", "==", "unread")
+      .get();
+
+    return snapshot.size;
+  } catch {
+    return 0;
   }
 }

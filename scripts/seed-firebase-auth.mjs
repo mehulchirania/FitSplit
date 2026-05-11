@@ -45,7 +45,8 @@ const projectId = process.env.FIREBASE_PROJECT_ID || "fitsplit-29215";
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 const staffPassword = process.env.FITSPLIT_DEMO_PASSWORD || "password";
-const memberPin = process.env.FITSPLIT_MEMBER_DEMO_PIN || "123456";
+const memberPin = process.env.FITSPLIT_MEMBER_DEMO_PIN || "1234";
+const memberFirebasePassword = `pin-${memberPin}`;
 
 const users = [
   {
@@ -123,7 +124,7 @@ const auth = getAuth();
 
 for (const user of users) {
   const { gymId, role, ...authUser } = user;
-  const password = role === "member" ? memberPin : staffPassword;
+  const password = role === "member" ? memberFirebasePassword : staffPassword;
 
   try {
     await auth.updateUser(user.uid, {

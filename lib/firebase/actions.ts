@@ -38,6 +38,25 @@ function requireText(formData: FormData, key: string, label = key) {
   return value;
 }
 
+function assertValidEmail(email: string, label = "Email") {
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new Error(`${label} is invalid.`);
+  }
+}
+
+function assertValidPhone(phone: string, label = "Mobile number") {
+  const compact = phone.replace(/[\s-]/g, "");
+  if (!/^(\+91)?[6-9]\d{9}$/.test(compact)) {
+    throw new Error(`${label} is invalid.`);
+  }
+}
+
+function assertValidPin(pin: string) {
+  if (!/^\d{4}$/.test(pin)) {
+    throw new Error("PIN must be exactly 4 numeric digits.");
+  }
+}
+
 async function upsertAuthUser(
   auth: ReturnType<typeof getFirebaseAdminServices>["auth"],
   user: { email: string; fullName: string; uid: string; role: Role; gymId: string; isActive: boolean },
@@ -93,6 +112,51 @@ function failure(error: unknown, fallback: string): FormActionState {
   return {
     status: "error",
     message: error instanceof Error ? error.message : fallback
+  };
+}
+
+function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
+  const radius = 6371000;
+  const toRadians = (value: number) => (value * Math.PI) / 180;
+  const dLat = toRadians(toLat - fromLat);
+  const dLng = toRadians(toLng - fromLng);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRadians(fromLat)) *
+      Math.cos(toRadians(toLat)) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
+
+  return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function validateGymGeofence(latitude: number, longitude: number) {
+  const gymLatitude = Number(process.env.TITAN_GYM_LATITUDE ?? process.env.NEXT_PUBLIC_TITAN_GYM_LATITUDE);
+  const gymLongitude = Number(process.env.TITAN_GYM_LONGITUDE ?? process.env.NEXT_PUBLIC_TITAN_GYM_LONGITUDE);
+  const radiusMeters = Number(process.env.TITAN_GYM_RADIUS_METERS ?? process.env.NEXT_PUBLIC_TITAN_GYM_RADIUS_METERS ?? 150);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new Error("Location permission is required to start workout attendance.");
+  }
+
+  if (!Number.isFinite(gymLatitude) || !Number.isFinite(gymLongitude)) {
+    return {
+      distanceMeters: null,
+      geofenceStatus: "not_configured" as const,
+      radiusMeters
+    };
+  }
+
+  const distanceMeters = distanceInMeters(gymLatitude, gymLongitude, latitude, longitude);
+
+  if (distanceMeters > radiusMeters) {
+    throw new Error(`You must be inside the gym radius to check in. Current distance is ${Math.round(distanceMeters)}m.`);
+  }
+
+  return {
+    distanceMeters: Math.round(distanceMeters),
+    geofenceStatus: "inside" as const,
+    radiusMeters
   };
 }
 
@@ -208,7 +272,7 @@ export async function ensureTitanWorkspace() {
     role: "member", 
     gymId: TITAN_GYM_ID, 
     isActive: true 
-  }, "123456", true);
+  }, "pin-1234", true);
 }
 
 export async function createMemberProfile(
@@ -223,6 +287,7 @@ export async function createMemberProfile(
     const memberId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
+    assertValidEmail(email);
     const gymId = String(formData.get("gymId") ?? user.gymId ?? TITAN_GYM_ID).trim() || TITAN_GYM_ID;
     const now = new Date().toISOString();
 
@@ -257,7 +322,7 @@ export async function createMemberProfile(
       role: "member", 
       gymId, 
       isActive: true 
-    }, "123456");
+    }, "pin-1234");
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -282,6 +347,7 @@ export async function updateMemberProfile(
     const memberId = requireText(formData, "memberId", "Member");
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
+    assertValidEmail(email);
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.profiles).doc(memberId).set(
@@ -425,6 +491,11 @@ export async function updateProfileMetrics(
     assertCanManageMember(currentUser, memberId);
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
+    assertValidEmail(email);
+    const phone = String(formData.get("phone") ?? "").trim();
+    if (phone) {
+      assertValidPhone(phone, "Phone");
+    }
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.profiles).doc(memberId).set(
@@ -432,10 +503,18 @@ export async function updateProfileMetrics(
         id: memberId,
         fullName,
         email,
-        phone: String(formData.get("phone") ?? "").trim(),
+        phone,
         age: Number(formData.get("age") ?? 0),
+        gender: String(formData.get("gender") ?? "").trim(),
+        dob: String(formData.get("dob") ?? "").trim(),
         heightCm: Number(formData.get("heightCm") ?? 0),
         weightKg: Number(formData.get("weightKg") ?? 0),
+        fitnessGoals: String(formData.get("fitnessGoals") ?? "").trim(),
+        medicalNotes: String(formData.get("medicalNotes") ?? "").trim(),
+        primarySlot: String(formData.get("primarySlot") ?? "A"),
+        secondarySlot: String(formData.get("secondarySlot") ?? "D"),
+        injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
+        assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
         role: "member",
         defaultGymId: TITAN_GYM_ID,
         isActive: true,
@@ -561,11 +640,16 @@ export async function resetPassword(
     const { auth } = requireFirebaseServices();
     
     // We can also handle a "newPin" or "newPassword" field if provided, otherwise default to "password"
-    const newPassword = String(formData.get("newPassword") || formData.get("newPin") || "password").trim();
+    const rawNewPassword = String(formData.get("newPassword") || formData.get("newPin") || "password").trim();
+    let newPassword = rawNewPassword;
+    if (formData.get("newPin")) {
+      assertValidPin(rawNewPassword);
+      newPassword = `pin-${rawNewPassword}`;
+    }
     
     await auth.updateUser(userId, { password: newPassword });
 
-    return success(`Access code reset to '${newPassword}'.`);
+    return success(`Access code reset to '${rawNewPassword}'.`);
   } catch (error) {
     console.error("Unable to reset password", error);
     return failure(error, "Could not reset access code.");
@@ -610,6 +694,7 @@ export async function createOwnerProfile(
     const ownerId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
+    assertValidEmail(email);
     const gymId = requireText(formData, "gymId", "Gym ID");
     const staffType = String(formData.get("staffType") ?? "owner").trim();
     const normalizedStaffType = ["owner", "trainer", "staff"].includes(staffType) ? staffType : "owner";
@@ -782,6 +867,10 @@ export async function startWorkoutSession(
     await ensureTitanWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
+    const latitude = Number(formData.get("latitude"));
+    const longitude = Number(formData.get("longitude"));
+    const deviceInfo = String(formData.get("deviceInfo") ?? "").slice(0, 500);
+    const geofence = validateGymGeofence(latitude, longitude);
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
@@ -789,6 +878,13 @@ export async function startWorkoutSession(
         id: sessionId,
         gymId: TITAN_GYM_ID,
         memberId,
+        attendance: {
+          latitude,
+          longitude,
+          deviceInfo,
+          timestamp: now,
+          ...geofence
+        },
         startedAt: now,
         status: "active",
         updatedAt: now
@@ -847,29 +943,99 @@ export async function submitContactMessage(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await ensureTitanWorkspace();
     const db = requireFirebase();
     const messageId = randomUUID();
+    const notificationId = randomUUID();
     const now = new Date().toISOString();
+    const name = requireText(formData, "name", "Name");
+    const mobile = requireText(formData, "mobile", "Mobile number");
+    const body = requireText(formData, "body", "Message");
+    const email = String(formData.get("email") ?? "").trim();
+    assertValidPhone(mobile);
+    if (email) {
+      assertValidEmail(email);
+    }
+    if (body.length < 10) {
+      throw new Error("Message must be at least 10 characters.");
+    }
 
     await db.collection(collectionPaths.contactMessages).doc(messageId).set({
       id: messageId,
       gymId: TITAN_GYM_ID,
-      name: requireText(formData, "name", "Name"),
-      number: requireText(formData, "number", "Number"),
-      requirement: requireText(formData, "requirement", "Requirement"),
-      email: String(formData.get("email") ?? "").trim(),
-      status: "new",
+      name,
+      mobile,
+      email,
+      body,
+      status: "unread",
       createdAt: now,
       updatedAt: now
     });
 
-    revalidatePath("/about");
+    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+      id: notificationId,
+      recipientRole: "admin",
+      recipientId: "admin-fitsplit",
+      type: "contact_message",
+      title: "New landing page message",
+      body: `${name} sent a contact request.`,
+      contactMessageId: messageId,
+      createdAt: now
+    });
 
-    return success("Message was sent.");
+    revalidatePath("/");
+    revalidatePath("/admin");
+    revalidatePath("/admin/inbox");
+    revalidatePath("/activity");
+
+    return success("Message sent. We will get back to you soon.");
   } catch (error) {
     console.error("Unable to submit contact message", error);
     return failure(error, "Unable to send message. Please try again.");
+  }
+}
+
+export async function getUnreadMessageCount(): Promise<number> {
+  if (!hasFirebaseAdminConfig()) {
+    return 0;
+  }
+
+  try {
+    const db = requireFirebase();
+    const snapshot = await db
+      .collection(collectionPaths.contactMessages)
+      .where("status", "==", "unread")
+      .get();
+    
+    return snapshot.size;
+  } catch {
+    return 0;
+  }
+}
+
+export async function markContactMessageRead(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const messageId = requireText(formData, "messageId", "Message ID");
+    const db = requireFirebase();
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.contactMessages).doc(messageId).set(
+      {
+        status: "read",
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/admin/inbox");
+
+    return success("Message marked as read.");
+  } catch (error) {
+    return failure(error, "Unable to update message.");
   }
 }
 

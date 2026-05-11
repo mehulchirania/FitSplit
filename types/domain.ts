@@ -119,7 +119,8 @@ export type Notification = {
     | "membership_expiring_soon"
     | "membership_expired"
     | "membership_renewed"
-    | "program_assigned";
+    | "program_assigned"
+    | "contact_message";
   title: string;
   body: string;
   createdAt: string;
@@ -158,8 +159,16 @@ export type ProfileMetrics = {
   email: string;
   phone: string;
   age?: number;
+  gender?: string;
+  dob?: string;
   heightCm?: number;
   weightKg?: number;
+  fitnessGoals?: string;
+  medicalNotes?: string;
+  primarySlot?: "A" | "B" | "C" | "D";
+  secondarySlot?: "A" | "B" | "C" | "D";
+  injuryNotes?: string;
+  assignedTrainer?: string;
 };
 
 export type WorkoutSession = {
@@ -175,4 +184,15 @@ export type AttendanceRecord = {
   memberId: string;
   checkInAt: string;
   checkOutAt?: string;
+};
+
+export type ContactMessage = {
+  id: string;
+  name: string;
+  mobile: string;
+  email?: string;
+  body: string;
+  status: "unread" | "read";
+  createdAt: string;
+  updatedAt: string;
 };
