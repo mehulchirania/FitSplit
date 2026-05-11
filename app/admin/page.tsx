@@ -23,9 +23,13 @@ export default async function AdminPage() {
           <p className="eyebrow">Admin / all gyms</p>
           <h1>Gym control.</h1>
           <p>
-            Admin users can access every gym. The current pilot gym is Titan V2
-            Fitness, with the Titan owner scoped only to that gym.
+            Review gym workspaces, staff access, and rollout status from one admin console.
           </p>
+          <div className="quick-actions">
+            <Link className="button button-primary" href="/admin/gyms">
+              Manage gyms
+            </Link>
+          </div>
         </div>
         <aside className="summary-panel">
           <WorkspaceSwitcher mode="admin" />
@@ -56,6 +60,9 @@ export default async function AdminPage() {
       <section className="list-panel">
         <div className="panel-title">
           <h2>Gyms</h2>
+          <Link className="button button-secondary" href="/admin/gyms">
+            Manage gyms
+          </Link>
         </div>
         {gyms.map((workspace) => (
           <Link href={`/admin/gyms/${workspace.id}`} key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>

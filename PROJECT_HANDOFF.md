@@ -772,12 +772,43 @@ Manual App Hosting deployment from local source is working and should be used un
 - Deployed App Hosting successfully.
 - Verified live URL returns HTTP 200.
 
+## Latest Update - May 11, 2026
+
+- Added `/admin/gyms` management page for admin users.
+- Admin can now add new gym workspaces, edit existing gym details inline, open a gym detail page, and remove unused gyms.
+- Gym removal is guarded:
+  - Titan V2 Fitness cannot be deleted because it is the active pilot gym.
+  - Gyms with assigned profiles cannot be removed until staff/members are reassigned or deleted.
+- Removed the old workspace helper copy: `Admin can add more gyms later`.
+- Replaced that copy with `Manage gyms` buttons on the admin dashboard and workspace switcher.
+- Login hardening completed in the previous pass:
+  - Member login accepts username/mobile/email plus `1234` PIN.
+  - Server-side credential login maps member PIN to Firebase-compatible `pin-1234`.
+  - Successful login uses hard navigation to the role dashboard.
+- Landing/authenticated nav now hides on scroll down and returns on scroll up.
+- Landing theme toggle moved into the hamburger menu.
+- README was refreshed to match current PWA/auth/admin-gym state.
+
+Latest verification:
+
+```bash
+npm.cmd run build
+npm.cmd run typecheck
+```
+
+Local server:
+
+```text
+http://localhost:3000
+```
+
 ## Open Issues
 
 - GitHub automatic deployment is not connected in Firebase App Hosting backend settings.
 - Storage rules deploy was previously blocked because Firebase Storage had not been initialized in console.
-- No real Firebase Auth flow yet.
-- No Firebase custom claims or server-side role checks yet.
+- Firebase Storage avatar/staff image upload is still pending.
+- Firebase Cloud Messaging push reminders are still pending.
+- Production gym geofence coordinates must be configured in environment variables before strict attendance validation is complete.
 - Membership renewal saving was removed from FitSplit UI because membership tracking now stays in the user's existing gym app.
 
 ## Last Known Verified Commands

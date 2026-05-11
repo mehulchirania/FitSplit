@@ -181,6 +181,15 @@ function assertCanManageGym(user: Awaited<ReturnType<typeof requireAuth>>, gymId
   throw new Error("You can only manage records for your assigned gym.");
 }
 
+function slugifyGymName(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 64);
+}
+
 export async function ensureTitanWorkspace() {
   const db = requireFirebase();
   const gymRef = db.collection(collectionPaths.gyms).doc(TITAN_GYM_ID);
@@ -729,6 +738,92 @@ export async function createOwnerProfile(
     return success(`${fullName} was added as gym ${normalizedStaffType}.`);
   } catch (error) {
     return failure(error, "Unable to create gym staff profile.");
+  }
+}
+
+export async function createGymWorkspace(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const name = requireText(formData, "name", "Gym name");
+    const requestedSlug = String(formData.get("slug") ?? "").trim();
+    const slug = slugifyGymName(requestedSlug || name);
+
+    if (!slug) {
+      throw new Error("Gym slug is invalid.");
+    }
+
+    const now = new Date().toISOString();
+    const gymRef = db.collection(collectionPaths.gyms).doc(slug);
+    const existing = await gymRef.get();
+
+    if (existing.exists) {
+      throw new Error("A gym with this slug already exists.");
+    }
+
+    await gymRef.set({
+      id: slug,
+      name,
+      slug,
+      ownerName: "",
+      ownerUserId: "",
+      expiryWarningDays: 7,
+      status: String(formData.get("status") ?? "active"),
+      location: String(formData.get("location") ?? "").trim(),
+      phone: String(formData.get("phone") ?? "").trim(),
+      email: String(formData.get("email") ?? "").trim().toLowerCase(),
+      instagram: "",
+      linkedin: "",
+      youtube: "",
+      createdAt: now,
+      updatedAt: now
+    });
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/gyms");
+
+    return success(`${name} was added.`);
+  } catch (error) {
+    return failure(error, "Unable to create gym.");
+  }
+}
+
+export async function deleteGymWorkspace(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { db } = requireFirebaseServices();
+    const gymId = requireText(formData, "gymId", "Gym ID");
+
+    if (gymId === TITAN_GYM_ID) {
+      throw new Error("Titan V2 Fitness is the active pilot gym and cannot be deleted.");
+    }
+
+    const assignedProfiles = await db
+      .collection(collectionPaths.profiles)
+      .where("defaultGymId", "==", gymId)
+      .limit(1)
+      .get();
+
+    if (!assignedProfiles.empty) {
+      throw new Error("Remove or reassign gym staff and members before deleting this gym.");
+    }
+
+    await db.collection(collectionPaths.gyms).doc(gymId).delete();
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/gyms");
+
+    return success("Gym was removed.");
+  } catch (error) {
+    return failure(error, "Unable to remove gym.");
   }
 }
 

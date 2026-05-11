@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
 
 export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "owner" }) {
@@ -16,9 +17,13 @@ export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "
           ))}
         </select>
       </label>
-      <span className="member-meta">
-        {mode === "admin" ? "Admin can add more gyms later" : roles.ownerAccess}
-      </span>
+      {mode === "admin" ? (
+        <Link className="button button-secondary" href="/admin/gyms">
+          Manage gyms
+        </Link>
+      ) : (
+        <span className="member-meta">{roles.ownerAccess}</span>
+      )}
     </div>
   );
 }
