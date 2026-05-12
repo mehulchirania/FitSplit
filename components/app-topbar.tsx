@@ -121,23 +121,17 @@ export function AppTopbar({
             )}
           </button>
           <Link className="brand" href="/">
-            <span className="theme-logo brand-icon-wrap" aria-hidden="true">
-              <img
-                alt=""
-                className="brand-icon theme-logo-dark"
-                src="/fitsplit-logo-dark.png"
-                style={{ width: "48px", height: "48px" }}
-              />
-              <img
-                alt=""
-                className="brand-icon theme-logo-light"
-                src="/fitsplit-logo-light.png"
-                style={{ width: "48px", height: "48px" }}
-              />
+            <span className="brand-logo-lockup" aria-hidden="true">
+              <span className="theme-logo brand-icon-wrap">
+                <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
+                <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
+              </span>
+              <span className="brand-x">x</span>
+              <img alt="" className="partner-logo" src="/shg-gym-logo.jpeg" />
             </span>
             <span className="brand-text">
               <strong style={{ fontSize: "1.3rem" }}>FitSplit</strong>
-              <small className="hide-mobile">Your fitness companion</small>
+              <small className="hide-mobile">x SHG Gym</small>
             </span>
           </Link>
         </div>
@@ -187,7 +181,7 @@ export function AppTopbar({
               <div>
                 <p className="eyebrow">Menu</p>
                 <h2>FitSplit</h2>
-                <span className="member-meta">Your fitness companion</span>
+                <span className="member-meta">FitSplit x SHG Gym</span>
               </div>
               <button
                 aria-label="Close menu"

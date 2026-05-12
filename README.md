@@ -1,6 +1,6 @@
 # FitSplit
 
-FitSplit is a Firebase-backed gym management web app for Titan V2 Fitness, with a second Dummy-Gym workspace included for admin testing. It uses Firebase Authentication, server-verified role sessions, Cloud Firestore app data, and an AI-assisted semi-personal trainer workflow.
+FitSplit is a Firebase-backed gym management web app for Sri Shakthi Hanuman Gym (SHG Gym), with a second Dummy-Gym workspace included for admin testing. It uses Firebase Authentication, server-verified role sessions, Cloud Firestore app data, and an AI-assisted semi-personal trainer workflow.
 
 Live app:
 
@@ -35,7 +35,7 @@ fitsplit-29215
 - Demo usernames still work by resolving to Firebase Auth emails.
 - New owner-created members also get Firebase Auth accounts with the same UID as their Firestore profile.
 - Firestore is the source for gyms, profiles, exercise catalog, programs, assignments, activity, sessions, lift logs, attendance, contact messages, and site links.
-- The app has PWA basics: manifest, service worker, install prompt, app icons, apple touch icon, and offline shell caching.
+- The app has PWA basics: manifest, service worker, matte install prompt, app icons, apple touch icon, and offline shell caching.
 - Admin inbox stores landing Contact Us messages in Firestore with read/unread state.
 - Admin can manage gym workspaces at `/admin/gyms`.
 
@@ -44,7 +44,9 @@ fitsplit-29215
 | Role | Username / Mobile / Email | Password |
 | --- | --- | --- |
 | Admin | `admin` | `password` |
-| Owner | `titan-owner-1` | `password` |
+| Owner | `santosh-shg` | `password` |
+| Trainer | `shg-trainer-1` | `password` |
+| Trainer | `shg-trainer-2` | `password` |
 | Owner | `dummy-gym-owner-1` | `password` |
 | Member | `mehulchirania` | `1234` |
 | Member | `9688227039` | `1234` |
@@ -55,7 +57,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 
 ## Features
 
-- Landing page with premium SaaS positioning, Contact Us form, theme support, and PWA install prompt.
+- Matte-black premium landing page with FitSplit-first hero, product overview, grouped features, realistic app previews, trainer/admin overview, SHG partner carousel, Contact Us form, theme support, and PWA install prompt.
 - Login page with username/mobile/email resolution, 4-digit member PIN support, staff password login, and Firebase password reset email support.
 - Admin dashboard for all gyms plus `/admin/gyms` management for adding, editing, opening, and guarded removal of gym workspaces.
 - Admin inbox for Contact Us submissions with unread notification support.
@@ -69,7 +71,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 ## App Routes
 
 ```text
-/                 -> Login page
+/                 -> Premium landing page with Contact Us and login section
 /admin            -> Admin gym overview
 /admin/gyms       -> Add/edit/remove gym workspaces
 /admin/gyms/[id]  -> Gym-specific settings, staff, and access control
@@ -89,7 +91,6 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 ```text
 gyms
 profiles
-memberships
 exerciseCatalog
 workoutPrograms
 notifications
@@ -106,8 +107,8 @@ siteLinks
 Important IDs:
 
 ```text
-Titan gym id: titan-v2-fitness
-Titan owner id: titan-owner-1
+SHG gym id: shg
+SHG owner id: santosh-shg
 Dummy gym id: dummy-gym
 Dummy owner id: dummy-gym-owner-1
 Admin profile id: admin-fitsplit
@@ -185,9 +186,9 @@ GEMINI_API_KEY=
 Optional gym geofence values for workout check-in:
 
 ```env
-TITAN_GYM_LATITUDE=
-TITAN_GYM_LONGITUDE=
-TITAN_GYM_RADIUS_METERS=150
+SHG_GYM_LATITUDE=
+SHG_GYM_LONGITUDE=
+SHG_GYM_RADIUS_METERS=150
 ```
 
 ## Firebase Auth Setup

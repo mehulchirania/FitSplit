@@ -49,14 +49,28 @@ const demoLogins: Record<string, DemoLogin> = {
     uid: "admin-fitsplit",
     authEmail: "admin@fitsplit.app",
     fullName: "FitSplit Admin",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "admin"
   },
-  "titan-owner-1": {
-    uid: "titan-owner-1",
-    authEmail: "titan-owner-1@fitsplit.app",
-    fullName: "titan-owner-1",
-    gymId: "titan-v2-fitness",
+  "santosh-shg": {
+    uid: "santosh-shg",
+    authEmail: "santosh-shg@fitsplit.app",
+    fullName: "Santosh SHG",
+    gymId: "shg",
+    role: "owner"
+  },
+  "shg-trainer-1": {
+    uid: "shg-trainer-1",
+    authEmail: "shg-trainer-1@fitsplit.app",
+    fullName: "Ravi Kumar",
+    gymId: "shg",
+    role: "owner"
+  },
+  "shg-trainer-2": {
+    uid: "shg-trainer-2",
+    authEmail: "shg-trainer-2@fitsplit.app",
+    fullName: "Priya Nair",
+    gymId: "shg",
     role: "owner"
   },
   "dummy-gym-owner-1": {
@@ -70,63 +84,63 @@ const demoLogins: Record<string, DemoLogin> = {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
     fullName: "Aarav Sharma",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   aarav: {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
     fullName: "Aarav Sharma",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   "9876543210": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
     fullName: "Aarav Sharma",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   "+919876543210": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
     fullName: "Aarav Sharma",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   "+91 9876543210": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
     fullName: "Aarav Sharma",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   mehulchirania: {
     uid: "member-mehul",
     authEmail: "mehul@example.com",
     fullName: "Mehul Chirania",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   "mehul@example.com": {
     uid: "member-mehul",
     authEmail: "mehul@example.com",
     fullName: "Mehul Chirania",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   "+919688227039": {
     uid: "member-mehul",
     authEmail: "mehul@example.com",
     fullName: "Mehul Chirania",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   },
   "+91 9688227039": {
     uid: "member-mehul",
     authEmail: "mehul@example.com",
     fullName: "Mehul Chirania",
-    gymId: "titan-v2-fitness",
+    gymId: "shg",
     role: "member"
   }
 };
@@ -350,10 +364,10 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     if (hasFirebaseAdminConfig()) {
       // Ensure demo profiles exist in Firestore/Auth before client tries to sign in
       try {
-        const { ensureTitanWorkspace } = await import("@/lib/firebase/actions");
-        await ensureTitanWorkspace();
+        const { ensurePrimaryWorkspace } = await import("@/lib/firebase/actions");
+        await ensurePrimaryWorkspace();
       } catch (e) {
-        console.warn("Failed to ensure Titan workspace during demo login", e);
+        console.warn("Failed to ensure SHG workspace during demo login", e);
       }
 
       return {
@@ -379,10 +393,10 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
   
   // Ensure basic demo profiles exist in Firestore
   try {
-    const { ensureTitanWorkspace } = await import("@/lib/firebase/actions");
-    await ensureTitanWorkspace();
+    const { ensurePrimaryWorkspace } = await import("@/lib/firebase/actions");
+    await ensurePrimaryWorkspace();
   } catch (e) {
-    console.warn("Failed to ensure Titan workspace", e);
+    console.warn("Failed to ensure SHG workspace", e);
   }
 
   const profile = await resolveProfileForIdentifier(cleanIdentifier);

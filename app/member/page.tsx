@@ -12,7 +12,7 @@ import {
   getMemberDetail,
   getMemberNotifications,
   getProgramAssignmentForMember,
-  getTitanWorkspace,
+  getPrimaryWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
@@ -32,7 +32,7 @@ export default async function MemberDashboard() {
     { sessions },
     { records: attendanceRecords }
   ] = await Promise.all([
-    getTitanWorkspace(),
+    getPrimaryWorkspace(),
     getMemberDetail(currentMemberId),
     getProgramAssignmentForMember(currentMemberId),
     getWorkoutPrograms(),

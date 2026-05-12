@@ -4,7 +4,7 @@ import { Settings, UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { createGymWorkspace, deleteGymWorkspace, updateGymDetails } from "@/lib/firebase/actions";
 import { getGymWorkspaces } from "@/lib/firebase/read-models";
-import { TITAN_GYM_ID } from "@/lib/firebase/collections";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 
 export const dynamic = "force-dynamic";
 
@@ -38,7 +38,7 @@ export default async function ManageGymsPage() {
           <div className="detail-window">
             <span>
               Active pilot
-              <strong>Titan V2 Fitness</strong>
+              <strong>Sri Shakti Hanuman Gym</strong>
             </span>
           </div>
         </aside>
@@ -93,7 +93,7 @@ export default async function ManageGymsPage() {
             A gym can be removed only after staff and members are reassigned or deleted. This avoids orphaned logins and member records.
           </p>
           <p className="member-meta">
-            Titan V2 Fitness is protected as the active pilot gym.
+            Sri Shakti Hanuman Gym is protected as the active pilot gym.
           </p>
         </div>
       </section>
@@ -171,7 +171,7 @@ export default async function ManageGymsPage() {
                   style={{ background: "none", border: "none", padding: 0 }}
                 >
                   <input name="gymId" type="hidden" value={gym.id} />
-                  {gym.id === TITAN_GYM_ID ? (
+                  {gym.id === PRIMARY_GYM_ID ? (
                     <input disabled name="protectedGym" type="hidden" value="protected" />
                   ) : null}
                 </ConfirmActionForm>

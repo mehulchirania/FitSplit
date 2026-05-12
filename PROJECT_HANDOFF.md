@@ -1,5 +1,51 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-12: Premium Matte Landing Refresh
+
+- Refactored `/` into a cohesive matte-black premium SaaS landing page that matches the authenticated app visual language.
+- Rebuilt the public storytelling flow around:
+  - Hero
+  - Product overview
+  - Features
+  - App previews
+  - Trainer/Admin overview
+  - Our Partners
+  - Testimonials/trust
+  - Contact
+  - Final CTA
+  - Login
+- Added a data-driven `Our Partners` section with a smooth infinite SHG Gym logo carousel using `public/shg-gym-logo.jpeg`.
+- Kept SHG partner branding off the public hero/nav; the landing page remains FitSplit-first, while SHG branding appears in the partner section and authenticated SHG workspace.
+- Polished the landing navbar into a compact matte floating header with Home, Features, Partners, Contact, Login, theme toggle support, and an Install App CTA.
+- Added premium matte styling for the PWA install banner, contact section, login band, product preview cards, and landing footer.
+- Removed the stale `memberships` collection reference from the README to match the current Firestore model focus.
+- Verification passed:
+  - local `/` HTTP 200 on `http://localhost:3000`
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+
+## Latest Update - 2026-05-12: SHG Gym Pilot Rename + Partner Branding
+
+- Renamed the primary pilot workspace from the earlier gym identity to `Sri Shakthi Hanuman Gym`.
+- Standardized the primary gym identifiers:
+  - Gym id / slug: `shg`
+  - Owner id / username: `santosh-shg`
+  - Owner auth email: `santosh-shg@fitsplit.app`
+- Added the SHG Gym logo from the supplied WhatsApp image as `public/shg-gym-logo.jpeg`.
+- Updated the authenticated app topbar to show a FitSplit x SHG Gym logo lockup after users log in to the SHG Gym workspace.
+- Kept the public landing page FitSplit-only so visitors see the product brand before login.
+- Fixed the landing break caused by the global Next loading fallback remaining visible over the home page.
+- Updated the service worker to stop caching dynamic Next pages/RSC responses, preventing stale loading shells from coming back.
+- Tightened mobile landing navigation so the brand and hamburger stay in one compact row.
+- Added SHG demo staff profiles for two trainers: `shg-trainer-1` and `shg-trainer-2`, both using password `password`.
+- Ensured the SHG demo workspace seeds five editable member profiles and filters the previous legacy pilot gym out of the gyms page.
+- Updated mock fallbacks, Firebase seed scripts, auth demo mapping, workspace switcher, owner/admin copy, and read models to use SHG Gym.
+- Removed direct app/docs/script references to the previous pilot gym name.
+- Verification passed:
+  - `npm.cmd run build`
+  - `npm.cmd run typecheck`
+  - local `/` HTTP 200 on `http://localhost:3000`
+
 ## Latest Update - 2026-05-06: Landing Contact + Admin Inbox
 
 - Removed the public landing-page footer credit so the credit only appears in the logged-in app footer.
@@ -85,17 +131,17 @@
 - Verification passed:
   - `npm.cmd run build`
   - `npm.cmd run typecheck`
-  - local `/admin/gyms/titan-v2-fitness` render check for Gym Staff, access toggle, reset, and delete controls
+  - local `/admin/gyms/shg` render check for Gym Staff, access toggle, reset, and delete controls
 
 ## Latest Update - 2026-05-05: Auth Hardening and Firestore Rules
 
 - Local Firebase Admin is now the required path for auth-backed local server actions.
 - `scripts/seed-firebase-auth.mjs` now loads `.env.local` before seeding Firebase Auth users.
-- Seeded demo Auth users with staff password `password` and member PIN `123456`.
+- Seeded demo Auth users with staff password `password` and member PIN `1234`.
 - Demo login resolution now uses real Firebase Auth when Admin credentials are configured.
 - Fixed server-render session handling so invalid Firebase session cookies do not attempt cookie mutation during page render.
-- Normalized `titan-owner-1` login to `titan-owner-1@fitsplit.app`.
-- Member creation is now gym-scoped to the authenticated owner/admin instead of hard-coding Titan.
+- Normalized `santosh-shg` login to `santosh-shg@fitsplit.app`.
+- Member creation is now gym-scoped to the authenticated owner/admin instead of hard-coding the pilot gym.
 - Logout now signs out the Firebase browser session before clearing the server session.
 - Hardened and deployed Firestore rules:
   - admin can manage all gyms and records.
@@ -110,7 +156,7 @@
 
 ## Latest Update - 2026-05-05: Hosted Demo Login Fix
 
-- Fixed hosted login failure where demo usernames such as `admin`, `titan-owner-1`, and member mobile logins were routed through real Firebase Auth on Firebase App Hosting.
+- Fixed hosted login failure where demo usernames such as `admin`, `santosh-shg`, and member mobile logins were routed through real Firebase Auth on Firebase App Hosting.
 - Demo credentials now resolve to the local demo-session path first, even when Firebase Admin is configured in the hosted environment.
 - Route guards now accept the demo compatibility cookies when no Firebase session cookie is present, so hosted demo users can reach `/admin`, `/owner`, and `/member`.
 - Real Firebase Auth remains available for non-demo accounts.
@@ -141,7 +187,7 @@
 - Follow-up fix: added a local demo-session fallback when Firebase Admin credentials are not configured locally.
 - Local login now works without Firebase Admin credentials:
   - Staff tab: `admin` / `password` -> `/admin`
-  - Member tab: `9688227039` / `123456` -> `/member`
+  - Member tab: `9688227039` / `1234` -> `/member`
 - Real Firebase Auth remains the production path when Admin credentials are configured.
 - Verified in the in-app browser on `http://localhost:3000`:
   - Staff login reaches `/admin`.
@@ -176,7 +222,7 @@
 - Member dashboard/profile now use the authenticated member ID instead of the old `fitsplit-member-id` fallback cookie.
 - Added `scripts/seed-firebase-auth.mjs` and `npm run seed:auth` to create demo Firebase Auth accounts:
   - `admin`
-  - `titan-owner-1`
+  - `santosh-shg`
   - `dummy-gym-owner-1`
   - demo member emails/phones, including Mehul.
 - Firestore profile seeding now includes `authEmail` and `username` fields used by login resolution.
@@ -296,10 +342,10 @@ Use this file as the starting context for future Codex chats.
 | Role   | Username / Mobile     | Password |
 |--------|-----------------------|----------|
 | Admin  | `admin`               | password |
-| Owner  | `titan-owner-1`       | password |
+| Owner  | `santosh-shg`       | password |
 | Owner  | `dummy-gym-owner-1`   | password |
-| Member | `mehulchirania`       | password |
-| Member | `9688227039`          | password |
+| Member | `mehulchirania`       | 1234 |
+| Member | `9688227039`          | 1234 |
 | Member | `aaravs`              | password |
 
 ### Login Page
@@ -336,7 +382,7 @@ Use this file as the starting context for future Codex chats.
 ### Admin Page
 - **"Owner scope"** row removed from summary panel.
 - Gym names are **clickable links** to `/owner/dashboard`.
-- **Dummy-Gym** displayed alongside Titan V2 Fitness.
+- **Dummy-Gym** displayed alongside Sri Shakti Hanuman Gym.
 
 ### Mock Data
 - All exercise `instructions` now have **real coaching notes** (e.g., "Keep chest up, drive through the heels...") instead of the placeholder `"Compound back movement. Add coaching notes..."`.
@@ -356,7 +402,7 @@ Use this file as the starting context for future Codex chats.
 
 ## Project
 
-FitSplit is a Next.js gym management app for the Titan V2 Fitness pilot gym.
+FitSplit is a Next.js gym management app for the Sri Shakti Hanuman Gym pilot gym.
 
 Local project path:
 
@@ -407,7 +453,7 @@ https://console.firebase.google.com/project/fitsplit-29215/overview
 - Product direction update: membership tracking is intentionally handled outside FitSplit in the user's existing gym app. FitSplit now focuses on member training profiles, workout programs, custom exercises, weekly schedules, AI modifications, and live capacity.
 - Firestore has been initialized.
 - Firestore rules and indexes have been deployed.
-- Firestore was seeded with Titan V2 Fitness demo data on 2026-05-04.
+- Firestore was seeded with Sri Shakti Hanuman Gym demo data on 2026-05-04.
 - Live Firestore document counts after seeding: `gyms` 1, `profiles` 6, `memberships` 4, `exerciseCatalog` 49, `workoutPrograms` 5, `notifications` 3, `workoutSplitTemplates` 5, `liftLogs` 2, `programAssignments` 2, `activityEvents` 4, `workoutSessions` 0, `contactMessages` 0, `siteLinks` 4.
 - Storage rules file exists but Storage setup was previously blocked until console setup.
 - App Hosting config exists in `apphosting.yaml`.
@@ -546,8 +592,8 @@ siteLinks
 Important IDs:
 
 ```text
-Titan gym id: titan-v2-fitness
-Titan owner id: owner-titan-v2
+SHG gym id: shg
+SHG owner id: santosh-shg
 ```
 
 Relevant files:
@@ -590,7 +636,7 @@ Read models in `lib/firebase/read-models.ts`:
 - `getMembers`
 - `getMemberDetail`
 - `getGymWorkspaces`
-- `getTitanWorkspace`
+- `getPrimaryWorkspace`
 - `getRoleSummary`
 - `getExerciseCatalog`
 - `getOwnerNotifications`
@@ -718,7 +764,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Updated Firestore server actions to return a shared `{ status, message }` state and to catch user-facing validation/write failures instead of throwing raw app errors.
 - Added confirmation and post-update status dialogs for member workout events: Start Workout, End Workout, and Log Lift.
 - Removed membership-dependent UI and stopped creating membership/renewal records from FitSplit. Existing Firestore `memberships` seed data is legacy only and is no longer read by active pages.
-- Renamed the gym selector UI to `Select Gym`; it is a dropdown with Titan V2 Fitness as the current pilot option.
+- Renamed the gym selector UI to `Select Gym`; it is a dropdown with Sri Shakti Hanuman Gym as the current pilot option.
 - Moved custom exercise creation into a `Custom Workouts` section on `/owner/exercises` and renamed its submit action to `Save custom exercise`.
 - Added a global footer across every page with `Developed with ❤️ by Mehul`.
 - Improved primary navigation flow to Dashboard, Members, Workout Programs, Custom Workouts, and Exercise Catalog.
@@ -754,7 +800,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Added `public/favicon.ico` generated from the cropped icon and changed tab icon links to `/favicon.ico?v=3` plus versioned PNG links to force browser favicon refresh.
 - Recropped `public/icon-512.png` to the dark artwork panel so no white border is visible, and replaced the header `FS` text mark with the same icon image.
 - Added FitSplit PWA/browser icon assets: `public/icon-512.png`, `public/manifest.json`, and root layout manifest/favicon/apple-touch links.
-- Seeded live Firestore for project `fitsplit-29215` with full Titan V2 Fitness demo data: gym workspace, admin/owner/member profiles, memberships, exercise catalog, workout programs, notifications, and split templates.
+- Seeded live Firestore for project `fitsplit-29215` with full Sri Shakti Hanuman Gym demo data: gym workspace, admin/owner/member profiles, memberships, exercise catalog, workout programs, notifications, and split templates.
 - Added `scripts/seed-demo-firestore.mjs` and `npm.cmd run seed:demo` for repeatable demo seeding.
 - Added editable member profile form on `/owner/members/[memberId]` backed by `updateMemberProfile`.
 - Made owner dashboard and owner programs page read dynamic Firestore data.
@@ -777,7 +823,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Added `/admin/gyms` management page for admin users.
 - Admin can now add new gym workspaces, edit existing gym details inline, open a gym detail page, and remove unused gyms.
 - Gym removal is guarded:
-  - Titan V2 Fitness cannot be deleted because it is the active pilot gym.
+  - Sri Shakti Hanuman Gym cannot be deleted because it is the active pilot gym.
   - Gyms with assigned profiles cannot be removed until staff/members are reassigned or deleted.
 - Removed the old workspace helper copy: `Admin can add more gyms later`.
 - Replaced that copy with `Manage gyms` buttons on the admin dashboard and workspace switcher.
@@ -817,7 +863,7 @@ Latest local UI fix:
 
 - PWA/Auth upgrade pass added a cache-busted manifest, service worker, install prompt, cleaned transparent logo assets for favicon/app icon/header usage, and mobile bottom navigation.
 - Member auth now uses a 4-digit numeric PIN (`1234` for demo members) with inline client validation and 2-hour cookie/session timeout handling.
-- Workout check-in now requests GPS, sends latitude/longitude/device info to `workoutSessions.attendance`, and enforces the gym geofence when `TITAN_GYM_LATITUDE`, `TITAN_GYM_LONGITUDE`, and optional `TITAN_GYM_RADIUS_METERS` are configured.
+- Workout check-in now requests GPS, sends latitude/longitude/device info to `workoutSessions.attendance`, and enforces the gym geofence when `SHG_GYM_LATITUDE`, `SHG_GYM_LONGITUDE`, and optional `SHG_GYM_RADIUS_METERS` are configured.
 - Member profile now stores timing slots, gender/DOB, goals, medical notes, injury notes, and assigned trainer fields.
 - In-workout rest timer UI/code references were removed.
 - Authenticated footer now carries Pro Tips and Gym Rules. Landing page remains free of the Mehul footer credit before login.

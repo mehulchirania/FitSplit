@@ -8,9 +8,9 @@ import workoutsData from "../lib/workouts.json" with { type: "json" };
 const projectId = process.env.FIREBASE_PROJECT_ID || "fitsplit-29215";
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-const ownerId = "titan-owner-1";
+const ownerId = "santosh-shg";
 const adminId = "admin-fitsplit";
-const gymId = "titan-v2-fitness";
+const gymId = "shg";
 const dummyGymId = "dummy-gym";
 const dummyOwnerId = "dummy-gym-owner-1";
 const now = new Date().toISOString();
@@ -75,6 +75,25 @@ const members = [
     age: 28,
     heightCm: 180,
     weightKg: 78
+  }
+];
+
+const trainers = [
+  {
+    id: "shg-trainer-1",
+    fullName: "Ravi Kumar",
+    email: "shg-trainer-1@fitsplit.app",
+    username: "shg-trainer-1",
+    avatarInitials: "RK",
+    staffType: "trainer"
+  },
+  {
+    id: "shg-trainer-2",
+    fullName: "Priya Nair",
+    email: "shg-trainer-2@fitsplit.app",
+    username: "shg-trainer-2",
+    avatarInitials: "PN",
+    staffType: "trainer"
   }
 ];
 
@@ -202,7 +221,7 @@ const activityEvents = [
     id: "activity-owner-member-aarav",
     audience: "owner",
     title: 'New member added - "Aarav Sharma"',
-    detail: "Membership record created for Titan V2 Fitness.",
+    detail: "Training workspace record created for Sri Shakthi Hanuman Gym.",
     icon: "users",
     createdAt: "2026-05-04T10:30:00+05:30"
   },
@@ -395,9 +414,9 @@ if (!setDoc) {
 
 await setDoc("gyms", gymId, {
   id: gymId,
-  name: "Titan V2 Fitness",
+  name: "Sri Shakthi Hanuman Gym",
   slug: gymId,
-  ownerName: "Titan Owner",
+  ownerName: "Santosh SHG",
   ownerUserId: ownerId,
   expiryWarningDays: 7,
   memberCount: members.length,
@@ -420,16 +439,29 @@ await setDoc("profiles", adminId, {
 
 await setDoc("profiles", ownerId, {
   id: ownerId,
-  fullName: "Titan V2 Owner",
-  email: "owner@titanv2.local",
-  authEmail: "titan-owner-1@fitsplit.app",
-  username: "titan-owner-1",
+  fullName: "Santosh SHG",
+  email: "santosh-shg@fitsplit.app",
+  authEmail: "santosh-shg@fitsplit.app",
+  username: "santosh-shg",
   role: "owner",
+  staffType: "owner",
   defaultGymId: gymId,
   isActive: true,
   createdAt: now,
   updatedAt: now
 });
+
+for (const trainer of trainers) {
+  await setDoc("profiles", trainer.id, {
+    ...trainer,
+    authEmail: trainer.email.toLowerCase(),
+    role: "owner",
+    defaultGymId: gymId,
+    isActive: true,
+    createdAt: now,
+    updatedAt: now
+  });
+}
 
 await setDoc("gyms", dummyGymId, {
   id: dummyGymId,

@@ -3,7 +3,7 @@ import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
 
 export async function WorkspaceSwitcher({ mode = "owner" }: { mode?: "admin" | "owner" }) {
   const [{ gyms }, roles] = await Promise.all([getGymWorkspaces(), getRoleSummary()]);
-  const currentWorkspace = gyms.find((workspace) => workspace.slug === "titan-v2-fitness") ?? gyms[0];
+  const currentWorkspace = gyms.find((workspace) => workspace.slug === "shg") ?? gyms[0];
 
   return (
     <div className="workspace-switcher" aria-label="Gym selector">

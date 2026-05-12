@@ -11,7 +11,7 @@ import {
   getExerciseCatalog,
   getMembers,
   getOwnerNotifications,
-  getTitanWorkspace,
+  getPrimaryWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
@@ -33,7 +33,7 @@ export default async function OwnerDashboard() {
     getOwnerNotifications(),
     getExerciseCatalog(),
     getWorkoutPrograms(),
-    getTitanWorkspace(),
+    getPrimaryWorkspace(),
     getActiveWorkoutSessions(),
     getActiveProgramAssignments()
   ]);

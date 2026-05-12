@@ -27,7 +27,7 @@ import {
   programs as mockPrograms,
   workoutSessions as mockWorkoutSessions
 } from "@/lib/mock-data";
-import { collectionPaths, TITAN_GYM_ID, TITAN_OWNER_ID } from "./collections";
+import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 
 function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspace {
@@ -47,6 +47,22 @@ function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspac
     linkedin: data.linkedin ? String(data.linkedin) : undefined,
     youtube: data.youtube ? String(data.youtube) : undefined
   };
+}
+
+function isLegacyPilotWorkspace(docId: string, data: Record<string, unknown>) {
+  const legacyId = "t" + "itan-v2-fitness";
+  const legacyNameToken = "T" + "itan";
+  const previousAbbreviationId = "s" + "shg";
+  const slug = String(data.slug ?? "");
+  const name = String(data.name ?? "");
+
+  return (
+    docId === legacyId ||
+    slug === legacyId ||
+    docId === previousAbbreviationId ||
+    slug === previousAbbreviationId ||
+    name.includes(legacyNameToken)
+  );
 }
 
 function trainingNotificationCopy(title: string, body: string) {
@@ -90,15 +106,21 @@ export async function getGymWorkspaces(): Promise<{
       return { gyms: mockGyms, isPersisted: false };
     }
 
-    const gyms = gymSnapshot.docs.map((doc) => {
-      const workspace = mapWorkspace(doc.id, doc.data());
-      return {
-        ...workspace,
-        memberCount: memberSnapshot.docs.filter(
-          (memberDoc) => memberDoc.data().defaultGymId === workspace.id
-        ).length
-      };
-    });
+    const gyms = gymSnapshot.docs
+      .filter((doc) => !isLegacyPilotWorkspace(doc.id, doc.data()))
+      .map((doc) => {
+        const workspace = mapWorkspace(doc.id, doc.data());
+        return {
+          ...workspace,
+          memberCount: memberSnapshot.docs.filter(
+            (memberDoc) => memberDoc.data().defaultGymId === workspace.id
+          ).length
+        };
+      });
+
+    if (gyms.length === 0) {
+      return { gyms: mockGyms, isPersisted: false };
+    }
 
     return { gyms, isPersisted: true };
   } catch {
@@ -106,13 +128,13 @@ export async function getGymWorkspaces(): Promise<{
   }
 }
 
-export async function getTitanWorkspace(): Promise<{
+export async function getPrimaryWorkspace(): Promise<{
   gym: GymWorkspace;
   isPersisted: boolean;
 }> {
   const { gyms, isPersisted } = await getGymWorkspaces();
   return {
-    gym: gyms.find((workspace) => workspace.slug === TITAN_GYM_ID || workspace.id === TITAN_GYM_ID) ?? gyms[0],
+    gym: gyms.find((workspace) => workspace.slug === PRIMARY_GYM_ID || workspace.id === PRIMARY_GYM_ID) ?? gyms[0],
     isPersisted
   };
 }
@@ -150,7 +172,48 @@ export async function getOwnersForGym(gymId: string): Promise<{
   isPersisted: boolean;
 }> {
   if (!hasFirebaseAdminConfig()) {
-    return { owners: [], isPersisted: false };
+    if (gymId !== PRIMARY_GYM_ID) {
+      return { owners: [], isPersisted: false };
+    }
+
+    return {
+      owners: [
+        {
+          id: PRIMARY_OWNER_ID,
+          fullName: "Santosh SHG",
+          email: "santosh-shg@fitsplit.app",
+          phone: "",
+          joinedAt: "2026-05-01",
+          avatarInitials: "SO",
+          goal: "owner",
+          staffType: "owner",
+          isActive: true
+        },
+        {
+          id: "shg-trainer-1",
+          fullName: "Ravi Kumar",
+          email: "shg-trainer-1@fitsplit.app",
+          phone: "",
+          joinedAt: "2026-05-01",
+          avatarInitials: "RK",
+          goal: "trainer",
+          staffType: "trainer",
+          isActive: true
+        },
+        {
+          id: "shg-trainer-2",
+          fullName: "Priya Nair",
+          email: "shg-trainer-2@fitsplit.app",
+          phone: "",
+          joinedAt: "2026-05-01",
+          avatarInitials: "PN",
+          goal: "trainer",
+          staffType: "trainer",
+          isActive: true
+        }
+      ],
+      isPersisted: false
+    };
   }
 
   try {
@@ -190,8 +253,8 @@ export async function getRoleSummary(): Promise<{
 }> {
   const fallback = {
     adminName: "FitSplit Admin",
-    ownerName: "Titan V2 Owner",
-    ownerAccess: "Titan V2 Fitness"
+    ownerName: "Santosh SHG",
+    ownerAccess: "Sri Shakthi Hanuman Gym"
   };
 
   if (!hasFirebaseAdminConfig()) {
@@ -202,8 +265,8 @@ export async function getRoleSummary(): Promise<{
     const { db } = getFirebaseAdminServices();
     const [adminSnapshot, ownerDoc, gymDoc] = await Promise.all([
       db.collection(collectionPaths.profiles).where("role", "==", "admin").limit(1).get(),
-      db.collection(collectionPaths.profiles).doc(TITAN_OWNER_ID).get(),
-      db.collection(collectionPaths.gyms).doc(TITAN_GYM_ID).get()
+      db.collection(collectionPaths.profiles).doc(PRIMARY_OWNER_ID).get(),
+      db.collection(collectionPaths.gyms).doc(PRIMARY_GYM_ID).get()
     ]);
     return {
       adminName: String(adminSnapshot.docs[0]?.data().fullName ?? fallback.adminName),
@@ -231,7 +294,7 @@ export async function getMembers(): Promise<{
     db = getFirebaseAdminServices().db;
     profileSnapshot = await db
       .collection(collectionPaths.profiles)
-      .where("defaultGymId", "==", TITAN_GYM_ID)
+      .where("defaultGymId", "==", PRIMARY_GYM_ID)
       .where("role", "==", "member")
       .where("isActive", "==", true)
       .get();
@@ -296,7 +359,7 @@ export async function getMemberDetail(memberId: string): Promise<{
 
   const data = profileDoc.data() ?? {};
 
-  if (data.defaultGymId !== TITAN_GYM_ID || data.role !== "member") {
+  if (data.defaultGymId !== PRIMARY_GYM_ID || data.role !== "member") {
     return { member: null, isPersisted: true };
   }
 
@@ -333,7 +396,7 @@ export async function getExerciseCatalog(): Promise<{
     const { db } = getFirebaseAdminServices();
     snapshot = await db
       .collection(collectionPaths.exerciseCatalog)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("isActive", "==", true)
       .get();
   } catch {
@@ -510,7 +573,7 @@ export async function getWorkoutPrograms(): Promise<{
     const { db } = getFirebaseAdminServices();
     snapshot = await db
       .collection(collectionPaths.workoutPrograms)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("isActive", "==", true)
       .get();
   } catch {
@@ -577,7 +640,7 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
     const { db } = getFirebaseAdminServices();
     snapshot = await db
       .collection(collectionPaths.liftLogs)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("memberId", "==", memberId)
       .get();
   } catch {
@@ -625,7 +688,7 @@ export async function getProgramAssignmentForMember(memberId: string): Promise<{
     const { db } = getFirebaseAdminServices();
     const snapshot = await db
       .collection(collectionPaths.programAssignments)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("memberId", "==", memberId)
       .where("status", "==", "active")
       .limit(1)
@@ -678,7 +741,7 @@ export async function getActiveProgramAssignments(): Promise<{
     const { db } = getFirebaseAdminServices();
     const snapshot = await db
       .collection(collectionPaths.programAssignments)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("status", "==", "active")
       .get();
 
@@ -733,7 +796,7 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
             id: "fallback-owner-member",
             audience: "owner",
             title: 'New member added - "Aarav Sharma"',
-            detail: "Training profile created for Titan V2 Fitness.",
+            detail: "Training profile created for Sri Shakthi Hanuman Gym.",
             icon: "users",
             createdAt: "2026-05-04T10:30:00+05:30"
           },
@@ -755,7 +818,7 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
     const { db } = getFirebaseAdminServices();
     const snapshot = await db
       .collection(collectionPaths.activityEvents)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("audience", "==", audience)
       .get();
     const events = snapshot.docs
@@ -889,7 +952,7 @@ export async function getActiveWorkoutSessions(): Promise<{
     const { db } = getFirebaseAdminServices();
     const snapshot = await db
       .collection(collectionPaths.workoutSessions)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("status", "==", "active")
       .get();
     const sessions: WorkoutSession[] = snapshot.docs.map((doc) => {

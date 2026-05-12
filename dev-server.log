@@ -1,0 +1,22 @@
+
+> fitsplit@0.1.0 dev
+> next dev -p 3000
+
+   ▲ Next.js 15.5.15
+   - Local:        http://localhost:3000
+   - Network:      http://192.168.1.70:3000
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 3.6s
+ ○ Compiling / ...
+ ✓ Compiled / in 10.2s (890 modules)
+ GET /?fresh=css-final 200 in 15366ms
+ GET /?fresh=desktop-final 200 in 14863ms
+ GET /?fresh=mobile-final 200 in 14872ms
+ GET / 200 in 2043ms
+ ○ Compiling /owner ...
+ ✓ Compiled /owner in 1022ms (887 modules)
+ POST / 200 in 19284ms
+ ✓ Compiled in 386ms (887 modules)
+ GET /owner 200 in 6257ms

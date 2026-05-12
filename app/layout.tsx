@@ -7,20 +7,20 @@ import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
-import { getTitanWorkspace, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
+import { getPrimaryWorkspace, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "FitSplit",
   description: "Workout programming and gym operations for focused fitness teams.",
-  manifest: "/manifest.json?v=5",
+  manifest: "/manifest.json?v=6",
   icons: {
     icon: [
-      { url: "/favicon-32x32.png?v=5", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png?v=5", sizes: "16x16", type: "image/png" },
-      { url: "/icon-512.png?v=5", sizes: "512x512", type: "image/png" }
+      { url: "/favicon-32x32.png?v=6", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png?v=6", sizes: "16x16", type: "image/png" },
+      { url: "/icon-512.png?v=6", sizes: "512x512", type: "image/png" }
     ],
-    apple: "/apple-touch-icon.png?v=5"
+    apple: "/apple-touch-icon.png?v=6"
   }
 };
 
@@ -31,7 +31,7 @@ export default async function RootLayout({
 }>) {
   const [currentUser, { gym }] = await Promise.all([
     getCurrentUser(),
-    getTitanWorkspace()
+    getPrimaryWorkspace()
   ]);
 
   let initials = "";
@@ -65,12 +65,12 @@ export default async function RootLayout({
           rel="stylesheet"
         />
 
-        <link rel="manifest" href="/manifest.json?v=5" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=5" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=5" />
-        <link rel="shortcut icon" href="/favicon-32x32.png?v=5" />
-        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=5" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=5" />
+        <link rel="manifest" href="/manifest.json?v=6" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=6" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=6" />
+        <link rel="shortcut icon" href="/favicon-32x32.png?v=6" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=6" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=6" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

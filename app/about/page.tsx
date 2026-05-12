@@ -30,7 +30,7 @@ export default async function AboutPage() {
             <h2>
               <Activity /> Pilot scope
             </h2>
-            <span className="status-pill status-active">Titan V2 Fitness</span>
+            <span className="status-pill status-active">Sri Shakthi Hanuman Gym</span>
           </div>
           <p>
             Built as a single-gym pilot with room to expand into multi-gym

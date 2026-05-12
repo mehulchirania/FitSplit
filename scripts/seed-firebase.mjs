@@ -6,8 +6,8 @@ import workoutsData from "../lib/workouts.json" with { type: "json" };
 const projectId = process.env.FIREBASE_PROJECT_ID || "fitsplit-29215";
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
-const ownerId = "owner-titan-v2";
-const gymId = "titan-v2-fitness";
+const ownerId = "santosh-shg";
+const gymId = "shg";
 
 if (!clientEmail || !privateKey) {
   console.error("Missing FIREBASE_CLIENT_EMAIL or FIREBASE_PRIVATE_KEY.");
@@ -24,7 +24,7 @@ async function seedWorkspace() {
   await db.collection("gyms").doc(gymId).set(
     {
       id: gymId,
-      name: "Titan V2 Fitness",
+      name: "Sri Shakthi Hanuman Gym",
       slug: gymId,
       ownerUserId: ownerId,
       expiryWarningDays: 7,
@@ -37,15 +37,50 @@ async function seedWorkspace() {
   await db.collection("profiles").doc(ownerId).set(
     {
       id: ownerId,
-      fullName: "Titan V2 Owner",
-      email: "owner@titanv2.local",
+      fullName: "Santosh SHG",
+      email: "santosh-shg@fitsplit.app",
+      authEmail: "santosh-shg@fitsplit.app",
+      username: "santosh-shg",
       role: "owner",
+      staffType: "owner",
       defaultGymId: gymId,
       isActive: true,
       updatedAt: new Date().toISOString()
     },
     { merge: true }
   );
+
+  const trainers = [
+    {
+      id: "shg-trainer-1",
+      fullName: "Ravi Kumar",
+      email: "shg-trainer-1@fitsplit.app",
+      username: "shg-trainer-1",
+      avatarInitials: "RK"
+    },
+    {
+      id: "shg-trainer-2",
+      fullName: "Priya Nair",
+      email: "shg-trainer-2@fitsplit.app",
+      username: "shg-trainer-2",
+      avatarInitials: "PN"
+    }
+  ];
+
+  for (const trainer of trainers) {
+    await db.collection("profiles").doc(trainer.id).set(
+      {
+        ...trainer,
+        authEmail: trainer.email.toLowerCase(),
+        role: "owner",
+        staffType: "trainer",
+        defaultGymId: gymId,
+        isActive: true,
+        updatedAt: new Date().toISOString()
+      },
+      { merge: true }
+    );
+  }
 }
 
 async function getOrCreateExercise(muscleGroup, exercise) {
@@ -168,4 +203,4 @@ await seedWorkspace();
 const exerciseIdMap = await seedExercises();
 await seedSplitTemplates(exerciseIdMap);
 
-console.log("Firebase seed complete for Titan V2 Fitness.");
+console.log("Firebase seed complete for Sri Shakthi Hanuman Gym.");

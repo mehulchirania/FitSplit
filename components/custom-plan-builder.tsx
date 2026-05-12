@@ -52,7 +52,7 @@ export function CustomPlanBuilder({ catalog }: { catalog: CatalogGroup[] }) {
         Description
         <input
           name="description"
-          defaultValue="Owner-built routine from Titan V2 exercise catalog"
+          defaultValue="Owner-built routine from SHG Gym exercise catalog"
         />
       </label>
       <div className="form-grid">

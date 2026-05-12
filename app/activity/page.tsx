@@ -34,7 +34,7 @@ export default async function ActivityPage() {
           <p>
             {currentUser.role === "member"
               ? "Your workout, assignment, profile, and account events stay attached to your FitSplit account."
-              : "All owner, member, workout, assignment, and system events across Titan V2 Fitness, independent of which device is being used."}
+              : "All owner, member, workout, assignment, and system events across Sri Shakthi Hanuman Gym, independent of which device is being used."}
           </p>
         </div>
       </section>

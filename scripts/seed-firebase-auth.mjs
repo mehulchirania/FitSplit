@@ -54,14 +54,28 @@ const users = [
     email: "admin@fitsplit.app",
     displayName: "FitSplit Admin",
     role: "admin",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
   },
   {
-    uid: "titan-owner-1",
-    email: "titan-owner-1@fitsplit.app",
-    displayName: "Titan V2 Owner",
+    uid: "santosh-shg",
+    email: "santosh-shg@fitsplit.app",
+    displayName: "Santosh SHG",
     role: "owner",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
+  },
+  {
+    uid: "shg-trainer-1",
+    email: "shg-trainer-1@fitsplit.app",
+    displayName: "Ravi Kumar",
+    role: "owner",
+    gymId: "shg"
+  },
+  {
+    uid: "shg-trainer-2",
+    email: "shg-trainer-2@fitsplit.app",
+    displayName: "Priya Nair",
+    role: "owner",
+    gymId: "shg"
   },
   {
     uid: "dummy-gym-owner-1",
@@ -76,7 +90,7 @@ const users = [
     phoneNumber: "+919876543210",
     displayName: "Aarav Sharma",
     role: "member",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
   },
   {
     uid: "member-meera",
@@ -84,7 +98,7 @@ const users = [
     phoneNumber: "+919876542109",
     displayName: "Meera Iyer",
     role: "member",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
   },
   {
     uid: "member-kabir",
@@ -92,7 +106,7 @@ const users = [
     phoneNumber: "+919876541098",
     displayName: "Kabir Khan",
     role: "member",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
   },
   {
     uid: "member-nisha",
@@ -100,7 +114,7 @@ const users = [
     phoneNumber: "+919876540987",
     displayName: "Nisha Rao",
     role: "member",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
   },
   {
     uid: "member-mehul",
@@ -108,7 +122,7 @@ const users = [
     phoneNumber: "+919688227039",
     displayName: "Mehul Chirania",
     role: "member",
-    gymId: "titan-v2-fitness"
+    gymId: "shg"
   }
 ];
 

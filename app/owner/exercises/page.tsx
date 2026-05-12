@@ -23,7 +23,7 @@ export default async function ExerciseCatalogPage() {
           <p className="eyebrow">Owner-only catalog</p>
           <h1>Exercise catalog.</h1>
           <p>
-            Titan V2 Fitness owners build programs from this private catalog.
+            Sri Shakti Hanuman Gym owners build programs from this private catalog.
             Members only see exercises that are part of their assigned plan.
           </p>
         </div>

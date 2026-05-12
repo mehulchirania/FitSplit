@@ -3,7 +3,7 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { requireAuth, requireRole } from "@/lib/auth";
-import { collectionPaths, TITAN_GYM_ID, TITAN_OWNER_ID } from "./collections";
+import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
 import type { Role } from "@/types/domain";
@@ -131,9 +131,9 @@ function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng
 }
 
 function validateGymGeofence(latitude: number, longitude: number) {
-  const gymLatitude = Number(process.env.TITAN_GYM_LATITUDE ?? process.env.NEXT_PUBLIC_TITAN_GYM_LATITUDE);
-  const gymLongitude = Number(process.env.TITAN_GYM_LONGITUDE ?? process.env.NEXT_PUBLIC_TITAN_GYM_LONGITUDE);
-  const radiusMeters = Number(process.env.TITAN_GYM_RADIUS_METERS ?? process.env.NEXT_PUBLIC_TITAN_GYM_RADIUS_METERS ?? 150);
+  const gymLatitude = Number(process.env.SHG_GYM_LATITUDE ?? process.env.NEXT_PUBLIC_SHG_GYM_LATITUDE);
+  const gymLongitude = Number(process.env.SHG_GYM_LONGITUDE ?? process.env.NEXT_PUBLIC_SHG_GYM_LONGITUDE);
+  const radiusMeters = Number(process.env.SHG_GYM_RADIUS_METERS ?? process.env.NEXT_PUBLIC_SHG_GYM_RADIUS_METERS ?? 150);
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     throw new Error("Location permission is required to start workout attendance.");
@@ -190,53 +190,136 @@ function slugifyGymName(name: string) {
     .slice(0, 64);
 }
 
-export async function ensureTitanWorkspace() {
+const demoMembers = [
+  {
+    id: "member-aarav",
+    fullName: "Aarav Sharma",
+    email: "aarav@example.com",
+    username: "aarav@example.com",
+    phone: "+91 98765 43210",
+    avatarInitials: "AS",
+    goal: "Build lean muscle"
+  },
+  {
+    id: "member-meera",
+    fullName: "Meera Iyer",
+    email: "meera@example.com",
+    username: "meera@example.com",
+    phone: "+91 98765 42109",
+    avatarInitials: "MI",
+    goal: "Improve strength"
+  },
+  {
+    id: "member-kabir",
+    fullName: "Kabir Khan",
+    email: "kabir@example.com",
+    username: "kabir@example.com",
+    phone: "+91 98765 41098",
+    avatarInitials: "KK",
+    goal: "Fat loss and conditioning"
+  },
+  {
+    id: "member-nisha",
+    fullName: "Nisha Rao",
+    email: "nisha@example.com",
+    username: "nisha@example.com",
+    phone: "+91 98765 40987",
+    avatarInitials: "NR",
+    goal: "Beginner fitness"
+  },
+  {
+    id: "member-mehul",
+    fullName: "Mehul Chirania",
+    email: "mehul@example.com",
+    username: "mehulchirania",
+    phone: "+91 9688227039",
+    avatarInitials: "MC",
+    goal: "Improve strength and mobility"
+  }
+];
+
+const demoTrainers = [
+  {
+    id: "shg-trainer-1",
+    fullName: "Ravi Kumar",
+    email: "shg-trainer-1@fitsplit.app",
+    username: "shg-trainer-1",
+    avatarInitials: "RK"
+  },
+  {
+    id: "shg-trainer-2",
+    fullName: "Priya Nair",
+    email: "shg-trainer-2@fitsplit.app",
+    username: "shg-trainer-2",
+    avatarInitials: "PN"
+  }
+];
+
+export async function ensurePrimaryWorkspace() {
   const db = requireFirebase();
-  const gymRef = db.collection(collectionPaths.gyms).doc(TITAN_GYM_ID);
-  const ownerRef = db.collection(collectionPaths.profiles).doc(TITAN_OWNER_ID);
+  const gymRef = db.collection(collectionPaths.gyms).doc(PRIMARY_GYM_ID);
+  const ownerRef = db.collection(collectionPaths.profiles).doc(PRIMARY_OWNER_ID);
+  const now = new Date().toISOString();
 
   await gymRef.set(
     {
-      id: TITAN_GYM_ID,
-      name: "Titan V2 Fitness",
-      slug: TITAN_GYM_ID,
-      ownerUserId: TITAN_OWNER_ID,
+      id: PRIMARY_GYM_ID,
+      name: "Sri Shakthi Hanuman Gym",
+      slug: PRIMARY_GYM_ID,
+      ownerUserId: PRIMARY_OWNER_ID,
       expiryWarningDays: 7,
       status: "pilot",
-      updatedAt: new Date().toISOString()
+      updatedAt: now
     },
     { merge: true }
   );
 
   await ownerRef.set(
     {
-      id: TITAN_OWNER_ID,
-      fullName: "titan-owner-1",
-      email: "titan-owner-1@fitsplit.app",
-      authEmail: "titan-owner-1@fitsplit.app",
-      username: "titan-owner-1",
+      id: PRIMARY_OWNER_ID,
+      fullName: "Santosh SHG",
+      email: "santosh-shg@fitsplit.app",
+      authEmail: "santosh-shg@fitsplit.app",
+      username: "santosh-shg",
       role: "owner",
-      defaultGymId: TITAN_GYM_ID,
+      staffType: "owner",
+      defaultGymId: PRIMARY_GYM_ID,
       isActive: true,
-      updatedAt: new Date().toISOString()
+      updatedAt: now
     },
     { merge: true }
   );
 
-  const mehulRef = db.collection(collectionPaths.profiles).doc("member-mehul");
-  await mehulRef.set(
-    {
-      id: "member-mehul",
-      fullName: "Mehul Chirania",
-      email: "mehul@example.com",
-      username: "mehulchirania",
-      role: "member",
-      defaultGymId: TITAN_GYM_ID,
-      isActive: true,
-      updatedAt: new Date().toISOString()
-    },
-    { merge: true }
-  );
+  for (const member of demoMembers) {
+    await db.collection(collectionPaths.profiles).doc(member.id).set(
+      {
+        ...member,
+        authEmail: member.email.toLowerCase(),
+        role: "member",
+        defaultGymId: PRIMARY_GYM_ID,
+        isActive: true,
+        joinedAt: now.slice(0, 10),
+        updatedAt: now
+      },
+      { merge: true }
+    );
+  }
+
+  for (const trainer of demoTrainers) {
+    await db.collection(collectionPaths.profiles).doc(trainer.id).set(
+      {
+        ...trainer,
+        authEmail: trainer.email.toLowerCase(),
+        role: "owner",
+        staffType: "trainer",
+        defaultGymId: PRIMARY_GYM_ID,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+  }
 
   const adminRef = db.collection(collectionPaths.profiles).doc("admin-fitsplit");
   await adminRef.set(
@@ -246,9 +329,9 @@ export async function ensureTitanWorkspace() {
       email: "admin@fitsplit.app",
       username: "admin",
       role: "admin",
-      defaultGymId: TITAN_GYM_ID,
+      defaultGymId: PRIMARY_GYM_ID,
       isActive: true,
-      updatedAt: new Date().toISOString()
+      updatedAt: now
     },
     { merge: true }
   );
@@ -256,32 +339,46 @@ export async function ensureTitanWorkspace() {
   // Seed Auth - Force password reset for demo users to ensure they match requirements
   const { auth } = getFirebaseAdminServices();
   
-  await upsertAuthUser(auth, { 
+  await upsertAuthUser(auth, {
     email: "admin@fitsplit.app", 
     fullName: "Admin", 
     uid: "admin-fitsplit", 
     role: "admin", 
-    gymId: TITAN_GYM_ID, 
+    gymId: PRIMARY_GYM_ID, 
     isActive: true 
   }, "password", true);
   
-  await upsertAuthUser(auth, { 
-    email: "titan-owner-1@fitsplit.app", 
-    fullName: "titan-owner-1", 
-    uid: TITAN_OWNER_ID, 
+  await upsertAuthUser(auth, {
+    email: "santosh-shg@fitsplit.app", 
+    fullName: "Santosh SHG", 
+    uid: PRIMARY_OWNER_ID, 
     role: "owner", 
-    gymId: TITAN_GYM_ID, 
+    gymId: PRIMARY_GYM_ID, 
     isActive: true 
   }, "password", true);
   
-  await upsertAuthUser(auth, { 
-    email: "mehul@example.com", 
-    fullName: "Mehul Chirania", 
-    uid: "member-mehul", 
-    role: "member", 
-    gymId: TITAN_GYM_ID, 
-    isActive: true 
-  }, "pin-1234", true);
+  await Promise.all([
+    ...demoMembers.map((member) =>
+      upsertAuthUser(auth, {
+        email: member.email,
+        fullName: member.fullName,
+        uid: member.id,
+        role: "member",
+        gymId: PRIMARY_GYM_ID,
+        isActive: true
+      }, "pin-1234", true)
+    ),
+    ...demoTrainers.map((trainer) =>
+      upsertAuthUser(auth, {
+        email: trainer.email,
+        fullName: trainer.fullName,
+        uid: trainer.id,
+        role: "owner",
+        gymId: PRIMARY_GYM_ID,
+        isActive: true
+      }, "password", true)
+    )
+  ]);
 }
 
 export async function createMemberProfile(
@@ -291,13 +388,13 @@ export async function createMemberProfile(
   try {
     const user = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const { auth, db } = requireFirebaseServices();
     const memberId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
     const email = requireText(formData, "email", "Email");
     assertValidEmail(email);
-    const gymId = String(formData.get("gymId") ?? user.gymId ?? TITAN_GYM_ID).trim() || TITAN_GYM_ID;
+    const gymId = String(formData.get("gymId") ?? user.gymId ?? PRIMARY_GYM_ID).trim() || PRIMARY_GYM_ID;
     const now = new Date().toISOString();
 
     assertCanManageGym(user, gymId);
@@ -351,7 +448,7 @@ export async function updateMemberProfile(
   try {
     await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member");
     const fullName = requireText(formData, "fullName", "Full name");
@@ -368,7 +465,7 @@ export async function updateMemberProfile(
         username: email.toLowerCase(),
         phone: String(formData.get("phone") ?? "").trim(),
         role: "member",
-        defaultGymId: TITAN_GYM_ID,
+        defaultGymId: PRIMARY_GYM_ID,
         goal: String(formData.get("goal") ?? "General fitness").trim(),
         avatarInitials: fullName
           .split(" ")
@@ -387,7 +484,7 @@ export async function updateMemberProfile(
       fullName, 
       uid: memberId, 
       role: "member", 
-      gymId: TITAN_GYM_ID, 
+      gymId: PRIMARY_GYM_ID, 
       isActive: true 
     });
 
@@ -420,7 +517,7 @@ export async function assignProgramToMember(
       return success(`${programTitle} was assigned to ${memberName} (local mode).`);
     }
 
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const assignmentId = randomUUID();
     const notificationId = randomUUID();
@@ -431,7 +528,7 @@ export async function assignProgramToMember(
 
     const existingAssignments = await db
       .collection(collectionPaths.programAssignments)
-      .where("gymId", "==", TITAN_GYM_ID)
+      .where("gymId", "==", PRIMARY_GYM_ID)
       .where("memberId", "==", memberId)
       .where("status", "==", "active")
       .get();
@@ -444,12 +541,12 @@ export async function assignProgramToMember(
 
     await db.collection(collectionPaths.programAssignments).doc(assignmentId).set({
       id: assignmentId,
-      gymId: TITAN_GYM_ID,
+      gymId: PRIMARY_GYM_ID,
       memberId,
       programId,
       assignedAt: now,
       status: "active",
-      createdBy: TITAN_OWNER_ID,
+      createdBy: PRIMARY_OWNER_ID,
       createdAt: now,
       updatedAt: now
     });
@@ -466,7 +563,7 @@ export async function assignProgramToMember(
 
     await db.collection(collectionPaths.activityEvents).doc(activityId).set({
       id: activityId,
-      gymId: TITAN_GYM_ID,
+      gymId: PRIMARY_GYM_ID,
       audience: "owner",
       title: `Program assigned - ${programTitle}`,
       detail: `${memberName} now has ${programTitle} as the active weekly schedule.`,
@@ -494,7 +591,7 @@ export async function updateProfileMetrics(
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const currentUser = await requireAuth();
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const memberId = requireText(formData, "memberId", "Member");
     assertCanManageMember(currentUser, memberId);
@@ -525,7 +622,7 @@ export async function updateProfileMetrics(
         injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
         assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
         role: "member",
-        defaultGymId: TITAN_GYM_ID,
+        defaultGymId: PRIMARY_GYM_ID,
         isActive: true,
         updatedAt: now
       },
@@ -556,7 +653,7 @@ export async function logLiftSet(
       // Mock mode — lift is saved client-side optimistically
       return success("Lift entry was logged (local mode).");
     }
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const liftLogId = randomUUID();
     const exerciseId = requireText(formData, "exerciseId", "Exercise");
@@ -572,7 +669,7 @@ export async function logLiftSet(
 
     await db.collection(collectionPaths.liftLogs).doc(liftLogId).set({
       id: liftLogId,
-      gymId: TITAN_GYM_ID,
+      gymId: PRIMARY_GYM_ID,
       memberId,
       exerciseId,
       weight,
@@ -603,7 +700,7 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
       }
     }
 
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const batch = db.batch();
     const now = new Date().toISOString();
@@ -614,7 +711,7 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
       
       batch.set(docRef, {
         id: liftLogId,
-        gymId: TITAN_GYM_ID,
+        gymId: PRIMARY_GYM_ID,
         memberId: log.memberId,
         exerciseId: log.exerciseId,
         weight: Number(log.weight),
@@ -802,8 +899,8 @@ export async function deleteGymWorkspace(
     const { db } = requireFirebaseServices();
     const gymId = requireText(formData, "gymId", "Gym ID");
 
-    if (gymId === TITAN_GYM_ID) {
-      throw new Error("Titan V2 Fitness is the active pilot gym and cannot be deleted.");
+    if (gymId === PRIMARY_GYM_ID) {
+      throw new Error("Sri Shakthi Hanuman Gym is the active pilot gym and cannot be deleted.");
     }
 
     const assignedProfiles = await db
@@ -959,7 +1056,7 @@ export async function startWorkoutSession(
       // Mock mode — just confirm success locally
       return success("Workout session was started (local mode).");
     }
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
     const latitude = Number(formData.get("latitude"));
@@ -971,7 +1068,7 @@ export async function startWorkoutSession(
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
       {
         id: sessionId,
-        gymId: TITAN_GYM_ID,
+        gymId: PRIMARY_GYM_ID,
         memberId,
         attendance: {
           latitude,
@@ -1008,7 +1105,7 @@ export async function endWorkoutSession(
     if (!hasFirebaseAdminConfig()) {
       return success("Workout session was ended (local mode).");
     }
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
     const now = new Date().toISOString();
@@ -1056,7 +1153,7 @@ export async function submitContactMessage(
 
     await db.collection(collectionPaths.contactMessages).doc(messageId).set({
       id: messageId,
-      gymId: TITAN_GYM_ID,
+      gymId: PRIMARY_GYM_ID,
       name,
       mobile,
       email,
@@ -1140,7 +1237,7 @@ export async function createCatalogExercise(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const exerciseId = randomUUID();
     const now = new Date().toISOString();
@@ -1148,7 +1245,7 @@ export async function createCatalogExercise(
 
     await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
       id: exerciseId,
-      gymId: TITAN_GYM_ID,
+      gymId: PRIMARY_GYM_ID,
       name,
       muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
       equipment: String(formData.get("equipment") ?? "").trim(),
@@ -1157,7 +1254,7 @@ export async function createCatalogExercise(
       videoUrl: String(formData.get("videoUrl") ?? "").trim(),
       ownerOnly: true,
       isActive: true,
-      createdBy: TITAN_OWNER_ID,
+      createdBy: PRIMARY_OWNER_ID,
       createdAt: now,
       updatedAt: now
     });
@@ -1187,7 +1284,7 @@ export async function createCustomWorkoutProgram(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await ensureTitanWorkspace();
+    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const programId = randomUUID();
     const now = new Date().toISOString();
@@ -1207,7 +1304,7 @@ export async function createCustomWorkoutProgram(
 
     await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
       id: programId,
-      gymId: TITAN_GYM_ID,
+      gymId: PRIMARY_GYM_ID,
       title,
       description: String(formData.get("description") ?? "").trim(),
       goal: String(formData.get("goal") ?? "Custom member plan").trim(),
@@ -1215,7 +1312,7 @@ export async function createCustomWorkoutProgram(
       daysPerWeek: Number(formData.get("daysPerWeek") ?? 1),
       splitType: "custom",
       isActive: true,
-      createdBy: TITAN_OWNER_ID,
+      createdBy: PRIMARY_OWNER_ID,
       days: [
         {
           id: randomUUID(),

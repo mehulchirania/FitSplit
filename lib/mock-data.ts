@@ -44,11 +44,11 @@ const workoutSource = workoutsData as WorkoutsJson;
 
 export const gyms: GymWorkspace[] = [
   {
-    id: "gym-titan-v2",
-    name: "Titan V2 Fitness",
-    slug: "titan-v2-fitness",
-    ownerName: "Titan Owner",
-    ownerUserId: "titan-owner-1",
+    id: "shg",
+    name: "Sri Shakthi Hanuman Gym",
+    slug: "shg",
+    ownerName: "Santosh SHG",
+    ownerUserId: "santosh-shg",
     status: "pilot",
     expiryWarningDays: 7,
     memberCount: 4
@@ -76,10 +76,10 @@ export const roles = {
     access: "All workspaces"
   },
   owner: {
-    id: "titan-owner-1",
-    name: "Titan V2 Owner",
+    id: "santosh-shg",
+    name: "Santosh SHG",
     role: "owner",
-    access: "Titan V2 Fitness"
+    access: "Sri Shakthi Hanuman Gym"
   }
 };
 
@@ -351,7 +351,7 @@ export const notifications: Notification[] = [
   {
     id: "notification-meera-expiring",
     recipientRole: "owner",
-    recipientId: "titan-owner-1",
+    recipientId: "santosh-shg",
     type: "membership_expiring_soon",
     title: "Membership expiring soon",
     body: "Meera Iyer's membership ends on 09 May 2026.",
@@ -360,7 +360,7 @@ export const notifications: Notification[] = [
   {
     id: "notification-kabir-expired",
     recipientRole: "owner",
-    recipientId: "titan-owner-1",
+    recipientId: "santosh-shg",
     type: "membership_expired",
     title: "Membership expired",
     body: "Kabir Khan's membership expired on 24 Apr 2026.",

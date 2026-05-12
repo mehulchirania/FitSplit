@@ -16,5 +16,5 @@ export const collectionPaths = {
 
 } as const;
 
-export const TITAN_GYM_ID = "titan-v2-fitness";
-export const TITAN_OWNER_ID = "titan-owner-1";
+export const PRIMARY_GYM_ID = "shg";
+export const PRIMARY_OWNER_ID = "santosh-shg";

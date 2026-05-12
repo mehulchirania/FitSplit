@@ -20,7 +20,7 @@ export default async function ProgramsPage() {
           <p className="eyebrow">Workout splits</p>
           <h1>Training plans from the catalog.</h1>
           <p>
-            Titan V2 Fitness now has the requested split templates, each built
+            Sri Shakti Hanuman Gym now has the requested split templates, each built
             from the owner-only exercise catalog.
           </p>
         </div>
