@@ -77,7 +77,17 @@ export function LandingNav() {
   }
 
   return (
-    <nav className={`landing-nav ${isHidden ? "landing-nav-hidden" : ""}`} aria-label="FitSplit landing navigation">
+    <>
+      <button
+        aria-expanded={isOpen}
+        aria-label="Open menu"
+        className={`landing-mobile-menu-trigger ${isHidden ? "landing-mobile-menu-trigger-hidden" : ""}`}
+        onClick={() => setIsOpen((value) => !value)}
+        type="button"
+      >
+        Menu
+      </button>
+      <nav className={`landing-nav ${isHidden ? "landing-nav-hidden" : ""}`} aria-label="FitSplit landing navigation">
       <a className="landing-nav-brand" href="#top" aria-label="FitSplit home">
         <span className="theme-logo" aria-hidden="true">
           <img alt="" className="theme-logo-dark" src="/fitsplit-logo-dark.png" />
@@ -118,6 +128,7 @@ export function LandingNav() {
           Start Demo
         </a>
       </div>
-    </nav>
+      </nav>
+    </>
   );
 }
