@@ -12,3 +12,4 @@
  ○ Compiling / ...
  ✓ Compiled / in 9.6s (890 modules)
  GET /?fresh=ready-after-build 200 in 15080ms
+ GET /?fresh=ready-check2 200 in 1778ms
