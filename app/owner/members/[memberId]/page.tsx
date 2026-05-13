@@ -148,17 +148,18 @@ export default async function MemberDetailPage({
         
         <ConfirmActionForm
           action={toggleMemberAccess}
-          className="form-panel"
+          className="form-panel access-toggle-panel"
           confirmMessage={member.isActive ? "This will disable the member's login access." : "This will re-enable the member's login access."}
           confirmTitle={member.isActive ? "Suspend member access?" : "Restore member access?"}
           pendingLabel="Updating access..."
-          submitLabel={member.isActive ? "Suspend Access" : "Restore Access"}
+          submitClassName={`access-toggle ${member.isActive ? "is-on" : "is-off"}`}
+          submitLabel={member.isActive ? "Active" : "Inactive"}
         >
           <h2>Access Control</h2>
           <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
             {member.isActive 
-              ? "Currently active. Suspending will prevent the member from logging in." 
-              : "Currently suspended. Restoring will allow the member to log in again."}
+              ? "Member login is currently enabled. Toggle to make this member inactive." 
+              : "Member login is currently disabled. Toggle to make this member active."}
           </p>
           <input name="memberId" type="hidden" value={member.id} />
           <input name="isActive" type="hidden" value={(!member.isActive).toString()} />

@@ -8,6 +8,22 @@
   - owner/admin billing dashboards
   - member payment visibility if needed
   - security rules and audit/activity events for billing operations
+- Implement OTP-based password reset:
+  - member PIN reset flow with OTP verification
+  - staff password reset approval flow through gym owner/admin
+  - SMS/email provider selection
+  - abuse limits, expiry windows, and audit trail
+
+## Latest Update - 2026-05-13: Login Enter Key + Reset Request UX
+
+- Follow-up: regenerated FitSplit favicon/PWA icon assets as transparent logo-mark files and bumped manifest/favicon versions to clear stale browser-tab icon caching.
+- Fixed login form keyboard behavior so pressing Enter from username/password fields submits the login form.
+- Added "Forgot password?" to both active login experiences:
+  - member reset requests show a confirmation dialog explaining the request goes to the gym owner and the member should contact them for the new PIN.
+  - staff reset requests show a confirmation dialog explaining the request goes to the gym owner and admin.
+- Added a Firestore-backed password reset request notification path for owner/admin recipients when Firebase Admin is configured.
+- Scoped the Training Notes/Gym Rules footer to member pages only.
+- Updated owner member access controls into compact Active/Inactive switch-style toggles on both the members list and member detail page.
 
 ## Latest Update - 2026-05-13: Focused Landing Page Redesign
 

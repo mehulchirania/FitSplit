@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { randomUUID } from "crypto";
 import type { DocumentData } from "firebase-admin/firestore";
 import type { Role } from "@/types/domain";
 import { collectionPaths } from "@/lib/firebase/collections";
@@ -596,9 +597,74 @@ export async function logoutUser() {
   redirect("/");
 }
 
-export async function requestPasswordReset() {
-  return {
-    status: "success" as const,
-    message: "Use the Firebase password reset email from the login form."
-  };
+export async function requestPasswordReset(formData: FormData) {
+  const identifier = String(formData.get("username") ?? "").trim();
+  const mode = String(formData.get("mode") ?? "member") as "member" | "staff";
+
+  if (!identifier) {
+    return { status: "error" as const, message: "Enter your login identifier first." };
+  }
+
+  if (!hasFirebaseAdminConfig()) {
+    return {
+      status: "success" as const,
+      message:
+        mode === "member"
+          ? "Password reset request noted. Please contact your gym owner for a new PIN."
+          : "Password reset request noted. Please contact the gym owner or admin."
+    };
+  }
+
+  try {
+    const profile = await resolveProfileForIdentifier(identifier);
+    const { db } = getFirebaseAdminServices();
+    const now = new Date().toISOString();
+    const displayName = profile?.fullName ?? identifier;
+    const requestType = mode === "member" ? "Member PIN reset request" : "Staff password reset request";
+    const message =
+      mode === "member"
+        ? `${displayName} requested a member PIN reset.`
+        : `${displayName} requested a staff password reset.`;
+
+    const notifications = [
+      {
+        id: randomUUID(),
+        recipientRole: "owner",
+        recipientId: profile?.defaultGymId ? `${profile.defaultGymId}-owners` : "gym-owners",
+        type: "password_reset_request",
+        title: requestType,
+        body: message,
+        createdAt: now
+      }
+    ];
+
+    if (mode === "staff") {
+      notifications.push({
+        id: randomUUID(),
+        recipientRole: "admin",
+        recipientId: "admin-fitsplit",
+        type: "password_reset_request",
+        title: requestType,
+        body: message,
+        createdAt: now
+      });
+    }
+
+    await Promise.all(
+      notifications.map((notification) =>
+        db.collection(collectionPaths.notifications).doc(notification.id).set(notification)
+      )
+    );
+
+    return {
+      status: "success" as const,
+      message:
+        mode === "member"
+          ? "Password reset request sent to the gym owner. Please contact them for your new PIN."
+          : "Password reset request sent to the gym owner and admin."
+    };
+  } catch (error) {
+    console.error("Unable to create password reset request", error);
+    return { status: "error" as const, message: "Unable to send reset request. Please try again." };
+  }
 }

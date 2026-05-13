@@ -1,13 +1,9 @@
 "use client";
 
 import { FirebaseError } from "firebase/app";
-import {
-  sendPasswordResetEmail
-} from "firebase/auth";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
-import { loginWithCredentials, resolveLoginIdentifier } from "@/lib/auth";
-import { getFirebaseClientServices } from "@/lib/firebase/client";
+import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phonePattern = /^(\+91[\s-]?)?[6-9]\d{9}$/;
@@ -112,20 +108,30 @@ export function LoginForm() {
     setError("");
     setMessage("");
 
+    if (!cleanUsername) {
+      setError(isMember ? "Enter your mobile number or email first." : "Enter your username first.");
+      return;
+    }
+
+    const prompt = isMember
+      ? "A password reset request will be sent to the gym owner. Please contact them for the new PIN."
+      : "A password reset request will be sent to the gym owner and admin.";
+
+    if (!window.confirm(prompt)) {
+      return;
+    }
+
     startTransition(async () => {
-      try {
-        const resolved = await resolveLoginIdentifier(username, mode);
+      const formData = new FormData();
+      formData.set("username", cleanUsername);
+      formData.set("mode", mode);
+      const result = await requestPasswordReset(formData);
 
-        if (resolved.status !== "success") {
-          setError(resolved.message);
-          return;
-        }
-
-        const { auth } = getFirebaseClientServices();
-        await sendPasswordResetEmail(auth, resolved.email);
-        setMessage("Password reset email sent.");
-      } catch (caughtError) {
-        setError(authErrorMessage(caughtError));
+      if (result.status === "success") {
+        setMessage(result.message);
+        window.alert(result.message);
+      } else {
+        setError(result.message);
       }
     });
   }
@@ -178,7 +184,17 @@ export function LoginForm() {
           </button>
         </div>
 
-        <form className="login-form" onSubmit={handleSubmit} ref={formRef}>
+        <form
+          className="login-form"
+          onKeyDown={(event: KeyboardEvent<HTMLFormElement>) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              formRef.current?.requestSubmit();
+            }
+          }}
+          onSubmit={handleSubmit}
+          ref={formRef}
+        >
           <label>
             <span>{isMember ? "Mobile number or email" : "Email or username"}</span>
             <input
@@ -229,16 +245,14 @@ export function LoginForm() {
             {isPending ? "Logging in..." : "Log in"}
           </button>
 
-          {!isMember ? (
-            <button
-              className="login-link-button"
-              disabled={isPending || !username.trim()}
-              onClick={handleForgotPassword}
-              type="button"
-            >
-              Forgot password?
-            </button>
-          ) : null}
+          <button
+            className="login-link-button"
+            disabled={isPending || !username.trim()}
+            onClick={handleForgotPassword}
+            type="button"
+          >
+            Forgot password?
+          </button>
         </form>
       </div>
     </section>

@@ -4,7 +4,7 @@ import { FirebaseError } from "firebase/app";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import type { FormEvent, MouseEvent } from "react";
 import { Activity, Dumbbell, Mail, Menu, UsersRound, X } from "@/components/icons";
-import { loginWithCredentials } from "@/lib/auth";
+import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
 import { submitContactMessage } from "@/lib/firebase/actions";
 import type { FormActionState } from "@/types/action-state";
 
@@ -71,6 +71,7 @@ function LoginModal({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
   const [isPending, startTransition] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const isMember = mode === "member";
@@ -104,6 +105,7 @@ function LoginModal({
     setUsername("");
     setPassword("");
     setError("");
+    setMessage("");
   }
 
   function handleBackdropClick(event: MouseEvent<HTMLDivElement>) {
@@ -115,6 +117,7 @@ function LoginModal({
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
+    setMessage("");
 
     const cleanUsername = username.trim();
     const cleanPassword = password.trim();
@@ -156,6 +159,39 @@ function LoginModal({
     });
   }
 
+  function handleForgotPassword() {
+    setError("");
+    setMessage("");
+
+    const cleanUsername = username.trim();
+    if (!cleanUsername) {
+      setError(isMember ? "Enter your mobile number or email first." : "Enter your username first.");
+      return;
+    }
+
+    const prompt = isMember
+      ? "A password reset request will be sent to the gym owner. Please contact them for the new PIN."
+      : "A password reset request will be sent to the gym owner and admin.";
+
+    if (!window.confirm(prompt)) {
+      return;
+    }
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("username", cleanUsername);
+      formData.set("mode", mode);
+      const result = await requestPasswordReset(formData);
+
+      if (result.status === "success") {
+        setMessage(result.message);
+        window.alert(result.message);
+      } else {
+        setError(result.message);
+      }
+    });
+  }
+
   return (
     <div className="fs3-modal-backdrop" onMouseDown={handleBackdropClick}>
       <section className="fs3-login-modal" aria-label="Login modal" role="dialog" aria-modal="true">
@@ -188,7 +224,17 @@ function LoginModal({
           </button>
         </div>
 
-        <form className="fs3-login-form" onSubmit={handleSubmit} ref={formRef}>
+        <form
+          className="fs3-login-form"
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              formRef.current?.requestSubmit();
+            }
+          }}
+          onSubmit={handleSubmit}
+          ref={formRef}
+        >
           <label>
             <span>{isMember ? "Mobile number or email" : "Username"}</span>
             <input
@@ -217,9 +263,18 @@ function LoginModal({
           </label>
 
           {error ? <p className="fs3-login-error">{error}</p> : null}
+          {message ? <p className="fs3-login-success">{message}</p> : null}
 
           <button className="fs3-button fs3-button-primary fs3-full-button" disabled={isPending} type="submit">
             {isPending ? "Logging in..." : "Log in"}
+          </button>
+          <button
+            className="fs3-forgot-button"
+            disabled={isPending}
+            onClick={handleForgotPassword}
+            type="button"
+          >
+            Forgot password?
           </button>
         </form>
 
