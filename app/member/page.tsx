@@ -11,7 +11,8 @@ import {
   getMemberNotifications,
   getProgramAssignmentForMember,
   getPrimaryWorkspace,
-  getWorkoutPrograms
+  getWorkoutPrograms,
+  getProfileMetrics
 } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -27,7 +28,8 @@ export default async function MemberDashboard() {
     { notifications: memberNotifications },
     { liftLogs },
     { exercises },
-    { sessions }
+    { sessions },
+    { profile }
   ] = await Promise.all([
     getPrimaryWorkspace(),
     getMemberDetail(currentMemberId),
@@ -36,12 +38,15 @@ export default async function MemberDashboard() {
     getMemberNotifications(currentMemberId),
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(),
-    getActiveWorkoutSessions()
+    getActiveWorkoutSessions(),
+    getProfileMetrics(currentMemberId)
   ]);
 
   if (!member) {
     return null;
   }
+
+  const memberWithProfile = { ...member, ...profile };
 
   const program = programs.find((item) => item.id === assignment?.programId) ?? programs[0];
 
@@ -51,7 +56,7 @@ export default async function MemberDashboard() {
         <div className="header-copy">
           <p className="eyebrow">Welcome, {member.fullName.split(" ")[0]}</p>
           <h1>Let&apos;s get fit!</h1>
-          <EditableMetrics member={member} />
+          <EditableMetrics member={memberWithProfile as any} />
         </div>
 
         <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 15 }}>

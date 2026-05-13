@@ -289,9 +289,7 @@ export function MemberWorkoutConsole({
   program: WorkoutProgram;
 }) {
   const router = useRouter();
-  const [isActive, setIsActive] = useState(false);
-  const [activeCount, setActiveCount] = useState(0);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  // Removed workout tracking states
   const [injury, setInjury] = useState("");
   const [modification, setModification] = useState<Modification | null>(null);
   const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
@@ -302,7 +300,7 @@ export function MemberWorkoutConsole({
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
   );
-  const busyness = useMemo(() => getBusyness(activeCount), [activeCount]);
+  // Removed busyness tracking
   const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
   const visibleWorkoutDay = modification && selectedDay
     ? { ...selectedDay, exercises: modification.routine }
@@ -313,9 +311,6 @@ export function MemberWorkoutConsole({
   );
 
   useEffect(() => {
-    setIsActive(window.localStorage.getItem(sessionKey) === "active");
-    setActiveCount(Math.max(initialActiveSessionCount, getStoredActiveCount()));
-    
     function handleOnline() {
       const offlineLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
       if (offlineLogs.length > 0) {
@@ -335,105 +330,9 @@ export function MemberWorkoutConsole({
     
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
-  }, [initialActiveSessionCount]);
+  }, []);
 
-  // Elapsed workout clock — ticks while active, auto-ends at 4 hours
-  useEffect(() => {
-    if (!isActive) {
-      setElapsedSeconds(0);
-      return;
-    }
-
-    // Restore elapsed time from stored start timestamp
-    const storedStart = window.localStorage.getItem(WORKOUT_START_KEY);
-    const startTime = storedStart ? Number(storedStart) : Date.now();
-    if (!storedStart) {
-      window.localStorage.setItem(WORKOUT_START_KEY, String(startTime));
-    }
-
-    const tick = () => {
-      const elapsed = Math.floor((Date.now() - startTime) / 1000);
-      setElapsedSeconds(elapsed);
-
-      if (elapsed >= MAX_SESSION_SECONDS) {
-        // Auto-end after 4 hours
-        const formData = new FormData();
-        formData.set("sessionId", `active-${memberId}`);
-        endWorkoutSession(initialFormActionState, formData).then(() => {
-          window.localStorage.removeItem(sessionKey);
-          window.localStorage.removeItem(WORKOUT_START_KEY);
-          setIsActive(false);
-          setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
-          setElapsedSeconds(0);
-          router.refresh();
-        });
-      }
-    };
-
-    tick();
-    const intervalId = window.setInterval(tick, 1000);
-    return () => window.clearInterval(intervalId);
-  }, [isActive, memberId, router]);
-
-  function startWorkout() {
-    if (isActive) {
-      return;
-    }
-
-    setPendingEvent({
-      confirmLabel: "Start workout",
-      message: "This will request GPS permission, verify you are at the gym, and update live capacity.",
-      title: "Start workout session?",
-      run: async () => {
-        const formData = new FormData();
-        formData.set("memberId", memberId);
-        formData.set("sessionId", `active-${memberId}`);
-        const position = await getCurrentPosition();
-        formData.set("latitude", String(position.coords.latitude));
-        formData.set("longitude", String(position.coords.longitude));
-        formData.set("deviceInfo", navigator.userAgent);
-        const result = await startWorkoutSession(initialFormActionState, formData);
-
-        if (result.status === "success") {
-          window.localStorage.setItem(sessionKey, "active");
-          window.localStorage.setItem(WORKOUT_START_KEY, String(Date.now()));
-          setIsActive(true);
-          setActiveCount(setStoredActiveCount(getStoredActiveCount() + 1));
-          router.refresh();
-        }
-
-        return result;
-      }
-    });
-  }
-
-  function endWorkout() {
-    if (!isActive) {
-      return;
-    }
-
-    setPendingEvent({
-      confirmLabel: "End workout",
-      message: "This will close your active workout session and update live gym capacity.",
-      title: "End workout session?",
-      run: async () => {
-        const formData = new FormData();
-        formData.set("sessionId", `active-${memberId}`);
-        const result = await endWorkoutSession(initialFormActionState, formData);
-
-        if (result.status === "success") {
-          window.localStorage.removeItem(sessionKey);
-          window.localStorage.removeItem(WORKOUT_START_KEY);
-          setIsActive(false);
-          setElapsedSeconds(0);
-          setActiveCount(setStoredActiveCount(getStoredActiveCount() - 1));
-          router.refresh();
-        }
-
-        return result;
-      }
-    });
-  }
+  // Removed workout tracking actions
 
   function updateInjury() {
     if (!injury.trim()) {
@@ -529,47 +428,7 @@ export function MemberWorkoutConsole({
           </span>
         </div>
 
-        <div className="workout-session-panel">
-          <div>
-            <p className="eyebrow">Workout session</p>
-            <h2>{isActive ? "Workout in progress" : "Ready to train"}</h2>
-            {isActive ? (
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "6px", flexWrap: "wrap" }}>
-                <span style={{
-                  fontSize: "clamp(1.4rem, 3vw, 2rem)",
-                  fontWeight: 700,
-                  fontVariantNumeric: "tabular-nums",
-                  color: elapsedSeconds > 3 * 3600 ? "var(--danger)" : "var(--brand)"
-                }}>
-                  ⏱ {formatElapsed(elapsedSeconds)}
-                </span>
-                {elapsedSeconds > 3 * 3600 && (
-                  <span className="status-pill status-expired">Auto-ends at 4h</span>
-                )}
-              </div>
-            ) : (
-              <p>Start and end buttons update live gym capacity.</p>
-            )}
-          </div>
-          <div className="quick-actions">
-            <button
-              className="button button-primary"
-              disabled={isActive}
-              onClick={startWorkout}
-              type="button"
-            >
-              Start Workout
-            </button>
-            <button
-              className="button button-secondary"
-              disabled={!isActive}
-              onClick={endWorkout}
-              type="button"
-            >
-              End Workout
-            </button>
-          </div>
-        </div>
+        {/* Workout tracking UI removed */}
 
         <div className="notification-list">
           <div className="weekly-schedule">
@@ -623,62 +482,74 @@ export function MemberWorkoutConsole({
         </div>
 
         <div className="lift-log-panel">
-          <div className="panel-title" style={{ display: "flex", justifyContent: "space-between" }}>
+          <div className="panel-title" style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
             <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <h2>Progressive overload</h2>
+              <h2>Log your sets</h2>
               {offlineLogsCount > 0 && (
                 <span className="status-pill status-expired">
                   {offlineLogsCount} unsynced (Offline)
                 </span>
               )}
             </div>
-            <span className="status-pill status-neutral">Historical lift data</span>
+            <span className="status-pill status-neutral">Guided Tracker</span>
           </div>
-          <form className="lift-log-form" onSubmit={handleLiftLog}>
+
+          <form className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
             <input name="memberId" type="hidden" value={memberId} />
             <input name="sessionId" type="hidden" value={`session-${memberId}`} />
-            <label>
-              Exercise
-              <select name="exerciseId">
+            
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>Exercise</label>
+              <select name="exerciseId" style={{ width: "100%", padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)" }}>
                 {uniqueLoggableExercises.map((item) => (
                   <option key={item.exerciseId} value={item.exerciseId}>
                     {getExerciseName(item.exerciseId, exercises)}
                   </option>
                 ))}
               </select>
-            </label>
-            <label>
-              Weight (kg)
-              <input min="0" name="weight" placeholder="60" required step="0.5" type="number" />
-            </label>
-            <label>
-              Sets
-              <input defaultValue="3" min="1" name="sets" required type="number" />
-            </label>
-            <label>
-              Reps
-              <input name="reps" placeholder="8, 8, 7" required />
-            </label>
-            <button className="button button-primary" type="submit">
-              Log lift
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", gridColumn: "1 / -1" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
+                Weight (kg)
+                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
+                Sets
+                <input defaultValue="3" min="1" name="sets" required type="number" style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
+                Reps
+                <input name="reps" placeholder="8, 8, 7" required style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
+              </label>
+            </div>
+
+            <button className="button button-primary" type="submit" style={{ gridColumn: "1 / -1", padding: "12px", fontSize: "1rem" }}>
+              Log Set
             </button>
           </form>
-          <div className="lift-log-table" role="table" aria-label="Historical lift data">
-            <div role="row">
-              <span>Exercise</span>
-              <span>Weight</span>
-              <span>Sets</span>
-              <span>Reps</span>
-            </div>
-            {liftLogs.slice(0, 8).map((log) => (
-              <div key={log.id} role="row">
-                <span>{getExerciseName(log.exerciseId, exercises)}</span>
-                <span>{log.weight} kg</span>
-                <span>{log.sets}</span>
-                <span>{log.reps}</span>
+
+          <details style={{ marginTop: "24px", padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
+            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span className="status-pill status-neutral">View Lift History</span>
+            </summary>
+            <div className="lift-log-table" role="table" aria-label="Historical lift data" style={{ marginTop: "16px" }}>
+              <div role="row">
+                <span>Exercise</span>
+                <span>Weight</span>
+                <span>Sets</span>
+                <span>Reps</span>
               </div>
-            ))}
-          </div>
+              {liftLogs.slice(0, 8).map((log) => (
+                <div key={log.id} role="row">
+                  <span>{getExerciseName(log.exerciseId, exercises)}</span>
+                  <span>{log.weight} kg</span>
+                  <span>{log.sets}</span>
+                  <span>{log.reps}</span>
+                </div>
+              ))}
+            </div>
+          </details>
         </div>
       </div>
 
@@ -689,6 +560,12 @@ export function MemberWorkoutConsole({
             Update Injury/Limitation to let the AI swap risky exercises or
             create a conservative recovery routine for owner review.
           </p>
+          <div style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
+            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Shoulder pain")}>Shoulder pain</button>
+            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Knee pain")}>Knee pain</button>
+            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Lower back ache")}>Lower back ache</button>
+            {injury && <button type="button" className="status-pill status-expired" style={{ cursor: "pointer", border: "none" }} onClick={() => { setInjury(""); setModification(null); }}>Clear</button>}
+          </div>
           <label>
             Injury or limitation
             <textarea
