@@ -1,5 +1,40 @@
 # FitSplit Project Handoff
 
+## TODO
+
+- Develop billing support for FitSplit:
+  - billing data model and Firestore collections
+  - invoices/receipts or payment tracking requirements
+  - owner/admin billing dashboards
+  - member payment visibility if needed
+  - security rules and audit/activity events for billing operations
+
+## Latest Update - 2026-05-13: Focused Landing Page Redesign
+
+- Follow-up: removed the remaining `Get Started` CTAs from the active landing page so Login is the only auth entry point.
+- Follow-up: improved login speed by removing workspace seeding from the sign-in hot path and using lighter session-cookie verification on normal authenticated page reads.
+- Follow-up: removed "Demo" / "Start Demo" wording from the active landing page and login modal helper copy.
+- Removed outdated product limitation copy from the public landing page.
+- Rebuilt the public `/` landing page into the requested five-section, dark-first FitSplit marketing site:
+  - Navbar
+  - Hero
+  - How It Works
+  - Features + Product Previews
+  - Partners
+  - Footer with compact contact form
+- Removed the duplicated public landing sections from the active route: product overview strip, trainer/admin overview, repeated CTA strip, partner marquee, inline bottom login form, and landing navbar Install App button.
+- Added a centered login modal wired to the existing Firebase Auth/session-cookie flow.
+  - Member tab: mobile/email + 4-digit PIN.
+  - Staff tab: username + password.
+  - Successful login still redirects by role and resets scroll to top.
+- Kept the existing PWA/service worker/manifest setup intact while removing the landing nav Install App CTA.
+- Kept the SHG partner logo to the Partners section only, using `public/shg-gym-logo.jpeg`.
+- Added a compact footer contact form and extended the existing Firestore `contactMessages` server action to accept this footer form without breaking the full Contact Us form/admin inbox.
+- Verification passed:
+  - `npm.cmd run typecheck`
+  - `npm.cmd run build`
+  - local `/` HTTP + CSS 200 on `http://localhost:3000`
+
 ## Latest Update - 2026-05-12: Premium Matte Landing Refresh
 
 - Refactored `/` into a cohesive matte-black premium SaaS landing page that matches the authenticated app visual language.

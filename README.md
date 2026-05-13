@@ -57,7 +57,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 
 ## Features
 
-- Matte-black premium landing page with FitSplit-first hero, product overview, grouped features, realistic app previews, trainer/admin overview, SHG partner carousel, Contact Us form, theme support, and PWA install prompt.
+- Focused dark-first landing page for `fitsplit.in` with sticky navbar, modal login, hero product mockup, three-step workflow, merged role-based features/previews, SHG partner proof, and compact Firestore-backed footer contact form.
 - Login page with username/mobile/email resolution, 4-digit member PIN support, staff password login, and Firebase password reset email support.
 - Admin dashboard for all gyms plus `/admin/gyms` management for adding, editing, opening, and guarded removal of gym workspaces.
 - Admin inbox for Contact Us submissions with unread notification support.
@@ -71,7 +71,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 ## App Routes
 
 ```text
-/                 -> Premium landing page with Contact Us and login section
+/                 -> Focused landing page with modal login and footer contact form
 /admin            -> Admin gym overview
 /admin/gyms       -> Add/edit/remove gym workspaces
 /admin/gyms/[id]  -> Gym-specific settings, staff, and access control
@@ -123,6 +123,7 @@ lib/firebase/client.ts              -> Firebase web SDK app/services
 lib/firebase/actions.ts             -> Firestore write actions and member Auth account creation
 lib/firebase/read-models.ts         -> Firestore read models with mock fallbacks
 components/login-form.tsx           -> Role-aware login UI and validation
+components/landing-page-client.tsx  -> Public landing page, modal login, footer contact form
 components/app-topbar.tsx           -> Role-aware topbar/drawer/profile menu
 components/landing-nav.tsx          -> Landing navbar and mobile menu
 components/main-nav.tsx             -> Role-aware owner/admin navigation

@@ -362,14 +362,6 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     }
 
     if (hasFirebaseAdminConfig()) {
-      // Ensure demo profiles exist in Firestore/Auth before client tries to sign in
-      try {
-        const { ensurePrimaryWorkspace } = await import("@/lib/firebase/actions");
-        await ensurePrimaryWorkspace();
-      } catch (e) {
-        console.warn("Failed to ensure SHG workspace during demo login", e);
-      }
-
       return {
         status: "success" as const,
         email: demoLogin.authEmail,
@@ -387,16 +379,6 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
 
   if (!hasFirebaseAdminConfig()) {
     return { status: "error" as const, message: "No demo FitSplit account found." };
-  }
-
-  const keys = normalizedLookupKeys(cleanIdentifier);
-  
-  // Ensure basic demo profiles exist in Firestore
-  try {
-    const { ensurePrimaryWorkspace } = await import("@/lib/firebase/actions");
-    await ensurePrimaryWorkspace();
-  } catch (e) {
-    console.warn("Failed to ensure SHG workspace", e);
   }
 
   const profile = await resolveProfileForIdentifier(cleanIdentifier);
@@ -574,7 +556,7 @@ export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
 
   try {
     const { auth } = getFirebaseAdminServices();
-    const decodedSession = await auth.verifySessionCookie(session, true);
+    const decodedSession = await auth.verifySessionCookie(session);
     const profile =
       (await getProfileById(decodedSession.uid)) ??
       (decodedSession.email ? await getProfileByEmail(decodedSession.email) : null);

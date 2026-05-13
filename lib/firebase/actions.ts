@@ -1139,13 +1139,19 @@ export async function submitContactMessage(
     const messageId = randomUUID();
     const notificationId = randomUUID();
     const now = new Date().toISOString();
-    const name = requireText(formData, "name", "Name");
-    const mobile = requireText(formData, "mobile", "Mobile number");
-    const body = requireText(formData, "body", "Message");
+    const source = String(formData.get("source") ?? "").trim();
+    const isCompactFooter = source === "footer-compact";
     const email = String(formData.get("email") ?? "").trim();
-    assertValidPhone(mobile);
+    const name = isCompactFooter ? email || "Website visitor" : requireText(formData, "name", "Name");
+    const mobile = isCompactFooter ? "" : requireText(formData, "mobile", "Mobile number");
+    const body = requireText(formData, "body", "Message");
+    if (!isCompactFooter) {
+      assertValidPhone(mobile);
+    }
     if (email) {
       assertValidEmail(email);
+    } else if (isCompactFooter) {
+      throw new Error("Email is required.");
     }
     if (body.length < 10) {
       throw new Error("Message must be at least 10 characters.");
