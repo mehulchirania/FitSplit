@@ -382,7 +382,7 @@ export function MemberWorkoutConsole({
 
     setPendingEvent({
       confirmLabel: "Start workout",
-      message: "This will request GPS permission, verify gym check-in, and update live capacity.",
+      message: "This will request GPS permission, verify you are at the gym, and update live capacity.",
       title: "Start workout session?",
       run: async () => {
         const formData = new FormData();
@@ -531,7 +531,7 @@ export function MemberWorkoutConsole({
 
         <div className="workout-session-panel">
           <div>
-            <p className="eyebrow">Attendance proxy</p>
+            <p className="eyebrow">Workout session</p>
             <h2>{isActive ? "Workout in progress" : "Ready to train"}</h2>
             {isActive ? (
               <div style={{ display: "flex", alignItems: "center", gap: "12px", marginTop: "6px", flexWrap: "wrap" }}>

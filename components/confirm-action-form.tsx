@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
@@ -21,7 +22,8 @@ export function ConfirmActionForm({
   pendingLabel = "Saving...",
   style,
   submitClassName,
-  submitLabel
+  submitLabel,
+  successRedirect
 }: {
   action: ConfirmAction;
   cancelLabel?: string;
@@ -34,10 +36,13 @@ export function ConfirmActionForm({
   style?: CSSProperties;
   submitClassName?: string;
   submitLabel: string;
+  successRedirect?: string;
 }) {
   const [state, formAction, isPending] = useActionState(action, initialFormActionState);
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isConfirmedSubmit, setIsConfirmedSubmit] = useState(false);
+  const [dismissedMessage, setDismissedMessage] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
@@ -52,6 +57,7 @@ export function ConfirmActionForm({
     }
 
     event.preventDefault();
+    setDismissedMessage("");
 
     if (!event.currentTarget.reportValidity()) {
       return;
@@ -70,11 +76,6 @@ export function ConfirmActionForm({
     <>
       <form action={formAction} className={className} onSubmit={handleSubmit} ref={formRef} style={style}>
         {children}
-        {state.message ? (
-          <p className={`form-message form-message-${state.status}`} role="status">
-            {state.message}
-          </p>
-        ) : null}
         <button className={submitClassName ?? "button button-primary"} disabled={isPending} type="submit">
           {isPending ? pendingLabel : submitLabel}
         </button>
@@ -100,6 +101,33 @@ export function ConfirmActionForm({
               </button>
               <button className="button button-primary" onClick={confirmSubmit} type="button">
                 {confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {state.message && !isPending && dismissedMessage !== state.message ? (
+        <div className="dialog-backdrop" role="presentation">
+          <div aria-live="polite" aria-modal="true" className="confirm-dialog" role="dialog">
+            <h2>{state.status === "success" ? "Update complete" : "Update failed"}</h2>
+            <p className={`form-message form-message-${state.status}`}>{state.message}</p>
+            <div className="quick-actions">
+              <button
+                className="button button-primary"
+                onClick={() => {
+                  setDismissedMessage(state.message);
+                  if (state.status === "success") {
+                    if (successRedirect) {
+                      router.push(successRedirect);
+                    } else {
+                      router.refresh();
+                    }
+                  }
+                }}
+                type="button"
+              >
+                Done
               </button>
             </div>
           </div>

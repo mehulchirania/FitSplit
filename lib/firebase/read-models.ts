@@ -296,14 +296,13 @@ export async function getMembers(): Promise<{
       .collection(collectionPaths.profiles)
       .where("defaultGymId", "==", PRIMARY_GYM_ID)
       .where("role", "==", "member")
-      .where("isActive", "==", true)
       .get();
   } catch {
     return { members: mockMembers, isPersisted: false };
   }
 
   if (profileSnapshot.empty) {
-    return { members: mockMembers, isPersisted: false };
+    return { members: [], isPersisted: true };
   }
 
   const members: Member[] = profileSnapshot.docs.map((doc) => {

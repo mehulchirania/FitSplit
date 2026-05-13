@@ -17,14 +17,14 @@ const trainerItems = [
   "Create and manage workout programs",
   "Assign members to plans by trainer",
   "Review training activity and lift logs",
-  "Inbox messaging and attendance signals",
+  "Inbox messaging and training signals",
   "Injury notes visible to coaches",
   "Role-based staff access"
 ];
 
 const memberItems = [
   "View today's assigned workout",
-  "Start attendance from the app",
+  "Start workouts from the app",
   "Log sets, reps, and weights",
   "Track lift history and progress",
   "Simple mobile-first interface"
@@ -152,7 +152,7 @@ function LoginModal({
 
         window.scrollTo(0, 0);
         window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
-        window.location.assign(session.redirectUrl);
+        window.location.replace(session.redirectUrl);
       } catch (caughtError) {
         setError(authErrorMessage(caughtError));
       }
@@ -388,7 +388,7 @@ export function LandingPageClient() {
             <Activity />
             <span>Step 3</span>
             <h3>Track</h3>
-            <p>Review attendance, lift logs, and member progress in one view</p>
+            <p>Review lift logs, workout activity, and member progress in one view</p>
           </article>
         </div>
       </section>

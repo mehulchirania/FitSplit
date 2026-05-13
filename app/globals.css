@@ -321,13 +321,18 @@ html[data-theme="light"] .theme-logo-light {
 .back-row {
   margin: 0 auto;
   max-width: 1220px;
-  padding: 14px clamp(18px, 4vw, 56px) 0;
+  padding: 10px clamp(18px, 4vw, 56px) 0;
+  position: sticky;
+  top: 78px;
+  z-index: 35;
 }
 
 .back-button {
+  backdrop-filter: blur(18px);
   gap: 8px;
   min-height: 34px;
   padding: 7px 11px;
+  width: fit-content;
 }
 
 .back-button svg {
@@ -868,6 +873,47 @@ p {
   position: relative;
 }
 
+.app-profile-menu {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.topbar-gym-name {
+  color: var(--text-soft);
+  display: inline-block;
+  font-size: 0.84rem;
+  font-weight: 700;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-trigger {
+  align-items: center;
+  background: color-mix(in srgb, var(--brand) 22%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--brand) 36%, var(--border));
+  border-radius: 999px;
+  color: var(--text);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 850;
+  height: 42px;
+  justify-content: center;
+  min-width: 42px;
+  padding: 0 12px;
+  transition: border-color var(--fast), background-color var(--fast), transform var(--fast);
+}
+
+.profile-trigger:hover {
+  background: color-mix(in srgb, var(--brand) 30%, var(--bg-elevated));
+  transform: translateY(-1px);
+}
+
 .profile-dropdown {
   animation: dropdown-in 200ms var(--slow) both;
   background: var(--bg-elevated);
@@ -876,7 +922,7 @@ p {
   box-shadow: var(--shadow);
   display: grid;
   gap: 4px;
-  min-width: 190px;
+  min-width: 220px;
   padding: 8px;
   position: absolute;
   right: 0;
@@ -897,6 +943,11 @@ p {
   font-weight: 760;
   padding: 10px 12px;
   text-align: left;
+  width: 100%;
+}
+
+.profile-dropdown button {
+  color: var(--danger);
 }
 
 .profile-dropdown a:hover,
@@ -1415,6 +1466,82 @@ textarea {
 .selected-workout-day h2,
 .selected-workout-day p {
   margin: 0;
+}
+
+.assignment-options,
+.sort-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.assignment-options {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 4px 0;
+}
+
+.assignment-option {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  cursor: pointer;
+  display: grid;
+  gap: 8px;
+  min-height: 124px;
+  padding: 14px;
+  text-align: left;
+  transition: border-color var(--fast), background-color var(--fast), box-shadow var(--fast), transform var(--fast);
+}
+
+.assignment-option strong {
+  font-size: 1rem;
+}
+
+.assignment-option small {
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+.assignment-option:hover,
+.assignment-option.is-selected {
+  background: color-mix(in srgb, var(--brand-soft) 60%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--brand) 44%, var(--border));
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-1px);
+}
+
+.sort-tabs a {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 8px 10px;
+  text-decoration: none;
+}
+
+.sort-tabs a:hover,
+.sort-tabs a.is-selected {
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 38%, var(--border));
+  color: var(--brand-strong);
+}
+
+.inline-action-form {
+  display: inline-flex;
+  margin-top: 10px;
+}
+
+.danger-panel {
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
+}
+
+.button-danger {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
 }
 
 .app-footer {

@@ -33,25 +33,24 @@ export function ProgramAssignmentForm({
       <input name="memberId" type="hidden" value={member.id} />
       <input name="memberName" type="hidden" value={member.fullName} />
       <input name="programTitle" type="hidden" value={selectedProgram?.title ?? ""} />
-      <label>
-        Workout plan
-        <select
-          name="programId"
-          onChange={(event) => setSelectedProgramId(event.target.value)}
-          required
-          value={selectedProgramId}
-        >
-          {programs.map((program) => (
-            <option key={program.id} value={program.id}>
-              {program.title} - {program.days.length} days
-            </option>
-          ))}
-        </select>
-      </label>
-      <p>
-        Pick a plan from the catalog-backed workout templates. The assigned
-        weekly schedule appears immediately on the member dashboard.
-      </p>
+      <input name="programId" type="hidden" value={selectedProgramId} />
+      <div className="assignment-options" role="radiogroup" aria-label="Workout plans">
+        {programs.map((program) => (
+          <button
+            aria-checked={selectedProgramId === program.id}
+            className={selectedProgramId === program.id ? "assignment-option is-selected" : "assignment-option"}
+            key={program.id}
+            onClick={() => setSelectedProgramId(program.id)}
+            role="radio"
+            type="button"
+          >
+            <span className="status-pill status-neutral">{program.days.length} sessions</span>
+            <strong>{program.title}</strong>
+            <small>{program.goal}</small>
+          </button>
+        ))}
+      </div>
+      <p>The selected weekly schedule appears immediately on the member dashboard.</p>
     </ConfirmActionForm>
   );
 }

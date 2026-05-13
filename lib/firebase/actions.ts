@@ -6,7 +6,8 @@ import { requireAuth, requireRole } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
-import type { Role } from "@/types/domain";
+import type { Role, WorkoutProgram } from "@/types/domain";
+import { getWorkoutPrograms } from "@/lib/firebase/read-models";
 
 function requireFirebase() {
   if (!hasFirebaseAdminConfig()) {
@@ -55,6 +56,10 @@ function assertValidPin(pin: string) {
   if (!/^\d{4}$/.test(pin)) {
     throw new Error("PIN must be exactly 4 numeric digits.");
   }
+}
+
+function memberAuthEmail(memberId: string) {
+  return `${memberId}@members.fitsplit.app`;
 }
 
 async function upsertAuthUser(
@@ -392,23 +397,35 @@ export async function createMemberProfile(
     const { auth, db } = requireFirebaseServices();
     const memberId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
-    const email = requireText(formData, "email", "Email");
+    const email = requireText(formData, "email", "Email").toLowerCase();
     assertValidEmail(email);
+    const phone = String(formData.get("phone") ?? "").trim();
+    const goal = String(formData.get("goal") ?? "General fitness").trim() || "General fitness";
     const gymId = String(formData.get("gymId") ?? user.gymId ?? PRIMARY_GYM_ID).trim() || PRIMARY_GYM_ID;
     const now = new Date().toISOString();
+    const authEmail = memberAuthEmail(memberId);
 
     assertCanManageGym(user, gymId);
+
+    await upsertAuthUser(auth, {
+      email: authEmail,
+      fullName,
+      uid: memberId,
+      role: "member",
+      gymId,
+      isActive: true
+    }, "pin-1234");
 
     await db.collection(collectionPaths.profiles).doc(memberId).set({
       id: memberId,
       fullName,
       email,
-      authEmail: email.toLowerCase(),
-      username: email.toLowerCase(),
-      phone: String(formData.get("phone") ?? "").trim(),
+      authEmail,
+      username: phone || email,
+      phone,
       role: "member",
       defaultGymId: gymId,
-      goal: String(formData.get("goal") ?? "General fitness").trim(),
+      goal,
       avatarInitials: fullName
         .split(" ")
         .map((part) => part[0])
@@ -420,15 +437,6 @@ export async function createMemberProfile(
       createdAt: now,
       updatedAt: now
     });
-
-    await upsertAuthUser(auth, { 
-      email, 
-      fullName, 
-      uid: memberId, 
-      role: "member", 
-      gymId, 
-      isActive: true 
-    }, "pin-1234");
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -446,26 +454,32 @@ export async function updateMemberProfile(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    const user = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member");
     const fullName = requireText(formData, "fullName", "Full name");
-    const email = requireText(formData, "email", "Email");
+    const email = requireText(formData, "email", "Email").toLowerCase();
     assertValidEmail(email);
     const now = new Date().toISOString();
+    const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const existingProfile = profileDoc.data() ?? {};
+    const gymId = String(existingProfile.defaultGymId ?? user.gymId ?? PRIMARY_GYM_ID);
+    const authEmail = String(existingProfile.authEmail ?? memberAuthEmail(memberId));
+
+    assertCanManageGym(user, gymId);
 
     await db.collection(collectionPaths.profiles).doc(memberId).set(
       {
         id: memberId,
         fullName,
         email,
-        authEmail: email.toLowerCase(),
-        username: email.toLowerCase(),
+        authEmail,
+        username: String(formData.get("phone") ?? "").trim() || email,
         phone: String(formData.get("phone") ?? "").trim(),
         role: "member",
-        defaultGymId: PRIMARY_GYM_ID,
+        defaultGymId: gymId,
         goal: String(formData.get("goal") ?? "General fitness").trim(),
         avatarInitials: fullName
           .split(" ")
@@ -473,19 +487,18 @@ export async function updateMemberProfile(
           .join("")
           .slice(0, 2)
           .toUpperCase(),
-        isActive: true,
         updatedAt: now
       },
       { merge: true }
     );
 
     await upsertAuthUser(auth, { 
-      email, 
+      email: authEmail,
       fullName, 
       uid: memberId, 
       role: "member", 
-      gymId: PRIMARY_GYM_ID, 
-      isActive: true 
+      gymId, 
+      isActive: existingProfile.isActive !== false
     });
 
     revalidatePath("/owner");
@@ -581,6 +594,108 @@ export async function assignProgramToMember(
   } catch (error) {
     console.error("Unable to assign program to member", error);
     return failure(error, "Unable to assign workout program. Please try again.");
+  }
+}
+
+function pickProgramWithoutAi(programs: WorkoutProgram[], memberGoal: string) {
+  const goal = memberGoal.toLowerCase();
+
+  if (goal.includes("strength")) {
+    return programs.find((program) => program.title.toLowerCase().includes("ppl")) ?? programs[0];
+  }
+
+  if (goal.includes("fat") || goal.includes("loss") || goal.includes("weight")) {
+    return (
+      programs.find((program) => program.daysPerWeek <= 4) ??
+      programs.find((program) => program.splitType === "ppl_upper_lower") ??
+      programs[0]
+    );
+  }
+
+  if (goal.includes("muscle") || goal.includes("hypertrophy") || goal.includes("bulk")) {
+    return (
+      programs.find((program) => program.splitType === "ppl_x2") ??
+      programs.find((program) => program.splitType === "combo_x2") ??
+      programs[0]
+    );
+  }
+
+  return programs.find((program) => program.splitType === "ppl_upper_lower") ?? programs[0];
+}
+
+async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: string) {
+  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GEMINI_API_KEY;
+
+  if (!apiKey) {
+    return pickProgramWithoutAi(programs, memberGoal);
+  }
+
+  const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+  const prompt = [
+    "Pick the best FitSplit workout program id for this gym member.",
+    "Return only one exact id from the list. No markdown.",
+    `Member goal: ${memberGoal || "General fitness"}`,
+    "Programs:",
+    ...programs.map((program) =>
+      `- ${program.id}: ${program.title}; goal=${program.goal}; days=${program.daysPerWeek}; difficulty=${program.difficulty}; split=${program.splitType}`
+    )
+  ].join("\n");
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+      {
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { maxOutputTokens: 32, temperature: 0.2 }
+        }),
+        headers: { "Content-Type": "application/json" },
+        method: "POST"
+      }
+    );
+
+    if (!response.ok) {
+      return pickProgramWithoutAi(programs, memberGoal);
+    }
+
+    const payload = (await response.json()) as {
+      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+    };
+    const text = payload.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
+    const selectedId = text.replace(/[`"' ]/g, "");
+    return programs.find((program) => program.id === selectedId) ?? pickProgramWithoutAi(programs, memberGoal);
+  } catch (error) {
+    console.warn("Gemini program selection failed; using fallback.", error);
+    return pickProgramWithoutAi(programs, memberGoal);
+  }
+}
+
+export async function generateAndAssignProgram(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin", "owner"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const memberId = requireText(formData, "memberId", "Member");
+    const memberName = requireText(formData, "memberName", "Member name");
+    const memberGoal = String(formData.get("memberGoal") ?? "General fitness").trim();
+    const { programs } = await getWorkoutPrograms();
+    const selectedProgram = await pickProgramWithGemini(programs, memberGoal);
+
+    if (!selectedProgram) {
+      throw new Error("No workout programs are available to assign.");
+    }
+
+    const assignmentData = new FormData();
+    assignmentData.set("memberId", memberId);
+    assignmentData.set("memberName", memberName);
+    assignmentData.set("programId", selectedProgram.id);
+    assignmentData.set("programTitle", selectedProgram.title);
+    return assignProgramToMember(previousStateOrFormData, assignmentData);
+  } catch (error) {
+    console.error("Unable to generate and assign program", error);
+    return failure(error, "Unable to generate a workout assignment.");
   }
 }
 
@@ -778,7 +893,11 @@ export async function toggleMemberAccess(
       updatedAt: new Date().toISOString()
     });
     
-    await auth.updateUser(memberId, { disabled: !isActive });
+    try {
+      await auth.updateUser(memberId, { disabled: !isActive });
+    } catch (error) {
+      console.warn("Member auth access update skipped", error);
+    }
     
     revalidatePath("/owner/members");
     revalidatePath(`/owner/members/${memberId}`);
@@ -786,6 +905,44 @@ export async function toggleMemberAccess(
     return success(`Member access ${isActive ? "enabled" : "disabled"}.`);
   } catch (error) {
     return failure(error, "Unable to toggle member access.");
+  }
+}
+
+export async function deleteMemberProfile(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const user = await requireRole(["admin", "owner"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth, db } = requireFirebaseServices();
+    const memberId = requireText(formData, "memberId", "Member ID");
+    const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const data = profileDoc.data();
+
+    if (!profileDoc.exists || data?.role !== "member") {
+      throw new Error("Member profile was not found.");
+    }
+
+    const gymId = String(data.defaultGymId ?? PRIMARY_GYM_ID);
+    assertCanManageGym(user, gymId);
+
+    await db.collection(collectionPaths.profiles).doc(memberId).delete();
+
+    try {
+      await auth.deleteUser(memberId);
+    } catch (error) {
+      console.warn("Member auth user delete skipped", error);
+    }
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${memberId}`);
+
+    return success(`${String(data.fullName ?? "Member")} was deleted.`);
+  } catch (error) {
+    console.error("Unable to delete member", error);
+    return failure(error, "Unable to delete member.");
   }
 }
 

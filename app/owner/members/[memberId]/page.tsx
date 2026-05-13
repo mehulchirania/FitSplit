@@ -1,14 +1,18 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Dumbbell, Calendar } from "@/components/icons";
+import { Dumbbell, X } from "@/components/icons";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
-import { AttendanceCalendar } from "@/components/attendance-calendar";
 import { requireRole } from "@/lib/auth";
-import { updateMemberProfile, resetPassword, toggleMemberAccess } from "@/lib/firebase/actions";
 import {
-  getAttendanceRecords,
+  deleteMemberProfile,
+  generateAndAssignProgram,
+  resetPassword,
+  toggleMemberAccess,
+  updateMemberProfile
+} from "@/lib/firebase/actions";
+import {
   getExerciseCatalog,
   getMemberDetail,
   getProgramAssignmentForMember,
@@ -29,14 +33,12 @@ export default async function MemberDetailPage({
     { member },
     { assignment },
     { programs },
-    { exercises },
-    { records: attendanceRecords }
+    { exercises }
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
     getWorkoutPrograms(),
-    getExerciseCatalog(),
-    getAttendanceRecords(memberId)
+    getExerciseCatalog()
   ]);
 
   if (!member) {
@@ -59,9 +61,6 @@ export default async function MemberDetailPage({
           <div className="quick-actions">
             <Link className="button button-primary" href="/owner/members">
               Back to members
-            </Link>
-            <Link className="button button-secondary" href="/owner/programs">
-              Assign program
             </Link>
           </div>
         </div>
@@ -141,9 +140,18 @@ export default async function MemberDetailPage({
             Goals and constraints
             <textarea defaultValue={`${member.goal}. 3 days per week. No injuries reported.`} />
           </label>
-          <button className="button button-secondary" type="button">
-            Generate draft later
-          </button>
+          <ConfirmActionForm
+            action={generateAndAssignProgram}
+            className="inline-action-form"
+            confirmMessage="Gemini will review this member goal against saved workout programs, pick a default program, and assign it."
+            confirmTitle="Generate and assign program?"
+            pendingLabel="Generating..."
+            submitLabel="Generate"
+          >
+            <input name="memberId" type="hidden" value={member.id} />
+            <input name="memberName" type="hidden" value={member.fullName} />
+            <input name="memberGoal" type="hidden" value={member.goal} />
+          </ConfirmActionForm>
         </aside>
         
         <ConfirmActionForm
@@ -183,18 +191,28 @@ export default async function MemberDetailPage({
             <input inputMode="numeric" name="newPin" pattern="\d{4}" defaultValue="1234" maxLength={4} required />
           </label>
         </ConfirmActionForm>
+
+        <ConfirmActionForm
+          action={deleteMemberProfile}
+          className="form-panel danger-panel"
+          confirmMessage="This permanently deletes the member profile and disables their app access."
+          confirmTitle="Delete this member?"
+          pendingLabel="Deleting member..."
+          submitClassName="button button-danger"
+          submitLabel="Delete member"
+          successRedirect="/owner/members"
+        >
+          <h2>
+            <X /> Delete member
+          </h2>
+          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
+            Remove this member only when the profile was created by mistake or is no longer needed.
+          </p>
+          <input name="memberId" type="hidden" value={member.id} />
+        </ConfirmActionForm>
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>
-        <div className="list-panel">
-          <div className="panel-title">
-            <h2>
-              <Calendar /> Attendance history
-            </h2>
-          </div>
-          <AttendanceCalendar records={attendanceRecords} />
-        </div>
-
         {program ? (
           <div className="list-panel">
             <div className="panel-title">

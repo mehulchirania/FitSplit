@@ -97,7 +97,7 @@ export function LoginForm() {
 
         window.scrollTo(0, 0);
         window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
-        window.location.assign(session.redirectUrl);
+        window.location.replace(session.redirectUrl);
       } catch (caughtError) {
         setError(authErrorMessage(caughtError));
       }

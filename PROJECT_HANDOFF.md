@@ -16,6 +16,19 @@
 
 ## Latest Update - 2026-05-13: Login Enter Key + Reset Request UX
 
+- Follow-up: corrected member management UX:
+  - logged-in users visiting `/` are redirected to their role dashboard, and login now uses history replacement so browser Back does not return them to the landing page.
+  - Back button now routes to the role/top-level page instead of raw browser history.
+  - profile/logout dropdown styling was aligned with the app UI.
+  - member creation now preserves form values on errors and only clears after success.
+  - member creation validates before Firestore persistence and uses generated member Auth emails so multiple members can share the same contact email.
+  - inactive members remain visible in the members list, and profile edits no longer reactivate suspended members.
+  - member Active/Inactive toggles were repaired for list and detail pages.
+  - program assignment was moved into selectable cards on the member detail page.
+  - AI program brief now has a Generate action that uses Gemini when configured and falls back to a deterministic saved-program match.
+  - attendance calendar panels and attendance copy were removed from member/owner-facing pages.
+  - member detail now includes a delete member action.
+  - members list now supports sorting by name, newest, oldest, active, and inactive.
 - Follow-up: regenerated FitSplit favicon/PWA icon assets as transparent logo-mark files and bumped manifest/favicon versions to clear stale browser-tab icon caching.
 - Fixed login form keyboard behavior so pressing Enter from username/password fields submits the login form.
 - Added "Forgot password?" to both active login experiences:

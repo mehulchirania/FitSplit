@@ -1,12 +1,10 @@
-import { Bell, Dumbbell, Calendar } from "@/components/icons";
+import { Bell, Dumbbell } from "@/components/icons";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { NotificationList } from "@/components/notification-list";
 import { EditableMetrics } from "@/components/editable-metrics";
-import { AttendanceCalendar } from "@/components/attendance-calendar";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
-  getAttendanceRecords,
   getExerciseCatalog,
   getLiftLogsForMember,
   getMemberDetail,
@@ -29,8 +27,7 @@ export default async function MemberDashboard() {
     { notifications: memberNotifications },
     { liftLogs },
     { exercises },
-    { sessions },
-    { records: attendanceRecords }
+    { sessions }
   ] = await Promise.all([
     getPrimaryWorkspace(),
     getMemberDetail(currentMemberId),
@@ -39,8 +36,7 @@ export default async function MemberDashboard() {
     getMemberNotifications(currentMemberId),
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(),
-    getActiveWorkoutSessions(),
-    getAttendanceRecords(currentMemberId)
+    getActiveWorkoutSessions()
   ]);
 
   if (!member) {
@@ -48,11 +44,6 @@ export default async function MemberDashboard() {
   }
 
   const program = programs.find((item) => item.id === assignment?.programId) ?? programs[0];
-  const attendanceCount = attendanceRecords.filter(r => {
-    const d = new Date(r.checkInAt);
-    const now = new Date();
-    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-  }).length;
 
   return (
     <main className="page">
@@ -67,10 +58,6 @@ export default async function MemberDashboard() {
           <article className="ui-card blue">
             <p className="tip" style={{ fontSize: "1.2em" }}><Dumbbell /> {program.title}</p>
             <p className="second-text">Assigned Program</p>
-          </article>
-          <article className="ui-card green">
-            <p className="tip" style={{ fontSize: "1.2em" }}><Calendar /> {attendanceCount} days</p>
-            <p className="second-text">Monthly Attendance</p>
           </article>
         </aside>
       </section>
@@ -91,15 +78,6 @@ export default async function MemberDashboard() {
             </h2>
           </div>
           <NotificationList items={memberNotifications} />
-        </aside>
-
-        <aside className="list-panel">
-          <div className="panel-title">
-            <h2>
-              <Calendar /> Attendance
-            </h2>
-          </div>
-          <AttendanceCalendar records={attendanceRecords} />
         </aside>
       </section>
     </main>

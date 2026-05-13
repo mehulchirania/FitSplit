@@ -27,7 +27,7 @@ const slides = [
   {
     eyebrow: "Live capacity",
     title: "See the gym floor in motion.",
-    body: "Start and end workout sessions become a simple attendance proxy, showing members how busy the gym is and owners when peaks happen.",
+    body: "Start and end workout sessions show members how busy the gym is and help owners spot peak training times.",
     image:
       "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1300&q=80"
   },

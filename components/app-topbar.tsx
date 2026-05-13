@@ -120,7 +120,7 @@ export function AppTopbar({
               }} />
             )}
           </button>
-          <Link className="brand" href="/">
+          <Link className="brand" href={role === "admin" ? "/admin" : role === "owner" ? "/owner" : role === "member" ? "/member" : "/"}>
             <span className="brand-logo-lockup" aria-hidden="true">
               <span className="theme-logo brand-icon-wrap">
                 <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
@@ -138,17 +138,16 @@ export function AppTopbar({
 
         <MainNav role={role} />
 
-        <div className="profile-menu" ref={profileRef} style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: "10px" }}>
+        <div className="profile-menu app-profile-menu" ref={profileRef}>
           {gymName && (
-            <span className="topbar-gym-name" style={{ fontSize: "0.84rem", color: "var(--text-soft)", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>{gymName}</span>
+            <span className="topbar-gym-name">{gymName}</span>
           )}
           <button
             aria-expanded={isProfileOpen}
             aria-label="Open profile menu"
-            className="icon-button neutral-icon-button"
+            className="profile-trigger"
             onClick={() => setIsProfileOpen((current) => !current)}
             type="button"
-            style={{ borderRadius: "50%", background: "var(--primary)", color: "var(--primary-foreground)", fontWeight: 600, fontSize: "1rem" }}
           >
             {initials ? initials : <UserRound />}
           </button>
@@ -161,7 +160,6 @@ export function AppTopbar({
                 disabled={isLoggingOut}
                 onClick={handleLogout}
                 type="button"
-                style={{ width: "100%", textAlign: "left", background: "none", border: "none", padding: 0, color: "var(--danger)", cursor: "pointer" }}
               >
                 {isLoggingOut ? "Logging out..." : "Log Out"}
               </button>

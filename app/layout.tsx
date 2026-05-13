@@ -92,7 +92,7 @@ export default async function RootLayout({
             role={currentUser?.role}
             unreadInboxCount={unreadInboxCount}
           />
-          <BackButton />
+          <BackButton role={currentUser?.role} />
           {children}
           {currentUser?.role === "member" && <AppFooter />}
           <MobileBottomNav role={currentUser?.role} />
