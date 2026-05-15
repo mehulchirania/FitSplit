@@ -13,28 +13,60 @@ const initialContactState: FormActionState = {
   message: ""
 };
 
-const trainerItems = [
-  "Create and manage workout programs",
-  "Assign members to plans by trainer",
-  "Review training activity and lift logs",
-  "Inbox messaging and training signals",
-  "Injury notes visible to coaches",
-  "Role-based staff access"
+const valueCards = [
+  {
+    title: "Assign workouts faster",
+    body: "Pick a saved split, select a member, and keep training delivery consistent."
+  },
+  {
+    title: "Keep training structured",
+    body: "Members get a clear weekly plan instead of scattered notes and chat messages."
+  },
+  {
+    title: "Reduce trainer confusion",
+    body: "Owners and trainers work from the same exercise catalog, programs, and member records."
+  },
+  {
+    title: "Give members a cleaner app",
+    body: "Today's workout, exercises, and lift logging stay focused on what they need in the gym."
+  }
 ];
 
-const memberItems = [
-  "View today's assigned workout",
-  "Start workouts from the app",
-  "Log sets, reps, and weights",
-  "Track lift history and progress",
-  "Simple mobile-first interface"
+const workflowSteps = [
+  ["Create plans", "Build reusable workout splits from your exercise catalog."],
+  ["Assign members", "Choose the right plan for an individual member in seconds."],
+  ["Members follow workouts", "Members open their app and follow the day's assigned training."],
+  ["Track progress", "Review lift logs, completion signals, and training history clearly."]
 ];
 
-const previewStats = [
-  ["Live check-ins", "18 active now"],
-  ["PPL x2 assigned", "6 day split"],
-  ["Members by trainer", "5 updates today"],
-  ["Weekly consistency", "86% completion"]
+const audienceCards = [
+  "Independent gyms",
+  "Personal trainers",
+  "Strength gyms",
+  "Semi-personal training setups"
+];
+
+const previewCards = [
+  {
+    body: "Trainer selects a member and applies a saved workout split.",
+    title: "Assign workouts in seconds",
+    type: "assignment"
+  },
+  {
+    body: "A clean mobile workout view for today's exercises.",
+    title: "Members see only what matters",
+    type: "mobile"
+  },
+  {
+    body: "Lift history keeps progressive overload visible.",
+    title: "Track progress clearly",
+    type: "progress"
+  },
+  {
+    body: "Simple action lists help owners see who needs a plan.",
+    title: "Built for real gyms",
+    type: "owner"
+  }
 ];
 
 function authErrorMessage(error: unknown) {
@@ -328,100 +360,110 @@ export function LandingPageClient() {
       <section className="fs3-hero">
         <div className="fs3-hero-copy">
           <p className="fs3-eyebrow">Workout management for gyms</p>
-          <h1>Train members with clarity, consistency, and control.</h1>
+          <h1>Deliver structured workouts to every member.</h1>
           <p>
-            FitSplit gives gym owners and trainers one workspace to create plans, assign members,
-            and track progress from one clean workspace.
+            FitSplit helps gyms assign plans, guide members, and track training progress without
+            complicated systems.
           </p>
           <div className="fs3-hero-actions">
+            <button className="fs3-button fs3-button-primary" onClick={openLogin} type="button">
+              Login
+            </button>
             <a className="fs3-text-link" href="#features">
               See how it works <span aria-hidden="true">-&gt;</span>
             </a>
           </div>
         </div>
 
-        <article className="fs3-product-card" aria-label="Trainer command preview">
-          <div className="fs3-card-topline">
-            <span>Trainer Command</span>
-            <em>Live</em>
+        <article className="fs3-hero-mockup" aria-label="Workout assignment preview">
+          <div className="fs3-mockup-toolbar">
+            <span>Assign workout</span>
+            <em>Trainer workspace</em>
           </div>
-          <div className="fs3-stat-grid">
+          <div className="fs3-assignment-panel">
             <div>
-              <span>Active members</span>
-              <strong>38</strong>
+              <span>Member</span>
+              <strong>Rahul Sharma</strong>
+              <small>Goal: Muscle gain</small>
             </div>
             <div>
-              <span>Plans assigned</span>
-              <strong>24</strong>
-            </div>
-            <div>
-              <span>Training now</span>
-              <strong>18</strong>
+              <span>Workout split</span>
+              <strong>PPL Upper Lower</strong>
+              <small>Structured weekly plan</small>
             </div>
           </div>
-          <div className="fs3-plan-preview">
-            <span>Today's plan</span>
-            <strong>Push Strength</strong>
-            <p>Incline press / shoulder press / triceps</p>
+          <div className="fs3-day-preview">
+            <span>Today's workout</span>
+            <h3>Push Strength</h3>
+            <ul>
+              <li>Incline dumbbell press</li>
+              <li>Shoulder press</li>
+              <li>Triceps rope pushdown</li>
+            </ul>
           </div>
         </article>
       </section>
 
-      <section className="fs3-section fs3-how">
+      <section className="fs3-section fs3-value">
         <div className="fs3-section-heading">
-          <h2>Built around how gyms actually work.</h2>
+          <p className="fs3-eyebrow">Why gyms use FitSplit</p>
+          <h2>Simple workout delivery for real training floors.</h2>
+          <p>FitSplit keeps plans, members, and progress in one focused system for the people running training.</p>
         </div>
-        <div className="fs3-step-grid">
-          <article>
-            <Dumbbell />
-            <span>Step 1</span>
-            <h3>Create</h3>
-            <p>Build structured workout plans with exercises, sets, and progressions</p>
-          </article>
-          <article>
-            <UsersRound />
-            <span>Step 2</span>
-            <h3>Assign</h3>
-            <p>Assign plans to individual members or groups in seconds</p>
-          </article>
-          <article>
-            <Activity />
-            <span>Step 3</span>
-            <h3>Track</h3>
-            <p>Review lift logs, workout activity, and member progress in one view</p>
-          </article>
+        <div className="fs3-value-grid">
+          {valueCards.map((card) => (
+            <article key={card.title}>
+              <h3>{card.title}</h3>
+              <p>{card.body}</p>
+            </article>
+          ))}
         </div>
       </section>
 
-      <section className="fs3-section fs3-features" id="features">
+      <section className="fs3-section fs3-how" id="features">
         <div className="fs3-section-heading">
-          <h2>Everything important, grouped by how gyms actually work.</h2>
+          <p className="fs3-eyebrow">How it works</p>
+          <h2>From trainer plan to member workout in four clear steps.</h2>
         </div>
-        <div className="fs3-feature-columns">
-          <article>
-            <div className="fs3-feature-title">
-              <UsersRound />
-              <h3>For Trainers & Owners</h3>
-            </div>
-            <ul>
-              {trainerItems.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </article>
-          <article>
-            <div className="fs3-feature-title">
-              <Dumbbell />
-              <h3>For Members</h3>
-            </div>
-            <ul>
-              {memberItems.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </article>
+        <div className="fs3-step-grid">
+          {workflowSteps.map(([title, body], index) => (
+            <article key={title}>
+              {index === 0 ? <Dumbbell /> : index === 1 ? <UsersRound /> : <Activity />}
+              <span>0{index + 1}</span>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>
+          ))}
         </div>
-        <div className="fs3-preview-row">
-          {previewStats.map(([label, value]) => (
-            <article key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
+      </section>
+
+      <section className="fs3-section fs3-audience">
+        <div className="fs3-section-heading">
+          <p className="fs3-eyebrow">Who it is for</p>
+          <h2>Made for gyms that deliver coaching, not just access.</h2>
+        </div>
+        <div className="fs3-audience-grid">
+          {audienceCards.map((item) => (
+            <article key={item}>{item}</article>
+          ))}
+        </div>
+      </section>
+
+      <section className="fs3-section fs3-previews">
+        <div className="fs3-section-heading">
+          <p className="fs3-eyebrow">Product workflows</p>
+          <h2>Clean screens for the moments that matter.</h2>
+        </div>
+        <div className="fs3-preview-grid">
+          {previewCards.map((card) => (
+            <article className={`fs3-workflow-card fs3-workflow-${card.type}`} key={card.title}>
+              <div className="fs3-mini-screen" aria-hidden="true">
+                <span />
+                <span />
+                <span />
+              </div>
+              <h3>{card.title}</h3>
+              <p>{card.body}</p>
             </article>
           ))}
         </div>
@@ -429,6 +471,7 @@ export function LandingPageClient() {
 
       <section className="fs3-section fs3-partners" id="partners">
         <div className="fs3-section-heading">
+          <p className="fs3-eyebrow">Partners</p>
           <h2>Trusted by focused fitness communities.</h2>
         </div>
         <article className="fs3-partner-card">
@@ -449,13 +492,7 @@ export function LandingPageClient() {
             <LogoMark />
             <span>FitSplit</span>
           </div>
-          <p>Workout delivery, member progress, and trainer coordination in one focused workspace.</p>
-        </div>
-
-        <div className="fs3-footer-stats" aria-label="FitSplit proof points">
-          <div><strong>86%</strong><span>weekly workout completion visibility</span></div>
-          <div><strong>2 min</strong><span>average time to assign a plan</span></div>
-          <div><strong>1</strong><span>workspace for trainers, members, and admins</span></div>
+          <p>Workout delivery, member progress, and trainer coordination in one focused workspace for gyms.</p>
         </div>
 
         <form action={contactAction} className="fs3-footer-contact">

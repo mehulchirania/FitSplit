@@ -16,6 +16,14 @@
 
 ## Latest Update - 2026-05-13: Login Enter Key + Reset Request UX
 
+- Follow-up on 2026-05-15: refined the public landing page into a cleaner premium product showcase:
+  - removed the old Trainer Command hero widget and fake dashboard/stat cards.
+  - changed hero copy to "Deliver structured workouts to every member."
+  - added outcome-focused "Why gyms use FitSplit" cards.
+  - simplified the workflow to Create plans, Assign members, Members follow workouts, Track progress.
+  - added realistic workflow preview cards for assignment, member workout view, progress, and owner actions.
+  - kept the SHG partner section calm and static.
+  - compacted the footer/contact area while preserving the Firestore-backed contact action and login modal.
 - Follow-up: corrected member management UX:
   - logged-in users visiting `/` are redirected to their role dashboard, and login now uses history replacement so browser Back does not return them to the landing page.
   - Back button now routes to the role/top-level page instead of raw browser history.

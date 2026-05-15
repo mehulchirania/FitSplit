@@ -7282,3 +7282,355 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
     padding: 22px;
   }
 }
+
+/* FitSplit focused landing refinement */
+.fs3-landing {
+  background:
+    radial-gradient(circle at 50% 0%, rgb(34 197 94 / 0.10), transparent 28rem),
+    linear-gradient(180deg, #111111 0%, #0f0f0f 48%, #111111 100%);
+}
+
+.fs3-hero {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.72fr);
+  min-height: calc(100svh - 76px);
+}
+
+.fs3-hero h1 {
+  font-size: clamp(3rem, 6vw, 5.9rem);
+  max-width: 820px;
+}
+
+.fs3-hero-copy > p:not(.fs3-eyebrow) {
+  max-width: 590px;
+}
+
+.fs3-hero-mockup,
+.fs3-value-grid article,
+.fs3-audience-grid article,
+.fs3-workflow-card {
+  background: linear-gradient(180deg, rgb(26 26 26 / 0.92), rgb(15 15 15 / 0.94));
+  border: 1px solid var(--fs3-border);
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.24);
+}
+
+.fs3-hero-mockup {
+  border-radius: 32px;
+  display: grid;
+  gap: 16px;
+  padding: clamp(18px, 3vw, 28px);
+}
+
+.fs3-mockup-toolbar {
+  align-items: center;
+  border-bottom: 1px solid var(--fs3-border);
+  display: flex;
+  justify-content: space-between;
+  padding: 0 2px 16px;
+}
+
+.fs3-mockup-toolbar span,
+.fs3-assignment-panel strong,
+.fs3-day-preview h3 {
+  color: #fff;
+}
+
+.fs3-mockup-toolbar span,
+.fs3-assignment-panel strong {
+  font-weight: 900;
+}
+
+.fs3-mockup-toolbar em,
+.fs3-assignment-panel span,
+.fs3-assignment-panel small,
+.fs3-day-preview span {
+  color: var(--fs3-soft);
+  font-style: normal;
+}
+
+.fs3-assignment-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.fs3-assignment-panel div,
+.fs3-day-preview {
+  background: rgb(255 255 255 / 0.035);
+  border: 1px solid var(--fs3-border);
+  border-radius: 20px;
+  padding: 16px;
+}
+
+.fs3-assignment-panel span,
+.fs3-day-preview span {
+  display: block;
+  font-size: 0.74rem;
+  font-weight: 850;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fs3-assignment-panel strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-top: 8px;
+}
+
+.fs3-assignment-panel small {
+  display: block;
+  margin-top: 5px;
+}
+
+.fs3-day-preview h3 {
+  font-size: 1.5rem;
+  letter-spacing: -0.025em;
+  margin: 10px 0 14px;
+}
+
+.fs3-day-preview ul {
+  display: grid;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.fs3-day-preview li {
+  background: #101010;
+  border: 1px solid var(--fs3-border);
+  border-radius: 14px;
+  color: var(--fs3-muted);
+  padding: 11px 12px;
+}
+
+.fs3-section-heading p:not(.fs3-eyebrow) {
+  color: var(--fs3-muted);
+  line-height: 1.65;
+  margin: 14px 0 0;
+}
+
+.fs3-value-grid,
+.fs3-audience-grid,
+.fs3-preview-grid {
+  display: grid;
+  gap: 16px;
+}
+
+.fs3-value-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fs3-value-grid article,
+.fs3-workflow-card {
+  border-radius: 24px;
+  padding: 24px;
+}
+
+.fs3-value-grid h3,
+.fs3-workflow-card h3 {
+  color: #fff;
+  font-size: 1.08rem;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.fs3-value-grid p,
+.fs3-workflow-card p {
+  color: var(--fs3-muted);
+  line-height: 1.65;
+  margin: 12px 0 0;
+}
+
+.fs3-step-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fs3-audience-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fs3-audience-grid article {
+  border-radius: 999px;
+  color: #fff;
+  font-weight: 850;
+  padding: 16px 18px;
+  text-align: center;
+}
+
+.fs3-previews {
+  background: #101010;
+  border-block: 1px solid var(--fs3-border);
+  max-width: none;
+}
+
+.fs3-previews > * {
+  margin-inline: auto;
+  max-width: 1180px;
+}
+
+.fs3-preview-grid {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.fs3-workflow-card {
+  min-height: 280px;
+}
+
+.fs3-mini-screen {
+  background: #0b0b0b;
+  border: 1px solid var(--fs3-border);
+  border-radius: 22px;
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+  min-height: 138px;
+  padding: 16px;
+}
+
+.fs3-mini-screen span {
+  background: rgb(255 255 255 / 0.08);
+  border-radius: 999px;
+  display: block;
+  height: 12px;
+}
+
+.fs3-mini-screen span:first-child {
+  background: var(--fs3-accent);
+  height: 34px;
+  width: 72%;
+}
+
+.fs3-mini-screen span:nth-child(2) {
+  width: 88%;
+}
+
+.fs3-mini-screen span:nth-child(3) {
+  width: 58%;
+}
+
+.fs3-workflow-mobile .fs3-mini-screen {
+  border-radius: 28px;
+  margin-inline: auto;
+  max-width: 150px;
+  min-height: 190px;
+}
+
+.fs3-workflow-progress .fs3-mini-screen {
+  align-items: end;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.fs3-workflow-progress .fs3-mini-screen span {
+  height: 44px;
+}
+
+.fs3-workflow-progress .fs3-mini-screen span:first-child {
+  height: 74px;
+  width: auto;
+}
+
+.fs3-workflow-progress .fs3-mini-screen span:nth-child(2) {
+  height: 102px;
+  width: auto;
+}
+
+.fs3-workflow-progress .fs3-mini-screen span:nth-child(3) {
+  height: 126px;
+  width: auto;
+}
+
+.fs3-footer {
+  grid-template-columns: minmax(220px, 0.9fr) minmax(280px, 0.8fr);
+}
+
+.fs3-footer-contact {
+  justify-self: end;
+  max-width: 440px;
+  width: 100%;
+}
+
+.fs3-bottom-bar {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 1080px) {
+  .fs3-value-grid,
+  .fs3-preview-grid,
+  .fs3-step-grid,
+  .fs3-audience-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 960px) {
+  .fs3-hero {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .fs3-hero-mockup {
+    max-width: 620px;
+  }
+}
+
+@media (max-width: 640px) {
+  .fs3-navbar {
+    position: sticky;
+  }
+
+  .fs3-nav-actions .fs3-button-primary,
+  .fs3-menu-button {
+    left: auto;
+    position: static;
+    right: auto;
+    top: auto;
+    width: auto;
+  }
+
+  .fs3-menu-button {
+    width: 42px;
+  }
+
+  .fs3-hero {
+    padding: 56px 16px 74px;
+    text-align: left;
+  }
+
+  .fs3-hero h1,
+  .fs3-hero-copy,
+  .fs3-hero-copy > p:not(.fs3-eyebrow) {
+    max-width: none;
+  }
+
+  .fs3-hero h1 {
+    font-size: clamp(2.5rem, 11vw, 3.35rem);
+  }
+
+  .fs3-hero-actions {
+    align-items: stretch;
+    display: grid;
+    gap: 12px;
+  }
+
+  .fs3-hero-actions .fs3-button,
+  .fs3-text-link {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .fs3-value-grid,
+  .fs3-preview-grid,
+  .fs3-step-grid,
+  .fs3-audience-grid,
+  .fs3-footer {
+    grid-template-columns: 1fr;
+  }
+
+  .fs3-workflow-card {
+    min-height: auto;
+  }
+
+  .fs3-footer-contact {
+    justify-self: stretch;
+    max-width: none;
+  }
+}
