@@ -10,6 +10,75 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Current Source Of Truth
+
+This section supersedes older contradictory notes in the historical change log below.
+
+FitSplit is currently an SHG-focused workout delivery app for **Sri Shakthi Hanuman Gym (SHG Gym)**. The second `Dummy-Gym` workspace exists only for admin testing.
+
+Current product focus:
+
+- Workout plan creation and assignment.
+- Member workout delivery.
+- Lift logging and progress tracking.
+- Trainer/owner coordination.
+- Admin contact inbox and gym/staff management.
+- AI-assisted semi-personal trainer workflow.
+
+Current technical baseline:
+
+- Next.js App Router, React 19, TypeScript.
+- Firebase Auth email/password with server-side credential resolution.
+- Firebase Admin session cookies and server-side role guards.
+- Cloud Firestore as the app data source.
+- Firebase App Hosting for deployment.
+- PWA basics: manifest, service worker, icons, and install prompt.
+- Gemini API hooks for AI workout/program suggestions when configured.
+- Mock fallback data remains in `lib/mock-data.ts` and `lib/workouts.json` when Firebase Admin is unavailable.
+
+Current route behavior:
+
+- Unauthenticated `/` renders the public landing page with modal login.
+- Authenticated `/` redirects by role: admin -> `/admin`, owner -> `/owner`, member -> `/member`.
+- Authenticated app chrome/footer must not leak into the public landing page.
+
+Current IDs and credentials:
+
+- SHG gym id: `shg`
+- SHG owner username/id: `santosh-shg`
+- Dummy gym id: `dummy-gym`
+- Dummy owner username/id: `dummy-gym-owner-1`
+- Admin profile id: `admin-fitsplit`
+- Admin login: `admin` / `password`
+- Owner login: `santosh-shg` / `password`
+- Trainers: `shg-trainer-1` / `password`, `shg-trainer-2` / `password`
+- Members: `mehulchirania` / `1234`, `9688227039` / `1234`, `mehul@example.com` / `1234`, `aarav@example.com` / `1234`
+
+Explicitly out of scope unless re-approved:
+
+- In-workout rest timer. It was requested earlier, then later removed from the product requirements.
+- Membership renewal UI. FitSplit no longer syncs with the external membership app.
+- Public landing copy that says FitSplit does not do billing. Billing is now a future roadmap item, not a public limitation message.
+
+Recommended next work:
+
+1. Fix authenticated topbar branding and move SHG identity into the drawer.
+2. Polish member dashboard mobile layout and exercise cards.
+3. Add log-set success feedback and empty lift-history states.
+4. Clean `globals.css` by splitting active styles from archived/legacy landing iterations.
+5. Audit server actions for explicit role checks.
+
+---
+
+## Latest Update - 2026-05-17: Documentation baseline cleanup
+
+- Added this `Current Source Of Truth` section to make the handoff reliable at a glance.
+- Clarified current route behavior, active credentials, product focus, and explicit out-of-scope items.
+- Left older dated entries below as archive/history, even where older notes conflict with the current source of truth.
+- README should remain the shorter public/current reference; this file remains the deeper operational handoff.
+
+---
+
 ## Context
 
 FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** members and staff. It is not a generic multi-gym SaaS product. All features, copy, and UX decisions should reflect that single-gym context. The second "Dummy Gym" workspace exists only for admin testing.
@@ -47,7 +116,6 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
 
 - [ ] **Progress charts** — line chart of weight lifted over time per exercise, using existing lift log data. Most important member-facing feature. Use a lightweight chart lib (e.g. Recharts or Chart.js).
 - [ ] **Streak / consistency tracker** — number of days trained this week and this month, shown prominently in the member hero. Derived from lift log timestamps.
-- [ ] **Rest timer** — after logging a set, start a configurable countdown (60 / 90 / 120s) with audio cue. Stays visible while browsing exercises.
 - [ ] **Personal records (PRs)** — compare each logged weight to historical max; show a 🏆 indicator and "New PR!" toast when a max is beaten. Automatic from lift log history.
 - [ ] **Nutrition target card** — daily protein/calorie target set by admin per member, displayed as a simple progress bar in the member dashboard. Read from member Firestore profile.
 

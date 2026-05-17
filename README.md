@@ -38,6 +38,7 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 
 - Firebase Auth login is handled through a server-side credential flow that resolves usernames, phone numbers, and emails to Firebase Auth emails before creating server-verified session cookies.
 - Admin, owner, and member route access is enforced server-side.
+- Unauthenticated `/` shows the public landing page; authenticated `/` redirects users to their role dashboard.
 - Sessions are limited to 2 hours and the client forces logout when the local session timer expires.
 - Member login uses registered mobile/email/username plus a 4-digit PIN. Firebase stores this internally as a valid 6+ character password format.
 - Demo usernames still work by resolving to Firebase Auth emails.
@@ -250,7 +251,7 @@ firebase deploy --only apphosting:fitsplit --project fitsplit-29215
 
 ## Co-Developer Notes
 
-This project is developed jointly by **Claude** and **Codex**. After every change either developer makes, both `README.md` and `PROJECT_HANDOFF.md` must be updated — README for current state, handoff doc for the dated change log entry. These two files are the shared context that lets each developer pick up cold.
+This project is developed jointly by **Claude** and **Codex**. After every change either developer makes, both `README.md` and `PROJECT_HANDOFF.md` must be updated - README for current state, handoff doc for the dated change log entry. These two files are the shared context that lets each developer pick up cold.
 
 ## Handoff
 
