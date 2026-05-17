@@ -151,27 +151,17 @@ export function AppTopbar({
             )}
           </button>
           <Link className="brand" href={role === "admin" ? "/admin" : role === "owner" ? "/owner" : role === "member" ? "/member" : "/"}>
-            <span className="brand-logo-lockup" aria-hidden="true">
-              <span className="theme-logo brand-icon-wrap">
-                <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
-                <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
-              </span>
-              <span className="brand-x">x</span>
-              <img alt="" className="partner-logo" src="/shg-gym-logo.jpeg" />
+            <span className="theme-logo brand-icon-wrap" aria-hidden="true">
+              <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
+              <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
             </span>
-            <span className="brand-text">
-              <strong style={{ fontSize: "1.3rem" }}>FitSplit</strong>
-              <small className="hide-mobile">x SHG Gym</small>
-            </span>
+            <strong style={{ fontSize: "1.15rem", letterSpacing: "-0.01em" }}>FitSplit</strong>
           </Link>
         </div>
 
         <MainNav role={role} />
 
         <div className="topbar-actions">
-          {gymName && (
-            <span className="topbar-gym-name">{gymName}</span>
-          )}
           {role === "member" ? (
             <div className="notification-menu" ref={notificationRef}>
               <button

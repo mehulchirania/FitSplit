@@ -7657,7 +7657,6 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 /* ── Hero ── */
 .md-hero {
   padding: 32px 0 28px;
-  border-bottom: 1px solid var(--border);
   margin-bottom: 32px;
 }
 .md-hero-inner {
@@ -7779,12 +7778,25 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 
 /* Day tabs */
+.day-tabs-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+.day-tabs-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 4px;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--bg-elevated));
+  pointer-events: none;
+}
 .day-tabs {
   display: flex;
   gap: 6px;
   overflow-x: auto;
   padding-bottom: 4px;
-  margin-bottom: 20px;
   scrollbar-width: none;
 }
 .day-tabs::-webkit-scrollbar { display: none; }
@@ -7932,10 +7944,11 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 .lift-log-panel h2 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
 
-/* Override overflow:hidden for sticky scrollable sidebar */
-.list-panel.member-workout-side { overflow: visible; }
-
-/* Member workout side — sticky so log-set form stays in view */
+/* Sidebar: sticky, scrollable internally */
+.list-panel.member-workout-side {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
 .member-workout-side {
   display: flex;
   flex-direction: column;
@@ -7943,11 +7956,7 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   position: sticky;
   top: 80px;
   max-height: calc(100vh - 100px);
-  overflow-y: auto;
-  overflow-x: hidden;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) transparent;
-  padding: 0 2px 0 0;
+  scrollbar-width: none;
 }
 
 /* Lift log table */

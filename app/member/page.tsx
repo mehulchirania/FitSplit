@@ -47,6 +47,17 @@ export default async function MemberDashboard() {
   const program = programs.find((p) => p.id === assignment?.programId) ?? programs[0];
   const firstName = member.fullName.split(" ")[0];
 
+  // Streak: distinct calendar days trained this week (Mon–today)
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7)); // Monday
+  startOfWeek.setHours(0, 0, 0, 0);
+  const daysTrainedThisWeek = new Set(
+    liftLogs
+      .filter((l) => l.loggedAt && new Date(l.loggedAt) >= startOfWeek)
+      .map((l) => new Date(l.loggedAt!).toDateString())
+  ).size;
+
   return (
     <main className="md-page">
       {/* ── Hero ── */}
@@ -68,6 +79,9 @@ export default async function MemberDashboard() {
               )}
               {liftLogs.length > 0 && (
                 <span className="md-badge">{liftLogs.length} sets logged</span>
+              )}
+              {daysTrainedThisWeek > 0 && (
+                <span className="md-badge md-badge-accent">🔥 {daysTrainedThisWeek} day{daysTrainedThisWeek !== 1 ? "s" : ""} this week</span>
               )}
             </div>
           </div>

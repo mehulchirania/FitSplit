@@ -10,31 +10,62 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Context
+
+FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** members and staff. It is not a generic multi-gym SaaS product. All features, copy, and UX decisions should reflect that single-gym context. The second "Dummy Gym" workspace exists only for admin testing.
+
+---
+
 ## Roadmap & TODOs
 
-### Phase 1: Core Functionality & Management
-- Fix core functionality bugs and edge cases across the application.
-- Improve and fix the creation and management of gyms (workspaces).
-- Fix owner creation, onboarding, and permissions management.
-- Improve member creation, role assignment, and profile management.
-- Ensure stable core routing, role guards, and session management.
+### Phase 1: Bugs & Polish (In Progress)
 
-### Phase 2: Feature Expansion & Enhancements
-- Develop billing support for FitSplit:
-  - billing data model and Firestore collections
-  - invoices/receipts or payment tracking requirements
-  - owner/admin billing dashboards
-  - member payment visibility if needed
-  - security rules and audit/activity events for billing operations
-- Implement OTP-based password reset:
-  - member PIN reset flow with OTP verification
-  - staff password reset approval flow through gym owner/admin
-  - SMS/email provider selection
-  - abuse limits, expiry windows, and audit trail
-- Build exercise video upload UI
-- Add Firebase Storage avatar/staff image upload
-- Implement Firebase Cloud Messaging push reminders
-- Configure production geofence coordinates
+#### UI/Layout Fixes
+- [ ] **Topbar brand simplification** — remove the `FitSplit × SHG logo` double-lockup from the authenticated app topbar; show only FitSplit logo + name. The gym identity belongs in the drawer, not the nav.
+- [ ] **Day tabs fade edge** — "Saturday Lower Bod..." clips; add right-side fade-out mask on `.day-tabs` so it's clear it scrolls.
+- [ ] **Topbar gym name** — "Sri Shakthi Hanuman Gym" floats awkwardly mid-nav. Move it to the side drawer header only.
+- [ ] **Hero separator line** — visible accidental border under the hero section on member page.
+- [ ] **`member-meta` "none" values** — e.g. "Chest / Compound / none" — hide empty/null values in exercise cards.
+- [ ] **PDF floating button** — mystery red PDF icon bottom-right of member page. Investigate and remove.
+- [ ] **Training Notes / Gym Rules** — hardcoded below the workout console with no styling. Move to a proper collapsible card or admin-editable Firestore field.
+- [ ] **Mobile layout** — member dashboard is 2-column which stacks badly on mobile. Workout console should be single column; log form should be pinned to bottom on mobile.
+- [ ] **Dark mode as default** — app defaults to light for new users; brand is dark-first. Set dark as the initial default.
+
+#### Functional Fixes
+- [ ] **Log Set feedback** — after submitting, show a brief success toast and auto-clear weight field. Right now there is no confirmation.
+- [ ] **Empty lift history state** — "View Lift History" disclosure with no entries shows nothing. Add a "No sets logged yet" empty state.
+- [ ] **Exercise card collapse** — instruction paragraph is too long. Show name + sets/reps as the primary info; collapse instructions behind a tap/expand.
+- [ ] **First-run onboarding card** — members with no program assigned see an empty state. Add a friendly "Your trainer will assign your program soon" card with gym contact info.
+- [ ] **Fix owner creation/onboarding flow** — owner setup and permissions management has known bugs.
+- [ ] **Gym workspace creation/management** — improve and fix the create/edit gym flow.
+- [ ] **Member creation and role assignment** — audit and fix edge cases.
+- [ ] **Session/role guard audit** — verify all routes are server-side protected; check for any gaps.
+- [ ] **`getProfileMetrics` + `getMemberDetail` merge** — two separate Firestore reads that are always used together; combine at read-model level.
+- [ ] **`globals.css` cleanup** — 8000+ lines with 6+ duplicate `.topbar` rule blocks. Split into logical sections or separate files using CSS modules / `@import`.
+
+### Phase 2: Member Features (SHG-specific)
+
+- [ ] **Progress charts** — line chart of weight lifted over time per exercise, using existing lift log data. Most important member-facing feature. Use a lightweight chart lib (e.g. Recharts or Chart.js).
+- [ ] **Streak / consistency tracker** — number of days trained this week and this month, shown prominently in the member hero. Derived from lift log timestamps.
+- [ ] **Rest timer** — after logging a set, start a configurable countdown (60 / 90 / 120s) with audio cue. Stays visible while browsing exercises.
+- [ ] **Personal records (PRs)** — compare each logged weight to historical max; show a 🏆 indicator and "New PR!" toast when a max is beaten. Automatic from lift log history.
+- [ ] **Nutrition target card** — daily protein/calorie target set by admin per member, displayed as a simple progress bar in the member dashboard. Read from member Firestore profile.
+
+### Phase 3: Admin / Owner Features (SHG-specific)
+
+- [ ] **Member attendance heatmap** — who attended, when, how often. Firestore attendance collection already exists.
+- [ ] **Broadcast notifications** — admin sends a push/in-app notification to all SHG members or a filtered group (e.g. "Gym closed Saturday"). Use existing notification Firestore collection.
+- [ ] **Program bulk assignment** — assign a program to multiple members at once (e.g. all beginners → Starter Plan), rather than one by one.
+- [ ] **Revenue / billing dashboard** — track membership fees, payment status, overdue members. New Firestore collections needed: `payments`, `membership_plans`.
+- [ ] **Exercise video upload UI** — admin UI to upload exercise thumbnails/videos to Firebase Storage and link to the exercise catalog.
+- [ ] **Firebase Storage avatar upload** — member profile photos and staff images.
+
+### Phase 4: Infrastructure
+
+- [ ] **OTP-based PIN reset** — member PIN reset via OTP (SMS/email). Staff password reset approval via owner/admin. Abuse limits, expiry, audit trail.
+- [ ] **Firebase Cloud Messaging** — push reminders for workout days, rest day tips, gym announcements.
+- [ ] **Production geofence** — configure actual SHG Gym GPS coordinates for attendance geofencing.
+- [ ] **Inline styles → CSS classes** — member-workout-console.tsx has ~40 `style={{}}` props; move to named CSS classes.
 
 ## Latest Update - 2026-05-17: Replace hero grid with app mockup
 

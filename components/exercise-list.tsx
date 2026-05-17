@@ -75,7 +75,9 @@ export function ExerciseList({
                 <span>Secondary: {getSecondaryMuscles(exercise).join(", ") || "Stabilizers"}</span>
               </div>
               <span className="member-meta">
-                {exercise.muscleGroup} / {exercise.equipment} / {exercise.videoSource}
+                {[exercise.muscleGroup, exercise.equipment, exercise.videoSource]
+                  .filter(v => v && v !== "none" && v !== "null")
+                  .join(" / ")}
               </span>
             </div>
             <span className="exercise-prescription">

@@ -9,6 +9,8 @@ import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
+import { ProgressChart } from "@/components/progress-chart";
+import { RestTimer } from "@/components/rest-timer";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -262,6 +264,8 @@ export function MemberWorkoutConsole({
   const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
   const [isEventPending, setIsEventPending] = useState(false);
   const [offlineLogsCount, setOfflineLogsCount] = useState(0);
+  const [logSuccess, setLogSuccess] = useState(false);
+  const [showRestTimer, setShowRestTimer] = useState(false);
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
   );
@@ -469,6 +473,11 @@ export function MemberWorkoutConsole({
     setIsEventPending(false);
     setPendingEvent(null);
     setEventStatus(result);
+    if (result.status === "success") {
+      setLogSuccess(true);
+      setShowRestTimer(true);
+      setTimeout(() => setLogSuccess(false), 2400);
+    }
   }
 
   return (
@@ -487,7 +496,7 @@ export function MemberWorkoutConsole({
 
         <div className="notification-list">
           <div className="weekly-schedule">
-            <div className="day-tabs" aria-label="Weekly workout days">
+            <div className="day-tabs-wrap"><div className="day-tabs" aria-label="Weekly workout days">
               {program.days.map((day, index) => (
                 <button
                   className={selectedDayIndex === index ? "is-selected" : ""}
@@ -499,7 +508,7 @@ export function MemberWorkoutConsole({
                   <strong>{day.title}</strong>
                 </button>
               ))}
-            </div>
+            </div></div>
             {modification ? (
               <div className="workout-mode-toggle" role="tablist" aria-label="Workout version">
                 <button
@@ -575,6 +584,90 @@ export function MemberWorkoutConsole({
       </div>
 
       <aside className="list-panel member-workout-side">
+        <div className="lift-log-panel">
+          <div className="panel-title" style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <h2>Log your sets</h2>
+              {offlineLogsCount > 0 && (
+                <span className="status-pill status-expired">
+                  {offlineLogsCount} unsynced (Offline)
+                </span>
+              )}
+            </div>
+            {logSuccess && (
+              <span style={{ fontSize: "0.8rem", color: "var(--brand)", fontWeight: 600, display: "flex", alignItems: "center", gap: "5px" }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Set logged!
+              </span>
+            )}
+          </div>
+
+          <form className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+            <input name="memberId" type="hidden" value={memberId} />
+            <input name="sessionId" type="hidden" value={`session-${memberId}`} />
+
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{ display: "block", marginBottom: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>Exercise</label>
+              <select name="exerciseId" style={{ width: "100%", padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)" }}>
+                {uniqueLoggableExercises.map((item) => (
+                  <option key={item.exerciseId} value={item.exerciseId}>
+                    {getExerciseName(item.exerciseId, exercises)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="lift-log-fields">
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+                Weight (kg)
+                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+                Sets
+                <input defaultValue="3" min="1" name="sets" required type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
+              </label>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+                Reps
+                <input name="reps" placeholder="8, 8, 7" required style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
+              </label>
+            </div>
+
+            <button className="button button-primary" type="submit" style={{ gridColumn: "1 / -1", padding: "11px", fontSize: "0.95rem", fontWeight: 700 }}>
+              Log Set
+            </button>
+          </form>
+
+          {showRestTimer && (
+            <div style={{ marginTop: "14px" }}>
+              <RestTimer onDone={() => setShowRestTimer(false)} />
+            </div>
+          )}
+
+          <details style={{ marginTop: "14px", padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
+            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+              <span className="status-pill status-neutral">View Lift History</span>
+            </summary>
+            <div className="lift-log-table" role="table" aria-label="Historical lift data" style={{ marginTop: "16px" }}>
+              <div role="row">
+                <span>Exercise</span>
+                <span>Weight</span>
+                <span>Sets</span>
+                <span>Reps</span>
+              </div>
+              {liftLogs.length === 0 ? (
+                <p style={{ color: "var(--text-faint)", fontSize: "0.85rem", padding: "12px 0 4px" }}>No sets logged yet. Log your first set above.</p>
+              ) : liftLogs.slice(0, 8).map((log) => (
+                <div key={log.id} role="row">
+                  <span>{getExerciseName(log.exerciseId, exercises)}</span>
+                  <span>{log.weight} kg</span>
+                  <span>{log.sets}</span>
+                  <span>{log.reps}</span>
+                </div>
+              ))}
+            </div>
+          </details>
+        </div>
+
         <div className="injury-card">
           <h2>AI Semi-Personal Trainer</h2>
           <p>
@@ -634,75 +727,6 @@ export function MemberWorkoutConsole({
           </div>
         ) : null}
 
-        <div className="lift-log-panel">
-          <div className="panel-title" style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-              <h2>Log your sets</h2>
-              {offlineLogsCount > 0 && (
-                <span className="status-pill status-expired">
-                  {offlineLogsCount} unsynced (Offline)
-                </span>
-              )}
-            </div>
-          </div>
-
-          <form className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
-            <input name="memberId" type="hidden" value={memberId} />
-            <input name="sessionId" type="hidden" value={`session-${memberId}`} />
-
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>Exercise</label>
-              <select name="exerciseId" style={{ width: "100%", padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)" }}>
-                {uniqueLoggableExercises.map((item) => (
-                  <option key={item.exerciseId} value={item.exerciseId}>
-                    {getExerciseName(item.exerciseId, exercises)}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="lift-log-fields">
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
-                Weight (kg)
-                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
-              </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
-                Sets
-                <input defaultValue="3" min="1" name="sets" required type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
-              </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
-                Reps
-                <input name="reps" placeholder="8, 8, 7" required style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
-              </label>
-            </div>
-
-            <button className="button button-primary" type="submit" style={{ gridColumn: "1 / -1", padding: "11px", fontSize: "0.95rem", fontWeight: 700 }}>
-              Log Set
-            </button>
-          </form>
-
-          <details style={{ marginTop: "24px", padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
-              <span className="status-pill status-neutral">View Lift History</span>
-            </summary>
-            <div className="lift-log-table" role="table" aria-label="Historical lift data" style={{ marginTop: "16px" }}>
-              <div role="row">
-                <span>Exercise</span>
-                <span>Weight</span>
-                <span>Sets</span>
-                <span>Reps</span>
-              </div>
-              {liftLogs.slice(0, 8).map((log) => (
-                <div key={log.id} role="row">
-                  <span>{getExerciseName(log.exerciseId, exercises)}</span>
-                  <span>{log.weight} kg</span>
-                  <span>{log.sets}</span>
-                  <span>{log.reps}</span>
-                </div>
-              ))}
-            </div>
-          </details>
-        </div>
       </aside>
 
       {pendingEvent ? (
