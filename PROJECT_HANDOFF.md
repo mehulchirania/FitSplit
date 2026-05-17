@@ -68,6 +68,11 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ## Latest Update - 2026-05-13: Login Enter Key + Reset Request UX
 
+- Follow-up on 2026-05-17: fixed landing page UI regressions:
+  - restored authenticated `/` routing so logged-in admin/owner/member users go to their role dashboard instead of seeing public landing mixed with app chrome.
+  - polished the active landing layout with a cleaner floating nav, stronger hero hierarchy, calmer cards, better mobile spacing, and no horizontal overflow.
+  - removed reappeared public demo-oriented and billing-limitation copy from the active landing page.
+  - verified unauthenticated `/` returns the landing page and `npm.cmd run typecheck` passes.
 - Follow-up on 2026-05-15: refined the public landing page into a cleaner premium product showcase:
   - removed the old Trainer Command hero widget and fake dashboard/stat cards.
   - changed hero copy to "Deliver structured workouts to every member."
@@ -102,7 +107,7 @@ This file is the canonical handoff document. Read it first when starting any new
 
 - Follow-up: removed the remaining `Get Started` CTAs from the active landing page so Login is the only auth entry point.
 - Follow-up: improved login speed by removing workspace seeding from the sign-in hot path and using lighter session-cookie verification on normal authenticated page reads.
-- Follow-up: removed "Demo" / "Start Demo" wording from the active landing page and login modal helper copy.
+- Follow-up: removed demo-oriented wording from the active landing page and login modal helper copy.
 - Removed outdated product limitation copy from the public landing page.
 - Rebuilt the public `/` landing page into the requested five-section, dark-first FitSplit marketing site:
   - Navbar

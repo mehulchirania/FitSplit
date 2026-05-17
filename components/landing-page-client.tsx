@@ -46,7 +46,7 @@ const featureCards = [
   {
     icon: "phone",
     title: "Give members a cleaner app",
-    body: "Today's workout, exercises, and lift logging — focused on what they need in the gym.",
+    body: "Today's workout, exercises, and lift logging - focused on what they need in the gym.",
   },
 ];
 
@@ -156,7 +156,7 @@ const mockExercises = [
   { name: "Bench Press",      sets: 4, reps: 8,  kg: "85 kg", done: true  },
   { name: "Overhead Press",   sets: 3, reps: 10, kg: "50 kg", done: true  },
   { name: "Incline DB Press", sets: 3, reps: 12, kg: "30 kg", done: false },
-  { name: "Tricep Pushdown",  sets: 3, reps: 15, kg: "—",     done: false },
+  { name: "Tricep Pushdown",  sets: 3, reps: 15, kg: "-",     done: false },
 ];
 
 function CheckIcon() {
@@ -190,7 +190,7 @@ function AppMockup({ reduced }: { reduced: boolean }) {
       <div className="lp-mockup-header">
         <div>
           <div className="lp-mockup-day">Today&rsquo;s Workout</div>
-          <div className="lp-mockup-member">Mehul · Week 3</div>
+          <div className="lp-mockup-member">Mehul - Week 3</div>
         </div>
         <div className="lp-mockup-progress-ring" aria-label="50% complete">
           <svg width="40" height="40" viewBox="0 0 40 40">
@@ -214,7 +214,7 @@ function AppMockup({ reduced }: { reduced: boolean }) {
               {ex.done ? <CheckIcon /> : null}
             </span>
             <span className="lp-mockup-ex-name">{ex.name}</span>
-            <span className="lp-mockup-ex-detail">{ex.sets}×{ex.reps}</span>
+            <span className="lp-mockup-ex-detail">{ex.sets}x{ex.reps}</span>
             <span className="lp-mockup-ex-kg">{ex.kg}</span>
           </div>
         ))}
@@ -405,7 +405,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               {message && <p className="lp-form-success" role="status">{message}</p>}
 
               <button className="lp-btn-primary lp-w-full" disabled={isPending} type="submit">
-                {isPending ? "Logging in…" : "Log in"}
+                {isPending ? "Logging in..." : "Log in"}
               </button>
               <button className="lp-forgot" disabled={isPending} onClick={onForgot} type="button">
                 Forgot password?
@@ -413,7 +413,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             </form>
 
             <p className="lp-modal-note">
-              Workout management only. No billing or membership setup required.
+              Secure access for members, trainers, and gym owners.
             </p>
           </motion.section>
         </motion.div>
@@ -544,16 +544,16 @@ export function LandingPageClient() {
 
             <motion.p className="lp-subheadline" variants={fadeUp}>
               FitSplit gives gym owners and trainers one calm workspace to assign plans, guide
-              members, and track training — with no billing or membership complexity.
+              members, and track training in one focused workspace.
             </motion.p>
 
             <motion.div className="lp-hero-cta" variants={fadeUp}>
               <button className="lp-btn-primary lp-btn-arrow" onClick={openLogin} type="button">
-                Start Demo
+                Access workspace
                 <span className="lp-btn-arrow-icon"><ArrowRightIcon /></span>
               </button>
               <a href="#how-it-works" className="lp-btn-ghost">
-                See how it works →
+                See how it works -&gt;
               </a>
             </motion.div>
           </motion.div>
@@ -585,7 +585,7 @@ export function LandingPageClient() {
               Built around how training floors work.
             </motion.h2>
             <motion.p className="lp-section-sub" variants={fadeUp}>
-              No clutter. No billing. Just plans, members, and progress.
+              Less clutter. Clearer coaching. Just plans, members, and progress.
             </motion.p>
           </motion.div>
 
@@ -684,7 +684,7 @@ export function LandingPageClient() {
             whileInView="show"
             viewport={{ once: true, margin: "-60px" }}
           >
-            {/* Large card — assign workflow */}
+            {/* Large card - assign workflow */}
             <motion.article className="lp-bento-card lp-bento-large" variants={fadeUp}>
               <div className="lp-mock lp-mock-assign" aria-hidden="true">
                 <div className="lp-mock-bar">
@@ -699,12 +699,12 @@ export function LandingPageClient() {
                   </div>
                   <div className="lp-mock-row">
                     <span className="lp-mock-label">Split</span>
-                    <strong className="lp-mock-val">PPL × 2</strong>
+                    <strong className="lp-mock-val">PPL x 2</strong>
                     <small className="lp-mock-meta">6 days / week</small>
                   </div>
                   <div className="lp-mock-tags">
-                    <span className="lp-mock-tag">Push · Pull · Legs</span>
-                    <span className="lp-mock-tag lp-mock-accent">✓ Assign plan</span>
+                    <span className="lp-mock-tag">Push / Pull / Legs</span>
+                    <span className="lp-mock-tag lp-mock-accent">Assign plan</span>
                   </div>
                 </div>
               </div>
@@ -712,16 +712,16 @@ export function LandingPageClient() {
               <p>Pick a saved split, pick a member, done. No rebuilding plans each time.</p>
             </motion.article>
 
-            {/* Tall card — member view */}
+            {/* Tall card - member view */}
             <motion.article className="lp-bento-card lp-bento-tall" variants={fadeUp}>
               <div className="lp-mock lp-mock-member" aria-hidden="true">
                 <div className="lp-mock-bar">
                   <span className="lp-mock-dot" />
-                  <span className="lp-mock-bar-title">Today · Push</span>
+                  <span className="lp-mock-bar-title">Today - Push</span>
                 </div>
                 <div className="lp-mock-body">
                   <div className="lp-mock-day-head">Push Strength</div>
-                  {["Bench press · 4×8", "Incline DB · 3×10", "Shoulder press · 3×10", "Lat raises · 3×15"].map(
+                  {["Bench press - 4x8", "Incline DB - 3x10", "Shoulder press - 3x10", "Lat raises - 3x15"].map(
                     (ex) => (
                       <div key={ex} className="lp-mock-ex">{ex}</div>
                     )
@@ -745,7 +745,7 @@ export function LandingPageClient() {
             <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
               <div className="lp-bento-stat">
                 <span className="lp-stat-big">0</span>
-                <span className="lp-stat-label">billing or membership setup</span>
+                <span className="lp-stat-label">focused trainer workflow</span>
               </div>
               <h3 className="lp-h3">Built for real gyms</h3>
               <p>No complexity. Just training operations.</p>
@@ -814,7 +814,7 @@ export function LandingPageClient() {
               {[
                 { val: "86%", label: "weekly completion rate" },
                 { val: "2 min", label: "to assign a plan" },
-                { val: "0", label: "billing complexity" },
+                { val: "1", label: "focused trainer workspace" },
               ].map((s) => (
                 <div key={s.label} className="lp-footer-stat">
                   <span className="lp-footer-stat-val">{s.val}</span>
@@ -833,7 +833,7 @@ export function LandingPageClient() {
                 </label>
                 <label className="lp-field">
                   <span>Message</span>
-                  <textarea name="body" rows={3} placeholder="Tell us about your gym…" required />
+                  <textarea name="body" rows={3} placeholder="Tell us about your gym..." required />
                 </label>
                 {contactState.status === "error" && (
                   <p className="lp-form-error">{contactState.message}</p>
@@ -842,14 +842,14 @@ export function LandingPageClient() {
                   <p className="lp-form-success">{contactState.message}</p>
                 )}
                 <button className="lp-btn-primary lp-w-full" disabled={contactPending} type="submit">
-                  {contactPending ? "Sending…" : "Send message"}
+                  {contactPending ? "Sending..." : "Send message"}
                 </button>
               </form>
             </div>
           </div>
 
           <div className="lp-footer-bar">
-            <span>© 2025 FitSplit · fitsplit.in</span>
+            <span>© 2025 FitSplit - fitsplit.in</span>
             <span>Built for gyms that deliver coaching, not just access.</span>
           </div>
         </div>
