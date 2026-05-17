@@ -662,21 +662,21 @@ export function MemberWorkoutConsole({
             </div>
 
             <div className="lift-log-fields">
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
                 Weight (kg)
-                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
+                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
                 Sets
-                <input defaultValue="3" min="1" name="sets" required type="number" style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
+                <input defaultValue="3" min="1" name="sets" required type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
+              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
                 Reps
-                <input name="reps" placeholder="8, 8, 7" required style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
+                <input name="reps" placeholder="8, 8, 7" required style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
               </label>
             </div>
 
-            <button className="button button-primary" type="submit" style={{ gridColumn: "1 / -1", padding: "12px", fontSize: "1rem" }}>
+            <button className="button button-primary" type="submit" style={{ gridColumn: "1 / -1", padding: "11px", fontSize: "0.95rem", fontWeight: 700 }}>
               Log Set
             </button>
           </form>

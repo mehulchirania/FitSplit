@@ -33,28 +33,28 @@
 
 html[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0f172a;
-  --bg-elevated: #1e293b;
-  --bg-subtle: #334155;
-  --text: #f8fafc;
-  --text-soft: #cbd5e1;
-  --text-faint: #94a3b8;
-  --border: #475569;
-  --border-strong: #64748b;
-  --brand: #818cf8;
-  --brand-strong: #a5b4fc;
-  --brand-soft: #312e81;
-  --primary: #818cf8;
-  --primary-foreground: #0f172a;
-  --warning: #fbbf24;
-  --warning-soft: #78350f;
-  --danger: #f87171;
-  --danger-soft: #7f1d1d;
-  --info-soft: #1e3a8a;
+  --bg: #0A0A0A;
+  --bg-elevated: #161616;
+  --bg-subtle: #1e1e1e;
+  --text: #F5F5F5;
+  --text-soft: #888888;
+  --text-faint: #555555;
+  --border: rgba(255,255,255,.1);
+  --border-strong: rgba(255,255,255,.18);
+  --brand: #C8F135;
+  --brand-strong: #b8e028;
+  --brand-soft: rgba(200,241,53,.12);
+  --primary: #C8F135;
+  --primary-foreground: #0A0A0A;
+  --warning: #f59e0b;
+  --warning-soft: rgba(245,158,11,.12);
+  --danger: #ef4444;
+  --danger-soft: rgba(239,68,68,.12);
+  --info-soft: rgba(96,165,250,.12);
   --info: #60a5fa;
-  --shadow: 0 24px 70px rgba(0, 0, 0, 0.44);
-  --shadow-soft: 0 8px 28px rgba(0, 0, 0, 0.30);
-  --shadow-glow: 0 8px 32px color-mix(in srgb, var(--brand) 22%, transparent);
+  --shadow: 0 24px 70px rgba(0, 0, 0, 0.6);
+  --shadow-soft: 0 8px 28px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 8px 32px rgba(200,241,53,.15);
 }
 
 * {
@@ -153,14 +153,14 @@ html[data-theme="light"] .theme-logo-light {
   margin: 0 auto 20px;
   max-width: 1200px;
   width: calc(100% - 32px);
-  transition: box-shadow var(--medium), background-color var(--slow);
+  transition: box-shadow var(--medium), background-color var(--slow), transform 280ms cubic-bezier(0.4, 0, 0.2, 1), opacity 200ms ease;
   z-index: 50;
 }
 
 .topbar-hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translate(-50%, calc(-100% - 18px));
+  transform: translateY(calc(-100% - 18px));
 }
 
 .topbar-left {
@@ -168,6 +168,12 @@ html[data-theme="light"] .theme-logo-light {
   display: inline-flex;
   gap: 8px;
   min-width: 0;
+}
+
+.topbar-actions {
+  align-items: center;
+  display: flex;
+  gap: 8px;
 }
 
 @media (max-width: 560px) {
@@ -876,8 +882,7 @@ p {
 .app-profile-menu {
   align-items: center;
   display: flex;
-  gap: 10px;
-  margin-left: auto;
+  gap: 8px;
 }
 
 .topbar-gym-name {
@@ -7639,6 +7644,363 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
    Landing page — lp-* design system (linear/vercel-inspired dark B2B)
    All rules scoped to .lp-root to avoid contaminating the app shell.
    ═══════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════
+   MEMBER DASHBOARD  ·  md-* prefix
+   ═══════════════════════════════════════════════════════════════════ */
+
+.md-page {
+  min-height: 100dvh;
+  padding-bottom: 80px;
+}
+
+/* ── Hero ── */
+.md-hero {
+  padding: 32px 0 28px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+.md-hero-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  flex-wrap: wrap;
+}
+.md-hero-copy { flex: 1; min-width: 260px; }
+.md-greeting {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin: 0 0 6px;
+}
+.md-hero-title {
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.md-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.md-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+}
+.md-badge-accent {
+  background: var(--brand-soft);
+  border-color: rgba(200,241,53,.25);
+  color: var(--brand);
+}
+.md-hero-metrics { flex-shrink: 0; }
+
+/* ── Empty state ── */
+.md-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.md-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.md-empty h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.md-empty p {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Workout console panels ── */
+.content-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+.list-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.panel-title h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+/* Day tabs */
+.day-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  margin-bottom: 20px;
+  scrollbar-width: none;
+}
+.day-tabs::-webkit-scrollbar { display: none; }
+.day-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+}
+.day-tabs button:hover { background: var(--bg-subtle); color: var(--text); }
+.day-tabs button.is-selected {
+  background: var(--brand-soft);
+  border-color: rgba(200,241,53,.3);
+  color: var(--brand);
+}
+.day-tabs span { font-size: 11px; font-weight: 500; }
+.day-tabs strong { font-size: 13px; font-weight: 700; }
+
+/* Workout mode toggle */
+.workout-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.workout-mode-toggle button {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.workout-mode-toggle button.is-selected {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+/* Selected workout day */
+.selected-workout-day .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+.selected-workout-day > p { color: var(--text-soft); font-size: 14px; margin: 0 0 12px; }
+.day-muscle-targets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.day-muscle-targets span {
+  font-size: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  color: var(--text-soft);
+}
+
+/* AI trainer side panel */
+.injury-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.injury-card h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.injury-card p {
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.injury-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 12px;
+}
+.injury-card textarea {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 72px;
+  font-family: inherit;
+}
+.injury-card textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+/* AI modification panel */
+.ai-modification-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-modification-panel h2 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+
+/* Lift log panel */
+.lift-log-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.lift-log-panel h2 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
+
+/* Override overflow:hidden for sticky scrollable sidebar */
+.list-panel.member-workout-side { overflow: visible; }
+
+/* Member workout side — sticky so log-set form stays in view */
+.member-workout-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+  padding: 0 2px 0 0;
+}
+
+/* Lift log table */
+.lift-log-table { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.lift-log-table div {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  align-items: center;
+}
+.lift-log-table div:first-child {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+.lift-log-table div + div { background: var(--bg-subtle); }
+.lift-log-table span { color: var(--text-soft); }
+.lift-log-table span:first-child { color: var(--text); font-weight: 500; }
+
+/* muscle-targets inside exercise-row */
+.muscle-targets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 4px 0 2px;
+}
+.muscle-targets span {
+  font-size: 11px;
+  color: var(--text-faint);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+/* lift log fields grid */
+.lift-log-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 860px) {
+  .content-grid { grid-template-columns: 1fr; }
+  .md-hero-inner { flex-direction: column; gap: 20px; }
+  .lift-log-fields { grid-template-columns: 1fr 1fr 1fr; }
+}
 
 
 /* ── Root container ── */

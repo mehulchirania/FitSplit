@@ -28,7 +28,11 @@ fitsplit-29215
 
 ## Landing Page
 
-The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel-inspired) built with Framer Motion. Key design tokens live in CSS variables under `.lp-root`. Sections: Navbar, Hero (animated workout grid + `/bg-image.png` background), Feature strip, How it works, Audience pills, Workflow bento, Partners (SHG Gym), Footer + contact form, Login modal. The login modal is wired to the full Firebase Auth flow. All landing CSS is appended to `globals.css` under the `lp-*` prefix and does not affect the authenticated app shell.
+The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel-inspired) built with Framer Motion. Key design tokens live in CSS variables under `.lp-root`. Sections: Navbar, Hero (animated `AppMockup` workout card + `/bg-image.png` background), Feature strip, How it works, Audience pills, Workflow bento, Partners (SHG Gym), Footer + contact form, Login modal. The login modal is wired to the full Firebase Auth flow. All landing CSS is appended to `globals.css` under the `lp-*` prefix and does not affect the authenticated app shell.
+
+## Member Dashboard
+
+The member `/member` page uses a premium `md-*` layout consistent with the dark landing page aesthetic (`#0A0A0A` background, `#C8F135` lime accent). Layout: a full-width hero with contextual greeting, program title, week/sets badges, and inline editable metrics (Age, Weight, Height, BMI); below is the `MemberWorkoutConsole` with day tabs, AI customized workout toggle, and the AI Semi-Personal Trainer panel with injury/limitation management.
 
 ## Current Status
 

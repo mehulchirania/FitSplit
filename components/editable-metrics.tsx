@@ -13,177 +13,135 @@ export function EditableMetrics({ member }: { member: Member }) {
   const bmiValue = weight && height ? Number(weight) / Math.pow(Number(height) / 100, 2) : null;
   const bmi = bmiValue ? bmiValue.toFixed(1) : "--";
 
-  const getBmiStatus = (val: number | null) => {
-    if (!val) return "status-neutral";
-    if (val < 18.5) return "status-warning"; // Underweight
-    if (val < 25) return "status-active"; // Normal
-    if (val < 30) return "status-warning"; // Overweight
-    return "status-danger"; // Obese
+  const getBmiColor = (val: number | null) => {
+    if (!val) return "var(--text-soft)";
+    if (val < 18.5) return "var(--warning)";
+    if (val < 25) return "var(--brand)";
+    if (val < 30) return "var(--warning)";
+    return "var(--danger)";
   };
-
-  const bmiStatusClass = getBmiStatus(bmiValue);
 
   if (isEditing) {
     return (
       <form
-        className="metrics-form"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
-          gap: "10px",
-          marginTop: "14px",
-          alignItems: "end",
-        }}
-        onSubmit={(e) => {
-          e.preventDefault();
-          setIsEditing(false);
-        }}
+        onSubmit={(e) => { e.preventDefault(); setIsEditing(false); }}
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "10px", alignItems: "end" }}
       >
-        <label style={{ display: "grid", gap: "4px", fontSize: "0.8rem", color: "var(--text-soft)" }}>
-          Age
-          <input
-            type="number"
-            value={age}
-            onChange={(e) => setAge(e.target.value)}
-            inputMode="numeric"
-            style={{ padding: "8px 10px", borderRadius: "var(--radius-xs)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%", minHeight: "38px" }}
-          />
-        </label>
-        <label style={{ display: "grid", gap: "4px", fontSize: "0.8rem", color: "var(--text-soft)" }}>
-          Weight (kg)
-          <input
-            type="number"
-            value={weight}
-            onChange={(e) => setWeight(e.target.value)}
-            inputMode="decimal"
-            style={{ padding: "8px 10px", borderRadius: "var(--radius-xs)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%", minHeight: "38px" }}
-          />
-        </label>
-        <label style={{ display: "grid", gap: "4px", fontSize: "0.8rem", color: "var(--text-soft)" }}>
-          Height (cm)
-          <input
-            type="number"
-            value={height}
-            onChange={(e) => setHeight(e.target.value)}
-            inputMode="numeric"
-            style={{ padding: "8px 10px", borderRadius: "var(--radius-xs)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%", minHeight: "38px" }}
-          />
-        </label>
-        <div style={{ display: "flex", gap: "8px", alignSelf: "end" }}>
-          <button
-            type="submit"
-            className="button button-primary"
-            style={{ padding: "8px 14px", fontSize: "0.84rem", minHeight: "38px" }}
-          >
+        {(["Age", "Weight (kg)", "Height (cm)"] as const).map((label, i) => {
+          const val = [age, weight, height][i];
+          const setter = [setAge, setWeight, setHeight][i];
+          return (
+            <label key={label} style={{ display: "grid", gap: "4px" }}>
+              <span style={{ fontSize: "11px", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>{label}</span>
+              <input
+                type="number"
+                value={val}
+                onChange={(e) => setter(e.target.value)}
+                inputMode="decimal"
+                style={{ padding: "8px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg-subtle)", color: "var(--text)", width: "100%", minHeight: "36px", fontSize: "0.95rem" }}
+              />
+            </label>
+          );
+        })}
+        <div style={{ display: "flex", gap: "6px", paddingBottom: "0" }}>
+          <button type="submit" className="button button-primary" style={{ padding: "8px 14px", fontSize: "0.84rem", minHeight: "36px" }}>
             Save
           </button>
-          <button
-            type="button"
-            onClick={() => setIsEditing(false)}
-            className="button button-secondary"
-            style={{ padding: "8px 14px", fontSize: "0.84rem", minHeight: "38px" }}
-          >
-            Cancel
+          <button type="button" onClick={() => setIsEditing(false)} className="button button-secondary" style={{ padding: "8px 10px", fontSize: "0.84rem", minHeight: "36px" }}>
+            ✕
           </button>
         </div>
       </form>
     );
   }
 
-  return (
-    <div style={{ position: "relative", display: "flex", gap: "8px", marginTop: "14px", flexWrap: "wrap", alignItems: "center" }}>
-      <span className="status-pill status-neutral">Age: {age || "--"}</span>
-      <span className="status-pill status-neutral">Weight: {weight || "--"}kg</span>
-      <span className="status-pill status-neutral">Height: {height || "--"}cm</span>
-      
-      <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
-        <span className={`status-pill ${bmiStatusClass}`} style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          BMI: {bmi}
-          <button
-            type="button"
-            onClick={() => setIsEditing(true)}
-            title="Edit metrics"
-            aria-label="Edit body metrics"
-            style={{
-              background: "none",
-              border: "none",
-              color: "currentColor",
-              cursor: "pointer",
-              padding: "2px",
-              display: "flex",
-              alignItems: "center",
-              minWidth: "20px",
-              minHeight: "20px",
-              opacity: 0.8
-            }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
-            </svg>
-          </button>
-        </span>
+  const stats = [
+    { label: "Weight", value: weight ? `${weight} kg` : "—" },
+    { label: "Height", value: height ? `${height} cm` : "—" },
+    { label: "Age", value: age || "—" },
+  ];
 
-        <button
-          type="button"
+  return (
+    <div style={{ display: "flex", gap: "8px", alignItems: "stretch", flexWrap: "wrap" }}>
+      {stats.map(({ label, value }) => (
+        <div key={label} style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid var(--border)",
+          borderRadius: "10px",
+          padding: "10px 14px",
+          minWidth: "72px",
+        }}>
+          <div style={{ fontSize: "10px", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700, marginBottom: "4px" }}>{label}</div>
+          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>{value}</div>
+        </div>
+      ))}
+
+      {/* BMI tile */}
+      <div style={{ position: "relative" }}>
+        <div style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid var(--border)",
+          borderRadius: "10px",
+          padding: "10px 14px",
+          minWidth: "72px",
+          cursor: "pointer",
+        }}
+          onClick={() => setShowBmiInfo(v => !v)}
           onMouseEnter={() => setShowBmiInfo(true)}
           onMouseLeave={() => setShowBmiInfo(false)}
-          onClick={() => setShowBmiInfo(!showBmiInfo)}
-          style={{
-            background: "var(--bg-subtle)",
-            border: "1px solid var(--border)",
-            borderRadius: "50%",
-            width: "20px",
-            height: "20px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "0.7rem",
-            color: "var(--text-soft)",
-            cursor: "pointer"
-          }}
         >
-          ?
-        </button>
-      </div>
-
-      {showBmiInfo && (
-        <div style={{
-          position: "absolute",
-          top: "100%",
-          left: "0",
-          marginTop: "10px",
-          background: "var(--bg-elevated)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-sm)",
-          padding: "12px",
-          boxShadow: "var(--shadow)",
-          zIndex: 100,
-          width: "220px",
-          fontSize: "0.8rem",
-          animation: "dropdown-in 200ms ease-out"
-        }}>
-          <h4 style={{ margin: "0 0 8px 0", fontSize: "0.85rem" }}>BMI Categories</h4>
-          <div style={{ display: "grid", gap: "6px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--warning)" }}>
-              <span>Underweight</span>
-              <span>&lt; 18.5</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--brand)" }}>
-              <span>Normal</span>
-              <span>18.5 – 24.9</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--warning)" }}>
-              <span>Overweight</span>
-              <span>25 – 29.9</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", color: "var(--danger)" }}>
-              <span>Obese</span>
-              <span>&gt; 30</span>
+          <div style={{ fontSize: "10px", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700, marginBottom: "4px" }}>BMI</div>
+          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: getBmiColor(bmiValue), lineHeight: 1 }}>{bmi}</div>
+        </div>
+        {showBmiInfo && (
+          <div style={{
+            position: "absolute", top: "calc(100% + 8px)", right: 0,
+            background: "var(--bg-elevated)", border: "1px solid var(--border)",
+            borderRadius: "10px", padding: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+            zIndex: 100, width: "190px", fontSize: "0.78rem",
+          }}>
+            <div style={{ display: "grid", gap: "5px" }}>
+              {[
+                { label: "Underweight", range: "< 18.5", color: "var(--warning)" },
+                { label: "Normal", range: "18.5 – 24.9", color: "var(--brand)" },
+                { label: "Overweight", range: "25 – 29.9", color: "var(--warning)" },
+                { label: "Obese", range: "> 30", color: "var(--danger)" },
+              ].map(({ label, range, color }) => (
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", color }}>
+                  <span>{label}</span><span>{range}</span>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* Edit button */}
+      <button
+        type="button"
+        onClick={() => setIsEditing(true)}
+        title="Edit metrics"
+        aria-label="Edit body metrics"
+        style={{
+          background: "rgba(255,255,255,0.04)",
+          border: "1px solid var(--border)",
+          borderRadius: "10px",
+          padding: "10px 12px",
+          color: "var(--text-faint)",
+          cursor: "pointer",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          alignSelf: "stretch",
+          transition: "color 150ms, border-color 150ms",
+        }}
+        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-strong)"; }}
+        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-faint)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+        </svg>
+      </button>
     </div>
   );
 }
-

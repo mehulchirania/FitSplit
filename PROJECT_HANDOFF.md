@@ -10,8 +10,16 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
-## TODO
+## Roadmap & TODOs
 
+### Phase 1: Core Functionality & Management
+- Fix core functionality bugs and edge cases across the application.
+- Improve and fix the creation and management of gyms (workspaces).
+- Fix owner creation, onboarding, and permissions management.
+- Improve member creation, role assignment, and profile management.
+- Ensure stable core routing, role guards, and session management.
+
+### Phase 2: Feature Expansion & Enhancements
 - Develop billing support for FitSplit:
   - billing data model and Firestore collections
   - invoices/receipts or payment tracking requirements
@@ -23,6 +31,10 @@ This file is the canonical handoff document. Read it first when starting any new
   - staff password reset approval flow through gym owner/admin
   - SMS/email provider selection
   - abuse limits, expiry windows, and audit trail
+- Build exercise video upload UI
+- Add Firebase Storage avatar/staff image upload
+- Implement Firebase Cloud Messaging push reminders
+- Configure production geofence coordinates
 
 ## Latest Update - 2026-05-17: Replace hero grid with app mockup
 
@@ -40,6 +52,19 @@ This file is the canonical handoff document. Read it first when starting any new
 - Reduced `.lp-hero-inner` gap from `64px` to `40px` and `.lp-hero-copy` gap from `28px` to `18px`.
 - Reduced `.lp-subheadline` from `17px` to `15px`.
 - All hero elements (FitSplit branding, eyebrow, headline, subheadline, CTA, workout grid + chips) now fit in one viewport without scrolling.
+
+---
+
+## Latest Update - 2026-05-17: Member dashboard UI revamp
+
+- Rewrote `app/member/page.tsx` with a premium `md-*` layout: contextual greeting, hero section showing program title + week/sets badges, inline editable metrics (Age, Weight, Height, BMI) in the hero.
+- Added full `md-*` CSS section to `app/globals.css` covering `.md-page`, `.md-hero`, `.md-hero-inner`, `.md-greeting`, `.md-hero-title`, `.md-hero-meta`, `.md-badge`, `.md-badge-accent`, `.md-hero-metrics`, `.md-empty` — consistent with the dark `#0A0A0A` / `#C8F135` palette.
+- Updated dark theme CSS vars (`--bg`, `--bg-elevated`, `--brand`, `--primary`) to match the landing page aesthetic throughout the entire authenticated app.
+- Fixed `app-topbar.tsx` infinite re-render: removed `useEffect([notifications])` that caused a render loop (default `[]` parameter creates new array ref each render).
+- Reverted `app/page.tsx` to serve `<LandingPageClient />` directly — removed Codex-added role-based redirects.
+- Fixed `app/layout.tsx` to skip Firestore reads for unauthenticated visitors (cookie check only).
+- Replaced animated green grid in landing page hero with realistic `AppMockup` workout card component.
+- Fixed framer-motion blank-page issue on fresh server start using `useMounted` pattern (`initial={false}` until hydration).
 
 ---
 

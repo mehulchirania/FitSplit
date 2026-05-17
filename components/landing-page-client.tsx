@@ -425,7 +425,10 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 export function LandingPageClient() {
-  const reduced = useReducedMotion() ?? false;
+  const prefersReduced = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  const reduced = !mounted || (prefersReduced ?? false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [loginOpen, setLoginOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
