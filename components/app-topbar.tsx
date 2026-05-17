@@ -46,9 +46,6 @@ export function AppTopbar({
     setIsProfileOpen(false);
   }, [pathname]);
 
-  useEffect(() => {
-    setVisibleNotifications(notifications.filter((notification) => !notification.readAt));
-  }, [notifications]);
 
   useEffect(() => {
     function closeProfile(event: MouseEvent) {
