@@ -1,5 +1,15 @@
 # FitSplit Project Handoff
 
+## Co-Developer Protocol
+
+This project is maintained by two AI co-developers — **Claude** and **Codex** — plus the owner, **Mehul Chirania**. Both developers must:
+1. Prepend a dated "Latest Update" entry to this file after every change session.
+2. Keep `README.md` Current Status and Features sections accurate.
+
+This file is the canonical handoff document. Read it first when starting any new session.
+
+---
+
 ## TODO
 
 - Develop billing support for FitSplit:
@@ -13,6 +23,48 @@
   - staff password reset approval flow through gym owner/admin
   - SMS/email provider selection
   - abuse limits, expiry windows, and audit trail
+
+## Latest Update - 2026-05-17: Replace hero grid with app mockup
+
+- Removed abstract `WorkoutGrid` (animated green squares) from hero — users had no idea what it represented.
+- Replaced with `AppMockup`: a realistic member workout card showing gym name, plan tag (Push Day), today's exercises with sets/reps/weight, completion progress ring (2/4), and a "Log Next Set" CTA.
+- Active exercise row cycles every 2.2s to hint at live interaction.
+- Added `lp-mockup-*` CSS in `globals.css`; removed `lp-grid`, `lp-cell-*`, `lp-chips`, `lp-chip` CSS.
+
+---
+
+## Latest Update - 2026-05-17: Hero viewport fit fix
+
+- Reduced `.lp-h1` font size from `clamp(52px, 7vw, 88px)` to `clamp(36px, 4.2vw, 58px)` — headline was overflowing the viewport.
+- Reduced hero top padding from `120px` to `80px` and bottom from `80px` to `48px`.
+- Reduced `.lp-hero-inner` gap from `64px` to `40px` and `.lp-hero-copy` gap from `28px` to `18px`.
+- Reduced `.lp-subheadline` from `17px` to `15px`.
+- All hero elements (FitSplit branding, eyebrow, headline, subheadline, CTA, workout grid + chips) now fit in one viewport without scrolling.
+
+---
+
+## Latest Update - 2026-05-17: Premium dark B2B landing page redesign
+
+- Rebuilt `components/landing-page-client.tsx` from scratch as a Linear/Vercel/Raycast-inspired dark SaaS landing page.
+- Installed `framer-motion` (v11) for all animations.
+- Added Syne (700/800) + DM Sans (400/500) fonts to `app/layout.tsx` alongside existing Inter.
+- Design tokens scoped to `.lp-root` (CSS variables `--lp-*`) — completely isolated from the authenticated app shell.
+- Sections: Navbar → Hero → Feature strip → How it works → Audience pills → Workflow bento → Partners → Footer → Login modal.
+- Hero uses `/bg-image.png` as a 12%-opacity gym background with dark gradient overlay + radial lime glow. Animated 6×4 workout grid replaces old trainer workspace widget; cells cycle active→done every 4s. Floating metric chips animate in on load.
+- Gradient animated text on "every member" in H1.
+- Custom springy cursor (desktop only, hidden on touch). SVG noise overlay at 3% opacity. Reduced-motion support via `useReducedMotion()`.
+- Hero content fades on scroll via `useScroll`/`useTransform`.
+- Navbar blurs with `backdrop-filter` after 60px scroll.
+- Login modal: `AnimatePresence` scale/opacity, animated tab underline via `layoutId`, full Firebase auth preserved (loginWithCredentials, requestPasswordReset, Escape/outside close).
+- Appended ~500 lines of scoped `lp-*` CSS to `globals.css`.
+- Verification: `npm run typecheck` ✅ · `npm run build` ✅
+
+## Latest Update - 2026-05-17: Claude onboarded as co-developer
+
+- Claude read the full codebase (layout, auth, Firestore collections, domain types, read-models, key components) and built persistent project memory.
+- Established co-developer protocol: both Claude and Codex must update README.md + PROJECT_HANDOFF.md after every change session.
+- Added "Co-Developer Notes" section to README.md and "Co-Developer Protocol" section to this file.
+- No functional code changes in this session — onboarding/orientation pass only.
 
 ## Latest Update - 2026-05-13: Login Enter Key + Reset Request UX
 

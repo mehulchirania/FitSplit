@@ -1,519 +1,862 @@
 "use client";
 
 import { FirebaseError } from "firebase/app";
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
-import type { FormEvent, MouseEvent } from "react";
-import { Activity, Dumbbell, Mail, Menu, UsersRound, X } from "@/components/icons";
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
+import type { FormEvent, MouseEvent as ReactMouseEvent } from "react";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  useScroll,
+  useTransform,
+  type Variants,
+} from "framer-motion";
 import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
 import { submitContactMessage } from "@/lib/firebase/actions";
 import type { FormActionState } from "@/types/action-state";
 
-const initialContactState: FormActionState = {
-  status: "idle",
-  message: ""
-};
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const valueCards = [
+// ─── Data ─────────────────────────────────────────────────────────────────────
+
+const initialContactState: FormActionState = { status: "idle", message: "" };
+
+const featureCards = [
   {
+    icon: "zap",
     title: "Assign workouts faster",
-    body: "Pick a saved split, select a member, and keep training delivery consistent."
+    body: "Pick a saved split, select a member, and keep training delivery consistent across your whole roster.",
   },
   {
+    icon: "grid",
     title: "Keep training structured",
-    body: "Members get a clear weekly plan instead of scattered notes and chat messages."
+    body: "Members get a clear weekly plan instead of scattered notes and chat messages.",
   },
   {
+    icon: "users",
     title: "Reduce trainer confusion",
-    body: "Owners and trainers work from the same exercise catalog, programs, and member records."
+    body: "Owners and trainers work from the same exercise catalog, programs, and member records.",
   },
   {
+    icon: "phone",
     title: "Give members a cleaner app",
-    body: "Today's workout, exercises, and lift logging stay focused on what they need in the gym."
-  }
+    body: "Today's workout, exercises, and lift logging — focused on what they need in the gym.",
+  },
 ];
 
-const workflowSteps = [
-  ["Create plans", "Build reusable workout splits from your exercise catalog."],
-  ["Assign members", "Choose the right plan for an individual member in seconds."],
-  ["Members follow workouts", "Members open their app and follow the day's assigned training."],
-  ["Track progress", "Review lift logs, completion signals, and training history clearly."]
+const steps = [
+  { n: "01", label: "Create plans", body: "Build reusable workout splits from your exercise catalog." },
+  { n: "02", label: "Assign members", body: "Choose the right plan for an individual member in seconds." },
+  { n: "03", label: "Members follow", body: "Members open their app and follow the day's assigned training." },
+  { n: "04", label: "Track progress", body: "Review lift logs, completion signals, and training history." },
 ];
 
-const audienceCards = [
+const audience = [
   "Independent gyms",
   "Personal trainers",
   "Strength gyms",
-  "Semi-personal training setups"
+  "Semi-personal training setups",
 ];
 
-const previewCards = [
-  {
-    body: "Trainer selects a member and applies a saved workout split.",
-    title: "Assign workouts in seconds",
-    type: "assignment"
-  },
-  {
-    body: "A clean mobile workout view for today's exercises.",
-    title: "Members see only what matters",
-    type: "mobile"
-  },
-  {
-    body: "Lift history keeps progressive overload visible.",
-    title: "Track progress clearly",
-    type: "progress"
-  },
-  {
-    body: "Simple action lists help owners see who needs a plan.",
-    title: "Built for real gyms",
-    type: "owner"
-  }
-];
+// ─── Animation variants ───────────────────────────────────────────────────────
 
-function authErrorMessage(error: unknown) {
-  if (error instanceof FirebaseError) {
-    if (["auth/invalid-credential", "auth/user-not-found", "auth/wrong-password"].includes(error.code)) {
-      return "Invalid login details.";
-    }
+const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
 
-    if (error.code === "auth/too-many-requests") {
-      return "Too many attempts. Please wait a minute and try again.";
-    }
-  }
+const fadeUp: Variants = {
+  hidden: { y: 32, opacity: 0 },
+  show: { y: 0, opacity: 1, transition: { duration: 0.7, ease: EASE } },
+};
 
-  return "Unable to sign in. Please try again.";
-}
+const stagger: Variants = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.12 } },
+};
 
-function LogoMark({ size = "normal" }: { size?: "normal" | "large" }) {
+// ─── Inline SVG icons ─────────────────────────────────────────────────────────
+
+function ZapIcon() {
   return (
-    <span className={`fs3-logo-mark ${size === "large" ? "fs3-logo-mark-large" : ""}`} aria-hidden="true">
-      <img alt="" className="theme-logo-dark" src="/fitsplit-logo-dark.png" />
-      <img alt="" className="theme-logo-light" src="/fitsplit-logo-light.png" />
-    </span>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M13 2L4.5 13.5H12L11 22L19.5 10.5H12L13 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   );
 }
 
-function LoginModal({
-  isOpen,
-  onClose
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) {
+function GridIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="3" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+      <rect x="14" y="3" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+      <rect x="3" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+      <rect x="14" y="14" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="2" />
+    </svg>
+  );
+}
+
+function UsersIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <circle cx="9" cy="7" r="4" stroke="currentColor" strokeWidth="2" />
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M16 3.13a4 4 0 0 1 0 7.75" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PhoneIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <rect x="5" y="2" width="14" height="20" rx="2" stroke="currentColor" strokeWidth="2" />
+      <path d="M12 18h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function ArrowRightIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function CloseIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function HamburgerIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M3 12h18M3 6h18M3 18h18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function featureIcon(key: string) {
+  if (key === "zap") return <ZapIcon />;
+  if (key === "grid") return <GridIcon />;
+  if (key === "users") return <UsersIcon />;
+  return <PhoneIcon />;
+}
+
+// ─── AppMockup ────────────────────────────────────────────────────────────────
+
+const mockExercises = [
+  { name: "Bench Press",      sets: 4, reps: 8,  kg: "85 kg", done: true  },
+  { name: "Overhead Press",   sets: 3, reps: 10, kg: "50 kg", done: true  },
+  { name: "Incline DB Press", sets: 3, reps: 12, kg: "30 kg", done: false },
+  { name: "Tricep Pushdown",  sets: 3, reps: 15, kg: "—",     done: false },
+];
+
+function CheckIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AppMockup({ reduced }: { reduced: boolean }) {
+  const [activeIdx, setActiveIdx] = useState(2);
+
+  useEffect(() => {
+    if (reduced) return;
+    const id = setInterval(() => {
+      setActiveIdx((i) => (i + 1) % mockExercises.length);
+    }, 2200);
+    return () => clearInterval(id);
+  }, [reduced]);
+
+  return (
+    <div className="lp-mockup">
+      {/* top bar */}
+      <div className="lp-mockup-bar">
+        <span className="lp-mockup-gym">SHG Gym</span>
+        <span className="lp-mockup-plan-tag">Push Day</span>
+      </div>
+
+      {/* header */}
+      <div className="lp-mockup-header">
+        <div>
+          <div className="lp-mockup-day">Today&rsquo;s Workout</div>
+          <div className="lp-mockup-member">Mehul · Week 3</div>
+        </div>
+        <div className="lp-mockup-progress-ring" aria-label="50% complete">
+          <svg width="40" height="40" viewBox="0 0 40 40">
+            <circle cx="20" cy="20" r="16" fill="none" stroke="rgba(255,255,255,.08)" strokeWidth="3" />
+            <circle cx="20" cy="20" r="16" fill="none" stroke="#C8F135" strokeWidth="3"
+              strokeDasharray="100.5" strokeDashoffset="50" strokeLinecap="round"
+              transform="rotate(-90 20 20)" />
+          </svg>
+          <span className="lp-mockup-ring-label">2/4</span>
+        </div>
+      </div>
+
+      {/* exercise rows */}
+      <div className="lp-mockup-exercises">
+        {mockExercises.map((ex, i) => (
+          <div
+            key={ex.name}
+            className={`lp-mockup-row${ex.done ? " lp-mockup-row-done" : ""}${i === activeIdx && !ex.done ? " lp-mockup-row-active" : ""}`}
+          >
+            <span className={`lp-mockup-check${ex.done ? " lp-mockup-check-done" : ""}`}>
+              {ex.done ? <CheckIcon /> : null}
+            </span>
+            <span className="lp-mockup-ex-name">{ex.name}</span>
+            <span className="lp-mockup-ex-detail">{ex.sets}×{ex.reps}</span>
+            <span className="lp-mockup-ex-kg">{ex.kg}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* footer */}
+      <div className="lp-mockup-footer">
+        <div className="lp-mockup-footer-btn">Log Next Set</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Login modal ──────────────────────────────────────────────────────────────
+
+function authErrMsg(err: unknown) {
+  if (err instanceof FirebaseError) {
+    if (["auth/invalid-credential", "auth/user-not-found", "auth/wrong-password"].includes(err.code)) {
+      return "Invalid login details.";
+    }
+    if (err.code === "auth/too-many-requests") return "Too many attempts. Wait a minute and try again.";
+  }
+  return "Unable to sign in. Please try again.";
+}
+
+function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mode, setMode] = useState<"member" | "staff">("member");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isPending, start] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const isMember = mode === "member";
 
   useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    function handleKeydown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        onClose();
-      }
-    }
-
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeydown);
-
+    window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeydown);
+      window.removeEventListener("keydown", onKey);
     };
-  }, [isOpen, onClose]);
+  }, [open, onClose]);
 
-  if (!isOpen) {
-    return null;
+  function switchMode(next: "member" | "staff") {
+    setMode(next); setUsername(""); setPassword(""); setError(""); setMessage("");
   }
 
-  function switchMode(nextMode: "member" | "staff") {
-    setMode(nextMode);
-    setUsername("");
-    setPassword("");
-    setError("");
-    setMessage("");
+  function onBackdrop(e: ReactMouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
   }
 
-  function handleBackdropClick(event: MouseEvent<HTMLDivElement>) {
-    if (event.target === event.currentTarget) {
-      onClose();
-    }
-  }
+  async function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setError(""); setMessage("");
+    const u = username.trim(), p = password.trim();
+    if (!u) { setError(isMember ? "Enter your mobile number or email." : "Enter your username."); return; }
+    if (isMember && !/^\d{4}$/.test(p)) { setError("PIN must be exactly 4 numeric digits."); return; }
+    if (!isMember && !p) { setError("Enter your password."); return; }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setError("");
-    setMessage("");
-
-    const cleanUsername = username.trim();
-    const cleanPassword = password.trim();
-
-    if (!cleanUsername) {
-      setError(isMember ? "Enter your mobile number or email." : "Enter your username.");
-      return;
-    }
-
-    if (isMember && !/^\d{4}$/.test(cleanPassword)) {
-      setError("PIN must be exactly 4 numeric digits.");
-      return;
-    }
-
-    if (!isMember && !cleanPassword) {
-      setError("Enter your password.");
-      return;
-    }
-
-    startTransition(async () => {
+    start(async () => {
       try {
-        const formData = new FormData();
-        formData.set("username", cleanUsername);
-        formData.set("password", cleanPassword);
-        formData.set("mode", mode);
-        const session = await loginWithCredentials(formData);
-
-        if (session.status !== "success") {
-          setError(session.message);
-          return;
-        }
-
+        const fd = new FormData();
+        fd.set("username", u); fd.set("password", p); fd.set("mode", mode);
+        const session = await loginWithCredentials(fd);
+        if (session.status !== "success") { setError(session.message); return; }
         window.scrollTo(0, 0);
         window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
         window.location.replace(session.redirectUrl);
-      } catch (caughtError) {
-        setError(authErrorMessage(caughtError));
+      } catch (err) {
+        setError(authErrMsg(err));
       }
     });
   }
 
-  function handleForgotPassword() {
-    setError("");
-    setMessage("");
+  function onForgot() {
+    setError(""); setMessage("");
+    const u = username.trim();
+    if (!u) { setError(isMember ? "Enter your mobile/email first." : "Enter your username first."); return; }
+    const msg = isMember
+      ? "A reset request will be sent to the gym owner. Contact them for your new PIN."
+      : "A reset request will be sent to the gym owner and admin.";
+    if (!window.confirm(msg)) return;
 
-    const cleanUsername = username.trim();
-    if (!cleanUsername) {
-      setError(isMember ? "Enter your mobile number or email first." : "Enter your username first.");
-      return;
-    }
-
-    const prompt = isMember
-      ? "A password reset request will be sent to the gym owner. Please contact them for the new PIN."
-      : "A password reset request will be sent to the gym owner and admin.";
-
-    if (!window.confirm(prompt)) {
-      return;
-    }
-
-    startTransition(async () => {
-      const formData = new FormData();
-      formData.set("username", cleanUsername);
-      formData.set("mode", mode);
-      const result = await requestPasswordReset(formData);
-
-      if (result.status === "success") {
-        setMessage(result.message);
-        window.alert(result.message);
-      } else {
-        setError(result.message);
-      }
+    start(async () => {
+      const fd = new FormData();
+      fd.set("username", u); fd.set("mode", mode);
+      const result = await requestPasswordReset(fd);
+      if (result.status === "success") { setMessage(result.message); window.alert(result.message); }
+      else setError(result.message);
     });
   }
 
   return (
-    <div className="fs3-modal-backdrop" onMouseDown={handleBackdropClick}>
-      <section className="fs3-login-modal" aria-label="Login modal" role="dialog" aria-modal="true">
-        <button className="fs3-modal-close" aria-label="Close login" onClick={onClose} type="button">
-          <X />
-        </button>
-        <div className="fs3-modal-heading">
-          <LogoMark />
-          <h2>Access your workspace</h2>
-        </div>
-
-        <div className="fs3-login-tabs" role="tablist" aria-label="Login type">
-          <button
-            aria-selected={isMember}
-            className={isMember ? "is-active" : ""}
-            onClick={() => switchMode("member")}
-            role="tab"
-            type="button"
-          >
-            Member
-          </button>
-          <button
-            aria-selected={!isMember}
-            className={!isMember ? "is-active" : ""}
-            onClick={() => switchMode("staff")}
-            role="tab"
-            type="button"
-          >
-            Staff
-          </button>
-        </div>
-
-        <form
-          className="fs3-login-form"
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              formRef.current?.requestSubmit();
-            }
-          }}
-          onSubmit={handleSubmit}
-          ref={formRef}
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="lp-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.22 }}
+          onMouseDown={onBackdrop}
         >
-          <label>
-            <span>{isMember ? "Mobile number or email" : "Username"}</span>
-            <input
-              autoComplete="username"
-              inputMode={isMember ? "email" : undefined}
-              onChange={(event) => setUsername(event.target.value)}
-              required
-              type="text"
-              value={username}
-            />
-          </label>
-          <label>
-            <span>{isMember ? "4-digit PIN" : "Password"}</span>
-            <input
-              autoComplete={isMember ? "one-time-code" : "current-password"}
-              inputMode={isMember ? "numeric" : undefined}
-              maxLength={isMember ? 4 : undefined}
-              onChange={(event) =>
-                setPassword(isMember ? event.target.value.replace(/\D/g, "").slice(0, 4) : event.target.value)
-              }
-              pattern={isMember ? "\\d{4}" : undefined}
-              required
-              type="password"
-              value={password}
-            />
-          </label>
-
-          {error ? <p className="fs3-login-error">{error}</p> : null}
-          {message ? <p className="fs3-login-success">{message}</p> : null}
-
-          <button className="fs3-button fs3-button-primary fs3-full-button" disabled={isPending} type="submit">
-            {isPending ? "Logging in..." : "Log in"}
-          </button>
-          <button
-            className="fs3-forgot-button"
-            disabled={isPending}
-            onClick={handleForgotPassword}
-            type="button"
+          <motion.section
+            className="lp-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Login"
+            initial={{ opacity: 0, scale: 0.93, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.93, y: 20 }}
+            transition={{ duration: 0.3, ease: EASE }}
           >
-            Forgot password?
-          </button>
-        </form>
+            {/* Header */}
+            <div className="lp-modal-hdr">
+              <div className="lp-modal-brand">
+                <img src="/fitsplit-logo-dark.png" alt="FitSplit" width="22" height="22" />
+                <span>FitSplit</span>
+              </div>
+              <button className="lp-modal-x" onClick={onClose} aria-label="Close login" type="button">
+                <CloseIcon />
+              </button>
+            </div>
 
-        {isMember ? <p className="fs3-helper">Use your registered mobile/email and 4-digit PIN.</p> : null}
-        <p className="fs3-modal-note">Built for gym teams to manage workouts, members, and progress from one workspace.</p>
-      </section>
-    </div>
+            <h2 className="lp-modal-title">Access your workspace</h2>
+            <p className="lp-modal-sub">Members use mobile/email + PIN. Staff use username + password.</p>
+
+            {/* Tabs */}
+            <div className="lp-tabs" role="tablist" aria-label="Login type">
+              {(["member", "staff"] as const).map((tab) => (
+                <button
+                  key={tab}
+                  role="tab"
+                  aria-selected={mode === tab}
+                  className={`lp-tab${mode === tab ? " lp-tab-on" : ""}`}
+                  onClick={() => switchMode(tab)}
+                  type="button"
+                >
+                  {tab[0].toUpperCase() + tab.slice(1)}
+                  {mode === tab && (
+                    <motion.span
+                      className="lp-tab-underline"
+                      layoutId="lp-tab-underline"
+                      transition={{ type: "spring", damping: 30, stiffness: 400 }}
+                    />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            {/* Form */}
+            <form
+              ref={formRef}
+              className="lp-modal-form"
+              onSubmit={onSubmit}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); formRef.current?.requestSubmit(); } }}
+            >
+              <label className="lp-field">
+                <span>{isMember ? "Mobile number or email" : "Username"}</span>
+                <input
+                  type="text"
+                  autoComplete="username"
+                  inputMode={isMember ? "email" : undefined}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </label>
+              <label className="lp-field">
+                <span>{isMember ? "4-digit PIN" : "Password"}</span>
+                <input
+                  type="password"
+                  autoComplete={isMember ? "one-time-code" : "current-password"}
+                  inputMode={isMember ? "numeric" : undefined}
+                  maxLength={isMember ? 4 : undefined}
+                  value={password}
+                  onChange={(e) =>
+                    setPassword(isMember ? e.target.value.replace(/\D/g, "").slice(0, 4) : e.target.value)
+                  }
+                  pattern={isMember ? "\\d{4}" : undefined}
+                  required
+                />
+              </label>
+              {error && <p className="lp-form-error" role="alert">{error}</p>}
+              {message && <p className="lp-form-success" role="status">{message}</p>}
+
+              <button className="lp-btn-primary lp-w-full" disabled={isPending} type="submit">
+                {isPending ? "Logging in…" : "Log in"}
+              </button>
+              <button className="lp-forgot" disabled={isPending} onClick={onForgot} type="button">
+                Forgot password?
+              </button>
+            </form>
+
+            <p className="lp-modal-note">
+              Workout management only. No billing or membership setup required.
+            </p>
+          </motion.section>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
-export function LandingPageClient() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoginOpen, setIsLoginOpen] = useState(false);
-  const [contactState, contactAction, isContactPending] = useActionState(submitContactMessage, initialContactState);
+// ─── Main export ──────────────────────────────────────────────────────────────
 
-  function openLogin() {
-    setIsMenuOpen(false);
-    setIsLoginOpen(true);
-  }
+export function LandingPageClient() {
+  const reduced = useReducedMotion() ?? false;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+  const [contactState, contactAction, contactPending] = useActionState(
+    submitContactMessage,
+    initialContactState
+  );
+
+  const heroRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
+  const heroOpacity = useTransform(scrollYProgress, [0, 0.65], [1, 0.35]);
+
+  useEffect(() => {
+    const fn = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  useEffect(() => {
+    if (reduced) return;
+    const id = setInterval(() => setActiveStep((s) => (s + 1) % 4), 800);
+    return () => clearInterval(id);
+  }, [reduced]);
+
+  function openLogin() { setMenuOpen(false); setLoginOpen(true); }
 
   return (
-    <main className="fs3-landing" id="top">
-      <header className="fs3-navbar">
-        <a className="fs3-brand" href="#top" aria-label="FitSplit home">
-          <LogoMark />
-          <span>FitSplit</span>
-        </a>
+    <div className="lp-root" id="top">
+      {/* Noise texture overlay */}
+      <div className="lp-noise" aria-hidden="true" />
 
-        <nav className={`fs3-nav-links ${isMenuOpen ? "is-open" : ""}`} aria-label="Landing navigation">
-          <a href="#features" onClick={() => setIsMenuOpen(false)}>Features</a>
-          <a href="#partners" onClick={() => setIsMenuOpen(false)}>Partners</a>
-          <a href="#contact" onClick={() => setIsMenuOpen(false)}>Contact</a>
-        </nav>
+      {/* ── Navbar ─────────────────────────────────────────── */}
+      <header className={`lp-nav${scrolled ? " lp-nav-scrolled" : ""}`}>
+        <div className="lp-nav-inner">
+          <a href="#top" className="lp-brand" aria-label="FitSplit home">
+            <img src="/fitsplit-logo-dark.png" alt="" width="26" height="26" />
+            <span>FitSplit</span>
+          </a>
 
-        <div className="fs3-nav-actions">
-          <button
-            className="fs3-menu-button"
-            aria-expanded={isMenuOpen}
-            aria-label="Open navigation menu"
-            onClick={() => setIsMenuOpen((current) => !current)}
-            type="button"
-          >
-            <Menu />
-          </button>
-          <button className="fs3-button fs3-button-primary" onClick={openLogin} type="button">
-            Login
-          </button>
+          <nav className="lp-nav-links" aria-label="Site navigation">
+            <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+            <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a>
+            <a href="#partners" onClick={() => setMenuOpen(false)}>Partners</a>
+          </nav>
+
+          <div className="lp-nav-end">
+            <button className="lp-nav-login" onClick={openLogin} type="button">Login</button>
+            <button
+              className="lp-hamburger"
+              aria-expanded={menuOpen}
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              onClick={() => setMenuOpen((v) => !v)}
+              type="button"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={menuOpen ? "x" : "h"}
+                  initial={{ opacity: 0, rotate: -90 }}
+                  animate={{ opacity: 1, rotate: 0 }}
+                  exit={{ opacity: 0, rotate: 90 }}
+                  transition={{ duration: 0.14 }}
+                >
+                  {menuOpen ? <CloseIcon /> : <HamburgerIcon />}
+                </motion.span>
+              </AnimatePresence>
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence>
+          {menuOpen && (
+            <motion.nav
+              className="lp-mobile-menu"
+              aria-label="Mobile navigation"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.26, ease: EASE }}
+            >
+              <a href="#features" onClick={() => setMenuOpen(false)}>Features</a>
+              <a href="#how-it-works" onClick={() => setMenuOpen(false)}>How it works</a>
+              <a href="#partners" onClick={() => setMenuOpen(false)}>Partners</a>
+              <button className="lp-nav-login lp-mobile-login" onClick={openLogin} type="button">
+                Login
+              </button>
+            </motion.nav>
+          )}
+        </AnimatePresence>
       </header>
 
-      <section className="fs3-hero">
-        <div className="fs3-hero-copy">
-          <p className="fs3-eyebrow">Workout management for gyms</p>
-          <h1>Deliver structured workouts to every member.</h1>
-          <p>
-            FitSplit helps gyms assign plans, guide members, and track training progress without
-            complicated systems.
-          </p>
-          <div className="fs3-hero-actions">
-            <button className="fs3-button fs3-button-primary" onClick={openLogin} type="button">
-              Login
-            </button>
-            <a className="fs3-text-link" href="#features">
-              See how it works <span aria-hidden="true">-&gt;</span>
-            </a>
-          </div>
-        </div>
+      {/* ── Hero ─────────────────────────────────────────────── */}
+      <section className="lp-hero" ref={heroRef} aria-labelledby="lp-hero-title">
+        {/* Background gym image + dark overlay */}
+        <div className="lp-hero-bg" aria-hidden="true" />
+        {/* Radial lime glow from top */}
+        <div className="lp-hero-glow" aria-hidden="true" />
 
-        <article className="fs3-hero-mockup" aria-label="Workout assignment preview">
-          <div className="fs3-mockup-toolbar">
-            <span>Assign workout</span>
-            <em>Trainer workspace</em>
-          </div>
-          <div className="fs3-assignment-panel">
-            <div>
-              <span>Member</span>
-              <strong>Rahul Sharma</strong>
-              <small>Goal: Muscle gain</small>
-            </div>
-            <div>
-              <span>Workout split</span>
-              <strong>PPL Upper Lower</strong>
-              <small>Structured weekly plan</small>
-            </div>
-          </div>
-          <div className="fs3-day-preview">
-            <span>Today's workout</span>
-            <h3>Push Strength</h3>
-            <ul>
-              <li>Incline dumbbell press</li>
-              <li>Shoulder press</li>
-              <li>Triceps rope pushdown</li>
-            </ul>
-          </div>
-        </article>
+        <motion.div
+          className="lp-hero-inner"
+          style={reduced ? undefined : { opacity: heroOpacity }}
+        >
+          {/* Copy */}
+          <motion.div className="lp-hero-copy" variants={stagger} initial="hidden" animate="show">
+            <motion.p className="lp-eyebrow" variants={fadeUp}>
+              <span className="lp-pulse-dot" aria-hidden="true" />
+              Live workout delivery for gyms
+            </motion.p>
+
+            <motion.h1 className="lp-h1" id="lp-hero-title" variants={fadeUp}>
+              Structured workouts.
+              <br />
+              Delivered to{" "}
+              <span className="lp-gradient-text">every member.</span>
+            </motion.h1>
+
+            <motion.p className="lp-subheadline" variants={fadeUp}>
+              FitSplit gives gym owners and trainers one calm workspace to assign plans, guide
+              members, and track training — with no billing or membership complexity.
+            </motion.p>
+
+            <motion.div className="lp-hero-cta" variants={fadeUp}>
+              <button className="lp-btn-primary lp-btn-arrow" onClick={openLogin} type="button">
+                Start Demo
+                <span className="lp-btn-arrow-icon"><ArrowRightIcon /></span>
+              </button>
+              <a href="#how-it-works" className="lp-btn-ghost">
+                See how it works →
+              </a>
+            </motion.div>
+          </motion.div>
+
+          {/* App mockup visual */}
+          <motion.div
+            className="lp-hero-visual"
+            initial={reduced ? false : { opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.85, delay: 0.45, ease: EASE }}
+          >
+            <div className="lp-visual-glow" aria-hidden="true" />
+            <AppMockup reduced={reduced} />
+          </motion.div>
+        </motion.div>
       </section>
 
-      <section className="fs3-section fs3-value">
-        <div className="fs3-section-heading">
-          <p className="fs3-eyebrow">Why gyms use FitSplit</p>
-          <h2>Simple workout delivery for real training floors.</h2>
-          <p>FitSplit keeps plans, members, and progress in one focused system for the people running training.</p>
-        </div>
-        <div className="fs3-value-grid">
-          {valueCards.map((card) => (
-            <article key={card.title}>
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
-            </article>
-          ))}
+      {/* ── Feature strip ────────────────────────────────────── */}
+      <section className="lp-section lp-features" id="features">
+        <div className="lp-container">
+          <motion.div
+            className="lp-section-head"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            <motion.h2 className="lp-h2" variants={fadeUp}>
+              Built around how training floors work.
+            </motion.h2>
+            <motion.p className="lp-section-sub" variants={fadeUp}>
+              No clutter. No billing. Just plans, members, and progress.
+            </motion.p>
+          </motion.div>
+
+          <motion.div
+            className="lp-feat-grid"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-60px" }}
+          >
+            {featureCards.map((card) => (
+              <motion.article key={card.title} className="lp-feat-card" variants={fadeUp}>
+                <div className="lp-feat-icon" aria-hidden="true">
+                  {featureIcon(card.icon)}
+                </div>
+                <h3 className="lp-h3">{card.title}</h3>
+                <p>{card.body}</p>
+              </motion.article>
+            ))}
+          </motion.div>
         </div>
       </section>
 
-      <section className="fs3-section fs3-how" id="features">
-        <div className="fs3-section-heading">
-          <p className="fs3-eyebrow">How it works</p>
-          <h2>From trainer plan to member workout in four clear steps.</h2>
-        </div>
-        <div className="fs3-step-grid">
-          {workflowSteps.map(([title, body], index) => (
-            <article key={title}>
-              {index === 0 ? <Dumbbell /> : index === 1 ? <UsersRound /> : <Activity />}
-              <span>0{index + 1}</span>
-              <h3>{title}</h3>
-              <p>{body}</p>
-            </article>
-          ))}
-        </div>
-      </section>
+      {/* ── How it works ─────────────────────────────────────── */}
+      <section className="lp-section lp-hiw" id="how-it-works">
+        <div className="lp-container">
+          <motion.div
+            className="lp-section-head"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            <motion.h2 className="lp-h2" variants={fadeUp}>
+              From plan to progress in four steps.
+            </motion.h2>
+          </motion.div>
 
-      <section className="fs3-section fs3-audience">
-        <div className="fs3-section-heading">
-          <p className="fs3-eyebrow">Who it is for</p>
-          <h2>Made for gyms that deliver coaching, not just access.</h2>
-        </div>
-        <div className="fs3-audience-grid">
-          {audienceCards.map((item) => (
-            <article key={item}>{item}</article>
-          ))}
-        </div>
-      </section>
-
-      <section className="fs3-section fs3-previews">
-        <div className="fs3-section-heading">
-          <p className="fs3-eyebrow">Product workflows</p>
-          <h2>Clean screens for the moments that matter.</h2>
-        </div>
-        <div className="fs3-preview-grid">
-          {previewCards.map((card) => (
-            <article className={`fs3-workflow-card fs3-workflow-${card.type}`} key={card.title}>
-              <div className="fs3-mini-screen" aria-hidden="true">
-                <span />
-                <span />
-                <span />
+          <div className="lp-steps" role="list">
+            {steps.map((step, i) => (
+              <div
+                key={step.label}
+                role="listitem"
+                className={`lp-step${activeStep === i ? " lp-step-on" : ""}`}
+              >
+                <span className="lp-step-num" aria-hidden="true">{step.n}</span>
+                <h3 className="lp-h3">{step.label}</h3>
+                <p>{step.body}</p>
               </div>
-              <h3>{card.title}</h3>
-              <p>{card.body}</p>
-            </article>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
 
-      <section className="fs3-section fs3-partners" id="partners">
-        <div className="fs3-section-heading">
-          <p className="fs3-eyebrow">Partners</p>
-          <h2>Trusted by focused fitness communities.</h2>
+      {/* ── Audience ─────────────────────────────────────────── */}
+      <section className="lp-section lp-audience">
+        <div className="lp-container">
+          <motion.div
+            className="lp-audience-row"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true }}
+          >
+            <motion.span className="lp-audience-label" variants={fadeUp}>Works for</motion.span>
+            <motion.div className="lp-pills" variants={stagger}>
+              {audience.map((item) => (
+                <motion.span key={item} className="lp-pill" variants={fadeUp}>
+                  {item}
+                </motion.span>
+              ))}
+            </motion.div>
+          </motion.div>
         </div>
-        <article className="fs3-partner-card">
-          <img alt="Sri Shakthi Hanuman Gym logo" src="/shg-gym-logo.jpeg" />
-          <div>
-            <h3>Sri Shakthi Hanuman Gym</h3>
-            <blockquote>
-              "FitSplit simplified how our trainers assign and track workouts across all our members."
-            </blockquote>
-            <p>Gym Manager, Sri Shakthi Hanuman Gym</p>
-          </div>
-        </article>
       </section>
 
-      <footer className="fs3-footer" id="contact">
-        <div className="fs3-footer-brand">
-          <div className="fs3-brand">
-            <LogoMark />
-            <span>FitSplit</span>
-          </div>
-          <p>Workout delivery, member progress, and trainer coordination in one focused workspace for gyms.</p>
+      {/* ── Workflow bento ───────────────────────────────────── */}
+      <section className="lp-section lp-workflow">
+        <div className="lp-container">
+          <motion.div
+            className="lp-section-head"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            <motion.h2 className="lp-h2" variants={fadeUp}>
+              Clean screens for the moments that matter.
+            </motion.h2>
+          </motion.div>
+
+          <motion.div
+            className="lp-bento"
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-60px" }}
+          >
+            {/* Large card — assign workflow */}
+            <motion.article className="lp-bento-card lp-bento-large" variants={fadeUp}>
+              <div className="lp-mock lp-mock-assign" aria-hidden="true">
+                <div className="lp-mock-bar">
+                  <span className="lp-mock-dot" /><span className="lp-mock-dot" /><span className="lp-mock-dot" />
+                  <span className="lp-mock-bar-title">Assign workout</span>
+                </div>
+                <div className="lp-mock-body">
+                  <div className="lp-mock-row">
+                    <span className="lp-mock-label">Member</span>
+                    <strong className="lp-mock-val">Rahul Sharma</strong>
+                    <small className="lp-mock-meta">Goal: Muscle gain</small>
+                  </div>
+                  <div className="lp-mock-row">
+                    <span className="lp-mock-label">Split</span>
+                    <strong className="lp-mock-val">PPL × 2</strong>
+                    <small className="lp-mock-meta">6 days / week</small>
+                  </div>
+                  <div className="lp-mock-tags">
+                    <span className="lp-mock-tag">Push · Pull · Legs</span>
+                    <span className="lp-mock-tag lp-mock-accent">✓ Assign plan</span>
+                  </div>
+                </div>
+              </div>
+              <h3 className="lp-h3">Assign workouts in seconds</h3>
+              <p>Pick a saved split, pick a member, done. No rebuilding plans each time.</p>
+            </motion.article>
+
+            {/* Tall card — member view */}
+            <motion.article className="lp-bento-card lp-bento-tall" variants={fadeUp}>
+              <div className="lp-mock lp-mock-member" aria-hidden="true">
+                <div className="lp-mock-bar">
+                  <span className="lp-mock-dot" />
+                  <span className="lp-mock-bar-title">Today · Push</span>
+                </div>
+                <div className="lp-mock-body">
+                  <div className="lp-mock-day-head">Push Strength</div>
+                  {["Bench press · 4×8", "Incline DB · 3×10", "Shoulder press · 3×10", "Lat raises · 3×15"].map(
+                    (ex) => (
+                      <div key={ex} className="lp-mock-ex">{ex}</div>
+                    )
+                  )}
+                </div>
+              </div>
+              <h3 className="lp-h3">Members see only what matters</h3>
+              <p>A clean mobile view for the day's exercises.</p>
+            </motion.article>
+
+            {/* Medium cards */}
+            <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
+              <div className="lp-bento-stat">
+                <span className="lp-stat-big">86%</span>
+                <span className="lp-stat-label">weekly completion rate</span>
+              </div>
+              <h3 className="lp-h3">Track progress clearly</h3>
+              <p>Lift history keeps progressive overload visible.</p>
+            </motion.article>
+
+            <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
+              <div className="lp-bento-stat">
+                <span className="lp-stat-big">0</span>
+                <span className="lp-stat-label">billing or membership setup</span>
+              </div>
+              <h3 className="lp-h3">Built for real gyms</h3>
+              <p>No complexity. Just training operations.</p>
+            </motion.article>
+
+            <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
+              <div className="lp-bento-stat">
+                <span className="lp-stat-big">2 min</span>
+                <span className="lp-stat-label">to assign a new plan</span>
+              </div>
+              <h3 className="lp-h3">Trainer coordination</h3>
+              <p>Everyone works from the same program library.</p>
+            </motion.article>
+          </motion.div>
         </div>
+      </section>
 
-        <form action={contactAction} className="fs3-footer-contact">
-          <input name="source" type="hidden" value="footer-compact" />
-          <label>Want FitSplit for your gym?</label>
-          <input name="email" placeholder="Email address" required type="email" />
-          <textarea name="body" placeholder="Message" required rows={3} />
-          {contactState.status === "error" ? <p className="fs3-form-error">{contactState.message}</p> : null}
-          {contactState.status === "success" ? <p className="fs3-form-success">{contactState.message}</p> : null}
-          <button className="fs3-button fs3-button-primary" disabled={isContactPending} type="submit">
-            {isContactPending ? "Sending..." : "Send Message"}
-          </button>
-        </form>
+      {/* ── Partners ─────────────────────────────────────────── */}
+      <section className="lp-section lp-partners" id="partners">
+        <div className="lp-container">
+          <motion.div
+            variants={stagger}
+            initial="hidden"
+            whileInView="show"
+            viewport={{ once: true, margin: "-80px" }}
+          >
+            <motion.h2 className="lp-h2 lp-center" variants={fadeUp}>
+              Trusted by focused fitness communities.
+            </motion.h2>
+            <motion.article className="lp-partner-card" variants={fadeUp}>
+              <img
+                src="/shg-gym-logo.jpeg"
+                alt="Sri Shakthi Hanuman Gym logo"
+                className="lp-partner-logo"
+              />
+              <div className="lp-partner-copy">
+                <h3 className="lp-h3">Sri Shakthi Hanuman Gym</h3>
+                <blockquote className="lp-quote">
+                  "FitSplit simplified how our trainers assign and track workouts across all our members."
+                </blockquote>
+                <cite className="lp-cite">Gym Manager, Sri Shakthi Hanuman Gym</cite>
+              </div>
+            </motion.article>
+          </motion.div>
+        </div>
+      </section>
 
-        <div className="fs3-bottom-bar">
-          <span>© FitSplit · fitsplit.in</span>
-          <a href="mailto:hello@fitsplit.in"><Mail /> hello@fitsplit.in</a>
+      {/* ── Footer ───────────────────────────────────────────── */}
+      <footer className="lp-footer" id="contact">
+        <div className="lp-container">
+          <div className="lp-footer-grid">
+            {/* Brand col */}
+            <div className="lp-footer-brand">
+              <div className="lp-brand">
+                <img src="/fitsplit-logo-dark.png" alt="FitSplit logo" width="22" height="22" />
+                <span>FitSplit</span>
+              </div>
+              <p>Workout delivery and trainer coordination for focused fitness teams.</p>
+              <a href="mailto:hello@fitsplit.in" className="lp-footer-email">
+                hello@fitsplit.in
+              </a>
+            </div>
+
+            {/* Stats col */}
+            <div className="lp-footer-stats">
+              {[
+                { val: "86%", label: "weekly completion rate" },
+                { val: "2 min", label: "to assign a plan" },
+                { val: "0", label: "billing complexity" },
+              ].map((s) => (
+                <div key={s.label} className="lp-footer-stat">
+                  <span className="lp-footer-stat-val">{s.val}</span>
+                  <span className="lp-footer-stat-label">{s.label}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Contact form col */}
+            <div className="lp-footer-form-col">
+              <form action={contactAction}>
+                <input name="source" type="hidden" value="footer-compact" />
+                <label className="lp-field">
+                  <span>Email</span>
+                  <input name="email" type="email" placeholder="you@example.com" required />
+                </label>
+                <label className="lp-field">
+                  <span>Message</span>
+                  <textarea name="body" rows={3} placeholder="Tell us about your gym…" required />
+                </label>
+                {contactState.status === "error" && (
+                  <p className="lp-form-error">{contactState.message}</p>
+                )}
+                {contactState.status === "success" && (
+                  <p className="lp-form-success">{contactState.message}</p>
+                )}
+                <button className="lp-btn-primary lp-w-full" disabled={contactPending} type="submit">
+                  {contactPending ? "Sending…" : "Send message"}
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <div className="lp-footer-bar">
+            <span>© 2025 FitSplit · fitsplit.in</span>
+            <span>Built for gyms that deliver coaching, not just access.</span>
+          </div>
         </div>
       </footer>
 
-      <LoginModal isOpen={isLoginOpen} onClose={() => setIsLoginOpen(false)} />
-    </main>
+      {/* ── Login modal ──────────────────────────────────────── */}
+      <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+    </div>
   );
 }

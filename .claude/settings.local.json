@@ -1,0 +1,33 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "PowerShell(Get-Process -Id \\(Get-NetTCPConnection -LocalPort 3001 -State Listen\\).OwningProcess | Stop-Process -Force)",
+      "Bash(node -e \"const p=require\\('./package.json'\\);console.log\\(JSON.stringify\\({deps:p.dependencies,dev:p.devDependencies},null,2\\)\\)\")",
+      "Bash(npm install *)",
+      "mcp__Claude_Preview__preview_start",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(Remove-Item -Recurse -Force .next -ErrorAction SilentlyContinue)",
+      "Bash(Write-Host \"Cache cleared\")",
+      "mcp__Claude_in_Chrome__navigate",
+      "mcp__Claude_in_Chrome__computer",
+      "mcp__Claude_in_Chrome__read_page",
+      "mcp__Claude_in_Chrome__form_input",
+      "Bash(Start-Sleep -Seconds 5)",
+      "Bash(Get-Content \"C:\\\\Users\\\\mehul\\\\AppData\\\\Local\\\\Temp\\\\claude\\\\C--Users-mehul-Documents-Codex-2026-05-03-FitSplit--claude-worktrees-relaxed-bose-165014\\\\eaf6f8ce-c0a6-4c1f-a72a-8b913ad65860\\\\tasks\\\\b7syjrk8j.output\" -Tail 20)",
+      "PowerShell(netstat -ano)",
+      "Bash(cp 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\.claude\\\\worktrees\\\\relaxed-bose-165014/PROJECT_HANDOFF.md' 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit/PROJECT_HANDOFF.md')",
+      "Bash(cp 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\.claude\\\\worktrees\\\\relaxed-bose-165014/README.md' 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit/README.md')",
+      "Bash(cp 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\.claude\\\\worktrees\\\\relaxed-bose-165014/app/globals.css' 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit/app/globals.css')",
+      "Bash(cp 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\.claude\\\\worktrees\\\\relaxed-bose-165014/app/layout.tsx' 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit/app/layout.tsx')",
+      "Bash(cp 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\.claude\\\\worktrees\\\\relaxed-bose-165014/components/landing-page-client.tsx' 'C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit/components/landing-page-client.tsx')",
+      "Bash(ls \"C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\node_modules\\\\framer-motion\" 2>/dev/null && echo \"exists\" || echo \"missing\")",
+      "mcp__Claude_in_Chrome__read_console_messages",
+      "mcp__Claude_in_Chrome__get_page_text",
+      "Bash(cat \"C:\\\\Users\\\\mehul\\\\Documents\\\\Codex\\\\2026-05-03\\\\FitSplit\\\\app\\\\page.tsx\")",
+      "mcp__Claude_in_Chrome__javascript_tool",
+      "Bash(node -e \"console.log\\(require\\('C:/Users/mehul/Documents/Codex/2026-05-03/FitSplit/node_modules/framer-motion/package.json'\\).version\\)\")",
+      "mcp__Claude_in_Chrome__read_network_requests"
+    ]
+  }
+}
