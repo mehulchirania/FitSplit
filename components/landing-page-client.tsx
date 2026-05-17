@@ -778,20 +778,36 @@ export function LandingPageClient() {
             <motion.h2 className="lp-h2 lp-center" variants={fadeUp}>
               Trusted by focused fitness communities.
             </motion.h2>
-            <motion.article className="lp-partner-card" variants={fadeUp}>
-              <img
-                src="/shg-gym-logo.jpeg"
-                alt="Sri Shakthi Hanuman Gym logo"
-                className="lp-partner-logo"
-              />
-              <div className="lp-partner-copy">
-                <h3 className="lp-h3">Sri Shakthi Hanuman Gym</h3>
-                <blockquote className="lp-quote">
-                  "FitSplit simplified how our trainers assign and track workouts across all our members."
-                </blockquote>
-                <cite className="lp-cite">Gym Manager, Sri Shakthi Hanuman Gym</cite>
-              </div>
-            </motion.article>
+            <div className="lp-partner-list">
+              <motion.article className="lp-partner-card" variants={fadeUp}>
+                <img
+                  src="/shg-gym-logo.jpeg"
+                  alt="Sri Shakthi Hanuman Gym logo"
+                  className="lp-partner-logo"
+                />
+                <div className="lp-partner-copy">
+                  <h3 className="lp-h3">Sri Shakthi Hanuman Gym</h3>
+                  <blockquote className="lp-quote">
+                    "FitSplit simplified how our trainers assign and track workouts across all our members."
+                  </blockquote>
+                  <cite className="lp-cite">Gym Manager, Sri Shakthi Hanuman Gym</cite>
+                </div>
+              </motion.article>
+              <motion.article className="lp-partner-card" variants={fadeUp}>
+                <img
+                  src="/titan-v2-fitness-logo.svg"
+                  alt="Titan V2 Fitness logo"
+                  className="lp-partner-logo"
+                />
+                <div className="lp-partner-copy">
+                  <h3 className="lp-h3">Titan V2 Fitness</h3>
+                  <blockquote className="lp-quote">
+                    "FitSplit gives our coaching team a sharper way to deliver structured workouts."
+                  </blockquote>
+                  <cite className="lp-cite">Gym Manager, Titan V2 Fitness</cite>
+                </div>
+              </motion.article>
+            </div>
           </motion.div>
         </div>
       </section>

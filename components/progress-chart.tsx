@@ -110,7 +110,7 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
                 fontSize: "12px",
                 color: "var(--text)",
               }}
-              formatter={(val: number) => [`${val} kg`, "Weight"]}
+              formatter={(val) => [`${Number(val ?? 0)} kg`, "Weight"]}
               labelStyle={{ color: "var(--text-soft)", marginBottom: "4px" }}
             />
             <Line

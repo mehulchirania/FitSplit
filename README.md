@@ -66,7 +66,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 
 ## Features
 
-- Focused dark-first landing page for `fitsplit.in` with sticky navbar, modal login, hero product mockup, three-step workflow, merged role-based features/previews, SHG partner proof, and compact Firestore-backed footer contact form.
+- Focused dark-first landing page for `fitsplit.in` with sticky navbar, modal login, hero product mockup, three-step workflow, merged role-based features/previews, SHG and Titan V2 Fitness partner proof, and compact Firestore-backed footer contact form.
 - Login page with username/mobile/email resolution, 4-digit member PIN support, staff password login, and Firebase password reset email support.
 - Admin dashboard for all gyms plus `/admin/gyms` management for adding, editing, opening, and guarded removal of gym workspaces.
 - Admin inbox for Contact Us submissions with unread notification support.

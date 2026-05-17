@@ -8758,6 +8758,14 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 /* ── Partners ── */
 .lp-partners { border-top: 1px solid var(--lp-border); }
 
+.lp-partner-list {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 48px auto 0;
+  max-width: 1100px;
+}
+
 .lp-partner-card {
   align-items: center;
   background: var(--lp-surface);
@@ -8766,8 +8774,7 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   box-shadow: 0 0 0 1px var(--lp-border), 0 24px 48px rgba(0,0,0,.35);
   display: flex;
   gap: 32px;
-  margin: 48px auto 0;
-  max-width: 680px;
+  margin: 0;
   padding: 36px;
   transition: border-color 0.22s ease;
 }
@@ -9340,6 +9347,10 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   max-width: 760px;
 }
 
+.lp-partner-list .lp-partner-card {
+  max-width: none;
+}
+
 .lp-partner-logo {
   background: #050505;
   border: 1px solid var(--lp-border);
@@ -9467,6 +9478,10 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 
   .lp-partner-card {
     align-items: flex-start;
+  }
+
+  .lp-partner-list {
+    grid-template-columns: 1fr;
   }
 
   .lp-footer-stats {

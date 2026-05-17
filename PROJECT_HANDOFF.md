@@ -72,6 +72,9 @@ Recommended next work:
 
 ## Latest Update - 2026-05-17: Documentation baseline cleanup
 
+- Follow-up: added Titan V2 Fitness to the public landing page Partners section in the same card format as SHG Gym.
+- Added `public/titan-v2-fitness-logo.svg` as the partner logo asset.
+- Updated README landing features to mention SHG and Titan V2 Fitness partner proof.
 - Added this `Current Source Of Truth` section to make the handoff reliable at a glance.
 - Clarified current route behavior, active credentials, product focus, and explicit out-of-scope items.
 - Left older dated entries below as archive/history, even where older notes conflict with the current source of truth.

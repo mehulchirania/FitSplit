@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">Titan V2 Fitness logo</title>
+  <desc id="desc">A red and gold Spartan helmet mark for Titan V2 Fitness.</desc>
+  <rect width="512" height="512" rx="44" fill="#ffffff"/>
+  <path d="M126 119C178 70 270 51 389 72C354 84 325 101 302 124C256 118 213 126 174 147C153 158 137 149 126 119Z" fill="#9C241C"/>
+  <path d="M132 126C158 106 191 91 231 82C271 74 316 74 367 83C315 102 279 132 259 174C222 176 190 185 163 202C144 213 131 194 125 167C122 151 124 137 132 126Z" fill="#C63B22"/>
+  <path d="M150 205C173 177 209 161 258 158C311 155 348 169 369 200C325 188 281 190 237 207C195 223 165 255 148 303C134 263 135 230 150 205Z" fill="#B9A411"/>
+  <path d="M176 248C206 216 248 199 302 197C329 197 349 201 363 208C334 210 309 217 289 230C259 248 240 275 231 312C212 301 193 280 176 248Z" fill="#D0B719"/>
+  <path d="M126 321C139 259 174 218 231 197C286 176 336 180 382 209C346 205 314 211 285 226C248 245 228 276 224 320C209 319 192 314 173 304C156 297 140 303 126 321Z" stroke="#ffffff" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M252 154C251 107 274 80 322 72" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  <path d="M240 211C270 185 315 178 376 190" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+  <path d="M220 245C260 225 311 219 373 228" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+  <path d="M223 318C240 335 268 348 307 358C329 364 344 377 352 397C311 390 272 377 237 358C219 348 205 334 195 316L223 318Z" fill="#6F5F09"/>
+  <path d="M256 260C291 246 324 244 356 253C345 265 335 276 326 286C301 280 276 282 250 292C250 280 252 269 256 260Z" fill="#8A7610"/>
+  <path d="M335 242L397 249L368 277L416 288L381 316L413 342L354 329C338 327 329 318 328 303C327 279 329 259 335 242Z" fill="#7D6C0E"/>
+  <path d="M311 333C334 335 354 342 372 354L337 400C319 392 304 381 291 367C302 358 309 347 311 333Z" fill="#6E5D08"/>
+  <path d="M228 289C237 315 255 336 282 352" stroke="#ffffff" stroke-width="12" stroke-linecap="round"/>
+  <path d="M327 288L386 303" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <path d="M326 321L376 337" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  <path d="M333 357L356 380" stroke="#ffffff" stroke-width="10" stroke-linecap="round"/>
+</svg>
