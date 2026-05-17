@@ -125,7 +125,7 @@ export function LandingNav() {
           Install App
         </button>
         <a className="landing-nav-login" href="#login" onClick={() => setIsOpen(false)}>
-          Start Demo
+          Access workspace
         </a>
       </div>
       </nav>

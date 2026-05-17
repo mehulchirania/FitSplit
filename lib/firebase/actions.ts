@@ -754,6 +754,90 @@ export async function updateProfileMetrics(
   }
 }
 
+export async function saveMemberAiTrainerNote(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const currentUser = await requireAuth();
+    const db = requireFirebase();
+    const memberId = requireText(formData, "memberId", "Member");
+    assertCanManageMember(currentUser, memberId);
+
+    const injuryNotes = String(formData.get("injuryNotes") ?? "").trim();
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.profiles).doc(memberId).set(
+      {
+        injuryNotes,
+        aiTrainerNote: injuryNotes,
+        aiTrainerUpdatedAt: now,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/member");
+    revalidatePath("/profile");
+
+    return success(injuryNotes ? "AI trainer note saved." : "AI trainer note cleared.");
+  } catch (error) {
+    console.error("Unable to save AI trainer note", error);
+    return failure(error, "Unable to save this AI trainer note.");
+  }
+}
+
+export async function clearUserNotifications(notificationIds: string[]): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const db = requireFirebase();
+    const scopedIds = notificationIds
+      .map((id) => id.trim())
+      .filter(Boolean)
+      .slice(0, 20);
+
+    if (scopedIds.length === 0) {
+      return success("No notifications to clear.");
+    }
+
+    const now = new Date().toISOString();
+    const batch = db.batch();
+
+    for (const notificationId of scopedIds) {
+      const notificationRef = db.collection(collectionPaths.notifications).doc(notificationId);
+      const notificationDoc = await notificationRef.get();
+      const notification = notificationDoc.data();
+
+      if (!notificationDoc.exists || !notification) {
+        continue;
+      }
+
+      const isMemberNotification =
+        currentUser.role === "member" &&
+        String(notification.recipientId ?? "") === (currentUser.memberId ?? currentUser.uid);
+      const isOwnerNotification =
+        (currentUser.role === "owner" || currentUser.role === "admin") &&
+        String(notification.recipientRole ?? "") === "owner" &&
+        String(notification.recipientId ?? "").includes(currentUser.gymId);
+
+      if (currentUser.role === "admin" || isMemberNotification || isOwnerNotification) {
+        batch.set(notificationRef, { readAt: now }, { merge: true });
+      }
+    }
+
+    await batch.commit();
+    revalidatePath("/member");
+    revalidatePath("/owner");
+    revalidatePath("/admin");
+
+    return success("Notifications cleared.");
+  } catch (error) {
+    console.error("Unable to clear notifications", error);
+    return failure(error, "Unable to clear notifications.");
+  }
+}
+
 export async function logLiftSet(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData

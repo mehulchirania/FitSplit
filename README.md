@@ -26,6 +26,10 @@ fitsplit-29215
 - Firebase App Hosting
 - Gemini API for AI semi-personal trainer features
 
+## Landing Page
+
+The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel-inspired) built with Framer Motion. Key design tokens live in CSS variables under `.lp-root`. Sections: Navbar, Hero (animated workout grid + `/bg-image.png` background), Feature strip, How it works, Audience pills, Workflow bento, Partners (SHG Gym), Footer + contact form, Login modal. The login modal is wired to the full Firebase Auth flow. All landing CSS is appended to `globals.css` under the `lp-*` prefix and does not affect the authenticated app shell.
+
 ## Current Status
 
 - Firebase Auth login is handled through a server-side credential flow that resolves usernames, phone numbers, and emails to Firebase Auth emails before creating server-verified session cookies.
@@ -239,6 +243,10 @@ firebase deploy --only apphosting:fitsplit --project fitsplit-29215
 - Firebase Storage avatar/staff image upload is still pending.
 - Firebase Cloud Messaging push reminders are still pending.
 - Production geofence coordinates must be configured before strict gym-radius attendance can be trusted.
+
+## Co-Developer Notes
+
+This project is developed jointly by **Claude** and **Codex**. After every change either developer makes, both `README.md` and `PROJECT_HANDOFF.md` must be updated — README for current state, handoff doc for the dated change log entry. These two files are the shared context that lets each developer pick up cold.
 
 ## Handoff
 

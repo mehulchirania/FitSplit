@@ -443,6 +443,10 @@ export async function loginWithCredentials(formData: FormData) {
     return { status: "error" as const, message: "Enter your login details." };
   }
 
+  if (findDemoLogin(identifier)) {
+    return createLocalDemoSession(identifier, password, mode);
+  }
+
   const resolved = await resolveLoginIdentifier(identifier, mode);
 
   if (resolved.status !== "success") {

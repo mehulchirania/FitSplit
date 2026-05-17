@@ -1,6 +1,5 @@
-import { Bell, Dumbbell } from "@/components/icons";
+import { Dumbbell } from "@/components/icons";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
-import { NotificationList } from "@/components/notification-list";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { requireRole } from "@/lib/auth";
 import {
@@ -8,9 +7,7 @@ import {
   getExerciseCatalog,
   getLiftLogsForMember,
   getMemberDetail,
-  getMemberNotifications,
   getProgramAssignmentForMember,
-  getPrimaryWorkspace,
   getWorkoutPrograms,
   getProfileMetrics
 } from "@/lib/firebase/read-models";
@@ -21,21 +18,17 @@ export default async function MemberDashboard() {
   const currentUser = await requireRole(["member"]);
   const currentMemberId = currentUser.memberId ?? currentUser.uid;
   const [
-    { gym },
     { member },
     { assignment },
     { programs },
-    { notifications: memberNotifications },
     { liftLogs },
     { exercises },
     { sessions },
     { profile }
   ] = await Promise.all([
-    getPrimaryWorkspace(),
     getMemberDetail(currentMemberId),
     getProgramAssignmentForMember(currentMemberId),
     getWorkoutPrograms(),
-    getMemberNotifications(currentMemberId),
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(),
     getActiveWorkoutSessions(),
@@ -52,39 +45,26 @@ export default async function MemberDashboard() {
 
   return (
     <main className="page">
-      <section className="dashboard-header">
+      <section className="dashboard-header compact-header member-dashboard-hero">
         <div className="header-copy">
           <p className="eyebrow">Welcome, {member.fullName.split(" ")[0]}</p>
-          <h1>Let&apos;s get fit!</h1>
+          <h1>Let&apos;s get fit.</h1>
+          <span className="member-program-pill">
+            <Dumbbell /> {program.title}
+          </span>
           <EditableMetrics member={memberWithProfile as any} />
         </div>
-
-        <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 15 }}>
-          <article className="ui-card blue">
-            <p className="tip" style={{ fontSize: "1.2em" }}><Dumbbell /> {program.title}</p>
-            <p className="second-text">Assigned Program</p>
-          </article>
-        </aside>
       </section>
 
       <MemberWorkoutConsole
         exercises={exercises}
         initialActiveSessionCount={sessions.length}
+        initialInjuryNote={profile.injuryNotes}
         initialLiftLogs={liftLogs}
         memberId={member.id}
         program={program}
       />
 
-      <section className="content-grid" style={{ marginTop: 16 }}>
-        <aside className="list-panel">
-          <div className="panel-title">
-            <h2>
-              <Bell /> Notifications
-            </h2>
-          </div>
-          <NotificationList items={memberNotifications} />
-        </aside>
-      </section>
     </main>
   );
 }

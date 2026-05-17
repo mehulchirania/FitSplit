@@ -6,35 +6,49 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { MainNav } from "@/components/main-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Menu, UserRound } from "@/components/icons";
+import { Bell, Menu, UserRound, X } from "@/components/icons";
 
 import { logoutUser } from "@/lib/auth";
+import { clearUserNotifications } from "@/lib/firebase/actions";
 import { getFirebaseClientServices } from "@/lib/firebase/client";
-import type { Role } from "@/types/domain";
+import type { Notification, Role } from "@/types/domain";
 
 export function AppTopbar({
   gymName,
   initials,
+  notifications = [],
   role,
   unreadInboxCount = 0
 }: {
   gymName?: string;
   initials?: string;
+  notifications?: Notification[];
   role?: Role;
   unreadInboxCount?: number;
 }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isTopbarHidden, setIsTopbarHidden] = useState(false);
+  const [visibleNotifications, setVisibleNotifications] = useState(
+    notifications.filter((notification) => !notification.readAt)
+  );
+  const [isClearingNotifications, startNotificationTransition] = useTransition();
   const [isLoggingOut, startLogoutTransition] = useTransition();
+  const notificationRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const lastScrollYRef = useRef(0);
   const pathname = usePathname();
 
   useEffect(() => {
     setIsDrawerOpen(false);
+    setIsNotificationsOpen(false);
     setIsProfileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    setVisibleNotifications(notifications.filter((notification) => !notification.readAt));
+  }, [notifications]);
 
   useEffect(() => {
     function closeProfile(event: MouseEvent) {
@@ -45,6 +59,17 @@ export function AppTopbar({
 
     document.addEventListener("mousedown", closeProfile);
     return () => document.removeEventListener("mousedown", closeProfile);
+  }, []);
+
+  useEffect(() => {
+    function closeNotifications(event: MouseEvent) {
+      if (!notificationRef.current?.contains(event.target as Node)) {
+        setIsNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", closeNotifications);
+    return () => document.removeEventListener("mousedown", closeNotifications);
   }, []);
 
   useEffect(() => {
@@ -61,7 +86,7 @@ export function AppTopbar({
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollYRef.current;
 
-      if (isDrawerOpen || isProfileOpen || currentScrollY < 48) {
+      if (isDrawerOpen || isNotificationsOpen || isProfileOpen || currentScrollY < 48) {
         setIsTopbarHidden(false);
       } else if (delta > 8) {
         setIsTopbarHidden(true);
@@ -74,7 +99,7 @@ export function AppTopbar({
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isDrawerOpen, isProfileOpen]);
+  }, [isDrawerOpen, isNotificationsOpen, isProfileOpen]);
 
   if (pathname === "/") {
     return null;
@@ -91,6 +116,14 @@ export function AppTopbar({
 
       window.localStorage.removeItem("fitsplit-session-start");
       await logoutUser();
+    });
+  }
+
+  function handleClearNotifications() {
+    const ids = visibleNotifications.map((notification) => notification.id);
+    setVisibleNotifications([]);
+    startNotificationTransition(async () => {
+      await clearUserNotifications(ids);
     });
   }
 
@@ -138,33 +171,94 @@ export function AppTopbar({
 
         <MainNav role={role} />
 
-        <div className="profile-menu app-profile-menu" ref={profileRef}>
+        <div className="topbar-actions">
           {gymName && (
             <span className="topbar-gym-name">{gymName}</span>
           )}
-          <button
-            aria-expanded={isProfileOpen}
-            aria-label="Open profile menu"
-            className="profile-trigger"
-            onClick={() => setIsProfileOpen((current) => !current)}
-            type="button"
-          >
-            {initials ? initials : <UserRound />}
-          </button>
-          {isProfileOpen ? (
-            <div className="profile-dropdown">
-              <Link href="/profile" onClick={() => setIsProfileOpen(false)}>
-                View Profile
-              </Link>
+          {role === "member" ? (
+            <div className="notification-menu" ref={notificationRef}>
               <button
-                disabled={isLoggingOut}
-                onClick={handleLogout}
+                aria-expanded={isNotificationsOpen}
+                aria-label="Open notifications"
+                className="icon-button neutral-icon-button notification-trigger"
+                onClick={() => setIsNotificationsOpen((current) => !current)}
                 type="button"
               >
-                {isLoggingOut ? "Logging out..." : "Log Out"}
+                <Bell />
+                {visibleNotifications.length > 0 ? (
+                  <span className="notification-badge">{visibleNotifications.length}</span>
+                ) : null}
               </button>
+              {isNotificationsOpen ? (
+                <div className="notification-dropdown">
+                  <div className="notification-dropdown-header">
+                    <div>
+                      <p className="eyebrow">Notifications</p>
+                      <h2>Training updates</h2>
+                    </div>
+                    <button
+                      aria-label="Close notifications"
+                      className="icon-button neutral-icon-button"
+                      onClick={() => setIsNotificationsOpen(false)}
+                      type="button"
+                    >
+                      <X />
+                    </button>
+                  </div>
+                  {visibleNotifications.length > 0 ? (
+                    <>
+                      <div className="notification-dropdown-list">
+                        {visibleNotifications.slice(0, 6).map((notification) => (
+                          <article className="notification-dropdown-item" key={notification.id}>
+                            <span className="notification-dot" />
+                            <div>
+                              <strong>{notification.title}</strong>
+                              <p>{notification.body}</p>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                      <button
+                        className="button button-secondary notification-clear-button"
+                        disabled={isClearingNotifications}
+                        onClick={handleClearNotifications}
+                        type="button"
+                      >
+                        {isClearingNotifications ? "Clearing..." : "Clear notifications"}
+                      </button>
+                    </>
+                  ) : (
+                    <p className="notification-empty">No new training updates.</p>
+                  )}
+                </div>
+              ) : null}
             </div>
           ) : null}
+          <div className="profile-menu app-profile-menu" ref={profileRef}>
+            <button
+              aria-expanded={isProfileOpen}
+              aria-label="Open profile menu"
+              className="profile-trigger"
+              onClick={() => setIsProfileOpen((current) => !current)}
+              type="button"
+            >
+              {initials ? initials : <UserRound />}
+            </button>
+            {isProfileOpen ? (
+              <div className="profile-dropdown">
+                <Link href="/profile" onClick={() => setIsProfileOpen(false)}>
+                  View Profile
+                </Link>
+                <button
+                  disabled={isLoggingOut}
+                  onClick={handleLogout}
+                  type="button"
+                >
+                  {isLoggingOut ? "Logging out..." : "Log Out"}
+                </button>
+              </div>
+            ) : null}
+            </div>
         </div>
       </header>
 

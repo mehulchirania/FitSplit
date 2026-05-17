@@ -28,12 +28,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [currentUser, { gym }] = await Promise.all([
-    getCurrentUser(),
-    getPrimaryWorkspace()
-  ]);
+  const currentUser = await getCurrentUser();
 
   let initials = "";
+  let gymName: string | undefined;
+  let unreadInboxCount = 0;
+
   if (currentUser) {
     initials = currentUser.fullName
       .split(" ")
@@ -41,11 +41,15 @@ export default async function RootLayout({
       .join("")
       .slice(0, 2)
       .toUpperCase();
-  }
 
-  const gymName = currentUser ? gym?.name : undefined;
-  const unreadInboxCount =
-    currentUser?.role === "admin" ? await getUnreadContactMessageCount() : 0;
+    const [{ gym }] = await Promise.all([
+      getPrimaryWorkspace(),
+      currentUser.role === "admin"
+        ? getUnreadContactMessageCount().then((n) => { unreadInboxCount = n; })
+        : Promise.resolve()
+    ]);
+    gymName = gym?.name;
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -60,7 +64,7 @@ export default async function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&display=swap"
           rel="stylesheet"
         />
 

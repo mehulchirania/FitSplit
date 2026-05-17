@@ -1,22 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import {
-  endWorkoutSession,
-  logLiftSet,
-  startWorkoutSession,
-  syncOfflineLifts
-} from "@/lib/firebase/actions";
+import { logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
 import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
-import { Activity, Dumbbell } from "@/components/icons";
+import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 
-const sessionKey = "fitsplit-active-workout";
-const activeCountKey = "fitsplit-active-workouts";
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
 type Modification = {
@@ -33,33 +26,6 @@ type PendingEvent = {
   run: () => Promise<FormActionState>;
   title: string;
 };
-
-function getStoredActiveCount() {
-  if (typeof window === "undefined") {
-    return 0;
-  }
-
-  return Number(window.localStorage.getItem(activeCountKey) ?? "0");
-}
-
-function setStoredActiveCount(nextCount: number) {
-  const normalizedCount = Math.max(0, nextCount);
-  window.localStorage.setItem(activeCountKey, String(normalizedCount));
-  window.dispatchEvent(new CustomEvent("fitsplit-capacity-change"));
-  return normalizedCount;
-}
-
-function getBusyness(count: number) {
-  if (count <= 1) {
-    return { label: "Quiet", tone: "status-active", dot: "Green" };
-  }
-
-  if (count <= 4) {
-    return { label: "Moderate", tone: "status-expiring", dot: "Yellow" };
-  }
-
-  return { label: "Busy", tone: "status-expired", dot: "Red" };
-}
 
 function getDefaultDayIndex(dayCount: number) {
   const mondayFirstIndex = (new Date().getDay() + 6) % 7;
@@ -245,53 +211,52 @@ function createModification(
   };
 }
 
-const WORKOUT_START_KEY = "fitsplit-workout-start";
-const MAX_SESSION_SECONDS = 4 * 60 * 60; // 4 hours
-
-function formatElapsed(seconds: number) {
-  const h = Math.floor(seconds / 3600);
-  const m = Math.floor((seconds % 3600) / 60);
-  const s = seconds % 60;
-  if (h > 0) return `${h}h ${String(m).padStart(2, "0")}m`;
-  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
-}
-
 function getExerciseName(exerciseId: string, exercises: Exercise[]) {
   return exercises.find((exercise) => exercise.id === exerciseId)?.name ?? "Exercise";
 }
 
-function getCurrentPosition() {
-  return new Promise<GeolocationPosition>((resolve, reject) => {
-    if (!("geolocation" in navigator)) {
-      reject(new Error("GPS location is not available on this device."));
-      return;
+function getDayMuscleTargets(items: WorkoutExercise[], exercises: Exercise[]) {
+  const counts = new Map<string, number>();
+
+  for (const item of items) {
+    const exercise = exercises.find((entry) => entry.id === item.exerciseId);
+    if (!exercise) {
+      continue;
     }
 
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      timeout: 12000
-    });
-  });
+    counts.set(exercise.muscleGroup, (counts.get(exercise.muscleGroup) ?? 0) + 1);
+  }
+
+  const sortedGroups = Array.from(counts.entries())
+    .sort((left, right) => right[1] - left[1])
+    .map(([muscleGroup]) => muscleGroup);
+
+  return {
+    primary: sortedGroups[0] ?? "Full body",
+    secondary: sortedGroups.slice(1, 4)
+  };
 }
 
 export function MemberWorkoutConsole({
   exercises,
-  initialActiveSessionCount,
+  initialActiveSessionCount: _initialActiveSessionCount,
+  initialInjuryNote = "",
   initialLiftLogs,
   memberId,
   program
 }: {
   exercises: Exercise[];
   initialActiveSessionCount: number;
+  initialInjuryNote?: string;
   initialLiftLogs: LiftLog[];
   memberId: string;
   program: WorkoutProgram;
 }) {
   const router = useRouter();
   // Removed workout tracking states
-  const [injury, setInjury] = useState("");
+  const [injury, setInjury] = useState(initialInjuryNote);
   const [modification, setModification] = useState<Modification | null>(null);
+  const [workoutMode, setWorkoutMode] = useState<"default" | "ai">("default");
   const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
   const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
   const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
@@ -302,10 +267,12 @@ export function MemberWorkoutConsole({
   );
   // Removed busyness tracking
   const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
-  const visibleWorkoutDay = modification && selectedDay
+  const aiStorageKey = `fitsplit-ai-trainer-${memberId}-${program.id}`;
+  const visibleWorkoutDay = workoutMode === "ai" && modification && selectedDay
     ? { ...selectedDay, exercises: modification.routine }
     : selectedDay;
   const loggableExercises = visibleWorkoutDay?.exercises ?? [];
+  const dayMuscleTargets = getDayMuscleTargets(loggableExercises, exercises);
   const uniqueLoggableExercises = Array.from(
     new Map(loggableExercises.map((item) => [item.exerciseId, item])).values()
   );
@@ -332,10 +299,66 @@ export function MemberWorkoutConsole({
     return () => window.removeEventListener("online", handleOnline);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !program.days.length) {
+      return;
+    }
+
+    const savedCustomization = window.localStorage.getItem(aiStorageKey);
+    if (!savedCustomization && !initialInjuryNote.trim()) {
+      return;
+    }
+
+    try {
+      const parsed = savedCustomization ? JSON.parse(savedCustomization) as {
+        injury?: string;
+        selectedDayIndex?: number;
+        mode?: "default" | "ai";
+      } : {};
+      const savedInjury = parsed.injury?.trim() || initialInjuryNote.trim();
+      if (!savedInjury) {
+        return;
+      }
+
+      const nextIndex = Math.min(
+        Math.max(parsed.selectedDayIndex ?? selectedDayIndex, 0),
+        program.days.length - 1
+      );
+      const nextDay = program.days[nextIndex];
+
+      setInjury(savedInjury);
+      setSelectedDayIndex(nextIndex);
+      setModification(createModification(nextDay, savedInjury, exercises));
+      setWorkoutMode(parsed.mode === "default" ? "default" : "ai");
+    } catch {
+      window.localStorage.removeItem(aiStorageKey);
+    }
+  }, [aiStorageKey, exercises, initialInjuryNote, program.days, selectedDayIndex]);
+
   // Removed workout tracking actions
 
+  function persistAiCustomization(
+    nextInjury: string,
+    nextSelectedDayIndex: number,
+    nextMode: "default" | "ai"
+  ) {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(
+      aiStorageKey,
+      JSON.stringify({
+        injury: nextInjury,
+        mode: nextMode,
+        selectedDayIndex: nextSelectedDayIndex
+      })
+    );
+  }
+
   function updateInjury() {
-    if (!injury.trim()) {
+    const nextInjury = injury.trim();
+    if (!nextInjury) {
       return;
     }
 
@@ -343,7 +366,39 @@ export function MemberWorkoutConsole({
       return;
     }
 
-    setModification(createModification(selectedDay, injury.trim(), exercises));
+    setModification(createModification(selectedDay, nextInjury, exercises));
+    setWorkoutMode("ai");
+    persistAiCustomization(nextInjury, selectedDayIndex, "ai");
+
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("injuryNotes", nextInjury);
+    void saveMemberAiTrainerNote(initialFormActionState, formData);
+  }
+
+  function clearInjuryCustomization() {
+    setInjury("");
+    setModification(null);
+    setWorkoutMode("default");
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem(aiStorageKey);
+    }
+
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("injuryNotes", "");
+    void saveMemberAiTrainerNote(initialFormActionState, formData);
+  }
+
+  function selectWorkoutDay(index: number) {
+    const nextDay = program.days[index];
+    setSelectedDayIndex(index);
+
+    const nextInjury = injury.trim();
+    if (nextDay && nextInjury) {
+      setModification(createModification(nextDay, nextInjury, exercises));
+      persistAiCustomization(nextInjury, index, workoutMode);
+    }
   }
 
   function handleLiftLog(event: FormEvent<HTMLFormElement>) {
@@ -437,10 +492,7 @@ export function MemberWorkoutConsole({
                 <button
                   className={selectedDayIndex === index ? "is-selected" : ""}
                   key={day.id}
-                  onClick={() => {
-                    setSelectedDayIndex(index);
-                    setModification(null);
-                  }}
+                  onClick={() => selectWorkoutDay(index)}
                   type="button"
                 >
                   <span>{dayNames[index] ?? `Day ${day.dayNumber}`}</span>
@@ -448,23 +500,62 @@ export function MemberWorkoutConsole({
                 </button>
               ))}
             </div>
+            {modification ? (
+              <div className="workout-mode-toggle" role="tablist" aria-label="Workout version">
+                <button
+                  aria-selected={workoutMode === "default"}
+                  className={workoutMode === "default" ? "is-selected" : ""}
+                  onClick={() => {
+                    setWorkoutMode("default");
+                    persistAiCustomization(modification.injury, selectedDayIndex, "default");
+                  }}
+                  role="tab"
+                  type="button"
+                >
+                  Default workout
+                </button>
+                <button
+                  aria-selected={workoutMode === "ai"}
+                  className={workoutMode === "ai" ? "is-selected" : ""}
+                  onClick={() => {
+                    setWorkoutMode("ai");
+                    persistAiCustomization(modification.injury, selectedDayIndex, "ai");
+                  }}
+                  role="tab"
+                  type="button"
+                >
+                  AI customized workout
+                </button>
+              </div>
+            ) : null}
             {visibleWorkoutDay ? (
               <article className="selected-workout-day" key={visibleWorkoutDay.id}>
                 <p className="eyebrow">
                   {dayNames[selectedDayIndex] ?? `Day ${visibleWorkoutDay.dayNumber}`}
                 </p>
-                <h2>{visibleWorkoutDay.title}</h2>
-                <p>{modification ? modification.summary : visibleWorkoutDay.focus}</p>
+                <p>
+                  {workoutMode === "ai" && modification
+                    ? modification.summary
+                    : visibleWorkoutDay.focus}
+                </p>
+                <div className="day-muscle-targets" aria-label="Day muscle targets">
+                  <span>Primary: {dayMuscleTargets.primary}</span>
+                  <span>
+                    Secondary: {dayMuscleTargets.secondary.length
+                      ? dayMuscleTargets.secondary.join(", ")
+                      : "Mobility and stabilizers"}
+                  </span>
+                </div>
 
-                {/* Stretches section — shown when modified */}
-                {modification && modification.routine.some(item => item.notes?.includes("stretch") || item.notes?.includes("Warm-up")) && (
+                {/* Stretches section shown when modified */}
+                {workoutMode === "ai" && modification && modification.routine.some(item => item.notes?.includes("stretch") || item.notes?.includes("Warm-up")) && (
                   <>
-                    <p className="eyebrow" style={{ marginTop: "12px", color: "var(--brand)" }}>🧘 Stretches &amp; Warm-ups</p>
+                    <p className="eyebrow" style={{ marginTop: "12px", color: "var(--brand)" }}>Stretches &amp; Warm-ups</p>
                     <ExerciseList
                       exercises={exercises}
                       items={visibleWorkoutDay.exercises.filter(item => item.notes?.includes("stretch") || item.notes?.includes("Warm-up"))}
                     />
-                    <p className="eyebrow" style={{ marginTop: "12px" }}>🏋️ Weight Exercises</p>
+                    <p className="eyebrow" style={{ marginTop: "12px" }}>Weight Exercises</p>
                     <ExerciseList
                       exercises={exercises}
                       items={visibleWorkoutDay.exercises.filter(item => !item.notes?.includes("stretch") && !item.notes?.includes("Warm-up"))}
@@ -473,13 +564,75 @@ export function MemberWorkoutConsole({
                 )}
 
                 {/* Default (no modification) */}
-                {!modification && (
+                {(workoutMode === "default" || !modification) && (
                   <ExerciseList exercises={exercises} items={visibleWorkoutDay.exercises} />
                 )}
               </article>
             ) : null}
           </div>
         </div>
+
+      </div>
+
+      <aside className="list-panel member-workout-side">
+        <div className="injury-card">
+          <h2>AI Semi-Personal Trainer</h2>
+          <p>
+            Update Injury/Limitation to let the AI swap risky exercises or
+            create a conservative recovery routine for owner review.
+          </p>
+          <div style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
+            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Shoulder pain")}>Shoulder pain</button>
+            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Knee pain")}>Knee pain</button>
+            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Lower back ache")}>Lower back ache</button>
+            {injury && <button type="button" className="status-pill status-expired" style={{ cursor: "pointer", border: "none" }} onClick={clearInjuryCustomization}>Clear</button>}
+          </div>
+          <label>
+            Injury or limitation
+            <textarea
+              onChange={(event) => setInjury(event.target.value)}
+              placeholder="Example: shoulder pain during overhead press"
+              value={injury}
+            />
+          </label>
+          <button className="button button-primary" onClick={updateInjury} type="button">
+            Update Injury/Limitation
+          </button>
+        </div>
+
+        {modification ? (
+          <div className="ai-modification-panel">
+            <p className="eyebrow">Plan modified</p>
+            <h2>AI Adjustments for {modification.injury}</h2>
+            <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", margin: 0 }}>{modification.summary}</p>
+
+            {modification.swaps.length > 0 && (
+              <>
+                <p className="eyebrow" style={{ margin: "8px 0 4px", color: "var(--warning)" }}>Exercises Swapped</p>
+                {modification.swaps.map((swap) => (
+                  <span key={`${swap.from}-${swap.to}`}>
+                    <strong>{swap.from}</strong> -&gt; <strong>{swap.to}</strong>
+                    <br />
+                    <small style={{ color: "var(--text-soft)" }}>{swap.reason}</small>
+                  </span>
+                ))}
+              </>
+            )}
+
+            {modification.addedStretches.length > 0 && (
+              <>
+                <p className="eyebrow" style={{ margin: "8px 0 4px", color: "var(--brand)" }}>Stretches Added for Pain Management</p>
+                {modification.addedStretches.map((stretch) => (
+                  <span key={stretch.name}>
+                    <strong>{stretch.name}</strong>
+                    <br />
+                    <small style={{ color: "var(--text-soft)" }}>{stretch.reason}</small>
+                  </span>
+                ))}
+              </>
+            )}
+          </div>
+        ) : null}
 
         <div className="lift-log-panel">
           <div className="panel-title" style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
@@ -491,13 +644,12 @@ export function MemberWorkoutConsole({
                 </span>
               )}
             </div>
-            <span className="status-pill status-neutral">Guided Tracker</span>
           </div>
 
           <form className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
             <input name="memberId" type="hidden" value={memberId} />
             <input name="sessionId" type="hidden" value={`session-${memberId}`} />
-            
+
             <div style={{ gridColumn: "1 / -1" }}>
               <label style={{ display: "block", marginBottom: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>Exercise</label>
               <select name="exerciseId" style={{ width: "100%", padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)" }}>
@@ -509,7 +661,7 @@ export function MemberWorkoutConsole({
               </select>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px", gridColumn: "1 / -1" }}>
+            <div className="lift-log-fields">
               <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>
                 Weight (kg)
                 <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)", width: "100%" }} />
@@ -551,67 +703,6 @@ export function MemberWorkoutConsole({
             </div>
           </details>
         </div>
-      </div>
-
-      <aside className="list-panel">
-        <div className="injury-card">
-          <h2>AI Semi-Personal Trainer</h2>
-          <p>
-            Update Injury/Limitation to let the AI swap risky exercises or
-            create a conservative recovery routine for owner review.
-          </p>
-          <div style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
-            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Shoulder pain")}>Shoulder pain</button>
-            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Knee pain")}>Knee pain</button>
-            <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Lower back ache")}>Lower back ache</button>
-            {injury && <button type="button" className="status-pill status-expired" style={{ cursor: "pointer", border: "none" }} onClick={() => { setInjury(""); setModification(null); }}>Clear</button>}
-          </div>
-          <label>
-            Injury or limitation
-            <textarea
-              onChange={(event) => setInjury(event.target.value)}
-              placeholder="Example: shoulder pain during overhead press"
-              value={injury}
-            />
-          </label>
-          <button className="button button-primary" onClick={updateInjury} type="button">
-            Update Injury/Limitation
-          </button>
-        </div>
-
-        {modification ? (
-          <div className="ai-modification-panel">
-            <p className="eyebrow">Plan modified</p>
-            <h2>AI Adjustments for {modification.injury}</h2>
-            <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", margin: 0 }}>{modification.summary}</p>
-
-            {modification.swaps.length > 0 && (
-              <>
-                <p className="eyebrow" style={{ margin: "8px 0 4px", color: "var(--warning)" }}>🔄 Exercises Swapped</p>
-                {modification.swaps.map((swap) => (
-                  <span key={`${swap.from}-${swap.to}`}>
-                    <strong>{swap.from}</strong> → <strong>{swap.to}</strong>
-                    <br />
-                    <small style={{ color: "var(--text-soft)" }}>{swap.reason}</small>
-                  </span>
-                ))}
-              </>
-            )}
-
-            {modification.addedStretches.length > 0 && (
-              <>
-                <p className="eyebrow" style={{ margin: "8px 0 4px", color: "var(--brand)" }}>🧘 Stretches Added for Pain Management</p>
-                {modification.addedStretches.map((stretch) => (
-                  <span key={stretch.name}>
-                    <strong>{stretch.name}</strong>
-                    <br />
-                    <small style={{ color: "var(--text-soft)" }}>{stretch.reason}</small>
-                  </span>
-                ))}
-              </>
-            )}
-          </div>
-        ) : null}
       </aside>
 
       {pendingEvent ? (
