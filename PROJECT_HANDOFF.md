@@ -70,6 +70,26 @@ Recommended next work:
 
 ---
 
+## Latest Update - 2026-05-18: End-to-end flow fixes (session 2)
+
+### Security & auth fixes
+- **`createCatalogExercise` / `createCustomWorkoutProgram`**: Added missing `requireRole(["admin","owner"])` guards — these were callable by any user with a session.
+- **`createOwnerProfile`**: Fixed Auth/Firestore creation order (Auth first, then Firestore) so duplicate email errors fail clean without leaving orphaned Firestore docs. Also added `avatarInitials` derived from name.
+- **`generateWorkoutSummary` in `lib/ai.ts`**: Added `requireAuth()` guard; members can only generate their own summary, preventing Gemini API quota abuse.
+
+### Data persistence fixes
+- **`EditableMetrics` body metrics (member dashboard hero)**: The edit form was only calling `setIsEditing(false)` — changes were lost on refresh. Now calls `updateProfileMetrics` server action on save, shows a pending/error state.
+- **Member notifications in topbar**: Layout never fetched `getMemberNotifications`, so the notification bell badge was always 0 for logged-in members. Fixed in `app/layout.tsx`.
+
+### Admin / cache fixes
+- **`app/admin/inbox/page.tsx`**: Added `export const dynamic = "force-dynamic"` — inbox was potentially serving cached state.
+- **`components/ai-program-brief.tsx`** (Phase 1 complete): New client component wires textarea to `generateAndAssignProgram` — the brief textarea was previously purely decorative.
+- **`AddStaffForm` / `AddGymForm`**: New client components replacing static server forms on admin pages, with confirm dialogs, success/error modals, and live slug preview.
+- **`toggleMemberAccess`**: Added missing `revalidatePath("/owner")` so owner dashboard updates after toggling member access.
+- **`var(--text-muted)` undefined variable**: Replaced with `var(--text-soft)` across member detail, gym detail, and notification list.
+
+---
+
 ## Latest Update - 2026-05-18: Phase 1 + Phase 2 batch
 
 ### Phase 1 fixes
@@ -129,9 +149,9 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
 - [x] **Empty lift history state** — "No sets logged yet" message in place.
 - [x] **Exercise card collapse** — instructions in `<details>` with animated arrow.
 - [x] **First-run onboarding card** — shows gym name, phone, email from Firestore.
-- [ ] **Fix owner creation/onboarding flow** — owner setup and permissions management has known bugs.
-- [ ] **Gym workspace creation/management** — improve and fix the create/edit gym flow.
-- [ ] **Member creation and role assignment** — audit and fix edge cases.
+- [x] **Fix owner creation/onboarding flow** — createOwnerProfile: Auth first then Firestore, avatarInitials added. AddStaffForm client component on gym detail page.
+- [x] **Gym workspace creation/management** — AddGymForm client component with live slug preview; createGymWorkspace has auth guard.
+- [x] **Member creation and role assignment** — audited; auth guards added to createCatalogExercise and createCustomWorkoutProgram.
 - [x] **Session/role guard audit** — all routes and server actions verified; guards correctly placed.
 - [x] **`getProfileMetrics` + `getMemberDetail` merge** — combined into `getMemberWithProfile` (one Firestore read).
 - [ ] **`globals.css` cleanup** — ~9500 lines with remaining duplicate `.exercise-row` and `.hero-band` blocks. Partial cleanup done (removed duplicate `.topbar`, `.content-grid`, `.panel-title` blocks).
