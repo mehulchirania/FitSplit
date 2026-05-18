@@ -1,6 +1,5 @@
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell, Video } from "@/components/icons";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { requireRole } from "@/lib/auth";
 import { createCatalogExercise } from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
@@ -8,12 +7,12 @@ import { getExerciseCatalog } from "@/lib/firebase/read-models";
 export const dynamic = "force-dynamic";
 
 export default async function ExerciseCatalogPage() {
-  await requireRole(["admin", "owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
 
   const {
     exercises,
     catalog: exerciseCatalogByMuscle
-  } = await getExerciseCatalog();
+  } = await getExerciseCatalog(currentUser.gymId);
   const muscleGroups = exerciseCatalogByMuscle.map((group) => group.muscleGroup);
 
   return (
@@ -28,7 +27,6 @@ export default async function ExerciseCatalogPage() {
           </p>
         </div>
         <aside className="summary-panel">
-          <WorkspaceSwitcher />
           <p>
             Browse the owner-only catalog below. Add new custom exercises in the
             Custom Workouts section before using them in programs.

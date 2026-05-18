@@ -107,7 +107,6 @@ export async function getGymWorkspaces(): Promise<{
     }
 
     const gyms = gymSnapshot.docs
-      .filter((doc) => !isLegacyPilotWorkspace(doc.id, doc.data()))
       .map((doc) => {
         const workspace = mapWorkspace(doc.id, doc.data());
         return {
@@ -279,10 +278,12 @@ export async function getRoleSummary(): Promise<{
   }
 }
 
-export async function getMembers(): Promise<{
+export async function getMembers(gymId?: string): Promise<{
   members: Member[];
   isPersisted: boolean;
 }> {
+  const targetGymId = gymId ?? PRIMARY_GYM_ID;
+
   if (!hasFirebaseAdminConfig()) {
     return { members: mockMembers, isPersisted: false };
   }
@@ -294,7 +295,7 @@ export async function getMembers(): Promise<{
     db = getFirebaseAdminServices().db;
     profileSnapshot = await db
       .collection(collectionPaths.profiles)
-      .where("defaultGymId", "==", PRIMARY_GYM_ID)
+      .where("defaultGymId", "==", targetGymId)
       .where("role", "==", "member")
       .get();
   } catch {
@@ -376,11 +377,13 @@ export async function getMemberDetail(memberId: string): Promise<{
   return { member, isPersisted: true };
 }
 
-export async function getExerciseCatalog(): Promise<{
+export async function getExerciseCatalog(gymId?: string): Promise<{
   exercises: Exercise[];
   catalog: Array<{ muscleGroup: MuscleGroup; exercises: Exercise[] }>;
   isPersisted: boolean;
 }> {
+  const targetGymId = gymId ?? PRIMARY_GYM_ID;
+
   if (!hasFirebaseAdminConfig()) {
     return {
       exercises: mockExercises,
@@ -395,7 +398,7 @@ export async function getExerciseCatalog(): Promise<{
     const { db } = getFirebaseAdminServices();
     snapshot = await db
       .collection(collectionPaths.exerciseCatalog)
-      .where("gymId", "==", PRIMARY_GYM_ID)
+      .where("gymId", "==", targetGymId)
       .where("isActive", "==", true)
       .get();
   } catch {
@@ -447,7 +450,7 @@ export async function getExerciseCatalog(): Promise<{
   };
 }
 
-export async function getOwnerNotifications(): Promise<{
+export async function getOwnerNotifications(gymId?: string): Promise<{
   notifications: Notification[];
   isPersisted: boolean;
 }> {
@@ -464,10 +467,13 @@ export async function getOwnerNotifications(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    snapshot = await db
+    let query = db
       .collection(collectionPaths.notifications)
-      .where("recipientRole", "==", "owner")
-      .get();
+      .where("recipientRole", "==", "owner") as FirebaseFirestore.Query;
+    if (gymId) {
+      query = query.where("gymId", "==", gymId);
+    }
+    snapshot = await query.get();
   } catch {
     return {
       notifications: mockNotifications.filter(
@@ -508,6 +514,43 @@ export async function getOwnerNotifications(): Promise<{
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
   return { notifications, isPersisted: true };
+}
+
+export async function getAdminNotifications(): Promise<{
+  notifications: Notification[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { notifications: [], isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.notifications)
+      .where("recipientRole", "==", "admin")
+      .get();
+
+    const notifications: Notification[] = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          recipientRole: "admin" as Notification["recipientRole"],
+          recipientId: String(data.recipientId ?? ""),
+          type: String(data.type ?? "password_reset_request") as Notification["type"],
+          title: String(data.title ?? "Notification"),
+          body: String(data.body ?? ""),
+          createdAt: String(data.createdAt ?? new Date().toISOString()),
+          readAt: data.readAt ? String(data.readAt) : undefined
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return { notifications, isPersisted: true };
+  } catch {
+    return { notifications: [], isPersisted: false };
+  }
 }
 
 export async function getMemberNotifications(memberId: string): Promise<{
@@ -558,10 +601,12 @@ export async function getMemberNotifications(memberId: string): Promise<{
   }
 }
 
-export async function getWorkoutPrograms(): Promise<{
+export async function getWorkoutPrograms(gymId?: string): Promise<{
   programs: WorkoutProgram[];
   isPersisted: boolean;
 }> {
+  const targetGymId = gymId ?? PRIMARY_GYM_ID;
+
   if (!hasFirebaseAdminConfig()) {
     return { programs: mockPrograms, isPersisted: false };
   }
@@ -572,7 +617,7 @@ export async function getWorkoutPrograms(): Promise<{
     const { db } = getFirebaseAdminServices();
     snapshot = await db
       .collection(collectionPaths.workoutPrograms)
-      .where("gymId", "==", PRIMARY_GYM_ID)
+      .where("gymId", "==", targetGymId)
       .where("isActive", "==", true)
       .get();
   } catch {
@@ -606,31 +651,8 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
   liftLogs: LiftLog[];
   isPersisted: boolean;
 }> {
-  const fallbackLogs: LiftLog[] = [
-    {
-      id: "demo-bench-last-week",
-      memberId,
-      exerciseId: "ch_01",
-      weight: 60,
-      sets: 3,
-      reps: "8",
-      sessionId: "demo-session-last-week",
-      loggedAt: "2026-04-27T18:20:00+05:30"
-    },
-    {
-      id: "demo-bench-this-week",
-      memberId,
-      exerciseId: "ch_01",
-      weight: 62.5,
-      sets: 3,
-      reps: "8",
-      sessionId: "demo-session-this-week",
-      loggedAt: "2026-05-04T18:20:00+05:30"
-    }
-  ];
-
   if (!hasFirebaseAdminConfig()) {
-    return { liftLogs: fallbackLogs, isPersisted: false };
+    return { liftLogs: [], isPersisted: false };
   }
 
   let snapshot;
@@ -643,11 +665,11 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
       .where("memberId", "==", memberId)
       .get();
   } catch {
-    return { liftLogs: fallbackLogs, isPersisted: false };
+    return { liftLogs: [], isPersisted: false };
   }
 
   if (snapshot.empty) {
-    return { liftLogs: fallbackLogs, isPersisted: false };
+    return { liftLogs: [], isPersisted: true };
   }
 
   const liftLogs: LiftLog[] = snapshot.docs
@@ -726,10 +748,11 @@ export async function getProgramAssignmentForMember(memberId: string): Promise<{
   }
 }
 
-export async function getActiveProgramAssignments(): Promise<{
+export async function getActiveProgramAssignments(gymId?: string): Promise<{
   assignments: ProgramAssignment[];
   isPersisted: boolean;
 }> {
+  const targetGymId = gymId ?? PRIMARY_GYM_ID;
   const fallback = mockAssignments.filter((assignment) => assignment.status === "active");
 
   if (!hasFirebaseAdminConfig()) {
@@ -740,7 +763,7 @@ export async function getActiveProgramAssignments(): Promise<{
     const { db } = getFirebaseAdminServices();
     const snapshot = await db
       .collection(collectionPaths.programAssignments)
-      .where("gymId", "==", PRIMARY_GYM_ID)
+      .where("gymId", "==", targetGymId)
       .where("status", "==", "active")
       .get();
 
@@ -1019,10 +1042,12 @@ export async function getSiteLinks(): Promise<{
   }
 }
 
-export async function getActiveWorkoutSessions(): Promise<{
+export async function getActiveWorkoutSessions(gymId?: string): Promise<{
   sessions: WorkoutSession[];
   isPersisted: boolean;
 }> {
+  const targetGymId = gymId ?? PRIMARY_GYM_ID;
+
   if (!hasFirebaseAdminConfig()) {
     return { sessions: [], isPersisted: false };
   }
@@ -1031,7 +1056,7 @@ export async function getActiveWorkoutSessions(): Promise<{
     const { db } = getFirebaseAdminServices();
     const snapshot = await db
       .collection(collectionPaths.workoutSessions)
-      .where("gymId", "==", PRIMARY_GYM_ID)
+      .where("gymId", "==", targetGymId)
       .where("status", "==", "active")
       .get();
     const sessions: WorkoutSession[] = snapshot.docs.map((doc) => {

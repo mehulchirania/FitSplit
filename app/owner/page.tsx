@@ -3,7 +3,6 @@ import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveProgramAssignments,
@@ -18,8 +17,11 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function OwnerDashboard() {
-  await requireRole(["admin", "owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
+  const isTrainer = currentUser.role === "owner" && currentUser.staffType === "trainer";
+  const isStaff = currentUser.role === "owner" && currentUser.staffType === "staff";
 
+  const gymId = currentUser.gymId;
   const [
     { members },
     { notifications: ownerNotifications },
@@ -29,13 +31,13 @@ export default async function OwnerDashboard() {
     { sessions },
     { assignments }
   ] = await Promise.all([
-    getMembers(),
-    getOwnerNotifications(),
-    getExerciseCatalog(),
-    getWorkoutPrograms(),
+    getMembers(gymId),
+    getOwnerNotifications(gymId),
+    getExerciseCatalog(gymId),
+    getWorkoutPrograms(gymId),
     getPrimaryWorkspace(),
-    getActiveWorkoutSessions(),
-    getActiveProgramAssignments()
+    getActiveWorkoutSessions(gymId),
+    getActiveProgramAssignments(gymId)
   ]);
 
   const assignedMemberIds = new Set(assignments.map((assignment) => assignment.memberId));
@@ -49,7 +51,7 @@ export default async function OwnerDashboard() {
     <main className="page">
       <section className="dashboard-header compact-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "20px" }}>
         <div className="header-copy">
-          <p className="eyebrow">Owner dashboard</p>
+          <p className="eyebrow">{isTrainer ? "Trainer" : isStaff ? "Staff" : "Owner"} dashboard</p>
           <h1>Training ops command center.</h1>
           <p>
             See who has a plan, who still needs one, what is happening on the
@@ -57,18 +59,17 @@ export default async function OwnerDashboard() {
           </p>
           <div className="quick-actions" style={{ marginTop: 14 }}>
             <Link className="button button-primary" href="/owner/members">
-              Assign member plans
+              {isTrainer || isStaff ? "View members" : "Assign member plans"}
             </Link>
             <Link className="button button-secondary" href="/owner/programs">
               Review programs
             </Link>
-            <Link className="button button-secondary" href="/owner/exercises">
-              Open catalog
-            </Link>
+            {!isTrainer && !isStaff && (
+              <Link className="button button-secondary" href="/owner/exercises">
+                Open catalog
+              </Link>
+            )}
           </div>
-        </div>
-        <div>
-          <WorkspaceSwitcher />
         </div>
       </section>
 
@@ -110,9 +111,15 @@ export default async function OwnerDashboard() {
               View all
             </Link>
           </div>
-          {(unassignedMembers.length ? unassignedMembers : members.slice(0, 4)).map((member) => (
-            <MemberRow member={member} key={member.id} />
-          ))}
+          {unassignedMembers.length === 0 ? (
+            <p style={{ padding: "20px 0", color: "var(--text-soft)", textAlign: "center", fontSize: "0.9rem" }}>
+              All members have a program assigned.
+            </p>
+          ) : (
+            unassignedMembers.map((member) => (
+              <MemberRow member={member} key={member.id} />
+            ))
+          )}
         </div>
 
         <div style={{ display: "grid", gap: "16px", alignContent: "start" }}>

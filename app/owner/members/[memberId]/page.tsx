@@ -15,6 +15,7 @@ import {
 import {
   getExerciseCatalog,
   getMemberDetail,
+  getProfileMetrics,
   getProgramAssignmentForMember,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
@@ -33,12 +34,14 @@ export default async function MemberDetailPage({
     { member },
     { assignment },
     { programs },
-    { exercises }
+    { exercises },
+    { profile }
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
     getWorkoutPrograms(),
-    getExerciseCatalog()
+    getExerciseCatalog(),
+    getProfileMetrics(memberId)
   ]);
 
   if (!member) {
@@ -92,6 +95,24 @@ export default async function MemberDetailPage({
               <strong>{member.goal}</strong>
             </span>
           </div>
+
+          {(profile.weightKg || profile.heightCm || profile.age) && (
+            <>
+              <div className="panel-title" style={{ marginTop: 16 }}>
+                <h2>Body metrics</h2>
+                <span className="status-pill status-neutral">Member-reported</span>
+              </div>
+              <div className="detail-window">
+                {profile.weightKg ? <span>Weight<strong>{profile.weightKg} kg</strong></span> : null}
+                {profile.heightCm ? <span>Height<strong>{profile.heightCm} cm</strong></span> : null}
+                {profile.age ? <span>Age<strong>{profile.age}</strong></span> : null}
+                {profile.weightKg && profile.heightCm ? (
+                  <span>BMI<strong>{(profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1)}</strong></span>
+                ) : null}
+                {profile.primarySlot ? <span>Primary slot<strong>Slot {profile.primarySlot}</strong></span> : null}
+              </div>
+            </>
+          )}
         </aside>
       </section>
 

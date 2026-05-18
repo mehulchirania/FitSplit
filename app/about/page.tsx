@@ -56,12 +56,12 @@ export default async function AboutPage() {
               <input name="name" placeholder="Your name" required />
             </label>
             <label>
-              Number
-              <input name="number" placeholder="+91 ..." required />
+              Mobile number
+              <input name="mobile" placeholder="+91 ..." required />
             </label>
             <label>
-              Requirement
-              <input name="requirement" placeholder="What do you need?" required />
+              Message
+              <input name="body" placeholder="What do you need?" required />
             </label>
             <label>
               Email

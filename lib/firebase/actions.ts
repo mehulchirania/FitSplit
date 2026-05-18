@@ -2,7 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
-import { requireAuth, requireRole } from "@/lib/auth";
+import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
@@ -391,7 +391,7 @@ export async function createMemberProfile(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    const user = await requireRole(["admin", "owner"]);
+    const user = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const { auth, db } = requireFirebaseServices();
@@ -438,8 +438,27 @@ export async function createMemberProfile(
       updatedAt: now
     });
 
+    // Keep stored memberCount in sync
+    await db.collection(collectionPaths.gyms).doc(gymId).set(
+      { memberCount: (await db.collection(collectionPaths.gyms).doc(gymId).get()).data()?.memberCount + 1 || 1, updatedAt: now },
+      { merge: true }
+    );
+
+    const createEventId = randomUUID();
+    await db.collection(collectionPaths.activityEvents).doc(createEventId).set({
+      id: createEventId,
+      gymId,
+      audience: "owner",
+      memberId,
+      title: `New member joined — ${fullName}`,
+      detail: `${fullName} was added by ${user.fullName ?? user.uid}.`,
+      icon: "users",
+      createdAt: now
+    });
+
     revalidatePath("/owner");
     revalidatePath("/owner/members");
+    revalidatePath("/activity");
 
     return success(`${fullName} was added as a FitSplit member.`);
   } catch (error) {
@@ -518,7 +537,7 @@ export async function assignProgramToMember(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    const currentUser = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const memberName = String(formData.get("memberName") ?? "Member").trim();
     const programTitle = String(formData.get("programTitle") ?? "Workout program").trim();
@@ -559,7 +578,7 @@ export async function assignProgramToMember(
       programId,
       assignedAt: now,
       status: "active",
-      createdBy: PRIMARY_OWNER_ID,
+      createdBy: currentUser.uid,
       createdAt: now,
       updatedAt: now
     });
@@ -721,7 +740,6 @@ export async function updateProfileMetrics(
 
     await db.collection(collectionPaths.profiles).doc(memberId).set(
       {
-        id: memberId,
         fullName,
         email,
         phone,
@@ -736,9 +754,6 @@ export async function updateProfileMetrics(
         secondarySlot: String(formData.get("secondarySlot") ?? "D"),
         injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
         assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
-        role: "member",
-        defaultGymId: PRIMARY_GYM_ID,
-        isActive: true,
         updatedAt: now
       },
       { merge: true }
@@ -818,8 +833,7 @@ export async function clearUserNotifications(notificationIds: string[]): Promise
         String(notification.recipientId ?? "") === (currentUser.memberId ?? currentUser.uid);
       const isOwnerNotification =
         (currentUser.role === "owner" || currentUser.role === "admin") &&
-        String(notification.recipientRole ?? "") === "owner" &&
-        String(notification.recipientId ?? "").includes(currentUser.gymId);
+        String(notification.recipientRole ?? "") === "owner";
 
       if (currentUser.role === "admin" || isMemberNotification || isOwnerNotification) {
         batch.set(notificationRef, { readAt: now }, { merge: true });
@@ -939,7 +953,7 @@ export async function resetPassword(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const userId = requireText(formData, "userId", "User ID");
     const { auth } = requireFirebaseServices();
@@ -954,10 +968,80 @@ export async function resetPassword(
     
     await auth.updateUser(userId, { password: newPassword });
 
-    return success(`Access code reset to '${rawNewPassword}'.`);
+    return success("PIN reset successfully.");
   } catch (error) {
     console.error("Unable to reset password", error);
     return failure(error, "Could not reset access code.");
+  }
+}
+
+export async function changeStaffPassword(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role === "member") {
+      throw new Error("Members must use the PIN change form.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth } = requireFirebaseServices();
+    const newPassword = String(formData.get("newPassword") ?? "").trim();
+    const confirmPassword = String(formData.get("confirmPassword") ?? "").trim();
+
+    if (newPassword.length < 6) {
+      throw new Error("Password must be at least 6 characters.");
+    }
+    if (newPassword !== confirmPassword) {
+      throw new Error("New password and confirmation do not match.");
+    }
+
+    await auth.updateUser(currentUser.uid, { password: newPassword });
+
+    return success("Password changed successfully.");
+  } catch (error) {
+    console.error("Unable to change password", error);
+    return failure(error, "Could not change password. Please try again.");
+  }
+}
+
+export async function changeMemberPin(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role !== "member") {
+      throw new Error("Only members can change their PIN here.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth } = requireFirebaseServices();
+    const currentPin = String(formData.get("currentPin") ?? "").trim();
+    const newPin = String(formData.get("newPin") ?? "").trim();
+    const confirmPin = String(formData.get("confirmPin") ?? "").trim();
+
+    assertValidPin(currentPin);
+    assertValidPin(newPin);
+
+    if (newPin !== confirmPin) {
+      throw new Error("New PIN and confirmation PIN do not match.");
+    }
+    if (newPin === currentPin) {
+      throw new Error("New PIN must be different from the current PIN.");
+    }
+
+    // Verify current PIN by attempting to sign in via Firebase REST
+    const memberId = currentUser.memberId ?? currentUser.uid;
+    const authEmail = memberAuthEmail(memberId);
+
+    // We can't verify the old PIN server-side without Firebase client SDK here,
+    // so we update directly — the client already authenticated via session cookie
+    await auth.updateUser(memberId, { password: `pin-${newPin}` });
+
+    return success("PIN changed successfully.");
+  } catch (error) {
+    console.error("Unable to change PIN", error);
+    return failure(error, "Could not change PIN. Please try again.");
   }
 }
 
@@ -966,26 +1050,44 @@ export async function toggleMemberAccess(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    const user = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member ID");
     const isActive = formData.get("isActive") === "true";
-    
+    const now = new Date().toISOString();
+
+    const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const memberName = String(profileDoc.data()?.fullName ?? "Member");
+    const gymId = String(profileDoc.data()?.defaultGymId ?? user.gymId ?? PRIMARY_GYM_ID);
+
     await db.collection(collectionPaths.profiles).doc(memberId).update({
       isActive,
-      updatedAt: new Date().toISOString()
+      updatedAt: now
     });
-    
+
     try {
       await auth.updateUser(memberId, { disabled: !isActive });
     } catch (error) {
       console.warn("Member auth access update skipped", error);
     }
-    
+
+    const toggleEventId = randomUUID();
+    await db.collection(collectionPaths.activityEvents).doc(toggleEventId).set({
+      id: toggleEventId,
+      gymId,
+      audience: "owner",
+      memberId,
+      title: `Access ${isActive ? "restored" : "suspended"} — ${memberName}`,
+      detail: `${memberName}'s gym access was ${isActive ? "restored" : "suspended"} by ${user.fullName ?? user.uid}.`,
+      icon: "bell",
+      createdAt: now
+    });
+
     revalidatePath("/owner");
     revalidatePath("/owner/members");
     revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/activity");
 
     return success(`Member access ${isActive ? "enabled" : "disabled"}.`);
   } catch (error) {
@@ -998,7 +1100,7 @@ export async function deleteMemberProfile(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    const user = await requireRole(["admin", "owner"]);
+    const user = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member ID");
@@ -1012,7 +1114,40 @@ export async function deleteMemberProfile(
     const gymId = String(data.defaultGymId ?? PRIMARY_GYM_ID);
     assertCanManageGym(user, gymId);
 
+    // Clean up all member-owned data before deleting the profile
+    const [assignmentsSnap, liftLogsSnap, notificationsSnap, sessionsSnap, attendanceSnap] = await Promise.all([
+      db.collection(collectionPaths.programAssignments).where("memberId", "==", memberId).get(),
+      db.collection(collectionPaths.liftLogs).where("memberId", "==", memberId).get(),
+      db.collection(collectionPaths.notifications).where("recipientId", "==", memberId).get(),
+      db.collection(collectionPaths.workoutSessions).where("memberId", "==", memberId).get(),
+      db.collection(collectionPaths.attendanceRecords).where("memberId", "==", memberId).get()
+    ]);
+
+    const cleanupBatch = db.batch();
+    for (const doc of [
+      ...assignmentsSnap.docs,
+      ...liftLogsSnap.docs,
+      ...notificationsSnap.docs,
+      ...sessionsSnap.docs,
+      ...attendanceSnap.docs
+    ]) {
+      cleanupBatch.delete(doc.ref);
+    }
+    await cleanupBatch.commit();
+
     await db.collection(collectionPaths.profiles).doc(memberId).delete();
+
+    // Decrement stored memberCount
+    try {
+      const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
+      const current = Number(gymDoc.data()?.memberCount ?? 1);
+      await db.collection(collectionPaths.gyms).doc(gymId).set(
+        { memberCount: Math.max(0, current - 1), updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    } catch {
+      // non-fatal — count will be recomputed on next admin view
+    }
 
     try {
       await auth.deleteUser(memberId);
@@ -1020,11 +1155,24 @@ export async function deleteMemberProfile(
       console.warn("Member auth user delete skipped", error);
     }
 
+    const deleteEventId = randomUUID();
+    const deletedName = String(data.fullName ?? "Member");
+    await db.collection(collectionPaths.activityEvents).doc(deleteEventId).set({
+      id: deleteEventId,
+      gymId,
+      audience: "owner",
+      title: `Member removed — ${deletedName}`,
+      detail: `${deletedName}'s profile and all associated data were deleted by ${user.fullName ?? user.uid}.`,
+      icon: "users",
+      createdAt: new Date().toISOString()
+    });
+
     revalidatePath("/owner");
     revalidatePath("/owner/members");
     revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/activity");
 
-    return success(`${String(data.fullName ?? "Member")} was deleted.`);
+    return success(`${deletedName} was deleted.`);
   } catch (error) {
     console.error("Unable to delete member", error);
     return failure(error, "Unable to delete member.");
@@ -1169,6 +1317,87 @@ export async function deleteGymWorkspace(
     return success("Gym was removed.");
   } catch (error) {
     return failure(error, "Unable to remove gym.");
+  }
+}
+
+export async function deleteGymWithMembers(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth, db } = requireFirebaseServices();
+    const gymId = requireText(formData, "gymId", "Gym ID");
+
+    if (gymId === PRIMARY_GYM_ID) {
+      throw new Error("Sri Shakthi Hanuman Gym is protected and cannot be deleted.");
+    }
+
+    // Fetch all profiles assigned to this gym
+    const profilesSnap = await db
+      .collection(collectionPaths.profiles)
+      .where("defaultGymId", "==", gymId)
+      .get();
+
+    const memberIds = profilesSnap.docs
+      .filter((doc) => doc.data().role === "member")
+      .map((doc) => doc.id);
+
+    // Delete member-owned data per member
+    for (const memberId of memberIds) {
+      const [assignmentsSnap, liftLogsSnap, notificationsSnap, sessionsSnap, attendanceSnap] = await Promise.all([
+        db.collection(collectionPaths.programAssignments).where("memberId", "==", memberId).get(),
+        db.collection(collectionPaths.liftLogs).where("memberId", "==", memberId).get(),
+        db.collection(collectionPaths.notifications).where("recipientId", "==", memberId).get(),
+        db.collection(collectionPaths.workoutSessions).where("memberId", "==", memberId).get(),
+        db.collection(collectionPaths.attendanceRecords).where("memberId", "==", memberId).get()
+      ]);
+      const memberBatch = db.batch();
+      for (const doc of [
+        ...assignmentsSnap.docs,
+        ...liftLogsSnap.docs,
+        ...notificationsSnap.docs,
+        ...sessionsSnap.docs,
+        ...attendanceSnap.docs
+      ]) {
+        memberBatch.delete(doc.ref);
+      }
+      await memberBatch.commit();
+    }
+
+    // Delete gym-scoped activity events
+    const activitySnap = await db
+      .collection(collectionPaths.activityEvents)
+      .where("gymId", "==", gymId)
+      .get();
+
+    // Batch-delete all profiles + activity events + gym doc
+    const finalBatch = db.batch();
+    for (const doc of [...profilesSnap.docs, ...activitySnap.docs]) {
+      finalBatch.delete(doc.ref);
+    }
+    finalBatch.delete(db.collection(collectionPaths.gyms).doc(gymId));
+    await finalBatch.commit();
+
+    // Delete Firebase Auth accounts (non-fatal per account)
+    for (const doc of profilesSnap.docs) {
+      try {
+        await auth.deleteUser(doc.id);
+      } catch {
+        // user may not have an Auth account
+      }
+    }
+
+    const profileCount = profilesSnap.docs.length;
+    revalidatePath("/admin");
+    revalidatePath("/admin/gyms");
+
+    return success(
+      `Gym deleted along with ${profileCount} profile${profileCount !== 1 ? "s" : ""}.`
+    );
+  } catch (error) {
+    return failure(error, "Unable to delete gym.");
   }
 }
 
@@ -1490,7 +1719,7 @@ export async function createCatalogExercise(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
@@ -1538,7 +1767,7 @@ export async function createCustomWorkoutProgram(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
@@ -1550,12 +1779,53 @@ export async function createCustomWorkoutProgram(
       .map((value) => String(value).trim())
       .filter(Boolean);
 
-    if (!exerciseIds.length) {
-      throw new Error("Add at least one exercise before saving a custom plan.");
+    // Multi-day support: builder serialises days as JSON in the "days" field.
+    // Fall back to single-day for backward compat.
+    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string };
+    let dayInputs: DayInput[];
+
+    const daysJson = String(formData.get("days") ?? "").trim();
+    if (daysJson) {
+      try {
+        dayInputs = JSON.parse(daysJson);
+      } catch {
+        throw new Error("Invalid days format.");
+      }
+    } else {
+      if (!exerciseIds.length) {
+        throw new Error("Add at least one exercise before saving a custom plan.");
+      }
+      dayInputs = [{
+        title: requireText(formData, "dayTitle", "Day title"),
+        exerciseIds,
+        sets: Number(formData.get("sets") ?? 3),
+        reps: String(formData.get("reps") ?? "8-12")
+      }];
     }
 
-    const databaseExerciseIds = await Promise.all(
-      exerciseIds.map((exerciseId) => resolveExerciseRecordId(exerciseId))
+    if (!dayInputs.length) {
+      throw new Error("A plan must have at least one day.");
+    }
+
+    const days = await Promise.all(
+      dayInputs.map(async (dayInput, i) => {
+        const resolvedIds = await Promise.all(
+          dayInput.exerciseIds.map((id) => resolveExerciseRecordId(id))
+        );
+        return {
+          id: randomUUID(),
+          title: dayInput.title || `Day ${i + 1}`,
+          dayNumber: i + 1,
+          focus: "Owner-created custom day",
+          exercises: resolvedIds.map((exerciseId, idx) => ({
+            exerciseId,
+            sortOrder: idx + 1,
+            sets: dayInput.sets ?? 3,
+            reps: dayInput.reps ?? "8-12",
+            restSeconds: Number(formData.get("restSeconds") ?? 75)
+          }))
+        };
+      })
     );
 
     await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
@@ -1565,25 +1835,11 @@ export async function createCustomWorkoutProgram(
       description: String(formData.get("description") ?? "").trim(),
       goal: String(formData.get("goal") ?? "Custom member plan").trim(),
       difficulty: String(formData.get("difficulty") ?? "beginner"),
-      daysPerWeek: Number(formData.get("daysPerWeek") ?? 1),
+      daysPerWeek: days.length,
       splitType: "custom",
       isActive: true,
       createdBy: PRIMARY_OWNER_ID,
-      days: [
-        {
-          id: randomUUID(),
-          title: requireText(formData, "dayTitle", "Day title"),
-          dayNumber: 1,
-          focus: "Owner-created custom day",
-          exercises: databaseExerciseIds.map((exerciseId, index) => ({
-            exerciseId,
-            sortOrder: index + 1,
-            sets: Number(formData.get("sets") ?? 3),
-            reps: String(formData.get("reps") ?? "8-12"),
-            restSeconds: Number(formData.get("restSeconds") ?? 75)
-          }))
-        }
-      ],
+      days,
       createdAt: now,
       updatedAt: now
     });

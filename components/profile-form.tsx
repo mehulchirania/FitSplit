@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
-import type { ProfileMetrics } from "@/types/domain";
+import type { Member, ProfileMetrics } from "@/types/domain";
 import { ConfirmActionForm } from "./confirm-action-form";
 
 const slots = [
@@ -14,10 +14,12 @@ const slots = [
 
 export function ProfileForm({
   memberId,
-  profile
+  profile,
+  trainers = []
 }: {
   memberId: string;
   profile: ProfileMetrics;
+  trainers?: Pick<Member, "id" | "fullName" | "staffType">[];
 }) {
   const [height, setHeight] = useState(String(profile.heightCm ?? ""));
   const [weight, setWeight] = useState(String(profile.weightKg ?? ""));
@@ -147,7 +149,18 @@ export function ProfileForm({
         </label>
         <label>
           Assigned trainer
-          <input defaultValue={profile.assignedTrainer} name="assignedTrainer" placeholder="Trainer name" />
+          {trainers.length > 0 ? (
+            <select defaultValue={profile.assignedTrainer ?? ""} name="assignedTrainer">
+              <option value="">No trainer assigned</option>
+              {trainers.map((t) => (
+                <option key={t.id} value={t.fullName}>
+                  {t.fullName}{t.staffType === "trainer" ? " (Trainer)" : " (Owner)"}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input defaultValue={profile.assignedTrainer} name="assignedTrainer" placeholder="Trainer name" />
+          )}
         </label>
       </ConfirmActionForm>
 

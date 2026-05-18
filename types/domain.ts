@@ -120,7 +120,12 @@ export type Notification = {
     | "membership_expired"
     | "membership_renewed"
     | "program_assigned"
-    | "contact_message";
+    | "contact_message"
+    | "password_reset_request"
+    | "member_access_toggled"
+    | "member_created"
+    | "access_suspended"
+    | "access_restored";
   title: string;
   body: string;
   createdAt: string;

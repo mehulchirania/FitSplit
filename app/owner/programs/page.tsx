@@ -1,5 +1,4 @@
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
 import { getExerciseCatalog, getWorkoutPrograms } from "@/lib/firebase/read-models";
@@ -7,11 +6,12 @@ import { getExerciseCatalog, getWorkoutPrograms } from "@/lib/firebase/read-mode
 export const dynamic = "force-dynamic";
 
 export default async function ProgramsPage() {
-  await requireRole(["admin", "owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
+  const gymId = currentUser.gymId;
 
   const [{ catalog, exercises }, { programs }] = await Promise.all([
-    getExerciseCatalog(),
-    getWorkoutPrograms()
+    getExerciseCatalog(gymId),
+    getWorkoutPrograms(gymId)
   ]);
   return (
     <main className="page">
@@ -25,7 +25,6 @@ export default async function ProgramsPage() {
           </p>
         </div>
         <aside className="builder-stack">
-          <WorkspaceSwitcher />
           <CustomPlanBuilder catalog={catalog} />
         </aside>
       </section>

@@ -32,14 +32,14 @@ The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel
 
 ## Member Dashboard
 
-The member `/member` page uses a premium `md-*` layout consistent with the dark landing page aesthetic (`#0A0A0A` background, `#C8F135` lime accent). Layout: a full-width hero with contextual greeting, program title, week/sets badges, and inline editable metrics (Age, Weight, Height, BMI); below is the `MemberWorkoutConsole` with day tabs, AI customized workout toggle, and the AI Semi-Personal Trainer panel with injury/limitation management.
+The member `/member` page uses a premium `md-*` layout consistent with the dark landing page aesthetic (`#0A0A0A` background, `#C8F135` lime accent). Layout: a responsive summary hero with contextual greeting, program title, week/sets badges, and inline editable metrics (Age, Weight, Height, BMI); below is the `MemberWorkoutConsole` with day tabs, AI customized workout toggle, cleaned lift logging, lift history/progress panels, and the AI Semi-Personal Trainer injury/limitation workflow.
 
 ## Current Status
 
 - Firebase Auth login is handled through a server-side credential flow that resolves usernames, phone numbers, and emails to Firebase Auth emails before creating server-verified session cookies.
 - Admin, owner, and member route access is enforced server-side.
 - Unauthenticated `/` shows the public landing page; authenticated `/` redirects users to their role dashboard.
-- Sessions are limited to 2 hours and the client forces logout when the local session timer expires.
+- Sessions are limited to 2 hours. The client shows a warning banner at T-5 minutes and forces logout when the timer expires.
 - Member login uses registered mobile/email/username plus a 4-digit PIN. Firebase stores this internally as a valid 6+ character password format.
 - Demo usernames still work by resolving to Firebase Auth emails.
 - New owner-created members also get Firebase Auth accounts with the same UID as their Firestore profile.
@@ -47,6 +47,20 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - The app has PWA basics: manifest, service worker, matte install prompt, app icons, apple touch icon, and offline shell caching.
 - Admin inbox stores landing Contact Us messages in Firestore with read/unread state.
 - Admin can manage gym workspaces at `/admin/gyms`.
+- Trainers (`staffType: "trainer"`) can view member records and assign programs but cannot create/delete members, reset PINs, toggle access, or create/delete exercises and programs. This is enforced via `requireOwner()` in `lib/auth.ts`.
+- `/profile` is role-split: members see the full profile form with body metrics; admin and owner see a simple identity card with no body metrics.
+- Deleting a member also removes all associated programAssignments, liftLogs, notifications, workoutSessions, and attendanceRecords.
+- Owner member detail page shows member's self-reported body metrics (weight, height, age, BMI, slot) read-only in the aside panel.
+- All owner Firestore reads (members, programs, exercises, sessions, assignments, notifications) now use `currentUser.gymId` instead of the hardcoded SHG gym ID, enabling correct data isolation for multi-gym setups.
+- Admin notification bell is now populated from `recipientRole: "admin"` notifications (password reset requests, etc.).
+- `GymWorkspace.memberCount` is now kept in sync: incremented on member create, decremented on member delete.
+- Member dashboard UI is stabilized for desktop/mobile: the top summary card, profile/notification dropdowns, dark-mode selects, and lift logging panel have dedicated responsive styling.
+- Members can change their own 4-digit PIN from the `/profile` page. Admin and owner users have a password change form on their `/profile` page.
+- `assignedTrainer` field on the member profile form uses a `<select>` dropdown populated from the gym's trainer roster.
+- Activity events are emitted on member create, access toggle (suspend/restore), and member delete.
+- Member list (`/owner/members`) shows phone number, join date, and a colour-coded Active/Inactive status badge per row.
+- Custom plan builder supports multiple workout days (up to 7): add/remove days, per-day exercise picker, title and sets/reps per day.
+- `WorkspaceSwitcher` removed from owner pages (owners have one gym); kept on admin page for gym management link.
 
 ## Demo Login Credentials
 

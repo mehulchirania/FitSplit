@@ -4,7 +4,7 @@ import { AddStaffForm } from "@/components/add-staff-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { UsersRound, Settings } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { deleteGymStaffProfile, setGymStatus, updateGymDetails, resetPassword } from "@/lib/firebase/actions";
+import { deleteGymStaffProfile, deleteGymWithMembers, setGymStatus, updateGymDetails, resetPassword } from "@/lib/firebase/actions";
 import { getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -201,6 +201,32 @@ export default async function GymManagementPage({
           )}
         </div>
       </section>
+      {gym.id !== "shg" && (
+        <section className="list-panel" style={{ marginTop: 16, borderColor: "var(--error, #f87171)" }}>
+          <div className="panel-title">
+            <h2 style={{ color: "var(--error, #f87171)" }}>Danger Zone</h2>
+          </div>
+          <div style={{ padding: "16px 20px" }}>
+            <p style={{ color: "var(--text-soft)", fontSize: "0.88rem", marginBottom: 12 }}>
+              Permanently deletes this gym and <strong>all associated members and staff</strong> — including their
+              Firebase Auth accounts, workout logs, assignments, sessions, and attendance records. This cannot be undone.
+            </p>
+            <ConfirmActionForm
+              action={deleteGymWithMembers}
+              confirmMessage={`Delete "${gym.name}" and all its members and staff permanently? This cannot be undone.`}
+              confirmTitle="Delete gym and all members?"
+              confirmLabel="Yes, delete everything"
+              pendingLabel="Deleting..."
+              submitClassName="button button-danger"
+              submitLabel="Delete gym and all members"
+              successRedirect="/admin/gyms"
+              style={{ background: "none", border: "none", padding: 0 }}
+            >
+              <input name="gymId" type="hidden" value={gym.id} />
+            </ConfirmActionForm>
+          </div>
+        </section>
+      )}
     </main>
   );
 }

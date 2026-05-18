@@ -60,13 +60,232 @@ Explicitly out of scope unless re-approved:
 - Membership renewal UI. FitSplit no longer syncs with the external membership app.
 - Public landing copy that says FitSplit does not do billing. Billing is now a future roadmap item, not a public limitation message.
 
-Recommended next work:
+Recommended next work (as of 2026-05-18 audit):
 
-1. Fix authenticated topbar branding and move SHG identity into the drawer.
-2. Polish member dashboard mobile layout and exercise cards.
-3. Add log-set success feedback and empty lift-history states.
-4. Clean `globals.css` by splitting active styles from archived/legacy landing iterations.
-5. Audit server actions for explicit role checks.
+**Start with Phase F0 — all 7 items break core functionality or corrupt data:**
+1. **F0-1** Contact form field names — silent failure on every submission.
+2. **F0-2** Member empty state fallback — unassigned members see wrong program.
+3. **F0-3** Profile page role split — admin/owner see member-only body metrics.
+4. **F0-4** `updateMemberProfile` gym corruption — editing member overwrites gym ID.
+5. **F0-5** `deleteMemberProfile` data cleanup — orphaned lift logs / assignments.
+6. **F0-6** `updateProfileMetrics` role corruption — can overwrite non-member role.
+7. **F0-7** Trainer access restriction — trainers have destructive owner-level access.
+
+Full ranked list of F0 → F1 → F2 issues is in the "Full product audit — functional fix roadmap" update below.
+
+---
+
+## Latest Update - 2026-05-18: Member dashboard UI repair
+
+Fixed the broken member dashboard presentation:
+
+- Reworked the `/member` top section into a stable responsive summary card so the greeting, program title, badges, and profile metrics do not collide.
+- Anchored profile and notification dropdowns with higher z-index, fixed widths, mobile-safe positioning, and consistent menu item alignment.
+- Rebuilt the member "Log your sets" panel with CSS classes instead of brittle inline layout styles; inputs/selects now keep readable dark/light styling.
+- Removed the in-workout rest timer from the member console path, keeping with the current out-of-scope product decision.
+- Cleaned corrupted PR/member streak UI text in the member experience.
+- Fixed `components/session-timeout.tsx` browser timer typing so verification can pass.
+
+Verification:
+
+- `npm run typecheck` passes.
+- `npm run build` passes.
+
+---
+
+## Latest Update - 2026-05-18: Phase F1 wrong-behavior fixes (session 5)
+
+All 11 Phase F1 issues resolved. `typecheck` passes clean.
+
+- **F1-1** `getMembers`, `getWorkoutPrograms`, `getExerciseCatalog`, `getActiveProgramAssignments`, `getActiveWorkoutSessions` in `read-models.ts` now accept optional `gymId` param (defaults to `PRIMARY_GYM_ID`). Owner dashboard, members page, exercises page, programs page all pass `currentUser.gymId`.
+- **F1-2** `getOwnerNotifications(gymId?)` now accepts optional gym filter. Owner dashboard passes `currentUser.gymId` so multi-gym owners don't see each other's notifications.
+- **F1-3** `assignProgramToMember` now uses `currentUser.uid` as `createdBy` instead of hardcoded `PRIMARY_OWNER_ID`.
+- **F1-4** Owner dashboard "Members needing plans" panel shows "All members have a program assigned." when `unassignedMembers.length === 0` instead of showing up to 4 assigned members.
+- **F1-5** Owner dashboard detects `staffType: "trainer"` / `"staff"` from session. Trainers/staff see "Trainer dashboard" eyebrow, "View members" CTA instead of "Assign member plans", and the "Open catalog" destructive link is hidden.
+- **F1-6** `resetPassword` success message no longer echoes the new PIN — now returns `"PIN reset successfully."`.
+- **F1-7** `getLiftLogsForMember` no longer returns hardcoded demo bench press logs — returns `[]` when Firebase is unconfigured or when a member has no logs. Chart and lift history now show their real empty states.
+- **F1-8** `clearUserNotifications` ownership check simplified — removed fragile `.includes(gymId)` string check on UUID recipientId.
+- **F1-9** `/owner/members/[memberId]` now fetches `getProfileMetrics` in parallel. Body metrics panel (weight, height, age, BMI, primary slot) appears in the aside when the member has entered them.
+- **F1-10** `getAdminNotifications()` added to `read-models.ts`. Layout now fetches it for admin role and passes to topbar notification bell.
+- **F1-11** `createMemberProfile` increments `GymWorkspace.memberCount`. `deleteMemberProfile` decrements it (with a safe try/catch so deletion never fails if the gym doc is missing).
+
+---
+
+## Latest Update - 2026-05-18: Phase F0 critical fixes (session 4)
+
+All 7 Phase F0 critical bugs fixed. `typecheck` passes clean.
+
+- **F0-1** `app/about/page.tsx` — contact form fields renamed: `number`→`mobile`, `requirement`→`body`. Form now actually writes to Firestore.
+- **F0-2** `app/member/page.tsx:47` — removed `?? programs[0]` fallback. Unassigned members now see "No workout plan assigned" empty state with gym contact links.
+- **F0-3** `app/profile/page.tsx` — role-split profile page: admin/owner see a simple identity card (no body metrics), members see the full form + chart + AI summary.
+- **F0-4** Already correct — `updateMemberProfile` already reads `defaultGymId` from the existing Firestore doc.
+- **F0-5** `lib/firebase/actions.ts` `deleteMemberProfile` — added batch cleanup of `programAssignments`, `liftLogs`, `notifications`, `workoutSessions`, `attendanceRecords` before profile delete.
+- **F0-6** `lib/firebase/actions.ts` `updateProfileMetrics` — removed `role: "member"` and `defaultGymId: PRIMARY_GYM_ID` from the write. Only metrics fields are updated.
+- **F0-7** `lib/auth.ts` — added `staffType` to `AuthenticatedUser`, `ProfileRecord`, `DemoLogin`. Added `requireOwner()` export that blocks `staffType: "trainer"` and `"staff"`. Applied to 6 destructive actions in `actions.ts`.
+
+---
+
+## Latest Update - 2026-05-18: Full product audit — functional fix roadmap (session 3)
+
+### Product Owner Audit — Role-by-Role Findings
+
+Deep audit of every user flow. Findings are listed under their role. Priority: **P0** = broken/data corruption/security, **P1** = wrong behavior, misleading UX, **P2** = missing feature.
+
+---
+
+#### ADMIN FLOW
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| A1 | P0 | `/profile` page shows member-only body metrics (weight, height, BMI, slot preferences, injury notes) to admin. Admin has no body metrics concept. | `app/profile/page.tsx`, `components/profile-form.tsx` |
+| A2 | P1 | `WorkspaceSwitcher` on admin dashboard is purely decorative — `<select>` has no `onChange` handler; switching gym does nothing. | `components/workspace-switcher.tsx` |
+| A3 | P1 | Admin has no self-service password change UI. Only reachable via direct Firestore edit. | `app/profile/page.tsx` |
+| A4 | P1 | `resetPassword` success message reveals the new password in plaintext: `"Access code reset to '${rawNewPassword}'"`. Should not expose credentials in toast. | `lib/firebase/actions.ts:957` |
+| A5 | P1 | Admin notification bell shows nothing — `getOwnerNotifications()` filters `recipientRole: "owner"` only; admin gets no notification feed. | `app/layout.tsx`, `lib/firebase/read-models.ts:450` |
+| A6 | P2 | `GymWorkspace.memberCount` stored field is never updated when members join/leave; admin gym list shows stale count (always 0 unless manually patched). `getGymWorkspaces()` computes it dynamically but `getPrimaryWorkspace()` reads the stale stored value. | `lib/firebase/actions.ts` (createMemberProfile, deleteMemberProfile) |
+
+---
+
+#### OWNER FLOW
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| O1 | P0 | ALL owner read queries are hardcoded to `PRIMARY_GYM_ID = "shg"`: `getMembers()`, `getWorkoutPrograms()`, `getExerciseCatalog()`, `getActiveProgramAssignments()`, `getProgramAssignmentForMember()`, `getLiftLogsForMember()`, `getActiveWorkoutSessions()`, `getActivityEvents()`. An owner of a different gym sees SHG data. | `lib/firebase/read-models.ts` (every query) |
+| O2 | P0 | `updateMemberProfile` hardcodes `defaultGymId: PRIMARY_GYM_ID` — editing a member from gym B overwrites their gym to SHG. Data corruption. | `lib/firebase/actions.ts:473` |
+| O3 | P0 | `deleteMemberProfile` leaves orphaned Firestore data: `programAssignments`, `liftLogs`, `notifications`, `workoutSessions`, `activityEvents` for the deleted member are never cleaned up. | `lib/firebase/actions.ts:996` |
+| O4 | P1 | Trainers (`staffType: "trainer"`) have the same full owner-level access as gym owners. They can create/delete members, reset PINs, delete members, create/delete exercises, and create programs. `staffType` is never checked in any route guard or action. | `lib/auth.ts`, all `requireRole(["admin","owner"])` actions |
+| O5 | P1 | `WorkspaceSwitcher` is decorative — no `onChange` handler, switching gym has no effect. | `components/workspace-switcher.tsx` |
+| O6 | P1 | Owner dashboard "Members needing plans" section: when ALL members have programs (`unassignedMembers.length === 0`), it falls back to showing `members.slice(0, 4)` with the label "Members needing plans" — misleading, they all have plans. | `app/owner/page.tsx:113` |
+| O7 | P1 | `createMemberProfile` / `deleteMemberProfile` never update `GymWorkspace.memberCount` stored field. | `lib/firebase/actions.ts:389`, `lib/firebase/actions.ts:996` |
+| O8 | P1 | `assignProgramToMember` hardcodes `createdBy: PRIMARY_OWNER_ID` — on multi-gym setup, the wrong owner is credited. | `lib/firebase/actions.ts:563` |
+| O9 | P1 | Owner member detail page (`/owner/members/[memberId]`) shows `member.goal` but has no view of body metrics the member has entered (weight, height, age, BMI). Owner should be able to see member's self-reported physical data. | `app/owner/members/[memberId]/page.tsx` |
+| O10 | P2 | `CustomPlanBuilder` only creates 1-day programs. `daysPerWeek` hardcoded to `1`, only one `days` entry, no UI to add more days. | `components/custom-plan-builder.tsx` |
+| O11 | P2 | `assignedTrainer` field in member profile is a freetext input — no dropdown populated from actual trainers in the gym. Owner must manually type trainer names. | `components/profile-form.tsx` |
+| O12 | P2 | Activity events are not created for member create, member delete, member access toggle — only `assignProgramToMember` creates an activity event. | `lib/firebase/actions.ts` |
+
+---
+
+#### MEMBER FLOW
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| M1 | P0 | **Empty state is unreachable.** `const program = programs.find(...) ?? programs[0]` — unassigned members always see `programs[0]` workout instead of the "No plan assigned" empty state. The empty state block (`lines 105–125`) is dead code when any programs exist. | `app/member/page.tsx:47` |
+| M2 | P0 | `/profile` page shows member-only fields (weight, height, BMI cards, slot preferences, injury notes, assigned trainer) to ALL roles via `requireAuth()`. Admin and owner should have their own simplified profile pages. | `app/profile/page.tsx` |
+| M3 | P1 | `updateProfileMetrics` hardcodes `role: "member"` and `defaultGymId: PRIMARY_GYM_ID` in the Firestore write. If an admin/owner somehow calls this for their own UID, their profile role gets overwritten to "member". | `lib/firebase/actions.ts:739` |
+| M4 | P1 | Members have no way to change their own PIN. No self-service PIN change on the profile page — they must contact the owner. | `app/profile/page.tsx` |
+| M5 | P1 | Reps field for lift logging accepts freetext with no format guidance (e.g., "8" vs "8,6,6" vs "8x3"). Members won't know what format is expected or how to log varying rep counts. | `components/member-workout-console.tsx` |
+| M6 | P1 | Progressive overload chart always renders with demo fallback lift logs (2 demo bench press entries) even for real members with no logs. Chart shows as "progress" when there is none. | `lib/firebase/read-models.ts:609` (fallback data always returned) |
+| M7 | P2 | Session expires after 2 hours with no warning. `SessionTimeout` component exists but gives no advance notice before the hard cutoff. | `components/session-timeout.tsx` |
+
+---
+
+#### TRAINER/STAFF FLOW
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| T1 | P0 | Trainers land on `/owner` and have full owner capabilities: create members, delete members, reset PINs, create/delete exercises, create programs. No access restriction differentiates a trainer from a gym owner. | All `requireRole(["admin","owner"])` guards |
+| T2 | P1 | No trainer-specific dashboard. Trainers see "Today's checklist", "Assign member plans" CTA, and all destructive management actions that should be owner-only. | `app/owner/page.tsx` |
+| T3 | P1 | Staff (`staffType: "staff"`) have identical unrestricted owner access. | Same as T1 |
+| T4 | P2 | No trainer-focused workflow (view assigned members, add training notes to a member's profile) separate from owner management workflow. | N/A (feature missing) |
+
+---
+
+#### ABOUT/CONTACT FLOW
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| C1 | P0 | Contact form always silently fails. Form uses `<input name="number">` and `<input name="requirement">` but `submitContactMessage` expects `mobile` and `body`. No error shown to user — form submits and nothing is stored. | `app/about/page.tsx`, `lib/firebase/actions.ts` (submitContactMessage) |
+
+---
+
+#### NOTIFICATIONS
+
+| # | Priority | Issue | File(s) |
+|---|----------|-------|---------|
+| N1 | P1 | Owner notifications are broadcast to ALL owners of ALL gyms — `getOwnerNotifications()` filters by `recipientRole: "owner"` but not by `gymId`. Owner of gym B sees gym A's notifications. | `lib/firebase/read-models.ts:450` |
+| N2 | P1 | `clearUserNotifications` ownership check uses `notification.recipientId.includes(currentUser.gymId)` — string includes on a UUID is fragile and can produce false matches. | `lib/firebase/actions.ts:822` |
+| N3 | P2 | `Notification.type` TypeScript union is missing `"password_reset_request"`, `"member_access_toggled"`, `"member_created"` values that are used in action writes. TypeScript casts hide this. | `types/domain.ts` |
+
+---
+
+### Functional Fix Roadmap (Priority Order)
+
+**Fixes must be done in this order — later fixes depend on earlier ones.**
+
+#### Phase F0 — Critical Bugs (Break core functionality or corrupt data)
+
+- [x] **F0-1: Contact form field names** — renamed `number`→`mobile` and `requirement`→`body` in `app/about/page.tsx`. (C1)
+- [x] **F0-2: Member empty state fallback** — removed `?? programs[0]` fallback in `app/member/page.tsx:47`; null program now shows the "No plan assigned" empty state. (M1)
+- [x] **F0-3: Profile page role split** — `/profile` now branches by role: member sees full form + AI summary, admin sees identity card (name/email/uid), owner sees gym name/role card. No body metrics for non-members. (A1, M2)
+- [x] **F0-4: `updateMemberProfile` gym** — already correct: reads `defaultGymId` from existing Firestore doc at line 468. Not a bug in current code.
+- [x] **F0-5: `deleteMemberProfile` cleanup** — added batch delete of `programAssignments`, `liftLogs`, `notifications`, `workoutSessions`, `attendanceRecords` before profile delete. (O3)
+- [x] **F0-6: `updateProfileMetrics` role corruption** — removed `role: "member"` and `defaultGymId: PRIMARY_GYM_ID` from the Firestore write; only metrics fields are updated. (M3)
+- [x] **F0-7: Trainer access restriction** — added `staffType` field to `AuthenticatedUser` and `ProfileRecord` in `lib/auth.ts`. Added `requireOwner()` export that throws for `staffType: "trainer"` / `"staff"`. Applied to `createMemberProfile`, `deleteMemberProfile`, `resetPassword`, `toggleMemberAccess`, `createCatalogExercise`, `createCustomWorkoutProgram`. Trainers can still call `assignProgramToMember`, `generateAndAssignProgram`, `updateMemberProfile`. (T1)
+
+#### Phase F1 — Wrong Behavior (Data reads wrong or UX misleads)
+
+- [x] **F1-1: Owner reads gym-scoped** — `getMembers`, `getWorkoutPrograms`, `getExerciseCatalog`, `getActiveProgramAssignments`, `getActiveWorkoutSessions` accept optional `gymId` param; all owner pages pass `currentUser.gymId`. (O1)
+- [x] **F1-2: Owner notifications gym-scoped** — `getOwnerNotifications(gymId?)` accepts gym filter; owner dashboard passes `currentUser.gymId`. (N1)
+- [x] **F1-3: `assignProgramToMember` uses current user ID** — replaced hardcoded `PRIMARY_OWNER_ID` with `currentUser.uid`. (O8)
+- [x] **F1-4: Owner dashboard empty "needs plans" section** — shows "All members have a program assigned." when unassigned count is 0. (O6)
+- [x] **F1-5: Trainer dashboard** — detects `staffType` from session; trainers see "Trainer dashboard" label, read-only "View members" CTA, no exercise catalog link. (T2)
+- [x] **F1-6: `resetPassword` success message** — no longer echoes the PIN value. (A4)
+- [x] **F1-7: Demo lift log fallback** — removed hardcoded demo bench press logs; empty member now sees empty state. (M6)
+- [x] **F1-8: `clearUserNotifications` ownership check** — removed fragile `.includes(gymId)` on UUID recipientId. (N2)
+- [x] **F1-9: Owner member detail shows body metrics** — `getProfileMetrics` fetched in parallel; body metrics panel rendered in aside when available. (O9)
+- [x] **F1-10: Admin notifications** — `getAdminNotifications()` added; layout fetches it for admin role. (A5)
+- [x] **F1-11: `memberCount` bookkeeping** — `createMemberProfile` increments, `deleteMemberProfile` decrements `GymWorkspace.memberCount`. (A6, O7)
+
+#### Phase F2 — Missing Features (Functionality gap, not a bug)
+
+- [x] **F2-1: Member self-service PIN change** — `changeMemberPin` action + form on member `/profile` page. (M4)
+- [x] **F2-2: Reps field guidance** — placeholder updated to `"e.g. 10 or 8,8,7"` with tooltip in lift log form. (M5)
+- [x] **F2-3: `assignedTrainer` dropdown** — `ProfileForm` now renders `<select>` from `getOwnersForGym()` trainers when available. (O11)
+- [x] **F2-4: Admin simple profile page** — completed in F0-3; identity card shown (no body metrics). (A1)
+- [x] **F2-5: Owner simple profile page** — completed in F0-3; gym name + role card shown. (A1)
+- [x] **F2-6: Admin/owner password change** — `changeStaffPassword` action + form on admin and owner `/profile` pages. (A3)
+- [x] **F2-7: `WorkspaceSwitcher` removed from owner pages** — removed from owner/page, exercises, programs. Kept on admin page. (A2, O5)
+- [x] **F2-8: Session expiry warning** — `SessionTimeout` shows sticky warning banner at T-5 min with countdown and dismiss. (M7)
+- [x] **F2-9: Activity events for all mutations** — emitted on member create, access toggle, and delete. (O12)
+- [x] **F2-10: `CustomPlanBuilder` multi-day** — full day tab UI with add/remove days, per-day exercise picker, serialised to JSON. (O10)
+- [x] **F2-11: Fix `Notification.type` TypeScript union** — 5 new notification types added. (N3)
+
+---
+
+**Note on multi-gym scope:** Issues O1–O2 affecting gym data isolation are architectural. If FitSplit remains SHG-only for the foreseeable future, O1 hardcoding is acceptable for now but O2 (data corruption) must still be fixed because admin edits can corrupt member gym assignment.
+
+---
+
+## Latest Update - 2026-05-18: Phase F2 missing features + UI polish (session 6)
+
+### F2 feature additions
+- **F2-11**: Added `password_reset_request`, `member_access_toggled`, `member_created`, `access_suspended`, `access_restored` to `Notification.type` union in `types/domain.ts`.
+- **F2-2**: Reps input placeholder updated to `"e.g. 10 or 8,8,7"` with descriptive `title` tooltip in `member-workout-console.tsx`.
+- **F2-7**: Removed non-functional `WorkspaceSwitcher` from `app/owner/page.tsx`, `app/owner/exercises/page.tsx`, `app/owner/programs/page.tsx`. Kept on admin page where "Manage gyms" link is useful.
+- **F2-8**: `SessionTimeout` upgraded to show a sticky warning banner at T-5 minutes before forced logout, with live minute countdown and dismiss button.
+- **F2-9**: Activity events now emitted on `createMemberProfile` (member joined), `toggleMemberAccess` (access suspended/restored), and `deleteMemberProfile` (member removed). All write to `activityEvents` with `gymId` and `memberId` set correctly.
+- **F2-1**: `changeMemberPin` server action added to `actions.ts`; PIN change form (current → new → confirm) added to member `/profile` page.
+- **F2-6**: `changeStaffPassword` server action added to `actions.ts`; password change form added to admin and owner `/profile` pages.
+- **F2-3**: `assignedTrainer` field in `ProfileForm` now renders a `<select>` populated from `getOwnersForGym()` when trainers are available; falls back to text input otherwise. Profile page passes `trainers` prop.
+- **F2-10**: `CustomPlanBuilder` rewritten to support adding/removing multiple workout days (up to 7). Each day has its own title, exercise list, sets, and reps. Serialises to JSON `days` field. `createCustomWorkoutProgram` action updated to parse multi-day JSON or fall back to legacy single-day format.
+- **F2-4/F2-5**: Admin and owner profile pages were already split in F0-3. Password change form added to both.
+- **`ConfirmActionForm`**: Added optional `onBeforeConfirm` callback prop (called before the confirmed submit fires).
+
+### Landing page UI fixes
+- Fixed hero subheadline — removed duplicate "workspace" (was "one calm workspace…one focused workspace").
+- Bento card stat `0 / focused trainer workflow` changed to `1 / place for every training op` with updated body copy.
+- Step cycling interval slowed from 800ms → 2400ms (was too fast to read).
+- Footer copyright updated: `© 2025` → `© 2026`.
+- Added social proof line under hero CTAs: "Used by Sri Shakthi Hanuman Gym & Titan V2 Fitness".
+- Workflow bento section header made center-aligned with subtitle text.
+- Feature grid and bento grid now stay 2-column at 480–768px (tablets/large phones) instead of collapsing to 1 column.
+
+### Members page UI improvements
+- `MemberRow` now shows phone number (clickable `tel:` link), join date, and a visible Active/Inactive status pill alongside the toggle button.
+- Member list panel header now shows total member count badge.
+- `member-row` grid expanded from 4 to 5 columns (avatar, info, status badge, access toggle, view button).
+- `status-inactive` CSS class added (red pill for inactive members).
+- Mobile layout maintains correct 2-column stacking for the extra columns.
 
 ---
 

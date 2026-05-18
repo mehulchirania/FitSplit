@@ -19,6 +19,7 @@ export function ConfirmActionForm({
   confirmLabel = "Confirm",
   confirmMessage,
   confirmTitle = "Confirm update",
+  onBeforeConfirm,
   pendingLabel = "Saving...",
   style,
   submitClassName,
@@ -32,6 +33,7 @@ export function ConfirmActionForm({
   confirmLabel?: string;
   confirmMessage: string;
   confirmTitle?: string;
+  onBeforeConfirm?: () => void;
   pendingLabel?: string;
   style?: CSSProperties;
   submitClassName?: string;
@@ -69,6 +71,7 @@ export function ConfirmActionForm({
   function confirmSubmit() {
     setIsDialogOpen(false);
     setIsConfirmedSubmit(true);
+    onBeforeConfirm?.();
     window.setTimeout(() => formRef.current?.requestSubmit(), 0);
   }
 

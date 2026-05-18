@@ -10,7 +10,6 @@ import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { ProgressChart } from "@/components/progress-chart";
-import { RestTimer } from "@/components/rest-timer";
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -268,7 +267,6 @@ export function MemberWorkoutConsole({
   const [offlineLogsCount, setOfflineLogsCount] = useState(0);
   const [logSuccess, setLogSuccess] = useState(false);
   const [isNewPR, setIsNewPR] = useState(false);
-  const [showRestTimer, setShowRestTimer] = useState(false);
   const liftFormRef = useRef<HTMLFormElement>(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
@@ -498,7 +496,6 @@ export function MemberWorkoutConsole({
         pendingEvent.liftWeight > prevMaxForExercise;
       setIsNewPR(isNewRecord);
       setLogSuccess(true);
-      setShowRestTimer(true);
       liftFormRef.current?.reset();
       setTimeout(() => { setLogSuccess(false); setIsNewPR(false); }, 3000);
     }
@@ -609,8 +606,8 @@ export function MemberWorkoutConsole({
 
       <aside className="list-panel member-workout-side">
         <div className="lift-log-panel">
-          <div className="panel-title" style={{ display: "flex", justifyContent: "space-between", marginBottom: "16px" }}>
-            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          <div className="panel-title lift-log-title">
+            <div className="lift-log-heading">
               <h2>Log your sets</h2>
               {offlineLogsCount > 0 && (
                 <span className="status-pill status-expired">
@@ -619,59 +616,53 @@ export function MemberWorkoutConsole({
               )}
             </div>
             {logSuccess && (
-              <span style={{ fontSize: "0.8rem", color: "var(--brand)", fontWeight: 600, display: "flex", alignItems: "center", gap: "5px" }}>
+              <span className="lift-log-success">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                {isNewPR ? "🏆 New PR!" : "Set logged!"}
+                {isNewPR ? "New PR!" : "Set logged!"}
               </span>
             )}
           </div>
 
-          <form ref={liftFormRef} className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+          <form ref={liftFormRef} className="lift-log-form" onSubmit={handleLiftLog}>
             <input name="memberId" type="hidden" value={memberId} />
             <input name="sessionId" type="hidden" value={`session-${memberId}`} />
 
-            <div style={{ gridColumn: "1 / -1" }}>
-              <label style={{ display: "block", marginBottom: "4px", fontSize: "0.85rem", color: "var(--text-soft)" }}>Exercise</label>
-              <select name="exerciseId" style={{ width: "100%", padding: "10px", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)", background: "var(--bg-elevated)", color: "var(--text)" }}>
+            <label className="lift-log-exercise-field">
+              Exercise
+              <select name="exerciseId" required>
                 {uniqueLoggableExercises.map((item) => (
                   <option key={item.exerciseId} value={item.exerciseId}>
                     {getExerciseName(item.exerciseId, exercises)}
                   </option>
                 ))}
               </select>
-            </div>
+            </label>
 
             <div className="lift-log-fields">
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+              <label>
                 Weight (kg)
-                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
+                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+              <label>
                 Sets
-                <input defaultValue="3" min="1" name="sets" required type="number" style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
+                <input defaultValue="3" min="1" name="sets" required type="number" />
               </label>
-              <label style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+              <label>
                 Reps
-                <input name="reps" placeholder="8, 8, 7" required style={{ padding: "9px 10px", borderRadius: "8px", border: "1px solid var(--border)", background: "var(--bg)", color: "var(--text)", width: "100%", fontSize: "0.95rem" }} />
+                <input name="reps" placeholder="e.g. 10 or 8,8,7" title="Single number for uniform reps (10) or comma-separated per set (8,8,7)" required />
               </label>
             </div>
 
-            <button className="button button-primary" type="submit" style={{ gridColumn: "1 / -1", padding: "11px", fontSize: "0.95rem", fontWeight: 700 }}>
+            <button className="button button-primary lift-log-submit" type="submit">
               Log Set
             </button>
           </form>
 
-          {showRestTimer && (
-            <div style={{ marginTop: "14px" }}>
-              <RestTimer onDone={() => setShowRestTimer(false)} />
-            </div>
-          )}
-
-          <details style={{ marginTop: "14px", padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+          <details className="member-details-panel">
+            <summary className="member-details-summary">
               <span className="status-pill status-neutral">View Lift History</span>
             </summary>
-            <div className="lift-log-table" role="table" aria-label="Historical lift data" style={{ marginTop: "16px" }}>
+            <div className="lift-log-table" role="table" aria-label="Historical lift data">
               <div role="row">
                 <span>Exercise</span>
                 <span>Weight</span>
@@ -679,12 +670,12 @@ export function MemberWorkoutConsole({
                 <span>Reps</span>
               </div>
               {liftLogs.length === 0 ? (
-                <p style={{ color: "var(--text-faint)", fontSize: "0.85rem", padding: "12px 0 4px" }}>No sets logged yet. Log your first set above.</p>
+                <p className="empty-lift-state">No sets logged yet. Log your first set above.</p>
               ) : liftLogs.slice(0, 8).map((log) => {
                 const isPR = log.weight != null && log.exerciseId && prMap.get(log.exerciseId) === log.weight;
                 return (
                   <div key={log.id} role="row">
-                    <span>{getExerciseName(log.exerciseId, exercises)}{isPR && <span title="Personal record" style={{ marginLeft: "4px" }}>🏆</span>}</span>
+                    <span>{getExerciseName(log.exerciseId, exercises)}{isPR && <span className="pr-chip" title="Personal record">PR</span>}</span>
                     <span>{log.weight} kg</span>
                     <span>{log.sets}</span>
                     <span>{log.reps}</span>
@@ -695,11 +686,11 @@ export function MemberWorkoutConsole({
           </details>
 
           {liftLogs.length > 0 && (
-            <details style={{ marginTop: "14px", padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
-              <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+            <details className="member-details-panel">
+              <summary className="member-details-summary">
                 <span className="status-pill status-neutral">Progress Chart</span>
               </summary>
-              <div style={{ marginTop: "16px" }}>
+              <div className="member-details-body">
                 <ProgressChart exercises={exercises} liftLogs={liftLogs} />
               </div>
             </details>

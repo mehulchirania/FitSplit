@@ -24,6 +24,7 @@ type ProfileRecord = {
   authEmail: string;
   fullName: string;
   role: Role;
+  staffType?: string;
   defaultGymId: string;
   isActive: boolean;
 };
@@ -33,6 +34,7 @@ export type AuthenticatedUser = {
   email: string;
   fullName: string;
   role: Role;
+  staffType?: string;
   gymId: string;
   memberId?: string;
 };
@@ -43,6 +45,7 @@ type DemoLogin = {
   fullName: string;
   gymId: string;
   role: Role;
+  staffType?: string;
 };
 
 const demoLogins: Record<string, DemoLogin> = {
@@ -65,14 +68,16 @@ const demoLogins: Record<string, DemoLogin> = {
     authEmail: "shg-trainer-1@fitsplit.app",
     fullName: "Ravi Kumar",
     gymId: "shg",
-    role: "owner"
+    role: "owner",
+    staffType: "trainer"
   },
   "shg-trainer-2": {
     uid: "shg-trainer-2",
     authEmail: "shg-trainer-2@fitsplit.app",
     fullName: "Priya Nair",
     gymId: "shg",
-    role: "owner"
+    role: "owner",
+    staffType: "trainer"
   },
   "dummy-gym-owner-1": {
     uid: "dummy-gym-owner-1",
@@ -217,6 +222,7 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
     authEmail: String(data.authEmail ?? data.email ?? ""),
     fullName: String(data.fullName ?? "FitSplit user"),
     role,
+    staffType: data.staffType ? String(data.staffType) : undefined,
     defaultGymId: String(data.defaultGymId ?? ""),
     isActive: data.isActive !== false
   };
@@ -308,6 +314,7 @@ function authUserFromProfile(profile: ProfileRecord): AuthenticatedUser {
     email: profile.authEmail || profile.email,
     fullName: profile.fullName,
     role: profile.role,
+    staffType: profile.staffType,
     gymId: profile.defaultGymId,
     memberId: profile.role === "member" ? profile.id : undefined
   };
@@ -319,6 +326,7 @@ function authUserFromDemo(demoLogin: DemoLogin): AuthenticatedUser {
     email: demoLogin.authEmail,
     fullName: demoLogin.fullName,
     role: demoLogin.role,
+    staffType: demoLogin.staffType,
     gymId: demoLogin.gymId,
     memberId: demoLogin.role === "member" ? demoLogin.uid : undefined
   };
@@ -591,6 +599,20 @@ export async function requireRole(allowedRoles: Role[]) {
 
   if (!allowedRoles.includes(user.role)) {
     redirect(redirectForRole(user.role));
+  }
+
+  return user;
+}
+
+/**
+ * Requires admin or gym owner (staffType: "owner"). Trainers and staff are
+ * allowed to view owner routes but must not call destructive actions.
+ */
+export async function requireOwner() {
+  const user = await requireRole(["admin", "owner"]);
+
+  if (user.role === "owner" && user.staffType && user.staffType !== "owner") {
+    throw new Error("Trainers and staff cannot perform this action. Contact the gym owner.");
   }
 
   return user;

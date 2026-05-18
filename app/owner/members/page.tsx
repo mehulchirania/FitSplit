@@ -4,6 +4,7 @@ import { UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { getMembers } from "@/lib/firebase/read-models";
 
+
 export const dynamic = "force-dynamic";
 
 const sortOptions = [
@@ -41,9 +42,9 @@ export default async function MembersPage({
 }: {
   searchParams: Promise<{ sort?: string }>;
 }) {
-  await requireRole(["admin", "owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
 
-  const { members } = await getMembers();
+  const { members } = await getMembers(currentUser.gymId);
   const { sort = "name" } = await searchParams;
   const sortedMembers = sortMembers(members, sort);
 
@@ -65,6 +66,9 @@ export default async function MembersPage({
         <div className="panel-title">
           <h2>
             <UsersRound /> All members
+            <span className="status-pill status-neutral" style={{ marginLeft: 8, fontSize: "0.72rem" }}>
+              {sortedMembers.length}
+            </span>
           </h2>
           <div className="sort-tabs" aria-label="Sort members">
             {sortOptions.map((option) => (

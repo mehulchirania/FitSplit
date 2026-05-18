@@ -450,7 +450,7 @@ export function LandingPageClient() {
 
   useEffect(() => {
     if (reduced) return;
-    const id = setInterval(() => setActiveStep((s) => (s + 1) % 4), 800);
+    const id = setInterval(() => setActiveStep((s) => (s + 1) % 4), 2400);
     return () => clearInterval(id);
   }, [reduced]);
 
@@ -546,8 +546,8 @@ export function LandingPageClient() {
             </motion.h1>
 
             <motion.p className="lp-subheadline" variants={fadeUp}>
-              FitSplit gives gym owners and trainers one calm workspace to assign plans, guide
-              members, and track training in one focused workspace.
+              FitSplit gives gym owners and trainers one focused workspace to assign plans, guide
+              members, and track every member&apos;s training progress.
             </motion.p>
 
             <motion.div className="lp-hero-cta" variants={fadeUp}>
@@ -556,9 +556,12 @@ export function LandingPageClient() {
                 <span className="lp-btn-arrow-icon"><ArrowRightIcon /></span>
               </button>
               <a href="#how-it-works" className="lp-btn-ghost">
-                See how it works -&gt;
+                See how it works →
               </a>
             </motion.div>
+            <motion.p className="lp-hero-proof" variants={fadeUp}>
+              Used by Sri Shakthi Hanuman Gym &amp; Titan V2 Fitness
+            </motion.p>
           </motion.div>
 
           {/* App mockup visual */}
@@ -669,15 +672,18 @@ export function LandingPageClient() {
       <section className="lp-section lp-workflow">
         <div className="lp-container">
           <motion.div
-            className="lp-section-head"
+            className="lp-section-head lp-center"
             variants={stagger}
             initial="hidden"
             whileInView="show"
             viewport={{ once: true, margin: "-80px" }}
           >
-            <motion.h2 className="lp-h2" variants={fadeUp}>
+            <motion.h2 className="lp-h2 lp-center" variants={fadeUp}>
               Clean screens for the moments that matter.
             </motion.h2>
+            <motion.p className="lp-section-sub lp-center" variants={fadeUp}>
+              Built around real workflows — assign plans, track lifts, spot issues before members do.
+            </motion.p>
           </motion.div>
 
           <motion.div
@@ -747,11 +753,11 @@ export function LandingPageClient() {
 
             <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
               <div className="lp-bento-stat">
-                <span className="lp-stat-big">0</span>
-                <span className="lp-stat-label">focused trainer workflow</span>
+                <span className="lp-stat-big">1</span>
+                <span className="lp-stat-label">place for every training op</span>
               </div>
               <h3 className="lp-h3">Built for real gyms</h3>
-              <p>No complexity. Just training operations.</p>
+              <p>Plans, members, logs, and progress — one focused workspace.</p>
             </motion.article>
 
             <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
@@ -868,7 +874,7 @@ export function LandingPageClient() {
           </div>
 
           <div className="lp-footer-bar">
-            <span>© 2025 FitSplit - fitsplit.in</span>
+            <span>© 2026 FitSplit - fitsplit.in</span>
             <span>Built for gyms that deliver coaching, not just access.</span>
           </div>
         </div>

@@ -44,7 +44,7 @@ export default async function MemberDashboard() {
   if (!member) return null;
 
   const memberWithProfile = { ...member, ...profile };
-  const program = programs.find((p) => p.id === assignment?.programId) ?? programs[0];
+  const program = assignment ? programs.find((p) => p.id === assignment.programId) ?? null : null;
   const firstName = member.fullName.split(" ")[0];
 
   // Streak: distinct calendar days trained this week (Mon–today)
@@ -81,7 +81,7 @@ export default async function MemberDashboard() {
                 <span className="md-badge">{liftLogs.length} sets logged</span>
               )}
               {daysTrainedThisWeek > 0 && (
-                <span className="md-badge md-badge-accent">🔥 {daysTrainedThisWeek} day{daysTrainedThisWeek !== 1 ? "s" : ""} this week</span>
+                <span className="md-badge md-badge-accent">Trained {daysTrainedThisWeek} day{daysTrainedThisWeek !== 1 ? "s" : ""} this week</span>
               )}
             </div>
           </div>
