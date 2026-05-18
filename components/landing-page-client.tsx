@@ -532,25 +532,33 @@ export function LandingPageClient() {
           style={reduced ? undefined : { opacity: heroOpacity }}
         >
           {/* Copy */}
-          <motion.div className="lp-hero-copy" variants={stagger} initial="hidden" animate="show">
-            <motion.p className="lp-eyebrow" variants={fadeUp}>
+          <div className="lp-hero-copy">
+            <motion.p className="lp-eyebrow"
+              initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: EASE, delay: 0 }}>
               <span className="lp-pulse-dot" aria-hidden="true" />
               Live workout delivery for gyms
             </motion.p>
 
-            <motion.h1 className="lp-h1" id="lp-hero-title" variants={fadeUp}>
+            <motion.h1 className="lp-h1" id="lp-hero-title"
+              initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: EASE, delay: 0.12 }}>
               Structured workouts.
               <br />
               Delivered to{" "}
               <span className="lp-gradient-text">every member.</span>
             </motion.h1>
 
-            <motion.p className="lp-subheadline" variants={fadeUp}>
+            <motion.p className="lp-subheadline"
+              initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: EASE, delay: 0.24 }}>
               FitSplit gives gym owners and trainers one focused workspace to assign plans, guide
               members, and track every member&apos;s training progress.
             </motion.p>
 
-            <motion.div className="lp-hero-cta" variants={fadeUp}>
+            <motion.div className="lp-hero-cta"
+              initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: EASE, delay: 0.36 }}>
               <button className="lp-btn-primary lp-btn-arrow" onClick={openLogin} type="button">
                 Access workspace
                 <span className="lp-btn-arrow-icon"><ArrowRightIcon /></span>
@@ -559,10 +567,12 @@ export function LandingPageClient() {
                 See how it works →
               </a>
             </motion.div>
-            <motion.p className="lp-hero-proof" variants={fadeUp}>
+            <motion.p className="lp-hero-proof"
+              initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.65, ease: EASE, delay: 0.48 }}>
               Used by Sri Shakthi Hanuman Gym &amp; Titan V2 Fitness
             </motion.p>
-          </motion.div>
+          </div>
 
           {/* App mockup visual */}
           <motion.div
@@ -580,30 +590,24 @@ export function LandingPageClient() {
       {/* ── Feature strip ────────────────────────────────────── */}
       <section className="lp-section lp-features" id="features">
         <div className="lp-container">
-          <motion.div
-            className="lp-section-head"
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-          >
-            <motion.h2 className="lp-h2" variants={fadeUp}>
+          <div className="lp-section-head">
+            <motion.h2 className="lp-h2"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.65, ease: EASE }}>
               Built around how training floors work.
             </motion.h2>
-            <motion.p className="lp-section-sub" variants={fadeUp}>
+            <motion.p className="lp-section-sub"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.12 }}>
               Less clutter. Clearer coaching. Just plans, members, and progress.
             </motion.p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            className="lp-feat-grid"
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-60px" }}
-          >
-            {featureCards.map((card) => (
-              <motion.article key={card.title} className="lp-feat-card" variants={fadeUp}>
+          <div className="lp-feat-grid">
+            {featureCards.map((card, i) => (
+              <motion.article key={card.title} className="lp-feat-card"
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: i * 0.1 }}>
                 <div className="lp-feat-icon" aria-hidden="true">
                   {featureIcon(card.icon)}
                 </div>
@@ -611,24 +615,20 @@ export function LandingPageClient() {
                 <p>{card.body}</p>
               </motion.article>
             ))}
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ── How it works ─────────────────────────────────────── */}
       <section className="lp-section lp-hiw" id="how-it-works">
         <div className="lp-container">
-          <motion.div
-            className="lp-section-head"
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-          >
-            <motion.h2 className="lp-h2" variants={fadeUp}>
+          <div className="lp-section-head">
+            <motion.h2 className="lp-h2"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.65, ease: EASE }}>
               From plan to progress in four steps.
             </motion.h2>
-          </motion.div>
+          </div>
 
           <div className="lp-steps" role="list">
             {steps.map((step, i) => (
@@ -649,52 +649,44 @@ export function LandingPageClient() {
       {/* ── Audience ─────────────────────────────────────────── */}
       <section className="lp-section lp-audience">
         <div className="lp-container">
-          <motion.div
-            className="lp-audience-row"
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true }}
-          >
-            <motion.span className="lp-audience-label" variants={fadeUp}>Works for</motion.span>
-            <motion.div className="lp-pills" variants={stagger}>
-              {audience.map((item) => (
-                <motion.span key={item} className="lp-pill" variants={fadeUp}>
+          <div className="lp-audience-row">
+            <motion.span className="lp-audience-label"
+              initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE }}>Works for</motion.span>
+            <div className="lp-pills">
+              {audience.map((item, i) => (
+                <motion.span key={item} className="lp-pill"
+                  initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }} transition={{ duration: 0.5, ease: EASE, delay: i * 0.08 }}>
                   {item}
                 </motion.span>
               ))}
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── Workflow bento ───────────────────────────────────── */}
       <section className="lp-section lp-workflow">
         <div className="lp-container">
-          <motion.div
-            className="lp-section-head lp-center"
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-          >
-            <motion.h2 className="lp-h2 lp-center" variants={fadeUp}>
+          <div className="lp-section-head lp-center">
+            <motion.h2 className="lp-h2 lp-center"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.65, ease: EASE }}>
               Clean screens for the moments that matter.
             </motion.h2>
-            <motion.p className="lp-section-sub lp-center" variants={fadeUp}>
+            <motion.p className="lp-section-sub lp-center"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.12 }}>
               Built around real workflows — assign plans, track lifts, spot issues before members do.
             </motion.p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            className="lp-bento"
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-60px" }}
-          >
+          <div className="lp-bento">
             {/* Large card - assign workflow */}
-            <motion.article className="lp-bento-card lp-bento-large" variants={fadeUp}>
+            <motion.article className="lp-bento-card lp-bento-large"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0 }}>
               <div className="lp-mock lp-mock-assign" aria-hidden="true">
                 <div className="lp-mock-bar">
                   <span className="lp-mock-dot" /><span className="lp-mock-dot" /><span className="lp-mock-dot" />
@@ -722,7 +714,9 @@ export function LandingPageClient() {
             </motion.article>
 
             {/* Tall card - member view */}
-            <motion.article className="lp-bento-card lp-bento-tall" variants={fadeUp}>
+            <motion.article className="lp-bento-card lp-bento-tall"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.1 }}>
               <div className="lp-mock lp-mock-member" aria-hidden="true">
                 <div className="lp-mock-bar">
                   <span className="lp-mock-dot" />
@@ -742,7 +736,9 @@ export function LandingPageClient() {
             </motion.article>
 
             {/* Medium cards */}
-            <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
+            <motion.article className="lp-bento-card lp-bento-med"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.2 }}>
               <div className="lp-bento-stat">
                 <span className="lp-stat-big">86%</span>
                 <span className="lp-stat-label">weekly completion rate</span>
@@ -751,7 +747,9 @@ export function LandingPageClient() {
               <p>Lift history keeps progressive overload visible.</p>
             </motion.article>
 
-            <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
+            <motion.article className="lp-bento-card lp-bento-med"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.3 }}>
               <div className="lp-bento-stat">
                 <span className="lp-stat-big">1</span>
                 <span className="lp-stat-label">place for every training op</span>
@@ -760,7 +758,9 @@ export function LandingPageClient() {
               <p>Plans, members, logs, and progress — one focused workspace.</p>
             </motion.article>
 
-            <motion.article className="lp-bento-card lp-bento-med" variants={fadeUp}>
+            <motion.article className="lp-bento-card lp-bento-med"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.4 }}>
               <div className="lp-bento-stat">
                 <span className="lp-stat-big">2 min</span>
                 <span className="lp-stat-label">to assign a new plan</span>
@@ -768,24 +768,23 @@ export function LandingPageClient() {
               <h3 className="lp-h3">Trainer coordination</h3>
               <p>Everyone works from the same program library.</p>
             </motion.article>
-          </motion.div>
+          </div>
         </div>
       </section>
 
       {/* ── Partners ─────────────────────────────────────────── */}
       <section className="lp-section lp-partners" id="partners">
         <div className="lp-container">
-          <motion.div
-            variants={stagger}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: "-80px" }}
-          >
-            <motion.h2 className="lp-h2 lp-center" variants={fadeUp}>
+          <div>
+            <motion.h2 className="lp-h2 lp-center"
+              initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-80px" }} transition={{ duration: 0.65, ease: EASE }}>
               Trusted by focused fitness communities.
             </motion.h2>
             <div className="lp-partner-list">
-              <motion.article className="lp-partner-card" variants={fadeUp}>
+              <motion.article className="lp-partner-card"
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.1 }}>
                 <img
                   src="/shg-gym-logo.jpeg"
                   alt="Sri Shakthi Hanuman Gym logo"
@@ -799,7 +798,9 @@ export function LandingPageClient() {
                   <cite className="lp-cite">Gym Manager, Sri Shakthi Hanuman Gym</cite>
                 </div>
               </motion.article>
-              <motion.article className="lp-partner-card" variants={fadeUp}>
+              <motion.article className="lp-partner-card"
+                initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-60px" }} transition={{ duration: 0.65, ease: EASE, delay: 0.2 }}>
                 <img
                   src="/titan-v2-fitness-logo.svg"
                   alt="Titan V2 Fitness logo"
@@ -814,7 +815,7 @@ export function LandingPageClient() {
                 </div>
               </motion.article>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
