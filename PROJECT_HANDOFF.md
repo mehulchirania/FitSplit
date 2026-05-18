@@ -70,12 +70,26 @@ Recommended next work:
 
 ---
 
-## Latest Update - 2026-05-18: Phase 1 UI polish
+## Latest Update - 2026-05-18: Phase 1 + Phase 2 batch
 
-- **Dark mode as default**: `data-theme="dark"` now set on `<html>` at SSR time; inline script and `ThemeToggle` state both default to dark so first-time visitors and server renders are dark without FOUC.
-- **Exercise card collapse**: instructions paragraph moved into a native `<details>`/`<summary>` block with animated arrow indicator; name + meta always visible, instructions expand on tap. CSS added under `.exercise-instructions`.
-- **Log Set form reset**: `liftFormRef` wired to the lift form; `form.reset()` called after a successful log submission so the weight field clears automatically.
-- **No PDF button found**: searched codebase — no PDF-related code exists; likely a browser extension artifact. Leaving note in handoff only.
+### Phase 1 fixes
+- **Dark mode as default**: `data-theme="dark"` on `<html>` at SSR, `ThemeToggle` state defaults to dark. No FOUC for first-time visitors.
+- **Exercise card collapse**: instructions in `<details>`/`<summary>` with animated arrow. Name + meta always visible.
+- **Log Set form reset**: `liftFormRef.current.reset()` after successful submission clears weight field.
+- **Topbar drawer gym name**: replaced hardcoded "FitSplit x SHG Gym" with dynamic `gymName` prop.
+- **Hero separator**: added `border: none` to `.md-hero` to neutralize any inherited UA border.
+- **Mobile layout**: tighter padding at ≤860px, 2-col lift-log-fields (1-col at ≤480px), reduced hero padding.
+- **CSS deduplication**: removed dead `.content-grid` block; removed redundant `.topbar` block (bar-style with `border-bottom`); removed dead `background/border/box-shadow` from second `.topbar` block; merged two `.panel-title` blocks into one canonical definition.
+- **`getMemberWithProfile`**: new read-model that combines `getMemberDetail` + `getProfileMetrics` into a single Firestore doc read. Member page updated to use it.
+- **Session/role guard audit**: all routes and server actions verified — guards are correctly placed.
+- **No PDF button found**: no PDF code in codebase; likely a browser extension. Not a code issue.
+- **Training Notes/Gym Rules**: not found in current codebase — already removed. Handoff item was stale.
+
+### Phase 2 features
+- **Progress chart in member console**: `ProgressChart` (which was imported but unused) now renders in a collapsible panel below Lift History. Shows weight-over-time line chart per exercise.
+- **Personal records (PRs)**: 🏆 indicator on lift history rows that match the current max for that exercise. "New PR!" toast on submission when new weight exceeds previous max.
+- **First-run empty state**: shows gym name, phone link, and email link from Firestore when no program is assigned.
+- **Streak tracker**: already in hero from previous session (🔥 N days this week badge).
 
 ## Latest Update - 2026-05-17: Documentation baseline cleanup
 
@@ -100,33 +114,33 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
 ### Phase 1: Bugs & Polish (In Progress)
 
 #### UI/Layout Fixes
-- [ ] **Topbar brand simplification** — remove the `FitSplit × SHG logo` double-lockup from the authenticated app topbar; show only FitSplit logo + name. The gym identity belongs in the drawer, not the nav.
-- [ ] **Day tabs fade edge** — "Saturday Lower Bod..." clips; add right-side fade-out mask on `.day-tabs` so it's clear it scrolls.
-- [ ] **Topbar gym name** — "Sri Shakthi Hanuman Gym" floats awkwardly mid-nav. Move it to the side drawer header only.
-- [ ] **Hero separator line** — visible accidental border under the hero section on member page.
-- [ ] **`member-meta` "none" values** — e.g. "Chest / Compound / none" — hide empty/null values in exercise cards.
-- [ ] **PDF floating button** — mystery red PDF icon bottom-right of member page. Investigate and remove.
-- [ ] **Training Notes / Gym Rules** — hardcoded below the workout console with no styling. Move to a proper collapsible card or admin-editable Firestore field.
-- [ ] **Mobile layout** — member dashboard is 2-column which stacks badly on mobile. Workout console should be single column; log form should be pinned to bottom on mobile.
-- [ ] **Dark mode as default** — app defaults to light for new users; brand is dark-first. Set dark as the initial default.
+- [x] **Topbar brand simplification** — gym identity in drawer only; topbar shows FitSplit logo + name.
+- [x] **Day tabs fade edge** — fade mask already existed; confirmed working.
+- [x] **Topbar gym name** — drawer now uses dynamic `gymName` prop from Firestore.
+- [x] **Hero separator line** — `border: none` added to `.md-hero`.
+- [x] **`member-meta` "none" values** — filter already in exercise-list.tsx; confirmed working.
+- [x] **PDF floating button** — no code found; browser extension artifact.
+- [x] **Training Notes / Gym Rules** — already removed from codebase; stale handoff item.
+- [x] **Mobile layout** — content-grid/hero padding tightened; lift-log-fields 2-col at ≤860px, 1-col at ≤480px.
+- [x] **Dark mode as default** — `data-theme="dark"` on `<html>` SSR; ThemeToggle defaults to dark.
 
 #### Functional Fixes
-- [ ] **Log Set feedback** — after submitting, show a brief success toast and auto-clear weight field. Right now there is no confirmation.
-- [ ] **Empty lift history state** — "View Lift History" disclosure with no entries shows nothing. Add a "No sets logged yet" empty state.
-- [ ] **Exercise card collapse** — instruction paragraph is too long. Show name + sets/reps as the primary info; collapse instructions behind a tap/expand.
-- [ ] **First-run onboarding card** — members with no program assigned see an empty state. Add a friendly "Your trainer will assign your program soon" card with gym contact info.
+- [x] **Log Set feedback** — success toast present; form auto-resets via `liftFormRef.current.reset()`.
+- [x] **Empty lift history state** — "No sets logged yet" message in place.
+- [x] **Exercise card collapse** — instructions in `<details>` with animated arrow.
+- [x] **First-run onboarding card** — shows gym name, phone, email from Firestore.
 - [ ] **Fix owner creation/onboarding flow** — owner setup and permissions management has known bugs.
 - [ ] **Gym workspace creation/management** — improve and fix the create/edit gym flow.
 - [ ] **Member creation and role assignment** — audit and fix edge cases.
-- [ ] **Session/role guard audit** — verify all routes are server-side protected; check for any gaps.
-- [ ] **`getProfileMetrics` + `getMemberDetail` merge** — two separate Firestore reads that are always used together; combine at read-model level.
-- [ ] **`globals.css` cleanup** — 8000+ lines with 6+ duplicate `.topbar` rule blocks. Split into logical sections or separate files using CSS modules / `@import`.
+- [x] **Session/role guard audit** — all routes and server actions verified; guards correctly placed.
+- [x] **`getProfileMetrics` + `getMemberDetail` merge** — combined into `getMemberWithProfile` (one Firestore read).
+- [ ] **`globals.css` cleanup** — ~9500 lines with remaining duplicate `.exercise-row` and `.hero-band` blocks. Partial cleanup done (removed duplicate `.topbar`, `.content-grid`, `.panel-title` blocks).
 
 ### Phase 2: Member Features (SHG-specific)
 
-- [ ] **Progress charts** — line chart of weight lifted over time per exercise, using existing lift log data. Most important member-facing feature. Use a lightweight chart lib (e.g. Recharts or Chart.js).
-- [ ] **Streak / consistency tracker** — number of days trained this week and this month, shown prominently in the member hero. Derived from lift log timestamps.
-- [ ] **Personal records (PRs)** — compare each logged weight to historical max; show a 🏆 indicator and "New PR!" toast when a max is beaten. Automatic from lift log history.
+- [x] **Progress charts** — `ProgressChart` component (Recharts line chart) now rendered in collapsible panel below Lift History in member console.
+- [x] **Streak / consistency tracker** — 🔥 N days this week badge in member hero (derived from liftLogs).
+- [x] **Personal records (PRs)** — 🏆 in lift history table rows at current max weight; "New PR!" toast on submission.
 - [ ] **Nutrition target card** — daily protein/calorie target set by admin per member, displayed as a simple progress bar in the member dashboard. Read from member Firestore profile.
 
 ### Phase 3: Admin / Owner Features (SHG-specific)
