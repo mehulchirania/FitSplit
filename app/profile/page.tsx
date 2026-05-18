@@ -1,10 +1,10 @@
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireAuth } from "@/lib/auth";
-import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog, getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
+import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog, getGymDetail, getGymWorkspaces, getOwnersForGym } from "@/lib/firebase/read-models";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 import { ProfileAiSummary } from "@/components/profile-ai-summary";
-import { changeMemberPin, changeStaffPassword } from "@/lib/firebase/actions";
+import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisplayName } from "@/lib/firebase/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -42,23 +42,138 @@ export default async function ProfilePage() {
   );
 
   if (currentUser.role === "admin") {
+    const { gyms } = await getGymWorkspaces();
+    const initials = currentUser.fullName
+      .split(" ")
+      .map((p: string) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    const shortUid = `${currentUser.uid.slice(0, 12)}…`;
+
     return (
       <main className="page">
         <section className="dashboard-header compact-header">
           <div className="header-copy">
             <p className="eyebrow">Profile</p>
-            <h1>{currentUser.fullName}</h1>
-            <p>You are logged in as the FitSplit platform administrator.</p>
+            <h1>Admin account</h1>
+            <p>Platform-level administrator. Manages all gym workspaces and staff access.</p>
           </div>
-          <aside className="summary-panel">
-            <div className="detail-window">
-              <span>Email<strong>{currentUser.email}</strong></span>
-              <span>Role<strong>Admin</strong></span>
-              <span>User ID<strong style={{ fontSize: "0.75rem", wordBreak: "break-all" }}>{currentUser.uid}</strong></span>
-            </div>
-          </aside>
         </section>
-        {passwordChangeForm}
+
+        {/* Profile card */}
+        <div className="profile-card-admin">
+          <div className="profile-avatar-lg">{initials}</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ margin: 0, fontSize: "1.2rem" }}>{currentUser.fullName}</h2>
+            <p style={{ color: "var(--text-soft)", fontSize: "0.85rem", margin: "4px 0 8px" }}>
+              {currentUser.email}
+            </p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <span className="status-pill status-active">Platform Admin</span>
+              <span className="status-pill status-neutral">{gyms.length} gym{gyms.length !== 1 ? "s" : ""} managed</span>
+            </div>
+          </div>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <p style={{ fontSize: "0.72rem", color: "var(--text-faint)", fontFamily: "monospace", margin: 0 }}>
+              UID
+            </p>
+            <p
+              style={{
+                fontSize: "0.72rem",
+                color: "var(--text-soft)",
+                fontFamily: "monospace",
+                margin: "2px 0 0",
+                maxWidth: 160,
+                wordBreak: "break-all"
+              }}
+              title={currentUser.uid}
+            >
+              {shortUid}
+            </p>
+          </div>
+        </div>
+
+        <div className="content-grid" style={{ marginTop: 16 }}>
+          {/* Display name */}
+          <section className="list-panel">
+            <div className="panel-title">
+              <h2>Display name</h2>
+            </div>
+            <div className="notification-list">
+              <ConfirmActionForm
+                action={updateAdminDisplayName}
+                className="form-panel"
+                confirmMessage="Update your display name?"
+                confirmTitle="Change display name?"
+                pendingLabel="Updating..."
+                submitLabel="Update name"
+              >
+                <label>
+                  Full name
+                  <input defaultValue={currentUser.fullName} name="displayName" placeholder="Your name" required />
+                </label>
+              </ConfirmActionForm>
+            </div>
+          </section>
+
+          {/* Change email */}
+          <section className="list-panel">
+            <div className="panel-title">
+              <h2>Email address</h2>
+            </div>
+            <div className="notification-list">
+              <ConfirmActionForm
+                action={changeAdminEmail}
+                className="form-panel"
+                confirmMessage="This changes your login email immediately. You will need to log in again."
+                confirmTitle="Change login email?"
+                pendingLabel="Updating..."
+                submitLabel="Change email"
+              >
+                <div className="form-grid">
+                  <label>
+                    New email address
+                    <input name="newEmail" placeholder="new@email.com" required type="email" />
+                  </label>
+                  <label>
+                    Confirm new email
+                    <input name="confirmEmail" placeholder="Repeat email address" required type="email" />
+                  </label>
+                </div>
+              </ConfirmActionForm>
+            </div>
+          </section>
+        </div>
+
+        {/* Password change */}
+        <section className="list-panel" style={{ marginTop: 16 }}>
+          <div className="panel-title">
+            <h2>Security</h2>
+            <span className="status-pill status-neutral">Change password</span>
+          </div>
+          <div className="notification-list">
+            <ConfirmActionForm
+              action={changeStaffPassword}
+              className="form-panel"
+              confirmMessage="This updates your login password immediately."
+              confirmTitle="Change password?"
+              pendingLabel="Updating..."
+              submitLabel="Change password"
+            >
+              <div className="form-grid">
+                <label>
+                  New password
+                  <input autoComplete="new-password" minLength={6} name="newPassword" placeholder="At least 6 characters" required type="password" />
+                </label>
+                <label>
+                  Confirm new password
+                  <input autoComplete="new-password" minLength={6} name="confirmPassword" placeholder="Repeat new password" required type="password" />
+                </label>
+              </div>
+            </ConfirmActionForm>
+          </div>
+        </section>
       </main>
     );
   }

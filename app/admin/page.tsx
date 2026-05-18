@@ -1,126 +1,201 @@
 import Link from "next/link";
-import { Bell, Dumbbell, UsersRound } from "@/components/icons";
-import { WorkspaceSwitcher } from "@/components/workspace-switcher";
+import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireRole } from "@/lib/auth";
 import { createOwnerProfile } from "@/lib/firebase/actions";
-import { getGymWorkspaces, getRoleSummary } from "@/lib/firebase/read-models";
-import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { getGymWorkspaces } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
   await requireRole(["admin"]);
 
-  const [{ gyms }, roles] = await Promise.all([
-    getGymWorkspaces(),
-    getRoleSummary()
-  ]);
+  const { gyms } = await getGymWorkspaces();
+
+  const totalMembers = gyms.reduce((sum, g) => sum + g.memberCount, 0);
+  const activeGyms = gyms.filter((g) => g.status === "active").length;
 
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Admin / all gyms</p>
-          <h1>Gym control.</h1>
-          <p>
-            Review gym workspaces, staff access, and rollout status from one admin console.
-          </p>
+          <p className="eyebrow">Platform admin</p>
+          <h1>Admin Console</h1>
+          <p>Manage gym workspaces, staff access, and platform-wide settings.</p>
           <div className="quick-actions">
             <Link className="button button-primary" href="/admin/gyms">
               Manage gyms
             </Link>
+            <Link className="button button-secondary" href="/admin/inbox">
+              Inbox
+            </Link>
           </div>
         </div>
-        <aside className="summary-panel">
-          <WorkspaceSwitcher mode="admin" />
-          <div className="detail-window">
-            <span>
-              Admin
-              <strong>{roles.adminName}</strong>
-            </span>
-          </div>
-        </aside>
       </section>
 
-      <section className="ui-cards" style={{ marginTop: 16 }}>
-        <article className="ui-card purple">
-          <p className="tip"><UsersRound /> {gyms.length}</p>
-          <p className="second-text">Gyms</p>
-        </article>
-        <article className="ui-card blue">
-          <p className="tip"><Dumbbell /> Training</p>
-          <p className="second-text">FitSplit focus</p>
-        </article>
-        <article className="ui-card green">
-          <p className="tip"><Bell /> Pilot</p>
-          <p className="second-text">Current rollout stage</p>
-        </article>
-      </section>
+      <div className="admin-stats-strip">
+        <div className="admin-stat">
+          <div className="admin-stat-value">{gyms.length}</div>
+          <div className="admin-stat-label">Total gyms</div>
+        </div>
+        <div className="admin-stat">
+          <div className="admin-stat-value">{activeGyms}</div>
+          <div className="admin-stat-label">Active gyms</div>
+        </div>
+        <div className="admin-stat">
+          <div className="admin-stat-value">{totalMembers}</div>
+          <div className="admin-stat-label">Total members</div>
+        </div>
+        <div className="admin-stat">
+          <div className="admin-stat-value">{gyms.length - activeGyms}</div>
+          <div className="admin-stat-label">Inactive / paused</div>
+        </div>
+      </div>
 
-      <section className="list-panel">
+      <section className="list-panel" style={{ marginTop: 4 }}>
         <div className="panel-title">
           <h2>Gyms</h2>
           <Link className="button button-secondary" href="/admin/gyms">
-            Manage gyms
+            Add / manage gyms
           </Link>
         </div>
-        {gyms.map((workspace) => (
-          <Link href={`/admin/gyms/${workspace.id}`} key={workspace.id} style={{ textDecoration: 'none', color: 'inherit' }}>
-            <article className="member-row">
-              <span className="avatar">{workspace.name.substring(0, 2).toUpperCase()}</span>
-              <div>
-                <span className="member-name" style={{ color: "var(--primary)" }}>{workspace.name}</span>
-                <span className="member-meta">
-                  Slug: {workspace.slug} / ID: {workspace.id}
-                </span>
-              </div>
-              <span className={`status-pill ${workspace.status === 'active' ? 'status-active' : 'status-neutral'}`}>
-                {workspace.status}
-              </span>
-              <span className="status-pill status-active">{workspace.memberCount} members</span>
-              <div className="button button-secondary">Manage Gym</div>
-            </article>
-          </Link>
-        ))}
+        <table className="admin-gym-table">
+          <thead>
+            <tr>
+              <th>Gym</th>
+              <th>Location</th>
+              <th>Status</th>
+              <th>Members</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {gyms.map((gym) => (
+              <tr key={gym.id}>
+                <td>
+                  <span style={{ fontWeight: 600 }}>{gym.name}</span>
+                  <br />
+                  <span style={{ fontSize: "0.78rem", color: "var(--text-soft)" }}>
+                    {gym.slug}
+                  </span>
+                </td>
+                <td style={{ color: "var(--text-soft)", fontSize: "0.88rem" }}>
+                  {gym.location || "—"}
+                </td>
+                <td>
+                  <span
+                    className={`status-pill ${gym.status === "active" ? "status-active" : "status-neutral"}`}
+                  >
+                    {gym.status}
+                  </span>
+                </td>
+                <td style={{ fontWeight: 600 }}>{gym.memberCount}</td>
+                <td>
+                  <Link
+                    className="button button-secondary"
+                    href={`/admin/gyms/${gym.id}`}
+                    style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+                  >
+                    Manage
+                  </Link>
+                </td>
+              </tr>
+            ))}
+            {gyms.length === 0 && (
+              <tr>
+                <td colSpan={5} style={{ textAlign: "center", color: "var(--text-soft)", padding: "32px" }}>
+                  No gyms yet. Add the first gym to get started.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>
         <ConfirmActionForm
           action={createOwnerProfile}
           className="form-panel"
-          confirmMessage="This will create a new gym staff profile and allow them to access the selected gym workspace."
-          confirmTitle="Create Gym Staff?"
-          pendingLabel="Creating staff..."
-          submitLabel="Create Staff"
+          confirmMessage="This creates a new gym staff login. They will receive an email with their credentials."
+          confirmTitle="Create gym staff?"
+          pendingLabel="Creating..."
+          submitLabel="Create staff account"
         >
           <h2>Add Gym Staff</h2>
+          <p className="member-meta" style={{ marginBottom: 16 }}>
+            Creates a login for an owner, trainer, or staff member at any gym workspace.
+          </p>
           <div className="form-grid">
             <label>
               Full name
-              <input name="fullName" placeholder="e.g. John Smith" required />
+              <input name="fullName" placeholder="Jane Smith" required />
             </label>
             <label>
               Email address
-              <input name="email" type="email" placeholder="e.g. owner@gym.com" required />
+              <input name="email" placeholder="jane@gym.com" required type="email" />
             </label>
             <label>
-              Staff category
-              <select name="staffType" required style={{ width: '100%', padding: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)' }}>
-                <option value="owner">Owner</option>
-                <option value="trainer">Trainer</option>
-                <option value="staff">Staff</option>
+              Role
+              <select
+                name="staffType"
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text)"
+                }}
+              >
+                <option value="owner">Owner — full access</option>
+                <option value="trainer">Trainer — view + assign programs</option>
+                <option value="staff">Staff — view only</option>
               </select>
             </label>
             <label>
-              Assign to Gym
-              <select name="gymId" required style={{ width: '100%', padding: '12px', background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', color: 'var(--text)' }}>
-                {gyms.map(gym => (
-                  <option key={gym.id} value={gym.id}>{gym.name}</option>
+              Assign to gym
+              <select
+                name="gymId"
+                required
+                style={{
+                  width: "100%",
+                  padding: "12px",
+                  background: "var(--bg-elevated)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-sm)",
+                  color: "var(--text)"
+                }}
+              >
+                {gyms.map((gym) => (
+                  <option key={gym.id} value={gym.id}>
+                    {gym.name}
+                  </option>
                 ))}
               </select>
             </label>
           </div>
         </ConfirmActionForm>
+
+        <div className="form-panel">
+          <h2>Staff access levels</h2>
+          <div style={{ display: "grid", gap: 12, marginTop: 4 }}>
+            {[
+              { role: "Owner", desc: "Full gym access — members, programs, exercises, settings." },
+              { role: "Trainer", desc: "View member profiles and assign workout programs." },
+              { role: "Staff", desc: "Read-only access to the member list." }
+            ].map(({ role, desc }) => (
+              <div key={role} style={{ borderLeft: "3px solid var(--brand)", paddingLeft: 12 }}>
+                <strong style={{ fontSize: "0.88rem" }}>{role}</strong>
+                <p style={{ fontSize: "0.82rem", color: "var(--text-soft)", margin: "2px 0 0" }}>
+                  {desc}
+                </p>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: "0.8rem", color: "var(--text-faint)", marginTop: 16 }}>
+            Default login password is <code>password</code>. Staff should change it on first login. Reset is available on each gym's detail page.
+          </p>
+        </div>
       </section>
     </main>
   );

@@ -7977,6 +7977,155 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 .ai-modification-panel h2 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
 
+/* Admin stats strip */
+.admin-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.admin-stat {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.admin-stat-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 5px;
+  letter-spacing: -0.02em;
+}
+.admin-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Admin gym table */
+.admin-gym-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-gym-table th,
+.admin-gym-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.admin-gym-table th {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.admin-gym-table tr:last-child td {
+  border-bottom: none;
+}
+
+/* Admin profile card */
+.profile-card-admin {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px 28px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.profile-avatar-lg {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Exercise catalog per-exercise edit */
+.catalog-exercise-entry {
+  border-bottom: 1px solid var(--border);
+}
+.catalog-exercise-entry:last-child {
+  border-bottom: none;
+}
+.catalog-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+.catalog-exercise-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+.exercise-edit-details summary::-webkit-details-marker { display: none; }
+.exercise-edit-details[open] summary { background: var(--bg); }
+.exercise-edit-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 0 0 12px;
+}
+
+/* YouTube / video modal */
+.video-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  padding: 16px;
+}
+.video-modal {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  overflow: hidden;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+.video-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.video-embed {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  border: none;
+}
+
 /* Workout session bar */
 .workout-session-bar {
   display: flex;

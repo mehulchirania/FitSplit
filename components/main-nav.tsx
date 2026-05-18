@@ -5,11 +5,9 @@ import { usePathname } from "next/navigation";
 import type { Role } from "@/types/domain";
 
 const adminLinks = [
-  { href: "/admin", label: "Admin" },
-  { href: "/owner", label: "Dashboard" },
-  { href: "/owner/members", label: "Members" },
-  { href: "/owner/programs", label: "Workout Programs" },
-  { href: "/owner/exercises", label: "Exercise Catalog" }
+  { href: "/admin", label: "Dashboard" },
+  { href: "/admin/gyms", label: "Gyms" },
+  { href: "/admin/inbox", label: "Inbox" }
 ];
 
 const ownerLinks = [

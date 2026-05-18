@@ -1330,7 +1330,7 @@ export async function deleteGymWorkspace(
     const gymId = requireText(formData, "gymId", "Gym ID");
 
     if (gymId === PRIMARY_GYM_ID) {
-      throw new Error("Sri Shakthi Hanuman Gym is the active pilot gym and cannot be deleted.");
+      throw new Error("This gym is protected and cannot be deleted.");
     }
 
     const assignedProfiles = await db
@@ -1365,7 +1365,7 @@ export async function deleteGymWithMembers(
     const gymId = requireText(formData, "gymId", "Gym ID");
 
     if (gymId === PRIMARY_GYM_ID) {
-      throw new Error("Sri Shakthi Hanuman Gym is protected and cannot be deleted.");
+      throw new Error("This gym is protected and cannot be deleted.");
     }
 
     // Fetch all profiles assigned to this gym
@@ -1819,6 +1819,99 @@ export async function createCatalogExercise(
   } catch (error) {
     console.error("Unable to create catalog exercise", error);
     return failure(error, "Unable to save exercise. Please try again.");
+  }
+}
+
+export async function updateCatalogExercise(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
+    const name = requireText(formData, "name", "Exercise name");
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(
+      {
+        name,
+        muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
+        equipment: String(formData.get("equipment") ?? "").trim(),
+        instructions: String(formData.get("instructions") ?? "").trim(),
+        videoSource: String(formData.get("videoSource") ?? "none"),
+        videoUrl: String(formData.get("videoUrl") ?? "").trim(),
+        thumbnailUrl: String(formData.get("thumbnailUrl") ?? "").trim(),
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/owner/exercises");
+    return success(`${name} updated.`);
+  } catch (error) {
+    return failure(error, "Unable to update exercise.");
+  }
+}
+
+export async function changeAdminEmail(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role !== "admin") {
+      throw new Error("Only the platform admin can use this form.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth, db } = requireFirebaseServices();
+    const newEmail = requireText(formData, "newEmail", "New email");
+    assertValidEmail(newEmail);
+    const confirmEmail = String(formData.get("confirmEmail") ?? "").trim();
+    if (newEmail !== confirmEmail) {
+      throw new Error("Email and confirmation do not match.");
+    }
+    const now = new Date().toISOString();
+    await auth.updateUser(currentUser.uid, { email: newEmail });
+    await db.collection(collectionPaths.profiles).doc(currentUser.uid).set(
+      { email: newEmail, updatedAt: now },
+      { merge: true }
+    );
+    return success("Email updated. Log in again with your new email.");
+  } catch (error) {
+    return failure(error, "Unable to change email.");
+  }
+}
+
+export async function updateAdminDisplayName(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role !== "admin") {
+      throw new Error("Only the platform admin can use this form.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth, db } = requireFirebaseServices();
+    const displayName = requireText(formData, "displayName", "Display name");
+    const now = new Date().toISOString();
+    const initials = displayName
+      .split(" ")
+      .map((p: string) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    await auth.updateUser(currentUser.uid, { displayName });
+    await db.collection(collectionPaths.profiles).doc(currentUser.uid).set(
+      { fullName: displayName, avatarInitials: initials, updatedAt: now },
+      { merge: true }
+    );
+    revalidatePath("/profile");
+    return success("Display name updated.");
+  } catch (error) {
+    return failure(error, "Unable to update display name.");
   }
 }
 

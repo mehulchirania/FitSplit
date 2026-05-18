@@ -1,5 +1,38 @@
 # FitSplit Project Handoff
 
+## Session 9 Plan — Admin Console Redesign (2026-05-18)
+
+### Scope approved by Mehul. Implementation in progress.
+
+**Problems to fix:**
+1. `/admin/gyms` — after deleting a gym a 404 appears (no redirect after delete on list page)
+2. "Pilot" / "Sri Shakti Hanuman Gym is the active pilot" text appears in 5 places — remove all
+3. Admin dashboard (`/admin`) — 3 useless color cards, redundant "Manage gyms" button x2, "Pilot" card, tiny text inside big cards
+4. Admin gyms list (`/admin/gyms`) — inline edit forms per gym clutters the list; editing lives on the detail page
+5. Admin topnav — shows `Admin | Dashboard | Members | Workout Programs | Exercise Catalog`; admin shouldn't have owner-specific links mixed in
+6. Profile page — admin avatar shows "FA" (derived from name like "FitSplit Admin"); no change email; UID displayed in full looks broken; page has nothing useful besides password change
+7. Workout Programs (`/owner/programs`) — `CustomPlanBuilder` appears first/in aside before showing existing programs; programs should be primary
+8. Exercise Catalog (`/owner/exercises`) — "Custom Workouts" add form appears before catalog; no edit per exercise; no thumbnail/video URL management
+9. Exercise video for members — need YouTube embed modal when member taps a "Watch form" button per exercise
+
+**Implementation tasks:**
+
+| # | File | Change |
+|---|------|--------|
+| 1 | `lib/firebase/actions.ts` | Add `updateCatalogExercise` (edit name, muscle, equipment, instructions, thumbnail, videoUrl) |
+| 2 | `lib/firebase/actions.ts` | Add `changeAdminEmail` (admin email + profile doc update) |
+| 3 | `lib/firebase/actions.ts` | Fix `deleteGymWorkspace` error message (remove SHG pilot reference) |
+| 4 | `components/main-nav.tsx` | Admin nav → `Dashboard /admin | Gyms /admin/gyms | Inbox /admin/inbox` (remove /owner/* from admin nav) |
+| 5 | `app/admin/page.tsx` | Full redesign: compact stat strip (gyms, active, members), clean gym table, remove useless color cards and "Pilot" |
+| 6 | `app/admin/gyms/page.tsx` | Remove pilot/SHG text, remove inline edit forms (they live on detail page), add `successRedirect` to delete |
+| 7 | `app/owner/programs/page.tsx` | Programs gallery first (primary), `CustomPlanBuilder` at bottom as secondary "Create Program" section; remove SHG text |
+| 8 | `app/owner/exercises/page.tsx` | Catalog first grouped by muscle; each exercise has `<details>` edit panel; "Add exercise" at bottom; remove SHG text |
+| 9 | `app/profile/page.tsx` | Admin section: avatar with proper initials/icon, truncated UID, change-email form, change-password form; display name edit |
+| 10 | `components/exercise-list.tsx` | Make client component; YouTube embed modal when exercise has videoUrl |
+| 11 | `app/globals.css` | Add CSS for: admin stats strip, admin gym table, exercise catalog edit row, video modal |
+
+---
+
 ## Co-Developer Protocol
 
 This project is maintained by two AI co-developers — **Claude** and **Codex** — plus the owner, **Mehul Chirania**. Both developers must:

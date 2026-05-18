@@ -1,11 +1,9 @@
 import Link from "next/link";
 import { AddGymForm } from "@/components/add-gym-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Settings, UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { deleteGymWorkspace, updateGymDetails } from "@/lib/firebase/actions";
+import { deleteGymWorkspace } from "@/lib/firebase/actions";
 import { getGymWorkspaces } from "@/lib/firebase/read-models";
-import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 
 export const dynamic = "force-dynamic";
 
@@ -18,28 +16,30 @@ export default async function ManageGymsPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Admin / manage gyms</p>
-          <h1>Manage gyms</h1>
+          <p className="eyebrow">Admin / Gyms</p>
+          <h1>Gym workspaces</h1>
           <p>
-            Add new gym workspaces, update gym details, and remove unused gyms when they no longer have assigned staff or members.
+            Add new gym workspaces and remove ones that are no longer needed. Edit gym details and manage staff from each gym's detail page.
           </p>
           <div className="quick-actions">
             <Link className="button button-secondary" href="/admin">
-              Back to admin
+              Back to dashboard
             </Link>
           </div>
         </div>
         <aside className="summary-panel">
           <div className="panel-title">
-            <h2>
-              <UsersRound /> Workspace count
-            </h2>
-            <span className="status-pill status-active">{gyms.length} gyms</span>
+            <h2>Overview</h2>
+            <span className="status-pill status-active">{gyms.length} workspace{gyms.length !== 1 ? "s" : ""}</span>
           </div>
           <div className="detail-window">
             <span>
-              Active pilot
-              <strong>Sri Shakti Hanuman Gym</strong>
+              Active
+              <strong>{gyms.filter((g) => g.status === "active").length}</strong>
+            </span>
+            <span>
+              Total members
+              <strong>{gyms.reduce((sum, g) => sum + g.memberCount, 0)}</strong>
             </span>
           </div>
         </aside>
@@ -49,96 +49,83 @@ export default async function ManageGymsPage() {
         <AddGymForm />
 
         <div className="form-panel">
-          <h2>How removal works</h2>
+          <h2>Before removing a gym</h2>
           <p className="member-meta">
-            A gym can be removed only after staff and members are reassigned or deleted. This avoids orphaned logins and member records.
+            A gym can only be removed after all staff and members have been deleted or reassigned. This prevents orphaned logins.
           </p>
-          <p className="member-meta">
-            Sri Shakti Hanuman Gym is protected as the active pilot gym.
+          <p className="member-meta" style={{ marginTop: 8 }}>
+            To permanently delete a gym <em>including all its members and staff</em>, open the gym's detail page and use the Danger Zone section.
           </p>
         </div>
       </section>
 
       <section className="list-panel" style={{ marginTop: 16 }}>
         <div className="panel-title">
-          <h2>
-            <Settings /> Existing gyms
-          </h2>
+          <h2>All gyms</h2>
         </div>
         <div className="activity-feed">
           {gyms.map((gym) => (
-            <article className="form-panel" key={gym.id}>
-              <div className="panel-title">
-                <div>
-                  <h2>{gym.name}</h2>
-                  <p className="member-meta">Slug: {gym.slug} / ID: {gym.id}</p>
+            <article
+              key={gym.id}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                gap: 16,
+                alignItems: "center",
+                padding: "16px 20px",
+                borderBottom: "1px solid var(--border)"
+              }}
+            >
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 700, fontSize: "1rem" }}>{gym.name}</span>
+                  <span
+                    className={`status-pill ${gym.status === "active" ? "status-active" : "status-neutral"}`}
+                  >
+                    {gym.status}
+                  </span>
+                  <span className="status-pill status-neutral">{gym.memberCount} members</span>
                 </div>
-                <span className={`status-pill ${gym.status === "active" ? "status-active" : "status-neutral"}`}>
-                  {gym.status}
-                </span>
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "var(--text-soft)",
+                    margin: "4px 0 0",
+                    fontFamily: "monospace"
+                  }}
+                >
+                  ID: {gym.id}{gym.location ? ` · ${gym.location}` : ""}
+                </p>
               </div>
 
-              <ConfirmActionForm
-                action={updateGymDetails}
-                confirmMessage={`Save updates for ${gym.name}?`}
-                confirmTitle="Update gym?"
-                pendingLabel="Saving..."
-                submitLabel="Save gym"
-              >
-                <input name="gymId" type="hidden" value={gym.id} />
-                <div className="form-grid">
-                  <label>
-                    Gym name
-                    <input name="name" defaultValue={gym.name} required />
-                  </label>
-                  <label>
-                    Location
-                    <input name="location" defaultValue={gym.location} />
-                  </label>
-                  <label>
-                    Contact phone
-                    <input name="phone" defaultValue={gym.phone} inputMode="tel" />
-                  </label>
-                  <label>
-                    Contact email
-                    <input name="email" defaultValue={gym.email} type="email" />
-                  </label>
-                  <label>
-                    Instagram
-                    <input name="instagram" defaultValue={gym.instagram} />
-                  </label>
-                  <label>
-                    LinkedIn
-                    <input name="linkedin" defaultValue={gym.linkedin} />
-                  </label>
-                  <label>
-                    YouTube
-                    <input name="youtube" defaultValue={gym.youtube} />
-                  </label>
-                </div>
-              </ConfirmActionForm>
-
-              <div className="quick-actions">
-                <Link className="button button-secondary" href={`/admin/gyms/${gym.id}`}>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <Link
+                  className="button button-secondary"
+                  href={`/admin/gyms/${gym.id}`}
+                  style={{ fontSize: "0.82rem", padding: "6px 14px" }}
+                >
                   Open details
                 </Link>
                 <ConfirmActionForm
                   action={deleteGymWorkspace}
-                  confirmMessage={`Remove ${gym.name}? This is only allowed after staff and members are no longer assigned.`}
+                  confirmMessage={`Remove "${gym.name}"? Only allowed when no staff or members are assigned.`}
                   confirmTitle="Remove gym?"
                   pendingLabel="Removing..."
                   submitClassName="button button-secondary"
-                  submitLabel="Remove gym"
+                  submitLabel="Remove"
+                  successRedirect="/admin/gyms"
                   style={{ background: "none", border: "none", padding: 0 }}
                 >
                   <input name="gymId" type="hidden" value={gym.id} />
-                  {gym.id === PRIMARY_GYM_ID ? (
-                    <input disabled name="protectedGym" type="hidden" value="protected" />
-                  ) : null}
                 </ConfirmActionForm>
               </div>
             </article>
           ))}
+          {gyms.length === 0 && (
+            <p style={{ padding: "32px", textAlign: "center", color: "var(--text-soft)" }}>
+              No gym workspaces yet. Add the first one above.
+            </p>
+          )}
         </div>
       </section>
     </main>
