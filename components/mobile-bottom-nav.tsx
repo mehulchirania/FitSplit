@@ -15,7 +15,7 @@ function linksForRole(role: Role) {
 
   if (role === "owner") {
     return [
-      { href: "/owner", label: "Home", icon: Activity },
+      { href: "/owner", label: "Home", icon: Dumbbell },
       { href: "/owner/members", label: "Members", icon: UsersRound },
       { href: "/owner/programs", label: "Plans", icon: Dumbbell },
       { href: "/activity", label: "Activity", icon: Activity },
