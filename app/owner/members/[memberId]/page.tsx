@@ -27,7 +27,7 @@ export default async function MemberDetailPage({
 }: {
   params: Promise<{ memberId: string }>;
 }) {
-  await requireRole(["admin", "owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
 
   const { memberId } = await params;
   const [
@@ -39,8 +39,8 @@ export default async function MemberDetailPage({
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
-    getWorkoutPrograms(),
-    getExerciseCatalog(),
+    getWorkoutPrograms(currentUser.gymId),
+    getExerciseCatalog(currentUser.gymId),
     getProfileMetrics(memberId)
   ]);
 

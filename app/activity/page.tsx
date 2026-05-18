@@ -18,9 +18,12 @@ export default async function ActivityPage() {
     currentUser.role === "member"
       ? await Promise.all([
           Promise.resolve({ events: [] }),
-          getActivityEvents("member", currentUser.memberId ?? currentUser.uid)
+          getActivityEvents("member", currentUser.memberId ?? currentUser.uid, currentUser.gymId)
         ])
-      : await Promise.all([getActivityEvents("owner"), getActivityEvents("member")]);
+      : await Promise.all([
+          getActivityEvents("owner", undefined, currentUser.gymId),
+          getActivityEvents("member", undefined, currentUser.gymId)
+        ]);
   const events = [...ownerEvents, ...memberEvents].sort((left, right) =>
     right.createdAt.localeCompare(left.createdAt)
   );

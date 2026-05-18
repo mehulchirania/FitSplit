@@ -7977,6 +7977,39 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 .ai-modification-panel h2 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
 
+/* Workout session bar */
+.workout-session-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.session-elapsed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand);
+  flex: 1;
+}
+.session-idle-copy {
+  flex: 1;
+  font-size: 13px;
+  color: var(--text-soft);
+}
+.session-start-btn,
+.session-end-btn {
+  font-size: 13px;
+  padding: 6px 16px;
+}
+
 /* Lift log panel */
 .lift-log-panel {
   background: var(--bg-elevated);

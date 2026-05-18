@@ -558,9 +558,11 @@ export async function assignProgramToMember(
     const programId = requireText(formData, "programId", "Workout program");
     const now = new Date().toISOString();
 
+    const assignGymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+
     const existingAssignments = await db
       .collection(collectionPaths.programAssignments)
-      .where("gymId", "==", PRIMARY_GYM_ID)
+      .where("gymId", "==", assignGymId)
       .where("memberId", "==", memberId)
       .where("status", "==", "active")
       .get();
@@ -573,7 +575,7 @@ export async function assignProgramToMember(
 
     await db.collection(collectionPaths.programAssignments).doc(assignmentId).set({
       id: assignmentId,
-      gymId: PRIMARY_GYM_ID,
+      gymId: assignGymId,
       memberId,
       programId,
       assignedAt: now,
@@ -587,6 +589,7 @@ export async function assignProgramToMember(
       id: notificationId,
       recipientRole: "member",
       recipientId: memberId,
+      gymId: assignGymId,
       type: "program_assigned",
       title: "Workout program assigned",
       body: `${programTitle} is now available in your weekly schedule.`,
@@ -595,7 +598,7 @@ export async function assignProgramToMember(
 
     await db.collection(collectionPaths.activityEvents).doc(activityId).set({
       id: activityId,
-      gymId: PRIMARY_GYM_ID,
+      gymId: assignGymId,
       audience: "owner",
       title: `Program assigned - ${programTitle}`,
       detail: `${memberName} now has ${programTitle} as the active weekly schedule.`,
@@ -694,12 +697,12 @@ export async function generateAndAssignProgram(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin", "owner"]);
+    const currentUser = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const memberId = requireText(formData, "memberId", "Member");
     const memberName = requireText(formData, "memberName", "Member name");
     const memberGoal = String(formData.get("memberGoal") ?? "General fitness").trim();
-    const { programs } = await getWorkoutPrograms();
+    const { programs } = await getWorkoutPrograms(currentUser.gymId);
     const selectedProgram = await pickProgramWithGemini(programs, memberGoal);
 
     if (!selectedProgram) {
@@ -882,7 +885,7 @@ export async function logLiftSet(
 
     await db.collection(collectionPaths.liftLogs).doc(liftLogId).set({
       id: liftLogId,
-      gymId: PRIMARY_GYM_ID,
+      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
       memberId,
       exerciseId,
       weight,
@@ -924,7 +927,7 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
       
       batch.set(docRef, {
         id: liftLogId,
-        gymId: PRIMARY_GYM_ID,
+        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
         memberId: log.memberId,
         exerciseId: log.exerciseId,
         weight: Number(log.weight),
@@ -1536,16 +1539,20 @@ export async function startWorkoutSession(
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
-    const latitude = Number(formData.get("latitude"));
-    const longitude = Number(formData.get("longitude"));
+    const rawLat = formData.get("latitude");
+    const rawLng = formData.get("longitude");
+    const latitude = rawLat != null ? Number(rawLat) : null;
+    const longitude = rawLng != null ? Number(rawLng) : null;
     const deviceInfo = String(formData.get("deviceInfo") ?? "").slice(0, 500);
-    const geofence = validateGymGeofence(latitude, longitude);
+    const geofence = latitude != null && longitude != null && Number.isFinite(latitude) && Number.isFinite(longitude)
+      ? validateGymGeofence(latitude, longitude)
+      : { distanceMeters: null, geofenceStatus: "location_not_provided" as const, radiusMeters: 0 };
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
       {
         id: sessionId,
-        gymId: PRIMARY_GYM_ID,
+        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
         memberId,
         attendance: {
           latitude,
@@ -1577,7 +1584,7 @@ export async function endWorkoutSession(
 ): Promise<FormActionState> {
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    await requireAuth();
+    const currentUser = await requireAuth();
 
     if (!hasFirebaseAdminConfig()) {
       return success("Workout session was ended (local mode).");
@@ -1585,6 +1592,8 @@ export async function endWorkoutSession(
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
+    const memberId = requireText(formData, "memberId", "Member");
+    assertCanManageMember(currentUser, memberId);
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
@@ -1595,6 +1604,21 @@ export async function endWorkoutSession(
       },
       { merge: true }
     );
+
+    // Record attendance for the day
+    try {
+      const attendanceId = randomUUID();
+      await db.collection(collectionPaths.attendanceRecords).doc(attendanceId).set({
+        id: attendanceId,
+        memberId,
+        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+        sessionId,
+        checkInAt: now,
+        createdAt: now
+      });
+    } catch {
+      // non-fatal — attendance tracking is supplementary
+    }
 
     revalidatePath("/member");
     revalidatePath("/owner");
@@ -1719,7 +1743,7 @@ export async function createCatalogExercise(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireOwner();
+    const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
@@ -1729,7 +1753,7 @@ export async function createCatalogExercise(
 
     await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
       id: exerciseId,
-      gymId: PRIMARY_GYM_ID,
+      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
       name,
       muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
       equipment: String(formData.get("equipment") ?? "").trim(),
@@ -1738,7 +1762,7 @@ export async function createCatalogExercise(
       videoUrl: String(formData.get("videoUrl") ?? "").trim(),
       ownerOnly: true,
       isActive: true,
-      createdBy: PRIMARY_OWNER_ID,
+      createdBy: currentUser.uid,
       createdAt: now,
       updatedAt: now
     });
@@ -1767,7 +1791,7 @@ export async function createCustomWorkoutProgram(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireOwner();
+    const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
@@ -1830,7 +1854,7 @@ export async function createCustomWorkoutProgram(
 
     await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
       id: programId,
-      gymId: PRIMARY_GYM_ID,
+      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
       title,
       description: String(formData.get("description") ?? "").trim(),
       goal: String(formData.get("goal") ?? "Custom member plan").trim(),
@@ -1838,7 +1862,7 @@ export async function createCustomWorkoutProgram(
       daysPerWeek: days.length,
       splitType: "custom",
       isActive: true,
-      createdBy: PRIMARY_OWNER_ID,
+      createdBy: currentUser.uid,
       days,
       createdAt: now,
       updatedAt: now

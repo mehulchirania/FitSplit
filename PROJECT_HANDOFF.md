@@ -10,6 +10,58 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Latest Update - 2026-05-18: Admin portal gap fixes (session 8)
+
+### Multi-gym write paths fixed
+All server actions that previously hardcoded `PRIMARY_GYM_ID` or `PRIMARY_OWNER_ID` now use the authenticated user's `gymId`/`uid` from the session:
+- `assignProgramToMember` — uses `currentUser.gymId` for assignment, notification, and activity event writes
+- `generateAndAssignProgram` — passes `currentUser.gymId` to `getWorkoutPrograms()`
+- `logLiftSet` — uses `currentUser.gymId` for lift log records
+- `syncOfflineLifts` — uses `currentUser.gymId` for offline lift batch writes
+- `startWorkoutSession` — uses `currentUser.gymId` for session records
+- `endWorkoutSession` — uses `currentUser.gymId` for attendance records; now requires `memberId` in form data
+- `createCatalogExercise` — uses `currentUser.gymId` and `currentUser.uid`
+- `createCustomWorkoutProgram` — uses `currentUser.gymId` and `currentUser.uid`
+
+### Multi-gym read paths fixed
+- `getLiftLogsForMember` — removed `gymId` filter (memberId is globally unique; filter was blocking non-SHG members)
+- `getProgramAssignmentForMember` — removed `gymId` filter for same reason
+- `getActivityEvents` — new optional `gymId` param; all callers (`activity/page.tsx`) pass `currentUser.gymId`
+- `getMemberDetail` and `getMemberWithProfile` — removed `data.defaultGymId !== PRIMARY_GYM_ID` restriction that blocked non-SHG member detail pages
+- All owner pages already pass `currentUser.gymId` (done in F1); member page now passes it to `getWorkoutPrograms`, `getExerciseCatalog`, `getActiveWorkoutSessions`
+- Member detail page now passes `currentUser.gymId` to programs and exercises reads
+
+### Mock fallback pollution fixed
+When Firebase Admin is configured but a Firestore snapshot is empty, read models now return real empty state instead of demo data:
+- `getOwnerNotifications` → `[]` when empty (not mock notifications)
+- `getMemberNotifications` → `[]` when empty
+- `getWorkoutPrograms` → `[]` when empty (new gym gets clean state)
+- `getExerciseCatalog` → `[]` when empty
+- `getProgramAssignmentForMember` → `null` when not found
+- `getActiveProgramAssignments` → `[]` when empty
+- `getActivityEvents` → `[]` when empty
+- `getProfileMetrics` — returns non-persisted flag when doc missing so callers know it's fallback data
+
+### Start/End Workout UI restored
+`MemberWorkoutConsole` now includes a session bar at the top of the workout panel:
+- **Start Workout** button: requests GPS (optional, soft-fail), calls `startWorkoutSession`, stores sessionId + start time in `localStorage`
+- Elapsed time counter updates every second while session is active; shows `MM:SS` or `Xh MMm`; red warning at 3h
+- **End Workout** button: calls `endWorkoutSession`, clears localStorage, creates an `attendanceRecord` in Firestore
+- Session state is restored from `localStorage` on page refresh so the timer survives navigation
+
+### Geofence made optional
+`startWorkoutSession` no longer throws when GPS is unavailable — if lat/lng are not provided, `geofenceStatus: "location_not_provided"` is recorded and the session starts normally.
+
+### Attendance record on session end
+`endWorkoutSession` now creates an `attendanceRecords` document on each session completion (non-fatal — attendance write failure does not block the session end).
+
+### Dead code removed
+- `isLegacyPilotWorkspace` function removed from `read-models.ts` (filter was already removed in a prior session; function was orphaned)
+
+Verification: `npm run typecheck` passes clean.
+
+---
+
 ## Current Source Of Truth
 
 This section supersedes older contradictory notes in the historical change log below.
