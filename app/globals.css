@@ -609,17 +609,14 @@ p {
   font-size: 0.85rem;
 }
 
-.content-grid {
-  grid-template-columns: minmax(0, 1.15fr) minmax(300px, 0.85fr);
-}
-
 .panel-title {
   align-items: center;
   border-bottom: 1px solid var(--border);
   display: flex;
-  gap: 10px;
+  gap: 12px;
   justify-content: space-between;
   padding: 14px 16px;
+  margin-bottom: 20px;
 }
 
 .panel-title h2 {
@@ -7774,13 +7771,6 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 24px;
-}
-.panel-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 20px;
 }
 .panel-title h2 {
   font-size: 16px;

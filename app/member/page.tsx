@@ -6,6 +6,7 @@ import {
   getExerciseCatalog,
   getLiftLogsForMember,
   getMemberWithProfile,
+  getPrimaryWorkspace,
   getProgramAssignmentForMember,
   getWorkoutPrograms,
 } from "@/lib/firebase/read-models";
@@ -29,6 +30,7 @@ export default async function MemberDashboard() {
     { liftLogs },
     { exercises },
     { sessions },
+    { gym },
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
     getProgramAssignmentForMember(currentMemberId),
@@ -36,6 +38,7 @@ export default async function MemberDashboard() {
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(),
     getActiveWorkoutSessions(),
+    getPrimaryWorkspace(),
   ]);
 
   if (!member) return null;
@@ -107,7 +110,17 @@ export default async function MemberDashboard() {
             </svg>
           </div>
           <h2>No workout plan assigned</h2>
-          <p>Your trainer hasn&apos;t assigned a program yet. Check back soon or contact your gym.</p>
+          <p>Your trainer at {gym?.name ?? "your gym"} hasn&apos;t assigned a program yet. Check back soon.</p>
+          {gym?.phone && (
+            <a href={`tel:${gym.phone}`} style={{ fontSize: "13px", color: "var(--brand)", fontWeight: 600 }}>
+              Call {gym.phone}
+            </a>
+          )}
+          {gym?.email && (
+            <a href={`mailto:${gym.email}`} style={{ fontSize: "13px", color: "var(--text-soft)" }}>
+              {gym.email}
+            </a>
+          )}
         </div>
       )}
     </main>
