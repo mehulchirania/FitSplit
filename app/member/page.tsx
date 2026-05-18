@@ -4,9 +4,9 @@ import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
   getExerciseCatalog,
+  getGymDetail,
   getLiftLogsForMember,
   getMemberWithProfile,
-  getPrimaryWorkspace,
   getProgramAssignmentForMember,
   getWorkoutPrograms,
 } from "@/lib/firebase/read-models";
@@ -38,7 +38,7 @@ export default async function MemberDashboard() {
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(currentUser.gymId),
     getActiveWorkoutSessions(currentUser.gymId),
-    getPrimaryWorkspace(),
+    getGymDetail(currentUser.gymId),
   ]);
 
   if (!member) return null;

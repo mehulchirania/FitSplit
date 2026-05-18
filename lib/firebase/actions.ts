@@ -6,7 +6,7 @@ import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
-import type { Role, WorkoutProgram } from "@/types/domain";
+import type { GymWorkspace, Role, WorkoutProgram } from "@/types/domain";
 import { getWorkoutPrograms } from "@/lib/firebase/read-models";
 
 function requireFirebase() {
@@ -135,10 +135,29 @@ function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng
   return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-function validateGymGeofence(latitude: number, longitude: number) {
-  const gymLatitude = Number(process.env.SHG_GYM_LATITUDE ?? process.env.NEXT_PUBLIC_SHG_GYM_LATITUDE);
-  const gymLongitude = Number(process.env.SHG_GYM_LONGITUDE ?? process.env.NEXT_PUBLIC_SHG_GYM_LONGITUDE);
-  const radiusMeters = Number(process.env.SHG_GYM_RADIUS_METERS ?? process.env.NEXT_PUBLIC_SHG_GYM_RADIUS_METERS ?? 150);
+type GymGeofenceConfig = Pick<GymWorkspace, "latitude" | "longitude" | "radiusMeters">;
+
+function validateGymGeofence(
+  latitude: number,
+  longitude: number,
+  gymConfig?: GymGeofenceConfig
+) {
+  const gymLatitude = Number(
+    gymConfig?.latitude ??
+      process.env.SHG_GYM_LATITUDE ??
+      process.env.NEXT_PUBLIC_SHG_GYM_LATITUDE
+  );
+  const gymLongitude = Number(
+    gymConfig?.longitude ??
+      process.env.SHG_GYM_LONGITUDE ??
+      process.env.NEXT_PUBLIC_SHG_GYM_LONGITUDE
+  );
+  const radiusMeters = Number(
+    gymConfig?.radiusMeters ??
+      process.env.SHG_GYM_RADIUS_METERS ??
+      process.env.NEXT_PUBLIC_SHG_GYM_RADIUS_METERS ??
+      150
+  );
 
   if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
     throw new Error("Location permission is required to start workout attendance.");
@@ -163,6 +182,22 @@ function validateGymGeofence(latitude: number, longitude: number) {
     geofenceStatus: "inside" as const,
     radiusMeters
   };
+}
+
+async function getGymGeofenceConfig(gymId: string): Promise<GymGeofenceConfig> {
+  try {
+    const db = requireFirebase();
+    const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
+    const data = gymDoc.data() ?? {};
+
+    return {
+      latitude: data.latitude != null ? Number(data.latitude) : undefined,
+      longitude: data.longitude != null ? Number(data.longitude) : undefined,
+      radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined
+    };
+  } catch {
+    return {};
+  }
 }
 
 function assertCanManageMember(
@@ -549,7 +584,6 @@ export async function assignProgramToMember(
       return success(`${programTitle} was assigned to ${memberName} (local mode).`);
     }
 
-    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const assignmentId = randomUUID();
     const notificationId = randomUUID();
@@ -728,7 +762,6 @@ export async function updateProfileMetrics(
   try {
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const currentUser = await requireAuth();
-    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const memberId = requireText(formData, "memberId", "Member");
     assertCanManageMember(currentUser, memberId);
@@ -869,7 +902,6 @@ export async function logLiftSet(
       // Mock mode — lift is saved client-side optimistically
       return success("Lift entry was logged (local mode).");
     }
-    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const liftLogId = randomUUID();
     const exerciseId = requireText(formData, "exerciseId", "Exercise");
@@ -916,7 +948,6 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
       }
     }
 
-    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const batch = db.batch();
     const now = new Date().toISOString();
@@ -1536,23 +1567,22 @@ export async function startWorkoutSession(
       // Mock mode — just confirm success locally
       return success("Workout session was started (local mode).");
     }
-    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
     const rawLat = formData.get("latitude");
     const rawLng = formData.get("longitude");
-    const latitude = rawLat != null ? Number(rawLat) : null;
-    const longitude = rawLng != null ? Number(rawLng) : null;
+    const latitude = rawLat != null ? Number(rawLat) : Number.NaN;
+    const longitude = rawLng != null ? Number(rawLng) : Number.NaN;
     const deviceInfo = String(formData.get("deviceInfo") ?? "").slice(0, 500);
-    const geofence = latitude != null && longitude != null && Number.isFinite(latitude) && Number.isFinite(longitude)
-      ? validateGymGeofence(latitude, longitude)
-      : { distanceMeters: null, geofenceStatus: "location_not_provided" as const, radiusMeters: 0 };
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const gymConfig = await getGymGeofenceConfig(gymId);
+    const geofence = validateGymGeofence(latitude, longitude, gymConfig);
     const now = new Date().toISOString();
 
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
       {
         id: sessionId,
-        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+        gymId,
         memberId,
         attendance: {
           latitude,
@@ -1563,6 +1593,23 @@ export async function startWorkoutSession(
         },
         startedAt: now,
         status: "active",
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set(
+      {
+        id: sessionId,
+        memberId,
+        gymId,
+        sessionId,
+        checkInAt: now,
+        latitude,
+        longitude,
+        deviceInfo,
+        ...geofence,
+        createdAt: now,
         updatedAt: now
       },
       { merge: true }
@@ -1589,12 +1636,12 @@ export async function endWorkoutSession(
     if (!hasFirebaseAdminConfig()) {
       return success("Workout session was ended (local mode).");
     }
-    await ensurePrimaryWorkspace();
     const db = requireFirebase();
     const sessionId = requireText(formData, "sessionId", "Session");
     const memberId = requireText(formData, "memberId", "Member");
     assertCanManageMember(currentUser, memberId);
     const now = new Date().toISOString();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
       {
@@ -1607,15 +1654,14 @@ export async function endWorkoutSession(
 
     // Record attendance for the day
     try {
-      const attendanceId = randomUUID();
-      await db.collection(collectionPaths.attendanceRecords).doc(attendanceId).set({
-        id: attendanceId,
+      await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set({
+        id: sessionId,
         memberId,
-        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+        gymId,
         sessionId,
-        checkInAt: now,
-        createdAt: now
-      });
+        checkOutAt: now,
+        updatedAt: now
+      }, { merge: true });
     } catch {
       // non-fatal — attendance tracking is supplementary
     }

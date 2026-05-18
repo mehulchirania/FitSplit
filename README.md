@@ -52,6 +52,9 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - Deleting a member also removes all associated programAssignments, liftLogs, notifications, workoutSessions, and attendanceRecords.
 - Owner member detail page shows member's self-reported body metrics (weight, height, age, BMI, slot) read-only in the aside panel.
 - All owner Firestore reads (members, programs, exercises, sessions, assignments, notifications) now use `currentUser.gymId` instead of the hardcoded SHG gym ID, enabling correct data isolation for multi-gym setups.
+- Authenticated app chrome, owner dashboard copy, member empty state, and role profile pages now resolve the visible gym from the logged-in user's `gymId` instead of always using the primary SHG workspace.
+- Workout check-in creates an `attendanceRecords/{sessionId}` document at Start Workout and updates `checkOutAt` when the member ends the workout.
+- Start Workout requires browser GPS permission before submitting; server-side geofence validation reads gym-level `latitude`, `longitude`, and `radiusMeters` when present, falling back to SHG env vars.
 - Admin notification bell is now populated from `recipientRole: "admin"` notifications (password reset requests, etc.).
 - `GymWorkspace.memberCount` is now kept in sync: incremented on member create, decremented on member delete.
 - Member dashboard UI is stabilized for desktop/mobile: the top summary card, profile/notification dropdowns, dark-mode selects, and lift logging panel have dedicated responsive styling.

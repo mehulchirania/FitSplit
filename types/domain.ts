@@ -31,6 +31,9 @@ export type GymWorkspace = {
   instagram?: string;
   linkedin?: string;
   youtube?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusMeters?: number;
 };
 
 export type Member = {
@@ -179,6 +182,7 @@ export type ProfileMetrics = {
 export type WorkoutSession = {
   id: string;
   memberId: string;
+  gymId?: string;
   startedAt: string;
   endedAt?: string;
   status: "active" | "completed";
@@ -187,8 +191,16 @@ export type WorkoutSession = {
 export type AttendanceRecord = {
   id: string;
   memberId: string;
+  gymId?: string;
+  sessionId?: string;
   checkInAt: string;
   checkOutAt?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  deviceInfo?: string;
+  distanceMeters?: number | null;
+  geofenceStatus?: "inside" | "not_configured" | "location_not_provided";
+  radiusMeters?: number;
 };
 
 export type ContactMessage = {

@@ -1,7 +1,7 @@
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireAuth } from "@/lib/auth";
-import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog, getPrimaryWorkspace, getOwnersForGym } from "@/lib/firebase/read-models";
+import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog, getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 import { ProfileAiSummary } from "@/components/profile-ai-summary";
 import { changeMemberPin, changeStaffPassword } from "@/lib/firebase/actions";
@@ -64,7 +64,7 @@ export default async function ProfilePage() {
   }
 
   if (currentUser.role === "owner") {
-    const { gym } = await getPrimaryWorkspace();
+    const { gym } = await getGymDetail(currentUser.gymId);
     return (
       <main className="page">
         <section className="dashboard-header compact-header">

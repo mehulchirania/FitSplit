@@ -45,7 +45,10 @@ function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspac
     email: data.email ? String(data.email) : undefined,
     instagram: data.instagram ? String(data.instagram) : undefined,
     linkedin: data.linkedin ? String(data.linkedin) : undefined,
-    youtube: data.youtube ? String(data.youtube) : undefined
+    youtube: data.youtube ? String(data.youtube) : undefined,
+    latitude: data.latitude != null ? Number(data.latitude) : undefined,
+    longitude: data.longitude != null ? Number(data.longitude) : undefined,
+    radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined
   };
 }
 
@@ -1023,6 +1026,7 @@ export async function getActiveWorkoutSessions(gymId?: string): Promise<{
       return {
         id: doc.id,
         memberId: String(data.memberId ?? ""),
+        gymId: data.gymId ? String(data.gymId) : undefined,
         startedAt: String(data.startedAt ?? new Date().toISOString()),
         endedAt: data.endedAt ? String(data.endedAt) : undefined,
         status: "active"
@@ -1058,8 +1062,18 @@ export async function getAttendanceRecords(memberId: string): Promise<{
       return {
         id: doc.id,
         memberId: String(data.memberId),
+        gymId: data.gymId ? String(data.gymId) : undefined,
+        sessionId: data.sessionId ? String(data.sessionId) : undefined,
         checkInAt: String(data.checkInAt),
-        checkOutAt: data.checkOutAt ? String(data.checkOutAt) : undefined
+        checkOutAt: data.checkOutAt ? String(data.checkOutAt) : undefined,
+        latitude: data.latitude != null ? Number(data.latitude) : undefined,
+        longitude: data.longitude != null ? Number(data.longitude) : undefined,
+        deviceInfo: data.deviceInfo ? String(data.deviceInfo) : undefined,
+        distanceMeters: data.distanceMeters != null ? Number(data.distanceMeters) : undefined,
+        geofenceStatus: data.geofenceStatus
+          ? String(data.geofenceStatus) as AttendanceRecord["geofenceStatus"]
+          : undefined,
+        radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined
       };
     });
 

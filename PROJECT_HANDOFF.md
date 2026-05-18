@@ -10,6 +10,26 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Latest Update - 2026-05-18: Gym-aware app shell and strict attendance records
+
+This update supersedes the attendance notes from session 8 where GPS was optional.
+
+- Authenticated app chrome now resolves gym branding with `getGymDetail(currentUser.gymId)` instead of always using `getPrimaryWorkspace()` / SHG.
+- Owner dashboard, member empty state, and non-member profile cards now use the logged-in user's gym record.
+- `GymWorkspace` supports optional `latitude`, `longitude`, and `radiusMeters` fields for per-gym geofence configuration.
+- Start Workout now requires browser geolocation before submitting. If GPS is unavailable/denied, the member sees an inline error and no session is started.
+- `startWorkoutSession` validates against gym-level geofence coordinates when present, falling back to SHG env vars.
+- `startWorkoutSession` now creates/updates `attendanceRecords/{sessionId}` with true `checkInAt`, GPS, device info, distance, radius, and geofence status.
+- `endWorkoutSession` now updates the same attendance record with `checkOutAt` instead of creating a separate record at checkout time.
+- `WorkoutSession` and `AttendanceRecord` domain types now include gym/session/geofence metadata used by Firestore reads.
+
+Verification:
+
+- `npm run typecheck` passes.
+- `npm run build` passes.
+
+---
+
 ## Latest Update - 2026-05-18: Admin portal gap fixes (session 8)
 
 ### Multi-gym write paths fixed

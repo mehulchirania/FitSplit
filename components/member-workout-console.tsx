@@ -398,16 +398,25 @@ export function MemberWorkoutConsole({
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) =>
         navigator.geolocation
-          ? navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000 })
-          : reject(new Error("Geolocation unavailable"))
-      ).catch(() => null);
+          ? navigator.geolocation.getCurrentPosition(resolve, reject, {
+              enableHighAccuracy: true,
+              maximumAge: 0,
+              timeout: 10000
+            })
+          : reject(new Error("Location permission is required to start workout."))
+      );
 
-      if (position) {
-        formData.set("latitude", String(position.coords.latitude));
-        formData.set("longitude", String(position.coords.longitude));
-      }
-    } catch {
-      // GPS unavailable — proceed without location
+      formData.set("latitude", String(position.coords.latitude));
+      formData.set("longitude", String(position.coords.longitude));
+    } catch (error) {
+      setIsSessionPending(false);
+      setSessionStatus({
+        status: "error",
+        message: error instanceof Error
+          ? error.message
+          : "Location permission is required to start workout."
+      });
+      return;
     }
 
     const result = await startWorkoutSession(initialFormActionState, formData);

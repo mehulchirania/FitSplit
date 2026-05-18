@@ -7,7 +7,7 @@ import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
-import { getAdminNotifications, getMemberNotifications, getPrimaryWorkspace, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
+import { getAdminNotifications, getGymDetail, getMemberNotifications, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
 import type { Notification } from "@/types/domain";
 import "./globals.css";
 
@@ -46,7 +46,7 @@ export default async function RootLayout({
 
     const memberId = currentUser.memberId ?? currentUser.uid;
     const [{ gym }] = await Promise.all([
-      getPrimaryWorkspace(),
+      getGymDetail(currentUser.gymId),
       currentUser.role === "admin"
         ? getUnreadContactMessageCount().then((n) => { unreadInboxCount = n; })
         : Promise.resolve(),

@@ -8,9 +8,9 @@ import {
   getActiveProgramAssignments,
   getActiveWorkoutSessions,
   getExerciseCatalog,
+  getGymDetail,
   getMembers,
   getOwnerNotifications,
-  getPrimaryWorkspace,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
@@ -35,7 +35,7 @@ export default async function OwnerDashboard() {
     getOwnerNotifications(gymId),
     getExerciseCatalog(gymId),
     getWorkoutPrograms(gymId),
-    getPrimaryWorkspace(),
+    getGymDetail(gymId),
     getActiveWorkoutSessions(gymId),
     getActiveProgramAssignments(gymId)
   ]);
@@ -55,7 +55,7 @@ export default async function OwnerDashboard() {
           <h1>Training ops command center.</h1>
           <p>
             See who has a plan, who still needs one, what is happening on the
-            floor right now, and where to act next for {gym.name}.
+            floor right now, and where to act next for {gym?.name ?? "your gym"}.
           </p>
           <div className="quick-actions" style={{ marginTop: 14 }}>
             <Link className="button button-primary" href="/owner/members">
