@@ -1,10 +1,16 @@
 "use server";
 
 import { GoogleGenAI } from "@google/genai";
+import { requireAuth } from "./auth";
 import { getLiftLogsForMember, getExerciseCatalog } from "./firebase/read-models";
 
 export async function generateWorkoutSummary(memberId: string) {
   try {
+    const currentUser = await requireAuth();
+    if (currentUser.role === "member" && (currentUser.memberId ?? currentUser.uid) !== memberId) {
+      throw new Error("Not authorized to view this member's data.");
+    }
+
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("GEMINI_API_KEY is not set.");
     }
