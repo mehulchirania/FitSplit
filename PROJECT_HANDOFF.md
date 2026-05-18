@@ -43,6 +43,21 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Latest Update - 2026-05-18: Landing CSS split repair and login button fix
+
+- Respected the new CSS split: `/` imports `app/landing.css`, and the final `lp-*` landing overrides now live there instead of `app/globals.css`.
+- Repaired the landing navbar, hero, responsive grids, partner cards, footer contact form, mobile menu, and modal styles with scoped `lp-*` rules.
+- Fixed the landing Login button stacking/clickability by giving the navbar actions their own z-index and explicit button sizing.
+- Fixed the `/profile` production build issue by importing the client `ProgressiveOverloadChart` directly instead of using `next/dynamic({ ssr: false })` in a Server Component.
+
+Verification:
+
+- `npm run typecheck` passes.
+- `npm run build` passes.
+- `http://localhost:3000/` responds with status `200`.
+
+---
+
 ## Latest Update - 2026-05-18: Gym-aware app shell and strict attendance records
 
 This update supersedes the attendance notes from session 8 where GPS was optional.

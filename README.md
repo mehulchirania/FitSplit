@@ -28,7 +28,7 @@ fitsplit-29215
 
 ## Landing Page
 
-The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel-inspired) built with Framer Motion. Key design tokens live in CSS variables under `.lp-root`. Sections: Navbar, Hero (animated `AppMockup` workout card + `/bg-image.png` background), Feature strip, How it works, Audience pills, Workflow bento, Partners (SHG Gym), Footer + contact form, Login modal. The login modal is wired to the full Firebase Auth flow. All landing CSS is appended to `globals.css` under the `lp-*` prefix and does not affect the authenticated app shell.
+The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel-inspired) built with Framer Motion. Key design tokens live in CSS variables under `.lp-root`. Sections: Navbar, Hero (animated `AppMockup` workout card + `/bg-image.png` background), Feature strip, How it works, Audience pills, Workflow bento, Partners (SHG Gym + Titan V2 Fitness), Footer + contact form, Login modal. The login modal is wired to the full Firebase Auth flow. Landing-only CSS lives in `app/landing.css` under the `lp-*` prefix and does not affect the authenticated app shell.
 
 ## Member Dashboard
 
@@ -64,6 +64,7 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - Member list (`/owner/members`) shows phone number, join date, and a colour-coded Active/Inactive status badge per row.
 - Custom plan builder supports multiple workout days (up to 7): add/remove days, per-day exercise picker, title and sets/reps per day.
 - `WorkspaceSwitcher` removed from owner pages (owners have one gym); kept on admin page for gym management link.
+- Landing CSS is split into `app/landing.css`; `/` imports it directly and the repaired navbar/login modal styles are scoped to `lp-*`.
 
 ## Demo Login Credentials
 
