@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import type { Member } from "@/types/domain";
+import { updateProfileMetrics } from "@/lib/firebase/actions";
 
 export function EditableMetrics({ member }: { member: Member }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -9,6 +10,8 @@ export function EditableMetrics({ member }: { member: Member }) {
   const [age, setAge] = useState(member.age?.toString() || "");
   const [weight, setWeight] = useState(member.weightKg?.toString() || "");
   const [height, setHeight] = useState(member.heightCm?.toString() || "");
+  const [saveError, setSaveError] = useState("");
+  const [isPending, startTransition] = useTransition();
 
   const bmiValue = weight && height ? Number(weight) / Math.pow(Number(height) / 100, 2) : null;
   const bmi = bmiValue ? bmiValue.toFixed(1) : "--";
@@ -21,10 +24,31 @@ export function EditableMetrics({ member }: { member: Member }) {
     return "var(--danger)";
   };
 
+  function handleSave(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setSaveError("");
+    const formData = new FormData();
+    formData.set("memberId", member.id);
+    formData.set("fullName", member.fullName);
+    formData.set("email", member.email);
+    formData.set("phone", member.phone ?? "");
+    if (age) formData.set("age", age);
+    if (weight) formData.set("weightKg", weight);
+    if (height) formData.set("heightCm", height);
+    startTransition(async () => {
+      const result = await updateProfileMetrics({ status: "idle", message: "" }, formData);
+      if (result.status === "success") {
+        setIsEditing(false);
+      } else {
+        setSaveError(result.message);
+      }
+    });
+  }
+
   if (isEditing) {
     return (
       <form
-        onSubmit={(e) => { e.preventDefault(); setIsEditing(false); }}
+        onSubmit={handleSave}
         style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr auto", gap: "10px", alignItems: "end" }}
       >
         {(["Age", "Weight (kg)", "Height (cm)"] as const).map((label, i) => {
@@ -43,13 +67,18 @@ export function EditableMetrics({ member }: { member: Member }) {
             </label>
           );
         })}
-        <div style={{ display: "flex", gap: "6px", paddingBottom: "0" }}>
-          <button type="submit" className="button button-primary" style={{ padding: "8px 14px", fontSize: "0.84rem", minHeight: "36px" }}>
-            Save
-          </button>
-          <button type="button" onClick={() => setIsEditing(false)} className="button button-secondary" style={{ padding: "8px 10px", fontSize: "0.84rem", minHeight: "36px" }}>
-            ✕
-          </button>
+        <div style={{ display: "flex", gap: "6px", paddingBottom: "0", flexDirection: "column", alignItems: "stretch" }}>
+          <div style={{ display: "flex", gap: "6px" }}>
+            <button type="submit" disabled={isPending} className="button button-primary" style={{ padding: "8px 14px", fontSize: "0.84rem", minHeight: "36px" }}>
+              {isPending ? "Saving…" : "Save"}
+            </button>
+            <button type="button" onClick={() => { setIsEditing(false); setSaveError(""); }} className="button button-secondary" style={{ padding: "8px 10px", fontSize: "0.84rem", minHeight: "36px" }}>
+              ✕
+            </button>
+          </div>
+          {saveError && (
+            <p style={{ fontSize: "0.78rem", color: "var(--danger)", margin: 0 }}>{saveError}</p>
+          )}
         </div>
       </form>
     );
