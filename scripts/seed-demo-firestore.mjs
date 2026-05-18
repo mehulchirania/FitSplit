@@ -420,7 +420,7 @@ await setDoc("gyms", gymId, {
   ownerUserId: ownerId,
   expiryWarningDays: 7,
   memberCount: members.length,
-  status: "pilot",
+  status: "active",
   updatedAt: now
 });
 
@@ -471,7 +471,7 @@ await setDoc("gyms", dummyGymId, {
   ownerUserId: dummyOwnerId,
   expiryWarningDays: 7,
   memberCount: 0,
-  status: "pilot",
+  status: "active",
   updatedAt: now
 });
 
@@ -594,3 +594,4 @@ for (const link of siteLinks) {
 }
 
 console.log("Seeded FitSplit demo Firestore records.");
+

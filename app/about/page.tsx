@@ -28,14 +28,13 @@ export default async function AboutPage() {
         <aside className="summary-panel">
           <div className="panel-title">
             <h2>
-              <Activity /> Pilot scope
+              <Activity /> Gym workspace
             </h2>
             <span className="status-pill status-active">Sri Shakthi Hanuman Gym</span>
           </div>
           <p>
-            Built as a single-gym pilot with room to expand into multi-gym
-            operations where AI acts like a Semi-Personal Trainer for every
-            member.
+            Built to support active gym workspaces where AI acts like a
+            Semi-Personal Trainer for every member.
           </p>
         </aside>
       </section>

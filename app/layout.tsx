@@ -37,6 +37,7 @@ export default async function RootLayout({
 
   let initials = "";
   let gymName: string | undefined;
+  let gymLogoUrl: string | undefined;
   let unreadInboxCount = 0;
   let notifications: Notification[] = [];
 
@@ -62,6 +63,7 @@ export default async function RootLayout({
         : Promise.resolve()
     ]);
     gymName = gym?.name;
+    gymLogoUrl = gym?.logoUrl;
   }
 
   return (
@@ -96,6 +98,7 @@ export default async function RootLayout({
           <PwaInstallPrompt />
           <SessionTimeout isAuthenticated={Boolean(currentUser)} />
           <AppTopbar
+            gymLogoUrl={gymLogoUrl}
             initials={initials}
             gymName={gymName}
             notifications={notifications}

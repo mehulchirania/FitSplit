@@ -15,12 +15,14 @@ import type { Notification, Role } from "@/types/domain";
 
 export function AppTopbar({
   gymName,
+  gymLogoUrl,
   initials,
   notifications = [],
   role,
   unreadInboxCount = 0
 }: {
   gymName?: string;
+  gymLogoUrl?: string;
   initials?: string;
   notifications?: Notification[];
   role?: Role;
@@ -151,10 +153,21 @@ export function AppTopbar({
             )}
           </button>
           <Link className="brand" href={role === "admin" ? "/admin" : role === "owner" ? "/owner" : role === "member" ? "/member" : "/"}>
-            <span className="theme-logo brand-icon-wrap" aria-hidden="true">
-              <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
-              <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
-            </span>
+            {role === "member" && gymLogoUrl ? (
+              <span className="gym-brand-lockup" aria-label={`FitSplit x ${gymName ?? "gym"}`}>
+                <span className="theme-logo brand-icon-wrap" aria-hidden="true">
+                  <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
+                  <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
+                </span>
+                <span className="gym-brand-x" aria-hidden="true">x</span>
+                <img alt={`${gymName ?? "Gym"} logo`} className="gym-brand-logo" src={gymLogoUrl} />
+              </span>
+            ) : (
+              <span className="theme-logo brand-icon-wrap" aria-hidden="true">
+                <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
+                <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
+              </span>
+            )}
             <strong style={{ fontSize: "1.15rem", letterSpacing: "-0.01em" }}>FitSplit</strong>
           </Link>
         </div>

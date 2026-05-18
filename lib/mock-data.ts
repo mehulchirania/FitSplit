@@ -49,9 +49,10 @@ export const gyms: GymWorkspace[] = [
     slug: "shg",
     ownerName: "Santosh SHG",
     ownerUserId: "santosh-shg",
-    status: "pilot",
+    status: "active",
     expiryWarningDays: 7,
-    memberCount: 4
+    memberCount: 4,
+    logoUrl: "/shg-gym-logo.jpeg"
   },
   {
     id: "dummy-gym",
@@ -59,7 +60,7 @@ export const gyms: GymWorkspace[] = [
     slug: "dummy-gym",
     ownerName: "Dummy Gym Owner",
     ownerUserId: "dummy-gym-owner-1",
-    status: "pilot",
+    status: "active",
     expiryWarningDays: 7,
     memberCount: 0
   }

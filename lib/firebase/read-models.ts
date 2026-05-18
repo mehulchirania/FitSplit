@@ -30,6 +30,14 @@ import {
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 
+function normalizeGymStatus(status: unknown): GymWorkspace["status"] {
+  const value = String(status ?? "active");
+  if (value === "paused" || value === "inactive") {
+    return value;
+  }
+  return "active";
+}
+
 function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspace {
   return {
     id: docId,
@@ -37,9 +45,11 @@ function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspac
     slug: String(data.slug ?? docId),
     ownerName: String(data.ownerName ?? "Gym owner"),
     ownerUserId: String(data.ownerUserId ?? ""),
-    status: String(data.status ?? "pilot") as GymWorkspace["status"],
+    status: normalizeGymStatus(data.status),
     expiryWarningDays: Number(data.expiryWarningDays ?? 7),
     memberCount: Number(data.memberCount ?? 0),
+    logoUrl: data.logoUrl ? String(data.logoUrl) : docId === PRIMARY_GYM_ID ? "/shg-gym-logo.jpeg" : undefined,
+    logoPath: data.logoPath ? String(data.logoPath) : undefined,
     location: data.location ? String(data.location) : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     email: data.email ? String(data.email) : undefined,

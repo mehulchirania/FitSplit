@@ -119,6 +119,30 @@ svg {
   object-fit: cover;
 }
 
+.gym-brand-lockup {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+}
+
+.gym-brand-x {
+  color: var(--text-faint);
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.gym-brand-logo {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: block;
+  height: 36px;
+  object-fit: contain;
+  padding: 3px;
+  width: 36px;
+}
+
 .theme-logo-light {
   opacity: 0;
 }
@@ -6665,6 +6689,94 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 .admin-gym-table tr:last-child td {
   border-bottom: none;
+}
+
+.gym-logo-manager {
+  gap: 16px;
+}
+
+.gym-logo-current,
+.gym-logo-editor {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.gym-brand-preview {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  min-height: 74px;
+}
+
+.gym-brand-preview > img,
+.gym-logo-placeholder {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: block;
+  height: 58px;
+  object-fit: contain;
+  padding: 5px;
+  width: 58px;
+}
+
+.gym-brand-preview > span:not(.gym-logo-placeholder) {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.gym-logo-placeholder {
+  align-items: center;
+  color: var(--text-soft);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+}
+
+.gym-logo-editor {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.gym-logo-canvas {
+  aspect-ratio: 1;
+  background: #0a0a0a;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  display: block;
+  max-width: 280px;
+  width: 100%;
+}
+
+.gym-logo-empty {
+  color: var(--text-faint);
+  font-size: 0.84rem;
+  font-weight: 700;
+  max-width: 220px;
+  position: absolute;
+  text-align: center;
+}
+
+.gym-logo-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.gym-logo-controls label {
+  color: var(--text-soft);
+  display: grid;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.gym-logo-controls input[type="range"] {
+  accent-color: var(--brand);
 }
 
 /* Admin profile card */

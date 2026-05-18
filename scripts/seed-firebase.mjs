@@ -28,7 +28,7 @@ async function seedWorkspace() {
       slug: gymId,
       ownerUserId: ownerId,
       expiryWarningDays: 7,
-      status: "pilot",
+      status: "active",
       updatedAt: new Date().toISOString()
     },
     { merge: true }
@@ -204,3 +204,4 @@ const exerciseIdMap = await seedExercises();
 await seedSplitTemplates(exerciseIdMap);
 
 console.log("Firebase seed complete for Sri Shakthi Hanuman Gym.");
+

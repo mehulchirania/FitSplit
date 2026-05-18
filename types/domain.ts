@@ -22,9 +22,11 @@ export type GymWorkspace = {
   slug: string;
   ownerName: string;
   ownerUserId: string;
-  status: "active" | "pilot" | "paused" | "inactive";
+  status: "active" | "paused" | "inactive";
   expiryWarningDays: number;
   memberCount: number;
+  logoUrl?: string;
+  logoPath?: string;
   location?: string;
   phone?: string;
   email?: string;

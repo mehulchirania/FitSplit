@@ -58,6 +58,28 @@ function assertValidPin(pin: string) {
   }
 }
 
+function normalizeGymStatusInput(value: FormDataEntryValue | null) {
+  const status = String(value ?? "active");
+  if (status === "paused" || status === "inactive") {
+    return status;
+  }
+  return "active";
+}
+
+function parsePngDataUrl(dataUrl: string) {
+  const match = dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+  if (!match?.[1]) {
+    throw new Error("Logo must be saved as a PNG preview before uploading.");
+  }
+
+  const buffer = Buffer.from(match[1], "base64");
+  if (buffer.byteLength > 900_000) {
+    throw new Error("Logo is too large. Use the cropper preview before saving.");
+  }
+
+  return buffer;
+}
+
 function memberAuthEmail(memberId: string) {
   return `${memberId}@members.fitsplit.app`;
 }
@@ -308,7 +330,8 @@ export async function ensurePrimaryWorkspace() {
       slug: PRIMARY_GYM_ID,
       ownerUserId: PRIMARY_OWNER_ID,
       expiryWarningDays: 7,
-      status: "pilot",
+      status: "active",
+      logoUrl: "/shg-gym-logo.jpeg",
       updatedAt: now
     },
     { merge: true }
@@ -1299,7 +1322,7 @@ export async function createGymWorkspace(
       ownerName: "",
       ownerUserId: "",
       expiryWarningDays: 7,
-      status: String(formData.get("status") ?? "active"),
+      status: normalizeGymStatusInput(formData.get("status")),
       location: String(formData.get("location") ?? "").trim(),
       phone: String(formData.get("phone") ?? "").trim(),
       email: String(formData.get("email") ?? "").trim().toLowerCase(),
@@ -1497,6 +1520,54 @@ export async function updateGymDetails(
   }
 }
 
+export async function updateGymLogo(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { db, storage } = requireFirebaseServices();
+    const gymId = requireText(formData, "gymId", "Gym ID");
+    const logoDataUrl = requireText(formData, "logoDataUrl", "Logo preview");
+    const buffer = parsePngDataUrl(logoDataUrl);
+    const now = new Date().toISOString();
+    const token = randomUUID();
+    const logoPath = `gym-logos/${gymId}/logo-512.png`;
+    const bucket = storage.bucket();
+
+    await bucket.file(logoPath).save(buffer, {
+      contentType: "image/png",
+      metadata: {
+        cacheControl: "public, max-age=31536000",
+        metadata: {
+          firebaseStorageDownloadTokens: token
+        }
+      }
+    });
+
+    const logoUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(logoPath)}?alt=media&token=${token}`;
+
+    await db.collection(collectionPaths.gyms).doc(gymId).set(
+      {
+        logoPath,
+        logoUrl,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/admin");
+    revalidatePath("/admin/gyms");
+    revalidatePath(`/admin/gyms/${gymId}`);
+    revalidatePath("/member");
+
+    return success("Gym logo updated.");
+  } catch (error) {
+    return failure(error, "Unable to update gym logo.");
+  }
+}
+
 export async function setGymStatus(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
@@ -1506,7 +1577,7 @@ export async function setGymStatus(
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const gymId = requireText(formData, "gymId", "Gym ID");
-    const status = requireText(formData, "status", "Status") as any;
+    const status = normalizeGymStatusInput(formData.get("status"));
     const isActive = status === "active";
     const now = new Date().toISOString();
 

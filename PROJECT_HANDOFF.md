@@ -6,8 +6,8 @@
 
 **Problems to fix:**
 1. `/admin/gyms` — after deleting a gym a 404 appears (no redirect after delete on list page)
-2. "Pilot" / "Sri Shakti Hanuman Gym is the active pilot" text appears in 5 places — remove all
-3. Admin dashboard (`/admin`) — 3 useless color cards, redundant "Manage gyms" button x2, "Pilot" card, tiny text inside big cards
+2. "Initial rollout" / "Sri Shakti Hanuman Gym is the active initial rollout" text appears in 5 places — remove all
+3. Admin dashboard (`/admin`) — 3 useless color cards, redundant "Manage gyms" button x2, "Initial rollout" card, tiny text inside big cards
 4. Admin gyms list (`/admin/gyms`) — inline edit forms per gym clutters the list; editing lives on the detail page
 5. Admin topnav — shows `Admin | Dashboard | Members | Workout Programs | Exercise Catalog`; admin shouldn't have owner-specific links mixed in
 6. Profile page — admin avatar shows "FA" (derived from name like "FitSplit Admin"); no change email; UID displayed in full looks broken; page has nothing useful besides password change
@@ -21,10 +21,10 @@
 |---|------|--------|
 | 1 | `lib/firebase/actions.ts` | Add `updateCatalogExercise` (edit name, muscle, equipment, instructions, thumbnail, videoUrl) |
 | 2 | `lib/firebase/actions.ts` | Add `changeAdminEmail` (admin email + profile doc update) |
-| 3 | `lib/firebase/actions.ts` | Fix `deleteGymWorkspace` error message (remove SHG pilot reference) |
+| 3 | `lib/firebase/actions.ts` | Fix `deleteGymWorkspace` error message (remove SHG initial rollout reference) |
 | 4 | `components/main-nav.tsx` | Admin nav → `Dashboard /admin | Gyms /admin/gyms | Inbox /admin/inbox` (remove /owner/* from admin nav) |
-| 5 | `app/admin/page.tsx` | Full redesign: compact stat strip (gyms, active, members), clean gym table, remove useless color cards and "Pilot" |
-| 6 | `app/admin/gyms/page.tsx` | Remove pilot/SHG text, remove inline edit forms (they live on detail page), add `successRedirect` to delete |
+| 5 | `app/admin/page.tsx` | Full redesign: compact stat strip (gyms, active, members), clean gym table, remove useless color cards and "Initial rollout" |
+| 6 | `app/admin/gyms/page.tsx` | Remove initial rollout/SHG text, remove inline edit forms (they live on detail page), add `successRedirect` to delete |
 | 7 | `app/owner/programs/page.tsx` | Programs gallery first (primary), `CustomPlanBuilder` at bottom as secondary "Create Program" section; remove SHG text |
 | 8 | `app/owner/exercises/page.tsx` | Catalog first grouped by muscle; each exercise has `<details>` edit panel; "Add exercise" at bottom; remove SHG text |
 | 9 | `app/profile/page.tsx` | Admin section: avatar with proper initials/icon, truncated UID, change-email form, change-password form; display name edit |
@@ -40,6 +40,23 @@ This project is maintained by two AI co-developers — **Claude** and **Codex** 
 2. Keep `README.md` Current Status and Features sections accurate.
 
 This file is the canonical handoff document. Read it first when starting any new session.
+
+---
+
+## Latest Update - 2026-05-18: Gym logo management and initial rollout status removal
+
+- Removed user-facing `initial rollout` status handling. Gym status is now active, paused, or inactive; legacy Firestore/mock `initial rollout` values normalize to `active` on read.
+- SHG mock and primary workspace defaults now use `status: "active"` and SHG gets `/shg-gym-logo.jpeg` as the fallback logo.
+- Added `logoUrl` and `logoPath` fields to `GymWorkspace`.
+- Added admin gym logo management on `/admin/gyms/[gymId]`: upload an image, preview the FitSplit x gym lockup, crop via move sliders, resize via zoom slider, then save a 512px PNG.
+- Added `updateGymLogo` server action that uploads the processed PNG to Firebase Storage and stores the download URL/path on the gym document.
+- Member topbar now shows `FitSplit x gym-logo` for members whose gym has a logo.
+- Reworded About/admin copy to remove initial rollout references.
+
+Verification:
+
+- `npm run typecheck` passes.
+- `npm run build` passes.
 
 ---
 
@@ -140,7 +157,7 @@ When Firebase Admin is configured but a Firestore snapshot is empty, read models
 `endWorkoutSession` now creates an `attendanceRecords` document on each session completion (non-fatal — attendance write failure does not block the session end).
 
 ### Dead code removed
-- `isLegacyPilotWorkspace` function removed from `read-models.ts` (filter was already removed in a prior session; function was orphaned)
+- `isLegacyInitial rolloutWorkspace` function removed from `read-models.ts` (filter was already removed in a prior session; function was orphaned)
 
 Verification: `npm run typecheck` passes clean.
 
@@ -676,9 +693,9 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
   - `npm.cmd run typecheck`
   - `npm.cmd run build`
 
-## Latest Update - 2026-05-12: SHG Gym Pilot Rename + Partner Branding
+## Latest Update - 2026-05-12: SHG Gym Initial rollout Rename + Partner Branding
 
-- Renamed the primary pilot workspace from the earlier gym identity to `Sri Shakthi Hanuman Gym`.
+- Renamed the primary initial rollout workspace from the earlier gym identity to `Sri Shakthi Hanuman Gym`.
 - Standardized the primary gym identifiers:
   - Gym id / slug: `shg`
   - Owner id / username: `santosh-shg`
@@ -690,9 +707,9 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
 - Updated the service worker to stop caching dynamic Next pages/RSC responses, preventing stale loading shells from coming back.
 - Tightened mobile landing navigation so the brand and hamburger stay in one compact row.
 - Added SHG demo staff profiles for two trainers: `shg-trainer-1` and `shg-trainer-2`, both using password `password`.
-- Ensured the SHG demo workspace seeds five editable member profiles and filters the previous legacy pilot gym out of the gyms page.
+- Ensured the SHG demo workspace seeds five editable member profiles and filters the previous legacy initial rollout gym out of the gyms page.
 - Updated mock fallbacks, Firebase seed scripts, auth demo mapping, workspace switcher, owner/admin copy, and read models to use SHG Gym.
-- Removed direct app/docs/script references to the previous pilot gym name.
+- Removed direct app/docs/script references to the previous initial rollout gym name.
 - Verification passed:
   - `npm.cmd run build`
   - `npm.cmd run typecheck`
@@ -793,7 +810,7 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
 - Demo login resolution now uses real Firebase Auth when Admin credentials are configured.
 - Fixed server-render session handling so invalid Firebase session cookies do not attempt cookie mutation during page render.
 - Normalized `santosh-shg` login to `santosh-shg@fitsplit.app`.
-- Member creation is now gym-scoped to the authenticated owner/admin instead of hard-coding the pilot gym.
+- Member creation is now gym-scoped to the authenticated owner/admin instead of hard-coding the initial rollout gym.
 - Logout now signs out the Firebase browser session before clearing the server session.
 - Hardened and deployed Firestore rules:
   - admin can manage all gyms and records.
@@ -1054,7 +1071,7 @@ Use this file as the starting context for future Codex chats.
 
 ## Project
 
-FitSplit is a Next.js gym management app for the Sri Shakti Hanuman Gym pilot gym.
+FitSplit is a Next.js gym management app for the Sri Shakti Hanuman Gym initial rollout gym.
 
 Local project path:
 
@@ -1145,7 +1162,7 @@ Seed Firestore from `lib/workouts.json`:
 npm.cmd run seed:firebase
 ```
 
-Seed Firestore with full demo pilot data:
+Seed Firestore with full demo initial rollout data:
 
 ```bash
 npm.cmd run seed:demo
@@ -1416,7 +1433,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Updated Firestore server actions to return a shared `{ status, message }` state and to catch user-facing validation/write failures instead of throwing raw app errors.
 - Added confirmation and post-update status dialogs for member workout events: Start Workout, End Workout, and Log Lift.
 - Removed membership-dependent UI and stopped creating membership/renewal records from FitSplit. Existing Firestore `memberships` seed data is legacy only and is no longer read by active pages.
-- Renamed the gym selector UI to `Select Gym`; it is a dropdown with Sri Shakti Hanuman Gym as the current pilot option.
+- Renamed the gym selector UI to `Select Gym`; it is a dropdown with Sri Shakti Hanuman Gym as the current initial rollout option.
 - Moved custom exercise creation into a `Custom Workouts` section on `/owner/exercises` and renamed its submit action to `Save custom exercise`.
 - Added a global footer across every page with `Developed with ❤️ by Mehul`.
 - Improved primary navigation flow to Dashboard, Members, Workout Programs, Custom Workouts, and Exercise Catalog.
@@ -1475,7 +1492,7 @@ Manual App Hosting deployment from local source is working and should be used un
 - Added `/admin/gyms` management page for admin users.
 - Admin can now add new gym workspaces, edit existing gym details inline, open a gym detail page, and remove unused gyms.
 - Gym removal is guarded:
-  - Sri Shakti Hanuman Gym cannot be deleted because it is the active pilot gym.
+  - Sri Shakti Hanuman Gym cannot be deleted because it is the active initial rollout gym.
   - Gyms with assigned profiles cannot be removed until staff/members are reassigned or deleted.
 - Removed the old workspace helper copy: `Admin can add more gyms later`.
 - Replaced that copy with `Manage gyms` buttons on the admin dashboard and workspace switcher.
@@ -1605,3 +1622,4 @@ GitHub push passed to:
 ```text
 https://github.com/mehulchirania/FitSplit
 ```
+

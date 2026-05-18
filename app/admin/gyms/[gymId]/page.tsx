@@ -3,9 +3,10 @@ import { notFound } from "next/navigation";
 import { AddStaffForm } from "@/components/add-staff-form";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { GymLogoManager } from "@/components/gym-logo-manager";
 import { UsersRound, Settings } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { deleteGymStaffProfile, deleteGymWithMembers, setGymStatus, updateGymDetails, resetPassword } from "@/lib/firebase/actions";
+import { deleteGymStaffProfile, deleteGymWithMembers, setGymStatus, updateGymDetails, updateGymLogo, resetPassword } from "@/lib/firebase/actions";
 import { getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export default async function GymManagementPage({
           <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Gyms", href: "/admin/gyms" }, { label: gym.name }]} />
           <h1>{gym.name}</h1>
           <p>
-            Control gym-wide settings, manage staff, and monitor rollout status.
+            Control gym-wide settings, manage staff, and monitor workspace status.
           </p>
           <div className="quick-actions">
             <Link className="button button-secondary" href="/admin">
@@ -48,7 +49,7 @@ export default async function GymManagementPage({
           <div className="panel-title">
             <h2><Settings /> Gym Status</h2>
             <span className={`status-pill ${isGymAccessEnabled ? 'status-active' : 'status-neutral'}`}>
-              {gym.status}
+              {isGymAccessEnabled ? "active" : gym.status}
             </span>
           </div>
           <div className="detail-window">
@@ -109,6 +110,8 @@ export default async function GymManagementPage({
             </label>
           </div>
         </ConfirmActionForm>
+
+        <GymLogoManager action={updateGymLogo} currentLogoUrl={gym.logoUrl} gymId={gym.id} gymName={gym.name} />
 
         <div className="form-panel">
           <div className="panel-title">

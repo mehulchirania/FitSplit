@@ -87,7 +87,6 @@ export function AddGymForm() {
               value={formValues.status}
             >
               <option value="active">Active</option>
-              <option value="pilot">Pilot</option>
               <option value="paused">Paused</option>
               <option value="inactive">Inactive</option>
             </select>

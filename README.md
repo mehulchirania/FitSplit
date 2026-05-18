@@ -48,6 +48,9 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - The app has PWA basics: manifest, service worker, matte install prompt, app icons, apple touch icon, and offline shell caching.
 - Admin inbox stores landing Contact Us messages in Firestore with read/unread state.
 - Admin can manage gym workspaces at `/admin/gyms`.
+- Gyms are treated as active, paused, or inactive workspaces. Older setup status values are normalized to `active` on read.
+- Admin gym detail pages include a logo crop/resize uploader that saves a 512px PNG to Firebase Storage and stores the gym `logoUrl` in Firestore.
+- Member top navigation shows a FitSplit x gym-logo lockup when the logged-in member's gym has a logo.
 - Trainers (`staffType: "trainer"`) can view member records and assign programs but cannot create/delete members, reset PINs, toggle access, or create/delete exercises and programs. This is enforced via `requireOwner()` in `lib/auth.ts`.
 - `/profile` is role-split: members see the full profile form with body metrics; admin and owner see a simple identity card with no body metrics.
 - Deleting a member also removes all associated programAssignments, liftLogs, notifications, workoutSessions, and attendanceRecords.
@@ -275,3 +278,4 @@ This project is developed jointly by **Claude** and **Codex**. After every chang
 ## Handoff
 
 See `PROJECT_HANDOFF.md` for full change history, current status, and next steps.
+
