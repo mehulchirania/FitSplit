@@ -7,7 +7,8 @@ import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
-import { getPrimaryWorkspace, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
+import { getMemberNotifications, getPrimaryWorkspace, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
+import type { Notification } from "@/types/domain";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,6 +34,7 @@ export default async function RootLayout({
   let initials = "";
   let gymName: string | undefined;
   let unreadInboxCount = 0;
+  let notifications: Notification[] = [];
 
   if (currentUser) {
     initials = currentUser.fullName
@@ -42,10 +44,14 @@ export default async function RootLayout({
       .slice(0, 2)
       .toUpperCase();
 
+    const memberId = currentUser.memberId ?? currentUser.uid;
     const [{ gym }] = await Promise.all([
       getPrimaryWorkspace(),
       currentUser.role === "admin"
         ? getUnreadContactMessageCount().then((n) => { unreadInboxCount = n; })
+        : Promise.resolve(),
+      currentUser.role === "member"
+        ? getMemberNotifications(memberId).then((r) => { notifications = r.notifications; })
         : Promise.resolve()
     ]);
     gymName = gym?.name;
@@ -93,6 +99,7 @@ export default async function RootLayout({
           <AppTopbar
             initials={initials}
             gymName={gymName}
+            notifications={notifications}
             role={currentUser?.role}
             unreadInboxCount={unreadInboxCount}
           />

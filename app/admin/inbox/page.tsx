@@ -2,6 +2,8 @@ import { getContactMessages } from "@/lib/firebase/read-models";
 import { requireRole } from "@/lib/auth";
 import { markContactMessageRead } from "@/lib/firebase/actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function AdminInboxPage() {
   await requireRole(["admin"]);
   const { messages } = await getContactMessages();

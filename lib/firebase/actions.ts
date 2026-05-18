@@ -1048,6 +1048,15 @@ export async function createOwnerProfile(
     const normalizedStaffType = ["owner", "trainer", "staff"].includes(staffType) ? staffType : "owner";
     const now = new Date().toISOString();
 
+    await upsertAuthUser(auth, {
+      email,
+      fullName,
+      uid: ownerId,
+      role: "owner",
+      gymId,
+      isActive: true
+    });
+
     await db.collection(collectionPaths.profiles).doc(ownerId).set({
       id: ownerId,
       fullName,
@@ -1057,18 +1066,15 @@ export async function createOwnerProfile(
       role: "owner",
       staffType: normalizedStaffType,
       defaultGymId: gymId,
+      avatarInitials: fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
       isActive: true,
       createdAt: now,
       updatedAt: now
-    });
-
-    await upsertAuthUser(auth, { 
-      email, 
-      fullName, 
-      uid: ownerId, 
-      role: "owner", 
-      gymId, 
-      isActive: true 
     });
 
     revalidatePath("/admin");
@@ -1484,6 +1490,7 @@ export async function createCatalogExercise(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
+    await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
@@ -1531,6 +1538,7 @@ export async function createCustomWorkoutProgram(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
+    await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     await ensurePrimaryWorkspace();
     const db = requireFirebase();
