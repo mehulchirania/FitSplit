@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
@@ -51,7 +52,7 @@ export default async function OwnerDashboard() {
     <main className="page">
       <section className="dashboard-header compact-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "20px" }}>
         <div className="header-copy">
-          <p className="eyebrow">{isTrainer ? "Trainer" : isStaff ? "Staff" : "Owner"} dashboard</p>
+          <Breadcrumb crumbs={[{ label: isTrainer ? "Trainer" : isStaff ? "Staff" : "Owner" }, { label: "Dashboard" }]} />
           <h1>Training ops command center.</h1>
           <p>
             See who has a plan, who still needs one, what is happening on the

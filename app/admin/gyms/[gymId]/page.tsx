@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddStaffForm } from "@/components/add-staff-form";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { UsersRound, Settings } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
@@ -32,7 +33,7 @@ export default async function GymManagementPage({
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Admin / Gym Management</p>
+          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Gyms", href: "/admin/gyms" }, { label: gym.name }]} />
           <h1>{gym.name}</h1>
           <p>
             Control gym-wide settings, manage staff, and monitor rollout status.

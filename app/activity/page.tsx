@@ -1,4 +1,5 @@
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { requireAuth } from "@/lib/auth";
 import { getActivityEvents } from "@/lib/firebase/read-models";
 import type { ActivityEvent } from "@/types/domain";
@@ -32,12 +33,12 @@ export default async function ActivityPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Activity</p>
+          <Breadcrumb crumbs={[{ label: "Activity" }]} />
           <h1>{currentUser.role === "member" ? "Your activity feed." : "Full gym activity feed."}</h1>
           <p>
             {currentUser.role === "member"
               ? "Your workout, assignment, profile, and account events stay attached to your FitSplit account."
-              : "All owner, member, workout, assignment, and system events across Sri Shakthi Hanuman Gym, independent of which device is being used."}
+              : "All owner, member, workout, assignment, and system events across your gym, independent of which device is being used."}
           </p>
         </div>
       </section>

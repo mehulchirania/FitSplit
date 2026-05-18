@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AiProgramBrief } from "@/components/ai-program-brief";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell, X } from "@/components/icons";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
@@ -54,7 +55,7 @@ export default async function MemberDetailPage({
     <main className="page">
       <section className="dashboard-header">
         <div className="header-copy">
-          <p className="eyebrow">Member record</p>
+          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Members", href: "/owner/members" }, { label: member.fullName }]} />
           <h1>{member.fullName}</h1>
           <p>
             {member.goal}. Use this workspace to update training profile

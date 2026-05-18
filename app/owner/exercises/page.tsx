@@ -1,3 +1,4 @@
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
@@ -19,7 +20,7 @@ export default async function ExerciseCatalogPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Exercise catalog</p>
+          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Exercise Catalog" }]} />
           <h1>Exercise library</h1>
           <p>
             Owner-managed catalog used to build all workout programs. Members only see exercises that appear in their assigned plan.

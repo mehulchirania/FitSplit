@@ -1,3 +1,4 @@
+import { Breadcrumb } from "@/components/breadcrumb";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
@@ -18,7 +19,7 @@ export default async function ProgramsPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Workout programs</p>
+          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Workout Programs" }]} />
           <h1>Training plans</h1>
           <p>
             All workout programs for your gym. Assign a plan to any member from their profile page.

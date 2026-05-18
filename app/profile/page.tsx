@@ -1,3 +1,4 @@
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireAuth } from "@/lib/auth";
@@ -55,7 +56,7 @@ export default async function ProfilePage() {
       <main className="page">
         <section className="dashboard-header compact-header">
           <div className="header-copy">
-            <p className="eyebrow">Profile</p>
+            <Breadcrumb crumbs={[{ label: "Profile" }]} />
             <h1>Admin account</h1>
             <p>Platform-level administrator. Manages all gym workspaces and staff access.</p>
           </div>
@@ -184,7 +185,7 @@ export default async function ProfilePage() {
       <main className="page">
         <section className="dashboard-header compact-header">
           <div className="header-copy">
-            <p className="eyebrow">Profile</p>
+            <Breadcrumb crumbs={[{ label: "Profile" }]} />
             <h1>{currentUser.fullName}</h1>
             <p>Gym staff profile for {gym?.name ?? "your gym"}.</p>
           </div>
@@ -216,8 +217,8 @@ export default async function ProfilePage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Profile</p>
-          <h1>View Profile</h1>
+          <Breadcrumb crumbs={[{ label: "Profile" }]} />
+          <h1>Your profile</h1>
           <p>
             Keep basic contact and body metrics in one place for owner review
             and future AI-assisted workout planning.

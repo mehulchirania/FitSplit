@@ -1,4 +1,5 @@
 import { AddMemberForm } from "@/components/add-member-form";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
 import { UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
@@ -52,7 +53,7 @@ export default async function MembersPage({
     <main className="page">
       <section className="dashboard-header">
         <div className="header-copy">
-          <p className="eyebrow">Members</p>
+          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Members" }]} />
           <h1>Member training profiles.</h1>
           <p>
             Owners can create member profiles, edit goals, and open each record

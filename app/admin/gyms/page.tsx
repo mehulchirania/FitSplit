@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AddGymForm } from "@/components/add-gym-form";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireRole } from "@/lib/auth";
 import { deleteGymWorkspace } from "@/lib/firebase/actions";
@@ -16,7 +17,7 @@ export default async function ManageGymsPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Admin / Gyms</p>
+          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Gyms" }]} />
           <h1>Gym workspaces</h1>
           <p>
             Add new gym workspaces and remove ones that are no longer needed. Edit gym details and manage staff from each gym's detail page.

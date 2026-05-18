@@ -7977,6 +7977,43 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 .ai-modification-panel h2 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
 
+/* Breadcrumb trail */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.breadcrumb-sep {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+}
+.breadcrumb-link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breadcrumb-link:hover {
+  color: var(--brand);
+}
+.breadcrumb-current {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+
 /* Admin stats strip */
 .admin-stats-strip {
   display: grid;

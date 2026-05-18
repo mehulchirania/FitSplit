@@ -1,3 +1,4 @@
+import { Breadcrumb } from "@/components/breadcrumb";
 import { getContactMessages } from "@/lib/firebase/read-models";
 import { requireRole } from "@/lib/auth";
 import { markContactMessageRead } from "@/lib/firebase/actions";
@@ -13,7 +14,7 @@ export default async function AdminInboxPage() {
     <main className="page">
       <header className="dashboard-header compact-header">
         <div>
-          <p className="eyebrow">Admin Portal</p>
+          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Inbox" }]} />
           <h1>Inbox</h1>
           <p>View landing page inquiries and follow up with potential gyms.</p>
         </div>

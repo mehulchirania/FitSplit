@@ -278,31 +278,54 @@ export function AppTopbar({
             </div>
 
             <nav className="drawer-links" aria-label="Menu links">
-              {role === "admin" || role === "owner" ? (
-                <Link href="/owner" onClick={() => setIsDrawerOpen(false)}>
-                  Owner Flow
-                </Link>
-              ) : null}
               {role === "admin" && (
-                <Link href="/admin/inbox" onClick={() => setIsDrawerOpen(false)} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span>Inbox</span>
-                  {unreadInboxCount > 0 && (
-                    <span style={{ 
-                      background: "var(--primary)", 
-                      color: "var(--primary-foreground)", 
-                      padding: "2px 8px", 
-                      borderRadius: "99px", 
-                      fontSize: "0.75rem",
-                      fontWeight: 700
-                    }}>{unreadInboxCount}</span>
-                  )}
+                <>
+                  <Link href="/admin" onClick={() => setIsDrawerOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <Link href="/admin/gyms" onClick={() => setIsDrawerOpen(false)}>
+                    Gyms
+                  </Link>
+                  <Link
+                    href="/admin/inbox"
+                    onClick={() => setIsDrawerOpen(false)}
+                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                  >
+                    <span>Inbox</span>
+                    {unreadInboxCount > 0 && (
+                      <span style={{
+                        background: "var(--primary)",
+                        color: "var(--primary-foreground)",
+                        padding: "2px 8px",
+                        borderRadius: "99px",
+                        fontSize: "0.75rem",
+                        fontWeight: 700
+                      }}>{unreadInboxCount}</span>
+                    )}
+                  </Link>
+                </>
+              )}
+              {role === "owner" && (
+                <>
+                  <Link href="/owner" onClick={() => setIsDrawerOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <Link href="/owner/members" onClick={() => setIsDrawerOpen(false)}>
+                    Members
+                  </Link>
+                  <Link href="/owner/programs" onClick={() => setIsDrawerOpen(false)}>
+                    Programs
+                  </Link>
+                  <Link href="/owner/exercises" onClick={() => setIsDrawerOpen(false)}>
+                    Exercise Catalog
+                  </Link>
+                </>
+              )}
+              {role === "member" && (
+                <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
+                  Today&apos;s Workout
                 </Link>
               )}
-              {role === "member" ? (
-                <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
-                  Member Today
-                </Link>
-              ) : null}
               <Link href="/activity" onClick={() => setIsDrawerOpen(false)}>
                 Activity
               </Link>

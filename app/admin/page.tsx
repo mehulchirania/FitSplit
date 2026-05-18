@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireRole } from "@/lib/auth";
 import { createOwnerProfile } from "@/lib/firebase/actions";
@@ -18,7 +19,7 @@ export default async function AdminPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <p className="eyebrow">Platform admin</p>
+          <Breadcrumb crumbs={[{ label: "Admin" }]} />
           <h1>Admin Console</h1>
           <p>Manage gym workspaces, staff access, and platform-wide settings.</p>
           <div className="quick-actions">
