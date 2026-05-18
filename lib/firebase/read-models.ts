@@ -904,6 +904,86 @@ export async function getProfileMetrics(memberId: string): Promise<{
   }
 }
 
+export async function getMemberWithProfile(memberId: string): Promise<{
+  member: Member | null;
+  profile: ProfileMetrics;
+  isPersisted: boolean;
+}> {
+  const fallbackMember = mockMembers.find((m) => m.id === memberId) ?? mockMembers[0];
+  const fallbackProfile: ProfileMetrics = {
+    fullName: fallbackMember.fullName,
+    email: fallbackMember.email,
+    phone: fallbackMember.phone,
+    age: 29,
+    gender: "",
+    dob: "",
+    heightCm: 174,
+    weightKg: 72,
+    fitnessGoals: fallbackMember.goal,
+    medicalNotes: "",
+    primarySlot: "A",
+    secondarySlot: "D",
+    injuryNotes: "",
+    assignedTrainer: ""
+  };
+
+  if (!hasFirebaseAdminConfig()) {
+    return {
+      member: fallbackMember,
+      profile: fallbackProfile,
+      isPersisted: false
+    };
+  }
+
+  let doc;
+  try {
+    const { db } = getFirebaseAdminServices();
+    doc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+  } catch {
+    return { member: fallbackMember, profile: fallbackProfile, isPersisted: false };
+  }
+
+  if (!doc.exists) {
+    return { member: fallbackMember, profile: fallbackProfile, isPersisted: false };
+  }
+
+  const data = doc.data() ?? {};
+
+  if (data.defaultGymId !== PRIMARY_GYM_ID || data.role !== "member") {
+    return { member: null, profile: fallbackProfile, isPersisted: true };
+  }
+
+  const member: Member = {
+    id: doc.id,
+    fullName: String(data.fullName),
+    email: String(data.email),
+    phone: String(data.phone ?? ""),
+    joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
+    avatarInitials: String(data.avatarInitials ?? "MB"),
+    goal: String(data.goal ?? ""),
+    isActive: data.isActive !== false
+  };
+
+  const profile: ProfileMetrics = {
+    fullName: String(data.fullName ?? fallbackProfile.fullName),
+    email: String(data.email ?? fallbackProfile.email),
+    phone: String(data.phone ?? fallbackProfile.phone),
+    age: data.age ? Number(data.age) : fallbackProfile.age,
+    gender: String(data.gender ?? fallbackProfile.gender ?? ""),
+    dob: String(data.dob ?? fallbackProfile.dob ?? ""),
+    heightCm: data.heightCm ? Number(data.heightCm) : fallbackProfile.heightCm,
+    weightKg: data.weightKg ? Number(data.weightKg) : fallbackProfile.weightKg,
+    fitnessGoals: String(data.fitnessGoals ?? data.goal ?? fallbackProfile.fitnessGoals ?? ""),
+    medicalNotes: String(data.medicalNotes ?? fallbackProfile.medicalNotes ?? ""),
+    primarySlot: String(data.primarySlot ?? fallbackProfile.primarySlot ?? "A") as ProfileMetrics["primarySlot"],
+    secondarySlot: String(data.secondarySlot ?? fallbackProfile.secondarySlot ?? "D") as ProfileMetrics["secondarySlot"],
+    injuryNotes: String(data.injuryNotes ?? fallbackProfile.injuryNotes ?? ""),
+    assignedTrainer: String(data.assignedTrainer ?? fallbackProfile.assignedTrainer ?? "")
+  };
+
+  return { member, profile, isPersisted: true };
+}
+
 export async function getSiteLinks(): Promise<{
   links: SiteLink[];
   isPersisted: boolean;

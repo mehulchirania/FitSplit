@@ -5,10 +5,9 @@ import {
   getActiveWorkoutSessions,
   getExerciseCatalog,
   getLiftLogsForMember,
-  getMemberDetail,
+  getMemberWithProfile,
   getProgramAssignmentForMember,
   getWorkoutPrograms,
-  getProfileMetrics
 } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -24,21 +23,19 @@ export default async function MemberDashboard() {
   const currentUser = await requireRole(["member"]);
   const currentMemberId = currentUser.memberId ?? currentUser.uid;
   const [
-    { member },
+    { member, profile },
     { assignment },
     { programs },
     { liftLogs },
     { exercises },
     { sessions },
-    { profile }
   ] = await Promise.all([
-    getMemberDetail(currentMemberId),
+    getMemberWithProfile(currentMemberId),
     getProgramAssignmentForMember(currentMemberId),
     getWorkoutPrograms(),
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(),
     getActiveWorkoutSessions(),
-    getProfileMetrics(currentMemberId)
   ]);
 
   if (!member) return null;

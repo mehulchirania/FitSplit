@@ -260,7 +260,7 @@ export function AppTopbar({
               <div>
                 <p className="eyebrow">Menu</p>
                 <h2>FitSplit</h2>
-                <span className="member-meta">FitSplit x SHG Gym</span>
+                {gymName && <span className="member-meta">{gymName}</span>}
               </div>
               <button
                 aria-label="Close menu"
