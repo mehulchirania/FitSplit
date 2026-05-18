@@ -27,6 +27,8 @@ type PendingEvent = {
   message: string;
   run: () => Promise<FormActionState>;
   title: string;
+  liftExerciseId?: string;
+  liftWeight?: number;
 };
 
 function getDefaultDayIndex(dayCount: number) {
@@ -265,12 +267,20 @@ export function MemberWorkoutConsole({
   const [isEventPending, setIsEventPending] = useState(false);
   const [offlineLogsCount, setOfflineLogsCount] = useState(0);
   const [logSuccess, setLogSuccess] = useState(false);
+  const [isNewPR, setIsNewPR] = useState(false);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const liftFormRef = useRef<HTMLFormElement>(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
   );
-  // Removed busyness tracking
+  // Max weight per exercise for PR detection
+  const prMap = liftLogs.reduce<Map<string, number>>((acc, log) => {
+    if (log.weight && log.exerciseId) {
+      acc.set(log.exerciseId, Math.max(acc.get(log.exerciseId) ?? 0, log.weight));
+    }
+    return acc;
+  }, new Map());
+
   const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
   const aiStorageKey = `fitsplit-ai-trainer-${memberId}-${program.id}`;
   const visibleWorkoutDay = workoutMode === "ai" && modification && selectedDay
@@ -417,10 +427,14 @@ export function MemberWorkoutConsole({
     const formData = new FormData(form);
     const exerciseName = getExerciseName(String(formData.get("exerciseId") ?? ""), exercises);
 
+    const exerciseId = String(formData.get("exerciseId") ?? "");
+    const weight = Number(formData.get("weight") ?? 0);
     setPendingEvent({
       confirmLabel: "Log lift",
       message: `This will save a lift entry for ${exerciseName}.`,
       title: "Log this lift?",
+      liftExerciseId: exerciseId,
+      liftWeight: weight,
       run: async () => {
         const newLog: LiftLog = {
           id: `optimistic-${Date.now()}`,
@@ -466,6 +480,9 @@ export function MemberWorkoutConsole({
       return;
     }
 
+    const prevMaxForExercise = pendingEvent.liftExerciseId
+      ? prMap.get(pendingEvent.liftExerciseId) ?? 0
+      : 0;
     setIsEventPending(true);
     const result = await pendingEvent.run().catch((error) => ({
       status: "error" as const,
@@ -475,10 +492,15 @@ export function MemberWorkoutConsole({
     setPendingEvent(null);
     setEventStatus(result);
     if (result.status === "success") {
+      const isNewRecord =
+        pendingEvent.liftExerciseId != null &&
+        pendingEvent.liftWeight != null &&
+        pendingEvent.liftWeight > prevMaxForExercise;
+      setIsNewPR(isNewRecord);
       setLogSuccess(true);
       setShowRestTimer(true);
       liftFormRef.current?.reset();
-      setTimeout(() => setLogSuccess(false), 2400);
+      setTimeout(() => { setLogSuccess(false); setIsNewPR(false); }, 3000);
     }
   }
 
@@ -599,7 +621,7 @@ export function MemberWorkoutConsole({
             {logSuccess && (
               <span style={{ fontSize: "0.8rem", color: "var(--brand)", fontWeight: 600, display: "flex", alignItems: "center", gap: "5px" }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                Set logged!
+                {isNewPR ? "🏆 New PR!" : "Set logged!"}
               </span>
             )}
           </div>
@@ -658,16 +680,30 @@ export function MemberWorkoutConsole({
               </div>
               {liftLogs.length === 0 ? (
                 <p style={{ color: "var(--text-faint)", fontSize: "0.85rem", padding: "12px 0 4px" }}>No sets logged yet. Log your first set above.</p>
-              ) : liftLogs.slice(0, 8).map((log) => (
-                <div key={log.id} role="row">
-                  <span>{getExerciseName(log.exerciseId, exercises)}</span>
-                  <span>{log.weight} kg</span>
-                  <span>{log.sets}</span>
-                  <span>{log.reps}</span>
-                </div>
-              ))}
+              ) : liftLogs.slice(0, 8).map((log) => {
+                const isPR = log.weight != null && log.exerciseId && prMap.get(log.exerciseId) === log.weight;
+                return (
+                  <div key={log.id} role="row">
+                    <span>{getExerciseName(log.exerciseId, exercises)}{isPR && <span title="Personal record" style={{ marginLeft: "4px" }}>🏆</span>}</span>
+                    <span>{log.weight} kg</span>
+                    <span>{log.sets}</span>
+                    <span>{log.reps}</span>
+                  </div>
+                );
+              })}
             </div>
           </details>
+
+          {liftLogs.length > 0 && (
+            <details style={{ marginTop: "14px", padding: "12px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", background: "var(--bg-elevated)" }}>
+              <summary style={{ cursor: "pointer", fontWeight: 600, color: "var(--text)", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span className="status-pill status-neutral">Progress Chart</span>
+              </summary>
+              <div style={{ marginTop: "16px" }}>
+                <ProgressChart exercises={exercises} liftLogs={liftLogs} />
+              </div>
+            </details>
+          )}
         </div>
 
         <div className="injury-card">
