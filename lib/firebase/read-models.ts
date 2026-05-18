@@ -305,14 +305,15 @@ export async function getMembers(gymId?: string): Promise<{
 
   const members: Member[] = profileSnapshot.docs.map((doc) => {
     const data = doc.data();
+    const name = String(data.fullName ?? "");
     return {
       id: doc.id,
-      fullName: String(data.fullName),
+      fullName: name,
       email: String(data.email),
       phone: String(data.phone ?? ""),
       joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
-      avatarInitials: String(data.avatarInitials ?? "MB"),
-      goal: String(data.goal ?? "Stored in Firebase"),
+      avatarInitials: String(data.avatarInitials ?? name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB"),
+      goal: String(data.goal ?? "General fitness"),
       isActive: data.isActive !== false
     };
   });
@@ -360,14 +361,15 @@ export async function getMemberDetail(memberId: string): Promise<{
     return { member: null, isPersisted: true };
   }
 
+  const memberName = String(data.fullName ?? "");
   const member: Member = {
     id: profileDoc.id,
-    fullName: String(data.fullName),
+    fullName: memberName,
     email: String(data.email),
     phone: String(data.phone ?? ""),
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
-    avatarInitials: String(data.avatarInitials ?? "MB"),
-    goal: String(data.goal ?? "Stored in Firebase"),
+    avatarInitials: String(data.avatarInitials ?? memberName.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB"),
+    goal: String(data.goal ?? "General fitness"),
     isActive: data.isActive !== false
   };
 

@@ -20,6 +20,20 @@ export function ProgramAssignmentForm({
   const selectedProgram =
     programs.find((program) => program.id === selectedProgramId) ?? programs[0];
 
+  if (programs.length === 0) {
+    return (
+      <div className="form-panel">
+        <h2>Assign program</h2>
+        <p style={{ color: "var(--text-soft)", marginBottom: 16 }}>
+          No workout programs exist for this gym yet. Create a program first, then return here to assign it.
+        </p>
+        <a className="button button-primary" href="/owner/programs">
+          Go to programs
+        </a>
+      </div>
+    );
+  }
+
   return (
     <ConfirmActionForm
       action={assignProgramToMember}
