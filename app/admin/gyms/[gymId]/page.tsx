@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddStaffForm } from "@/components/add-staff-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { UsersRound, Bell, Settings } from "@/components/icons";
+import { UsersRound, Settings } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { deleteGymStaffProfile, setGymStatus, updateGymDetails, resetPassword } from "@/lib/firebase/actions";
 import { getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
@@ -91,7 +92,7 @@ export default async function GymManagementPage({
               <input name="email" defaultValue={gym.email} type="email" />
             </label>
           </div>
-          <h3 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-muted)' }}>Social Profiles</h3>
+          <h3 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-soft)' }}>Social Profiles</h3>
           <div className="form-grid">
             <label>
               Instagram
@@ -134,8 +135,23 @@ export default async function GymManagementPage({
               <input name="status" type="hidden" value={isGymAccessEnabled ? 'inactive' : 'active'} />
             </ConfirmActionForm>
           </div>
-          <p style={{ marginTop: 12, color: "var(--text-muted)" }}>
+          <p style={{ marginTop: 12, color: "var(--text-soft)" }}>
             Disabled gyms block owner, trainer, staff, and member logins by deactivating their profiles and Firebase Auth access.
+          </p>
+        </div>
+      </section>
+
+      <section className="content-grid" style={{ marginTop: 16 }}>
+        <AddStaffForm gymId={gym.id} />
+        <div className="form-panel">
+          <h2>Staff roles</h2>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-soft)", lineHeight: 1.6 }}>
+            <strong>Owner</strong> — full access to member management, programs, and settings.<br />
+            <strong>Trainer</strong> — can view members and assign programs.<br />
+            <strong>Staff</strong> — view-only access to member list.
+          </p>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-faint)", marginTop: 8 }}>
+            All staff log in with their email and the default password <code>password</code>. Use the reset button below to change any password.
           </p>
         </div>
       </section>
@@ -181,7 +197,7 @@ export default async function GymManagementPage({
             </article>
           ))}
           {staff.length === 0 && (
-            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>No staff assigned to this gym yet.</p>
+            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-soft)' }}>No staff assigned to this gym yet.</p>
           )}
         </div>
       </section>

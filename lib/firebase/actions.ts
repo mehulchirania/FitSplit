@@ -983,9 +983,10 @@ export async function toggleMemberAccess(
       console.warn("Member auth access update skipped", error);
     }
     
+    revalidatePath("/owner");
     revalidatePath("/owner/members");
     revalidatePath(`/owner/members/${memberId}`);
-    
+
     return success(`Member access ${isActive ? "enabled" : "disabled"}.`);
   } catch (error) {
     return failure(error, "Unable to toggle member access.");

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AiProgramBrief } from "@/components/ai-program-brief";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Dumbbell, X } from "@/components/icons";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
@@ -7,7 +8,6 @@ import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
 import {
   deleteMemberProfile,
-  generateAndAssignProgram,
   resetPassword,
   toggleMemberAccess,
   updateMemberProfile
@@ -134,25 +134,11 @@ export default async function MemberDetailPage({
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>
-        <aside className="form-panel">
-          <h2>AI program brief</h2>
-          <label>
-            Goals and constraints
-            <textarea defaultValue={`${member.goal}. 3 days per week. No injuries reported.`} />
-          </label>
-          <ConfirmActionForm
-            action={generateAndAssignProgram}
-            className="inline-action-form"
-            confirmMessage="Gemini will review this member goal against saved workout programs, pick a default program, and assign it."
-            confirmTitle="Generate and assign program?"
-            pendingLabel="Generating..."
-            submitLabel="Generate"
-          >
-            <input name="memberId" type="hidden" value={member.id} />
-            <input name="memberName" type="hidden" value={member.fullName} />
-            <input name="memberGoal" type="hidden" value={member.goal} />
-          </ConfirmActionForm>
-        </aside>
+        <AiProgramBrief
+          defaultGoal={member.goal}
+          memberId={member.id}
+          memberName={member.fullName}
+        />
         
         <ConfirmActionForm
           action={toggleMemberAccess}
@@ -164,7 +150,7 @@ export default async function MemberDetailPage({
           submitLabel={member.isActive ? "Active" : "Inactive"}
         >
           <h2>Access Control</h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
+          <p style={{ marginBottom: "16px", color: "var(--text-soft)" }}>
             {member.isActive 
               ? "Member login is currently enabled. Toggle to make this member inactive." 
               : "Member login is currently disabled. Toggle to make this member active."}
@@ -182,7 +168,7 @@ export default async function MemberDetailPage({
           submitLabel="Reset PIN"
         >
           <h2>Account PIN</h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
+          <p style={{ marginBottom: "16px", color: "var(--text-soft)" }}>
             If a member has forgotten their PIN, you can reset it here. The default reset PIN is '1234'.
           </p>
           <input name="userId" type="hidden" value={member.id} />
@@ -205,7 +191,7 @@ export default async function MemberDetailPage({
           <h2>
             <X /> Delete member
           </h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-muted)" }}>
+          <p style={{ marginBottom: "16px", color: "var(--text-soft)" }}>
             Remove this member only when the profile was created by mistake or is no longer needed.
           </p>
           <input name="memberId" type="hidden" value={member.id} />

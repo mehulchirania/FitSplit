@@ -78,12 +78,13 @@ export function AddMemberForm() {
             />
           </label>
           <label>
-            Phone
+            Phone <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>(optional, 10-digit Indian mobile)</span>
             <input
               autoComplete="tel"
+              inputMode="tel"
               name="phone"
               onChange={(event) => updateValue("phone", event.target.value)}
-              placeholder="+91 ..."
+              placeholder="9876543210"
               value={formValues.phone}
             />
           </label>

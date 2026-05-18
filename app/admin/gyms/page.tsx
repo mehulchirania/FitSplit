@@ -1,8 +1,9 @@
 import Link from "next/link";
+import { AddGymForm } from "@/components/add-gym-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Settings, UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { createGymWorkspace, deleteGymWorkspace, updateGymDetails } from "@/lib/firebase/actions";
+import { deleteGymWorkspace, updateGymDetails } from "@/lib/firebase/actions";
 import { getGymWorkspaces } from "@/lib/firebase/read-models";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 
@@ -45,47 +46,7 @@ export default async function ManageGymsPage() {
       </section>
 
       <section className="content-grid">
-        <ConfirmActionForm
-          action={createGymWorkspace}
-          className="form-panel"
-          confirmMessage="This will create a new gym workspace. Staff can be assigned after the gym is created."
-          confirmTitle="Add new gym?"
-          pendingLabel="Adding gym..."
-          submitLabel="Add gym"
-        >
-          <h2>Add gym</h2>
-          <div className="form-grid">
-            <label>
-              Gym name
-              <input name="name" placeholder="Example Fitness" required />
-            </label>
-            <label>
-              Gym slug
-              <input name="slug" placeholder="example-fitness" />
-            </label>
-            <label>
-              Location
-              <input name="location" placeholder="City, State" />
-            </label>
-            <label>
-              Status
-              <select name="status" defaultValue="active">
-                <option value="active">Active</option>
-                <option value="pilot">Pilot</option>
-                <option value="paused">Paused</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </label>
-            <label>
-              Contact phone
-              <input name="phone" inputMode="tel" />
-            </label>
-            <label>
-              Contact email
-              <input name="email" type="email" />
-            </label>
-          </div>
-        </ConfirmActionForm>
+        <AddGymForm />
 
         <div className="form-panel">
           <h2>How removal works</h2>
