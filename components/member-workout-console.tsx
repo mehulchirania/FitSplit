@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
@@ -266,6 +266,7 @@ export function MemberWorkoutConsole({
   const [offlineLogsCount, setOfflineLogsCount] = useState(0);
   const [logSuccess, setLogSuccess] = useState(false);
   const [showRestTimer, setShowRestTimer] = useState(false);
+  const liftFormRef = useRef<HTMLFormElement>(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
   );
@@ -476,6 +477,7 @@ export function MemberWorkoutConsole({
     if (result.status === "success") {
       setLogSuccess(true);
       setShowRestTimer(true);
+      liftFormRef.current?.reset();
       setTimeout(() => setLogSuccess(false), 2400);
     }
   }
@@ -602,7 +604,7 @@ export function MemberWorkoutConsole({
             )}
           </div>
 
-          <form className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
+          <form ref={liftFormRef} className="lift-log-form" onSubmit={handleLiftLog} style={{ display: "grid", gap: "12px", background: "var(--bg-subtle)", padding: "16px", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
             <input name="memberId" type="hidden" value={memberId} />
             <input name="sessionId" type="hidden" value={`session-${memberId}`} />
 

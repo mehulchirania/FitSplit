@@ -52,7 +52,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-theme="dark" suppressHydrationWarning>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#111111" />
@@ -79,7 +79,7 @@ export default async function RootLayout({
               try {
                 const saved = localStorage.getItem('fitsplit-theme');
                 const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                document.documentElement.dataset.theme = saved || preferred;
+                document.documentElement.dataset.theme = saved || preferred || 'dark';
               } catch (_) {}
             `
           }}

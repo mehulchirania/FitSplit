@@ -69,16 +69,21 @@ export function ExerciseList({
             />
             <div>
               <h3>{exercise.name}</h3>
-              <p>{exercise.instructions}</p>
-              <div className="muscle-targets" aria-label={`${exercise.name} muscle targets`}>
-                <span>Primary: {exercise.muscleGroup}</span>
-                <span>Secondary: {getSecondaryMuscles(exercise).join(", ") || "Stabilizers"}</span>
-              </div>
               <span className="member-meta">
                 {[exercise.muscleGroup, exercise.equipment, exercise.videoSource]
                   .filter(v => v && v !== "none" && v !== "null")
                   .join(" / ")}
               </span>
+              {exercise.instructions && (
+                <details className="exercise-instructions">
+                  <summary>Instructions</summary>
+                  <p>{exercise.instructions}</p>
+                  <div className="muscle-targets" aria-label={`${exercise.name} muscle targets`}>
+                    <span>Primary: {exercise.muscleGroup}</span>
+                    <span>Secondary: {getSecondaryMuscles(exercise).join(", ") || "Stabilizers"}</span>
+                  </div>
+                </details>
+              )}
             </div>
             <span className="exercise-prescription">
               <Video className="inline-icon" /> {getPrescription(item)}

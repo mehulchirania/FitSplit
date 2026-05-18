@@ -70,6 +70,13 @@ Recommended next work:
 
 ---
 
+## Latest Update - 2026-05-18: Phase 1 UI polish
+
+- **Dark mode as default**: `data-theme="dark"` now set on `<html>` at SSR time; inline script and `ThemeToggle` state both default to dark so first-time visitors and server renders are dark without FOUC.
+- **Exercise card collapse**: instructions paragraph moved into a native `<details>`/`<summary>` block with animated arrow indicator; name + meta always visible, instructions expand on tap. CSS added under `.exercise-instructions`.
+- **Log Set form reset**: `liftFormRef` wired to the lift form; `form.reset()` called after a successful log submission so the weight field clears automatically.
+- **No PDF button found**: searched codebase — no PDF-related code exists; likely a browser extension artifact. Leaving note in handoff only.
+
 ## Latest Update - 2026-05-17: Documentation baseline cleanup
 
 - Follow-up: added Titan V2 Fitness to the public landing page Partners section in the same card format as SHG Gym.

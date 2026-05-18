@@ -732,6 +732,35 @@ p {
   margin-bottom: 0;
 }
 
+.exercise-instructions {
+  margin-top: 6px;
+}
+.exercise-instructions summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  user-select: none;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.exercise-instructions summary::-webkit-details-marker { display: none; }
+.exercise-instructions summary::before {
+  content: "▸";
+  font-size: 0.7rem;
+  transition: transform 140ms;
+}
+.exercise-instructions[open] summary::before {
+  transform: rotate(90deg);
+}
+.exercise-instructions p {
+  margin: 8px 0 4px;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
 .detail-window {
   border-top: 1px solid var(--border);
   display: grid;
