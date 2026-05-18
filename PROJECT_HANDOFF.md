@@ -43,6 +43,22 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Latest Update - 2026-05-18: Protected route redirect fix for admin opening
+
+- Added `middleware.ts` to redirect unauthenticated protected routes (`/admin`, `/owner`, `/member`, `/profile`, `/activity`, `/about`) before Server Components render.
+- Fixed the dev-only broken shell where `/admin` could show only app chrome/topbar while the page was redirecting.
+- `AppTopbar` and `BackButton` now hide when there is no authenticated role, preventing public/protected redirect pages from showing authenticated chrome.
+- Restarted the local dev server on port `3000`.
+
+Verification:
+
+- Unauthenticated `GET /admin` returns `307` to `/`.
+- Admin-cookie request to `/admin` renders `Admin Console`.
+- `npm run typecheck` passes.
+- `npm run build` passes.
+
+---
+
 ## Latest Update - 2026-05-18: Landing CSS split repair and login button fix
 
 - Respected the new CSS split: `/` imports `app/landing.css`, and the final `lp-*` landing overrides now live there instead of `app/globals.css`.

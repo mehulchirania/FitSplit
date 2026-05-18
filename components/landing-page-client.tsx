@@ -792,6 +792,8 @@ export function LandingPageClient() {
                   src="/shg-gym-logo.jpeg"
                   alt="Sri Shakthi Hanuman Gym logo"
                   className="lp-partner-logo"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="lp-partner-copy">
                   <h3 className="lp-h3">Sri Shakthi Hanuman Gym</h3>
@@ -808,6 +810,8 @@ export function LandingPageClient() {
                   src="/titan-v2-fitness-logo.svg"
                   alt="Titan V2 Fitness logo"
                   className="lp-partner-logo"
+                  loading="lazy"
+                  decoding="async"
                 />
                 <div className="lp-partner-copy">
                   <h3 className="lp-h3">Titan V2 Fitness</h3>
@@ -829,7 +833,7 @@ export function LandingPageClient() {
             {/* Brand col */}
             <div className="lp-footer-brand">
               <div className="lp-brand">
-                <img src="/fitsplit-logo-dark.png" alt="FitSplit logo" width="22" height="22" />
+                <img src="/fitsplit-logo-dark.png" alt="FitSplit logo" width="22" height="22" loading="lazy" decoding="async" />
                 <span>FitSplit</span>
               </div>
               <p>Workout delivery and trainer coordination for focused fitness teams.</p>

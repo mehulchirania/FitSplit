@@ -39,6 +39,7 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - Firebase Auth login is handled through a server-side credential flow that resolves usernames, phone numbers, and emails to Firebase Auth emails before creating server-verified session cookies.
 - Admin, owner, and member route access is enforced server-side.
 - Unauthenticated `/` shows the public landing page; authenticated `/` redirects users to their role dashboard.
+- Protected routes use middleware to redirect unauthenticated users before the dashboard Server Components render.
 - Sessions are limited to 2 hours. The client shows a warning banner at T-5 minutes and forces logout when the timer expires.
 - Member login uses registered mobile/email/username plus a 4-digit PIN. Firebase stores this internally as a valid 6+ character password format.
 - Demo usernames still work by resolving to Firebase Auth emails.

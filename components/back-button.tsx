@@ -38,7 +38,7 @@ export function BackButton({ role }: { role?: Role }) {
   const router = useRouter();
   const parentPath = getParentPath(pathname, role);
 
-  if (pathname === "/" || !parentPath) {
+  if (pathname === "/" || !role || !parentPath) {
     return null;
   }
 

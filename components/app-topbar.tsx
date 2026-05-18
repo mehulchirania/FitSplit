@@ -98,7 +98,7 @@ export function AppTopbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isDrawerOpen, isNotificationsOpen, isProfileOpen]);
 
-  if (pathname === "/") {
+  if (pathname === "/" || !role) {
     return null;
   }
 
