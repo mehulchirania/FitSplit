@@ -9,7 +9,12 @@ import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
-import { ProgressChart } from "@/components/progress-chart";
+import dynamic from "next/dynamic";
+
+const ProgressChart = dynamic(() => import("@/components/progress-chart").then(mod => mod.ProgressChart), {
+  ssr: false,
+  loading: () => <p className="form-message">Loading chart...</p>
+});
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 

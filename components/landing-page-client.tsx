@@ -11,7 +11,9 @@ import {
 import type { FormEvent, MouseEvent as ReactMouseEvent } from "react";
 import {
   AnimatePresence,
-  motion,
+  m as motion,
+  LazyMotion,
+  domAnimation,
   useReducedMotion,
   useScroll,
   useTransform,
@@ -457,7 +459,8 @@ export function LandingPageClient() {
   function openLogin() { setMenuOpen(false); setLoginOpen(true); }
 
   return (
-    <div className="lp-root" id="top">
+    <LazyMotion features={domAnimation}>
+      <div className="lp-root" id="top">
       {/* Noise texture overlay */}
       <div className="lp-noise" aria-hidden="true" />
 
@@ -884,5 +887,6 @@ export function LandingPageClient() {
       {/* ── Login modal ──────────────────────────────────────── */}
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
     </div>
+    </LazyMotion>
   );
 }

@@ -3,7 +3,12 @@ import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { requireAuth } from "@/lib/auth";
 import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog, getGymDetail, getGymWorkspaces, getOwnersForGym } from "@/lib/firebase/read-models";
-import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
+import dynamic from "next/dynamic";
+
+const ProgressiveOverloadChart = dynamic(() => import("@/components/progressive-overload-chart").then(mod => mod.ProgressiveOverloadChart), {
+  ssr: false,
+  loading: () => <p className="form-message">Loading chart...</p>
+});
 import { ProfileAiSummary } from "@/components/profile-ai-summary";
 import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisplayName } from "@/lib/firebase/actions";
 

@@ -478,7 +478,7 @@ FitSplit × SHG is built exclusively for **Sri Shakthi Hanuman Gym (SHG)** membe
 - [x] **Member creation and role assignment** — audited; auth guards added to createCatalogExercise and createCustomWorkoutProgram.
 - [x] **Session/role guard audit** — all routes and server actions verified; guards correctly placed.
 - [x] **`getProfileMetrics` + `getMemberDetail` merge** — combined into `getMemberWithProfile` (one Firestore read).
-- [ ] **`globals.css` cleanup** — ~9500 lines with remaining duplicate `.exercise-row` and `.hero-band` blocks. Partial cleanup done (removed duplicate `.topbar`, `.content-grid`, `.panel-title` blocks).
+- [x] **`globals.css` cleanup** — ~9500 lines cleaned up by extracting landing page styles into `landing.css` and cleaning up duplicates.
 
 ### Phase 2: Member Features (SHG-specific)
 
