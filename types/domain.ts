@@ -16,6 +16,18 @@ export type MuscleGroup =
   | "Core"
   | "Cardio";
 
+export type GymNoticeType = "rule" | "tip" | "reminder" | "announcement";
+
+export type GymNotice = {
+  id: string;
+  type: GymNoticeType;
+  title: string;
+  body?: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+};
+
 export type GymWorkspace = {
   id: string;
   name: string;
@@ -36,6 +48,7 @@ export type GymWorkspace = {
   latitude?: number;
   longitude?: number;
   radiusMeters?: number;
+  notices?: GymNotice[];
 };
 
 export type Member = {

@@ -1992,6 +1992,68 @@ export async function resetExerciseVideos(
   }
 }
 
+export async function addGymNotice(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const title = requireText(formData, "title", "Notice title");
+    const type = String(formData.get("type") ?? "tip").trim();
+    const body = String(formData.get("body") ?? "").trim();
+
+    const notice = {
+      id: randomUUID(),
+      type,
+      title,
+      body: body || null,
+      isActive: true,
+      order: Date.now(),
+      createdAt: new Date().toISOString(),
+      createdBy: currentUser.uid,
+    };
+
+    const gymRef = db.collection(collectionPaths.gyms).doc(gymId);
+    const gymDoc = await gymRef.get();
+    const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
+    await gymRef.set({ notices: [...existing, notice] }, { merge: true });
+
+    revalidatePath("/owner");
+    revalidatePath("/member");
+    return success("Notice added.");
+  } catch (error) {
+    return failure(error, "Unable to add notice.");
+  }
+}
+
+export async function deleteGymNotice(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const noticeId = requireText(formData, "noticeId", "Notice ID");
+
+    const gymRef = db.collection(collectionPaths.gyms).doc(gymId);
+    const gymDoc = await gymRef.get();
+    const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
+    const updated = existing.filter((n) => (n as { id?: string }).id !== noticeId);
+    await gymRef.set({ notices: updated }, { merge: true });
+
+    revalidatePath("/owner");
+    revalidatePath("/member");
+    return success("Notice removed.");
+  } catch (error) {
+    return failure(error, "Unable to delete notice.");
+  }
+}
+
 export async function changeAdminEmail(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData

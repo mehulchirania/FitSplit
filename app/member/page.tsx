@@ -1,5 +1,6 @@
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { EditableMetrics } from "@/components/editable-metrics";
+import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
@@ -92,8 +93,7 @@ export default async function MemberDashboard() {
       </header>
 
       {/* ── Workout Console ── */}
-      {program ? (
-        <MemberWorkoutConsole
+      {program ? (<MemberWorkoutConsole
           exercises={exercises}
           initialActiveSessionCount={sessions.length}
           initialInjuryNote={profile.injuryNotes}
@@ -121,6 +121,13 @@ export default async function MemberDashboard() {
               {gym.email}
             </a>
           )}
+        </div>
+      )}
+
+      {/* ── Gym Notice Board ── */}
+      {gym?.notices && gym.notices.length > 0 && (
+        <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 clamp(12px, 3vw, 20px) 40px" }}>
+          <GymNoticeBoard notices={gym.notices} />
         </div>
       )}
     </main>

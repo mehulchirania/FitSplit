@@ -3,6 +3,8 @@ import type {
   AttendanceRecord,
   Difficulty,
   Exercise,
+  GymNotice,
+  GymNoticeType,
   GymWorkspace,
   LiftLog,
   Member,
@@ -39,6 +41,23 @@ function normalizeGymStatus(status: unknown): GymWorkspace["status"] {
 }
 
 function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspace {
+  const rawNotices = Array.isArray(data.notices) ? data.notices : [];
+  const notices: GymNotice[] = rawNotices
+    .filter((n): n is Record<string, unknown> => n != null && typeof n === "object")
+    .map((n, i): GymNotice => ({
+      id: String(n.id ?? `notice-${i}`),
+      type: (["rule", "tip", "reminder", "announcement"] as const).includes(n.type as GymNoticeType)
+        ? (n.type as GymNoticeType)
+        : "tip",
+      title: String(n.title ?? ""),
+      body: n.body ? String(n.body) : undefined,
+      isActive: n.isActive !== false,
+      order: Number(n.order ?? i),
+      createdAt: String(n.createdAt ?? ""),
+    }))
+    .filter((n) => n.title && n.isActive)
+    .sort((a, b) => a.order - b.order);
+
   return {
     id: docId,
     name: String(data.name ?? "Stored gym"),
@@ -58,7 +77,8 @@ function mapWorkspace(docId: string, data: Record<string, unknown>): GymWorkspac
     youtube: data.youtube ? String(data.youtube) : undefined,
     latitude: data.latitude != null ? Number(data.latitude) : undefined,
     longitude: data.longitude != null ? Number(data.longitude) : undefined,
-    radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined
+    radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined,
+    notices: notices.length > 0 ? notices : undefined,
   };
 }
 

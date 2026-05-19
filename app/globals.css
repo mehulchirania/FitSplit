@@ -7654,6 +7654,283 @@ html[data-theme="light"] option {
 }
 
 
+/* ═══════════════════════════════════════════════════════════════════
+   GYM NOTICE BOARD  ·  gnb-* prefix  (member-facing animated ticker)
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* Section label above the card */
+.gnb-section-label {
+  align-items: center;
+  color: var(--text-faint);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 6px;
+  letter-spacing: 0.1em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.gnb-section-label::before {
+  background: var(--gnb-accent, var(--brand));
+  border-radius: 999px;
+  content: "";
+  display: inline-block;
+  height: 6px;
+  width: 6px;
+}
+
+/* Outer card */
+.gnb {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--bg-elevated) 86%, var(--gnb-accent, var(--brand)) 14%) 0%,
+    var(--bg-elevated) 60%
+  );
+  border: 1px solid color-mix(in srgb, var(--gnb-accent, var(--brand)) 25%, var(--border));
+  border-left: 4px solid var(--gnb-accent, var(--brand));
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgb(0 0 0 / 0.16), 0 0 0 1px color-mix(in srgb, var(--gnb-accent, var(--brand)) 8%, transparent) inset;
+  overflow: hidden;
+  padding: 22px 24px 16px;
+  position: relative;
+}
+
+/* Animated content wrapper */
+.gnb-content {
+  min-height: 90px;
+  transition:
+    opacity 300ms ease,
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.gnb-visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.gnb-hidden {
+  opacity: 0;
+  transform: translateX(28px);
+  pointer-events: none;
+}
+
+/* Header row: badge + counter */
+.gnb-header {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.gnb-type-badge {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  padding: 3px 10px;
+  text-transform: uppercase;
+}
+
+.gnb-counter {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Main notice text */
+.gnb-title {
+  color: var(--text);
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.4;
+  margin: 0 0 6px;
+}
+
+.gnb-body {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+/* Footer: dots + arrows */
+.gnb-footer {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.gnb-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.gnb-dot {
+  background: var(--border);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  height: 6px;
+  padding: 0;
+  transition: width 280ms ease, background 280ms ease;
+  width: 6px;
+}
+
+.gnb-dot-active {
+  background: var(--gnb-accent, var(--brand));
+  width: 20px;
+}
+
+.gnb-arrows {
+  display: flex;
+  gap: 4px;
+}
+
+.gnb-arrow {
+  align-items: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: flex;
+  font-size: 1.1rem;
+  height: 28px;
+  justify-content: center;
+  line-height: 1;
+  padding: 0 8px;
+  transition: color 150ms, border-color 150ms, background 150ms;
+}
+
+.gnb-arrow:hover {
+  background: var(--bg-elevated);
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+/* Auto-advance progress bar */
+.gnb-progress {
+  animation: gnb-drain var(--gnb-duration, 7000ms) linear forwards;
+  background: var(--gnb-accent, var(--brand));
+  bottom: 0;
+  height: 2px;
+  left: 0;
+  opacity: 0.5;
+  position: absolute;
+  right: 0;
+}
+
+@keyframes gnb-drain {
+  from { transform: scaleX(1); transform-origin: left; }
+  to   { transform: scaleX(0); transform-origin: left; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GYM NOTICE MANAGER  ·  gnm-* prefix  (owner dashboard panel)
+   ═══════════════════════════════════════════════════════════════════ */
+
+.gnm {
+  display: grid;
+  gap: 14px;
+}
+
+.gnm-empty {
+  color: var(--text-faint);
+  font-size: 0.84rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.gnm-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gnm-row {
+  align-items: flex-start;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  padding: 10px 12px;
+}
+
+.gnm-badge {
+  border: 1px solid transparent;
+  border-radius: 999px;
+  flex-shrink: 0;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+  padding: 3px 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.gnm-row-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.gnm-row-copy strong {
+  color: var(--text);
+  display: block;
+  font-size: 0.84rem;
+  line-height: 1.4;
+}
+
+.gnm-row-copy p {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  margin: 3px 0 0;
+}
+
+.gnm-delete {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  min-height: 28px;
+  padding: 4px 8px;
+}
+
+.gnm-form {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+}
+
+.gnm-form label {
+  color: var(--text-soft);
+  display: grid;
+  font-size: 0.8rem;
+  font-weight: 700;
+  gap: 5px;
+}
+
+.gnm-form input,
+.gnm-form select {
+  background: var(--bg);
+  border-radius: 10px;
+  min-height: 40px;
+}
+
+.gnm-form-row {
+  display: grid;
+}
+
 /* ── Root container ── */
 
 /* ── Noise overlay ── */

@@ -4,6 +4,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
+import { GymNoticeManager } from "@/components/gym-notice-manager";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveProgramAssignments,
@@ -141,6 +142,10 @@ export default async function OwnerDashboard() {
               Start with members who need plans, then open Workout Programs to
               review plan details before assigning.
             </p>
+          </aside>
+
+          <aside className="list-panel">
+            <GymNoticeManager notices={gym?.notices ?? []} />
           </aside>
         </div>
       </section>

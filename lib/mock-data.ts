@@ -54,7 +54,51 @@ export const gyms: GymWorkspace[] = [
     status: "active",
     expiryWarningDays: 7,
     memberCount: 4,
-    logoUrl: "/shg-gym-logo.jpeg"
+    logoUrl: "/shg-gym-logo.jpeg",
+    notices: [
+      {
+        id: "shg-notice-1",
+        type: "rule",
+        title: "Re-rack all weights after every set.",
+        body: "Keep the floor clear so everyone trains safely.",
+        isActive: true,
+        order: 0,
+        createdAt: "2026-01-01"
+      },
+      {
+        id: "shg-notice-2",
+        type: "tip",
+        title: "Warm up for at least 10 minutes before heavy compound lifts.",
+        body: "Joint mobility and activation sets reduce injury risk significantly.",
+        isActive: true,
+        order: 1,
+        createdAt: "2026-01-01"
+      },
+      {
+        id: "shg-notice-3",
+        type: "reminder",
+        title: "Stay hydrated — aim for at least 3 litres of water on training days.",
+        isActive: true,
+        order: 2,
+        createdAt: "2026-01-01"
+      },
+      {
+        id: "shg-notice-4",
+        type: "tip",
+        title: "Log your sets every session. Progressive overload only works when you track it.",
+        isActive: true,
+        order: 3,
+        createdAt: "2026-01-01"
+      },
+      {
+        id: "shg-notice-5",
+        type: "rule",
+        title: "Wipe down equipment with the provided cloth after use.",
+        isActive: true,
+        order: 4,
+        createdAt: "2026-01-01"
+      }
+    ]
   },
   {
     id: "dummy-gym",
