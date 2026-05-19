@@ -32,7 +32,7 @@ The public `/` landing page is a premium dark B2B SaaS experience (Linear/Vercel
 
 ## Member Dashboard
 
-The member `/member` page uses a premium `md-*` layout consistent with the dark landing page aesthetic (`#0A0A0A` background, `#C8F135` lime accent). Layout: a responsive summary hero with contextual greeting, program title, week/sets badges, and inline editable metrics (Age, Weight, Height, BMI); below is the `MemberWorkoutConsole` with day tabs, AI customized workout toggle, cleaned lift logging, lift history/progress panels, and the AI Semi-Personal Trainer injury/limitation workflow.
+The member `/member` page uses a premium `md-*` summary hero plus an isolated `member-*` workout console layout. The console has responsive day tabs, stable exercise cards with video playback actions, contained lift logging, lift history/progress panels, and the AI Semi-Personal Trainer injury/limitation workflow. Member workout styles live in `app/styles/member.css`.
 
 ## Current Status
 
@@ -45,6 +45,8 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - Demo usernames still work by resolving to Firebase Auth emails.
 - New owner-created members also get Firebase Auth accounts with the same UID as their Firestore profile.
 - Firestore is the source for gyms, profiles, exercise catalog, programs, assignments, activity, sessions, lift logs, attendance, contact messages, and site links.
+- Workout assignment merges predefined `lib/workouts.json` splits with gym-created Firestore programs, so owners can assign built-in plans even before creating custom plans. Empty placeholder templates are excluded from assignment.
+- The exercise catalog read model merges predefined `lib/workouts.json` exercises with gym-created Firestore exercises so predefined plans always render exercise names. Optional `video_url` values in `workouts.json` become default exercise videos, with Firestore overrides layered on top.
 - The app has PWA basics: manifest, service worker, matte install prompt, app icons, apple touch icon, and offline shell caching.
 - Admin inbox stores landing Contact Us messages in Firestore with read/unread state.
 - Admin can manage gym workspaces at `/admin/gyms`.
@@ -62,11 +64,15 @@ The member `/member` page uses a premium `md-*` layout consistent with the dark 
 - Admin notification bell is now populated from `recipientRole: "admin"` notifications (password reset requests, etc.).
 - `GymWorkspace.memberCount` is now kept in sync: incremented on member create, decremented on member delete.
 - Member dashboard UI is stabilized for desktop/mobile: the top summary card, profile/notification dropdowns, dark-mode selects, and lift logging panel have dedicated responsive styling.
+- Member workout UI uses isolated `member-*` CSS classes so exercise rows, video actions, and lift logging do not inherit conflicting owner/admin list styles.
 - Members can change their own 4-digit PIN from the `/profile` page. Admin and owner users have a password change form on their `/profile` page.
 - `assignedTrainer` field on the member profile form uses a `<select>` dropdown populated from the gym's trainer roster.
 - Activity events are emitted on member create, access toggle (suspend/restore), and member delete.
 - Member list (`/owner/members`) shows phone number, join date, and a colour-coded Active/Inactive status badge per row.
 - Custom plan builder supports multiple workout days (up to 7): add/remove days, per-day exercise picker, title and sets/reps per day.
+- `/owner/programs` separates predefined plans from custom gym plans and shows mapped catalog exercises, training-day counts, total exercises, and assigned members without stock image cards.
+- `/owner/exercises` supports inline editing with visible open/close controls, admin-only video URL management, and a compact clickable video indicator for exercises that include a form video.
+- Member workout rows show a `Play video` action for exercises with a video URL, including YouTube Shorts links.
 - `WorkspaceSwitcher` removed from owner pages (owners have one gym); kept on admin page for gym management link.
 - Landing CSS is split into `app/landing.css`; `/` imports it directly and the repaired navbar/login modal styles are scoped to `lp-*`.
 
@@ -95,6 +101,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 - Owner dashboard with member management, program assignment, live capacity, notifications, and training coverage.
 - Member-only dashboard with assigned weekly workout, GPS-backed start/end workout check-in, lift logging, attendance, profile metrics, injury/limitation handling, and notifications.
 - Exercise catalog and workout program builder backed by Firestore.
+- Exercise videos can be stored on catalog entries and played from assigned member workout rows.
 - AI injury/modification flow framed as a semi-personal trainer.
 - Activity feed scoped by role: owner/admin see gym-wide activity, members see their own events.
 - Dark mode, responsive UI, mobile bottom navigation, scroll-aware topbars, PWA manifest/service worker, cleaned app icons, and install banner.

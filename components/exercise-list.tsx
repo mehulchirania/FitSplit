@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { X } from "@/components/icons";
+import { Video, X } from "@/components/icons";
 import type { Exercise, WorkoutExercise } from "@/types/domain";
 
 function getPrescription(item: WorkoutExercise) {
   if (item.durationSeconds) {
-    return `${item.sets ?? 1} × ${item.durationSeconds}s`;
+    return `${item.sets ?? 1} x ${item.durationSeconds}s`;
   }
-  return `${item.sets ?? "—"} × ${item.reps ?? "—"}`;
+  return `${item.sets ?? "-"} x ${item.reps ?? "-"}`;
 }
 
 function getSecondaryMuscles(exercise: Exercise) {
@@ -47,6 +47,8 @@ function getYouTubeEmbedUrl(videoUrl: string): string | null {
     if (url.hostname.includes("youtube.com")) {
       const id = url.searchParams.get("v");
       if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      const shortsId = url.pathname.match(/\/shorts\/([^/?]+)/)?.[1];
+      if (shortsId) return `https://www.youtube.com/embed/${shortsId}?autoplay=1&rel=0`;
     }
     if (url.hostname === "youtu.be") {
       const id = url.pathname.slice(1).split("?")[0];
@@ -84,7 +86,7 @@ export function ExerciseList({
                 className="exercise-thumb"
                 style={exercise.thumbnailUrl ? { backgroundImage: `url(${exercise.thumbnailUrl})` } : undefined}
               />
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="exercise-row-copy">
                 <h3>{exercise.name}</h3>
                 <span className="member-meta">
                   {[exercise.muscleGroup, exercise.equipment]
@@ -104,16 +106,15 @@ export function ExerciseList({
                   </details>
                 )}
               </div>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
+              <div className="exercise-row-actions">
                 <span className="exercise-prescription">{getPrescription(item)}</span>
                 {hasVideo && (
                   <button
-                    className="button button-secondary"
+                    className="exercise-video-button"
                     onClick={() => setVideoExercise(exercise)}
-                    style={{ fontSize: "0.75rem", padding: "4px 10px" }}
                     type="button"
                   >
-                    Watch form
+                    <Video /> Play video
                   </button>
                 )}
               </div>
@@ -157,9 +158,9 @@ export function ExerciseList({
               />
             ) : (
               <div style={{ padding: "32px", textAlign: "center", color: "var(--text-soft)" }}>
-                <p>Video URL is not a valid YouTube link.</p>
+                <p>This video source opens outside FitSplit.</p>
                 <a href={videoExercise.videoUrl} rel="noopener noreferrer" style={{ color: "var(--brand)" }} target="_blank">
-                  Open video
+                  Open video source
                 </a>
               </div>
             )}

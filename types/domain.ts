@@ -99,6 +99,7 @@ export type WorkoutProgram = {
   goal: string;
   difficulty: Difficulty;
   daysPerWeek: number;
+  source?: "predefined" | "gym";
   splitType:
     | "ppl_x2"
     | "ppl_upper_lower"

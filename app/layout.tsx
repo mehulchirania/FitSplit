@@ -11,6 +11,8 @@ import { getAdminNotifications, getGymDetail, getMemberNotifications, getUnreadC
 import type { Notification } from "@/types/domain";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
+import "./styles/forms.css";
+import "./styles/member.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });

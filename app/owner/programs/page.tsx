@@ -2,7 +2,12 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
-import { getExerciseCatalog, getWorkoutPrograms } from "@/lib/firebase/read-models";
+import {
+  getActiveProgramAssignments,
+  getExerciseCatalog,
+  getMembers,
+  getWorkoutPrograms
+} from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
@@ -10,10 +15,15 @@ export default async function ProgramsPage() {
   const currentUser = await requireRole(["admin", "owner"]);
   const gymId = currentUser.gymId;
 
-  const [{ catalog, exercises }, { programs }] = await Promise.all([
+  const [{ catalog, exercises }, { programs }, { assignments }, { members }] = await Promise.all([
     getExerciseCatalog(gymId),
-    getWorkoutPrograms(gymId)
+    getWorkoutPrograms(gymId),
+    getActiveProgramAssignments(gymId),
+    getMembers(gymId)
   ]);
+
+  const predefinedCount = programs.filter((program) => program.source !== "gym").length;
+  const customCount = programs.filter((program) => program.source === "gym").length;
 
   return (
     <main className="page">
@@ -32,7 +42,15 @@ export default async function ProgramsPage() {
           </div>
           <div className="detail-window">
             <span>
-              Exercises in catalog
+              Predefined
+              <strong>{predefinedCount}</strong>
+            </span>
+            <span>
+              Custom
+              <strong>{customCount}</strong>
+            </span>
+            <span>
+              Catalog exercises
               <strong>{exercises.length}</strong>
             </span>
           </div>
@@ -40,7 +58,12 @@ export default async function ProgramsPage() {
       </section>
 
       {/* Primary: existing programs */}
-      <WorkoutProgramGallery exercises={exercises} programs={programs} />
+      <WorkoutProgramGallery
+        assignments={assignments}
+        exercises={exercises}
+        members={members}
+        programs={programs}
+      />
 
       {/* Secondary: create a custom program */}
       <section className="list-panel" style={{ marginTop: 20 }}>

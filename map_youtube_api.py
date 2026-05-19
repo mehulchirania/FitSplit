@@ -1,0 +1,91 @@
+import urllib.request
+import urllib.parse
+import json
+import difflib
+import codecs
+import sys
+
+# Ensure stdout supports utf-8
+sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+
+API_KEY = "AIzaSyAE4E7HcJlp1yK0QB12k6qhlajIzGHU_BQ"
+PLAYLIST_ID = "UUerweoBkwQOb_zwx3NfUD1g"
+
+def get_all_videos():
+    videos = {}
+    next_page_token = ""
+    while True:
+        url = f"https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId={PLAYLIST_ID}&maxResults=50&key={API_KEY}"
+        if next_page_token:
+            url += f"&pageToken={next_page_token}"
+            
+        req = urllib.request.Request(url)
+        try:
+            response = urllib.request.urlopen(req).read().decode('utf-8')
+            data = json.loads(response)
+            
+            for item in data.get('items', []):
+                title = item['snippet']['title']
+                video_id = item['snippet']['resourceId']['videoId']
+                videos[video_id] = title
+                
+            next_page_token = data.get('nextPageToken')
+            if not next_page_token:
+                break
+        except Exception as e:
+            print(f"Error fetching videos: {e}")
+            break
+            
+    return videos
+
+all_videos = get_all_videos()
+
+with open('lib/workouts.json', 'r', encoding='utf-8') as f:
+    workouts = json.load(f)
+
+# Collect all exercises
+exercises = []
+for cat, ex_list in workouts['exercise_catalog'].items():
+    exercises.extend(ex_list)
+
+mapped_videos = set()
+unmapped_exercises = []
+
+for ex in exercises:
+    ex_name = ex['name']
+    best_match = None
+    best_score = 0
+    
+    for vid, title in all_videos.items():
+        score = difflib.SequenceMatcher(None, ex_name.lower(), title.lower()).ratio()
+        if ex_name.lower() in title.lower():
+            score += 0.5
+            
+        if score > best_score:
+            best_score = score
+            best_match = vid
+            
+    if best_match and best_score > 0.4:
+        ex['video_url'] = f"https://www.youtube.com/shorts/{best_match}"
+        mapped_videos.add(best_match)
+    else:
+        ex.pop('video_url', None)
+        unmapped_exercises.append(ex_name)
+
+# Identify unmapped videos
+unmapped_videos = []
+for vid, title in all_videos.items():
+    if vid not in mapped_videos:
+        unmapped_videos.append(f"- [{title}](https://www.youtube.com/shorts/{vid})")
+
+with open('lib/workouts.json', 'w', encoding='utf-8') as f:
+    json.dump(workouts, f, indent=2)
+
+with open('unmapped_videos.md', 'w', encoding='utf-8') as f:
+    f.write("# Unmapped Exercises\n")
+    for e in unmapped_exercises:
+        f.write(f"- {e}\n")
+    f.write("\n# Unmapped Videos\n")
+    f.write("\n".join(unmapped_videos))
+
+print(f"Mapped successfully. See unmapped_videos.md for the {len(unmapped_videos)} extra videos.")

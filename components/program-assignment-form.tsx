@@ -19,6 +19,8 @@ export function ProgramAssignmentForm({
   );
   const selectedProgram =
     programs.find((program) => program.id === selectedProgramId) ?? programs[0];
+  const predefinedPrograms = programs.filter((program) => program.source !== "gym");
+  const gymPrograms = programs.filter((program) => program.source === "gym");
 
   if (programs.length === 0) {
     return (
@@ -47,23 +49,45 @@ export function ProgramAssignmentForm({
       <input name="memberId" type="hidden" value={member.id} />
       <input name="memberName" type="hidden" value={member.fullName} />
       <input name="programTitle" type="hidden" value={selectedProgram?.title ?? ""} />
-      <input name="programId" type="hidden" value={selectedProgramId} />
-      <div className="assignment-options" role="radiogroup" aria-label="Workout plans">
-        {programs.map((program) => (
-          <button
-            aria-checked={selectedProgramId === program.id}
-            className={selectedProgramId === program.id ? "assignment-option is-selected" : "assignment-option"}
-            key={program.id}
-            onClick={() => setSelectedProgramId(program.id)}
-            role="radio"
-            type="button"
-          >
-            <span className="status-pill status-neutral">{program.days.length} sessions</span>
-            <strong>{program.title}</strong>
-            <small>{program.goal}</small>
-          </button>
-        ))}
-      </div>
+      <label>
+        Workout program
+        <select
+          name="programId"
+          onChange={(event) => setSelectedProgramId(event.target.value)}
+          required
+          value={selectedProgramId}
+        >
+          {predefinedPrograms.length ? (
+            <optgroup label="Predefined plans">
+              {predefinedPrograms.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.title} - {program.days.length} sessions
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          {gymPrograms.length ? (
+            <optgroup label="Saved gym plans">
+              {gymPrograms.map((program) => (
+                <option key={program.id} value={program.id}>
+                  {program.title} - {program.days.length} sessions
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+        </select>
+      </label>
+      {selectedProgram ? (
+        <div className="assignment-preview">
+          <span className="status-pill status-neutral">
+            {selectedProgram.source === "gym" ? "Saved gym plan" : "Predefined plan"}
+          </span>
+          <strong>{selectedProgram.title}</strong>
+          <small>
+            {selectedProgram.goal} · {selectedProgram.days.length} weekly sessions · {selectedProgram.difficulty}
+          </small>
+        </div>
+      ) : null}
       <p>The selected weekly schedule appears immediately on the member dashboard.</p>
     </ConfirmActionForm>
   );

@@ -4,94 +4,79 @@
       {
         "id": "ch_01",
         "name": "Barbell Bench Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/79Wdpx9b4uY"
+        "mechanic": "Compound"
       },
       {
         "id": "ch_02",
         "name": "Incline Dumbbell Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/oS2Uy3MAbgs"
+        "mechanic": "Compound"
       },
       {
         "id": "ch_03",
         "name": "Pec Deck Fly",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/FeERX9UwspY"
+        "mechanic": "Isolation"
       },
       {
         "id": "ch_04",
         "name": "Cable Crossover",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/CBeLkvo5-ic"
+        "mechanic": "Isolation"
       },
       {
         "id": "ch_05",
         "name": "Decline Barbell Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/oS2Uy3MAbgs"
+        "mechanic": "Compound"
       },
       {
         "id": "ch_06",
         "name": "Machine Chest Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/VHIlmOPMWWs"
+        "mechanic": "Compound"
       },
       {
         "id": "ch_07",
         "name": "Dumbbell Pullover",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/6yYVcIOAERY"
+        "mechanic": "Compound"
       },
       {
         "id": "ch_08",
         "name": "Push-Ups",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/a7_k1upEPjc"
+        "mechanic": "Compound"
       }
     ],
     "Back": [
       {
         "id": "bk_01",
         "name": "Pull-Ups",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/a7_k1upEPjc"
+        "mechanic": "Compound"
       },
       {
         "id": "bk_02",
         "name": "Barbell Row",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/7SzAgsAVzMo"
+        "mechanic": "Compound"
       },
       {
         "id": "bk_03",
         "name": "Lat Pulldown",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/RFgiCDJs8Nk"
+        "mechanic": "Compound"
       },
       {
         "id": "bk_04",
         "name": "Seated Cable Row",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/wAU8VdcRAMQ"
+        "mechanic": "Compound"
       },
       {
         "id": "bk_05",
         "name": "T-Bar Row",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/HRo7m_Dfpxw"
+        "mechanic": "Compound"
       },
       {
         "id": "bk_06",
         "name": "Single Arm Dumbbell Row",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/oS2Uy3MAbgs"
+        "mechanic": "Compound"
       },
       {
         "id": "bk_07",
         "name": "Straight Arm Pulldown",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/YINo3Z-vXAk"
+        "mechanic": "Isolation"
       },
       {
         "id": "bk_08",
@@ -103,32 +88,27 @@
       {
         "id": "lg_01",
         "name": "Barbell Squat",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/dW3zj79xfrc"
+        "mechanic": "Compound"
       },
       {
         "id": "lg_02",
         "name": "Romanian Deadlift",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/hu3jRvTc_po"
+        "mechanic": "Compound"
       },
       {
         "id": "lg_03",
         "name": "Leg Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/1PTD0mfKOQg"
+        "mechanic": "Compound"
       },
       {
         "id": "lg_04",
         "name": "Leg Extension",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/Tae3aeJe5Ks"
+        "mechanic": "Isolation"
       },
       {
         "id": "lg_05",
         "name": "Standing Calf Raises",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/G6hX_z-2S0g"
+        "mechanic": "Isolation"
       },
       {
         "id": "lg_06",
@@ -138,170 +118,143 @@
       {
         "id": "lg_07",
         "name": "Bulgarian Split Squats",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/SdIczSwWM6o"
+        "mechanic": "Compound"
       },
       {
         "id": "lg_08",
         "name": "Lying Hamstring Curls",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/xJqSby6pSO8"
+        "mechanic": "Isolation"
       },
       {
         "id": "lg_09",
         "name": "Seated Calf Raises",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/yuR2ma8f_-k"
+        "mechanic": "Isolation"
       }
     ],
     "Shoulders": [
       {
         "id": "sh_01",
         "name": "Overhead Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/4LBVP2Oe7fg"
+        "mechanic": "Compound"
       },
       {
         "id": "sh_02",
         "name": "Dumbbell Lateral Raise",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/yuR2ma8f_-k"
+        "mechanic": "Isolation"
       },
       {
         "id": "sh_03",
         "name": "Reverse Pec Deck",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/ZzeiSNGJOeE"
+        "mechanic": "Isolation"
       },
       {
         "id": "sh_04",
         "name": "Arnold Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/79Wdpx9b4uY"
+        "mechanic": "Compound"
       },
       {
         "id": "sh_05",
         "name": "Dumbbell Front Raise",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/0sI3Sn-Lxs0"
+        "mechanic": "Isolation"
       },
       {
         "id": "sh_06",
         "name": "Barbell Upright Row",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/0sI3Sn-Lxs0"
+        "mechanic": "Compound"
       },
       {
         "id": "sh_07",
         "name": "Barbell Shrugs",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/B78LZfLXiLg"
+        "mechanic": "Isolation"
       },
       {
         "id": "sh_08",
         "name": "Cable Lateral Raise",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/JlT2xB92lY8"
+        "mechanic": "Isolation"
       }
     ],
     "Biceps": [
       {
         "id": "bi_01",
         "name": "Barbell Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/MEh0dDOFgKE"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_02",
         "name": "Incline Dumbbell Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/oS2Uy3MAbgs"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_03",
         "name": "Hammer Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/EnZZIaPCb8k"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_04",
         "name": "EZ Bar Preacher Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/WyAVZn6_PIY"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_05",
         "name": "Concentration Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/EjUnEEfTSEY"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_06",
         "name": "Cable Bicep Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/7dGvfAjiqM4"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_07",
         "name": "Reverse Barbell Curl",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/HRo7m_Dfpxw"
+        "mechanic": "Isolation"
       },
       {
         "id": "bi_08",
         "name": "High Cable Curls",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/EnZZIaPCb8k"
+        "mechanic": "Isolation"
       }
     ],
     "Triceps": [
       {
         "id": "tr_01",
         "name": "Tricep Pushdown (Straight Bar)",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/WbfNbXBc8FA"
+        "mechanic": "Isolation"
       },
       {
         "id": "tr_02",
         "name": "Overhead Tricep Extension",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/J565P8FzJXA"
+        "mechanic": "Isolation"
       },
       {
         "id": "tr_03",
         "name": "Skull Crushers",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/-qtz5ysUzMM"
+        "mechanic": "Compound"
       },
       {
         "id": "tr_04",
         "name": "Close Grip Bench Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/79Wdpx9b4uY"
+        "mechanic": "Compound"
       },
       {
         "id": "tr_05",
         "name": "Tricep Dips",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/jkTKsIME3Go"
+        "mechanic": "Compound"
       },
       {
         "id": "tr_06",
         "name": "Rope Pushdown",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/-PqzEk57xiw"
+        "mechanic": "Isolation"
       },
       {
         "id": "tr_07",
         "name": "Dumbbell Kickbacks",
-        "mechanic": "Isolation",
-        "video_url": "https://www.youtube.com/shorts/MEh0dDOFgKE"
+        "mechanic": "Isolation"
       },
       {
         "id": "tr_08",
         "name": "JM Press",
-        "mechanic": "Compound",
-        "video_url": "https://www.youtube.com/shorts/79Wdpx9b4uY"
+        "mechanic": "Compound"
       }
     ]
   },

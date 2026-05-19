@@ -43,6 +43,90 @@ This file is the canonical handoff document. Read it first when starting any new
 
 ---
 
+## Latest Update - 2026-05-19: CSS modularization and default exercise video support
+
+- Started splitting feature CSS out of the oversized `app/globals.css`.
+- Moved the isolated member workout layout rules into `app/styles/member.css` and imported it from `app/layout.tsx`.
+- Added shared form helper styles in `app/styles/forms.css`.
+- `lib/workouts.json` exercise entries now support optional `video_url`; `lib/mock-data.ts` maps that into `Exercise.videoUrl` by default.
+- `getExerciseCatalog()` now preserves default `video_url` values from `workouts.json` when Firestore has a legacy blank video field, while still allowing Firestore video overrides.
+- Catalog video editing is admin-only at the UI/action layer. Owners can edit exercise details, but default video source changes are preserved for admin users.
+- Catalog video icons are clickable for users who can access the exercise catalog; assigned workout/program screens use the shared `ExerciseList` video action.
+
+Verification:
+
+- `npm run typecheck` passes.
+- `npm run build` passes.
+- Local dev server restarted at `http://localhost:3000`.
+
+---
+
+## Latest Update - 2026-05-19: Member workout UI rebuild
+
+- Rebuilt the member workout console with isolated `member-*` layout classes to stop shared dashboard/catalog CSS from breaking the member page.
+- Workout content and lift logging now use a stable two-column layout on desktop and a clean stacked layout on mobile.
+- Exercise rows now have fixed card structure: thumbnail, exercise details, prescription, and a prominent `Play video` button for video-enabled exercises.
+- Lift logging is constrained to the side panel with responsive fields, so inputs no longer stretch to the page edge.
+- Video modal z-index and card spacing were tightened for the member page.
+
+Verification:
+
+- `npm run typecheck` passes.
+- Clean `npm run build` passes.
+- Local dev server restarted at `http://localhost:3000`.
+
+---
+
+## Latest Update - 2026-05-19: Exercise catalog video editing and member playback
+
+- Reworked `/owner/exercises` edit rows so each exercise opens a full-width edit panel with a visible `Edit` / `Close edit` toggle.
+- Added a small video indicator icon beside catalog exercises that have a `videoUrl`.
+- Updated catalog exercise saves to stamp the current gym id, `isActive`, and owner metadata so edited predefined exercises remain visible in SHG owner/member reads.
+- Added YouTube Shorts support to the member exercise video modal, so links like `/shorts/...` embed correctly.
+- Repaired the existing Barbell Bench Press Firestore document from the old Titan gym id to `shg`, preserving its video URL for member playback.
+- Tightened member exercise-row CSS so prescription and `Watch form` actions align cleanly on desktop and mobile.
+
+Verification:
+
+- `npm run typecheck` passes.
+- Barbell Bench Press now has `gymId: shg`, `isActive: true`, and its YouTube Shorts video URL in Firestore.
+
+---
+
+## Latest Update - 2026-05-19: Workout programs page redesign
+
+- Reworked `/owner/programs` from stock-image cards into a useful program library.
+- Programs are now split into `Predefined workout plans` and `Custom gym plans`.
+- Each program card shows real mapped catalog exercises, training-day count, exercise count, and assigned member count/names.
+- Removed the misleading `sessions` count and replaced it with `training days` and `exercises`.
+- Removed stock imagery from program cards.
+- Program modal still opens the full weekly schedule with catalog-mapped exercise details.
+
+Verification:
+
+- `npm run typecheck` passes.
+- Clean `npm run build` passes after clearing `.next`.
+- Local `/owner/programs` renders mapped exercises such as Barbell Bench Press, T-Bar Row, and EZ Bar Preacher Curl.
+
+---
+
+## Latest Update - 2026-05-19: Program assignment source merge
+
+- Fixed owner member detail assignment flow so predefined `workouts.json` programs always appear, even when a gym has not created any custom Firestore programs yet.
+- `getWorkoutPrograms()` now merges predefined plans with active gym-created plans from Firestore and tags them as `predefined` or `gym`.
+- Empty predefined placeholder templates are excluded from assignment so AI cannot assign a blank `Custom User Routine`.
+- `getExerciseCatalog()` now merges predefined `workouts.json` exercises with Firestore exercises so predefined plans render exercise names even when Firestore has no exercise catalog rows.
+- Repaired Kabir's active Firestore assignment from the empty custom template to `PPL + Upper/Lower`.
+- Reworked the assign-program UI into a dropdown grouped by `Predefined plans` and `Saved gym plans`, with a concise selected-plan preview.
+- AI program brief now has assignable programs available because Gemini/fallback selection reads the same merged program list.
+
+Verification:
+
+- `npm run typecheck` passes.
+- Local `/owner/members/member-aarav` renders predefined plans in the assign-program dropdown.
+
+---
+
 ## Latest Update - 2026-05-18: Gym logo management and initial rollout status removal
 
 - Removed user-facing `initial rollout` status handling. Gym status is now active, paused, or inactive; legacy Firestore/mock `initial rollout` values normalize to `active` on read.

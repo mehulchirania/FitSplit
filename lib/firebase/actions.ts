@@ -677,36 +677,44 @@ export async function assignProgramToMember(
 }
 
 function pickProgramWithoutAi(programs: WorkoutProgram[], memberGoal: string) {
+  const assignablePrograms = programs.filter((program) =>
+    program.days.some((day) => day.exercises.length > 0)
+  );
+  const programPool = assignablePrograms.length ? assignablePrograms : programs;
   const goal = memberGoal.toLowerCase();
 
   if (goal.includes("strength")) {
-    return programs.find((program) => program.title.toLowerCase().includes("ppl")) ?? programs[0];
+    return programPool.find((program) => program.title.toLowerCase().includes("ppl")) ?? programPool[0];
   }
 
   if (goal.includes("fat") || goal.includes("loss") || goal.includes("weight")) {
     return (
-      programs.find((program) => program.daysPerWeek <= 4) ??
-      programs.find((program) => program.splitType === "ppl_upper_lower") ??
-      programs[0]
+      programPool.find((program) => program.daysPerWeek <= 4) ??
+      programPool.find((program) => program.splitType === "ppl_upper_lower") ??
+      programPool[0]
     );
   }
 
   if (goal.includes("muscle") || goal.includes("hypertrophy") || goal.includes("bulk")) {
     return (
-      programs.find((program) => program.splitType === "ppl_x2") ??
-      programs.find((program) => program.splitType === "combo_x2") ??
-      programs[0]
+      programPool.find((program) => program.splitType === "ppl_x2") ??
+      programPool.find((program) => program.splitType === "combo_x2") ??
+      programPool[0]
     );
   }
 
-  return programs.find((program) => program.splitType === "ppl_upper_lower") ?? programs[0];
+  return programPool.find((program) => program.splitType === "ppl_upper_lower") ?? programPool[0];
 }
 
 async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: string) {
+  const assignablePrograms = programs.filter((program) =>
+    program.days.some((day) => day.exercises.length > 0)
+  );
+  const programPool = assignablePrograms.length ? assignablePrograms : programs;
   const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GEMINI_API_KEY;
 
   if (!apiKey) {
-    return pickProgramWithoutAi(programs, memberGoal);
+    return pickProgramWithoutAi(programPool, memberGoal);
   }
 
   const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
@@ -715,7 +723,7 @@ async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: str
     "Return only one exact id from the list. No markdown.",
     `Member goal: ${memberGoal || "General fitness"}`,
     "Programs:",
-    ...programs.map((program) =>
+    ...programPool.map((program) =>
       `- ${program.id}: ${program.title}; goal=${program.goal}; days=${program.daysPerWeek}; difficulty=${program.difficulty}; split=${program.splitType}`
     )
   ].join("\n");
@@ -734,7 +742,7 @@ async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: str
     );
 
     if (!response.ok) {
-      return pickProgramWithoutAi(programs, memberGoal);
+      return pickProgramWithoutAi(programPool, memberGoal);
     }
 
     const payload = (await response.json()) as {
@@ -742,10 +750,10 @@ async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: str
     };
     const text = payload.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
     const selectedId = text.replace(/[`"' ]/g, "");
-    return programs.find((program) => program.id === selectedId) ?? pickProgramWithoutAi(programs, memberGoal);
+    return programPool.find((program) => program.id === selectedId) ?? pickProgramWithoutAi(programPool, memberGoal);
   } catch (error) {
     console.warn("Gemini program selection failed; using fallback.", error);
-    return pickProgramWithoutAi(programs, memberGoal);
+    return pickProgramWithoutAi(programPool, memberGoal);
   }
 }
 
@@ -1867,6 +1875,7 @@ export async function createCatalogExercise(
     const exerciseId = randomUUID();
     const now = new Date().toISOString();
     const name = requireText(formData, "name", "Exercise name");
+    const canManageDefaultVideos = currentUser.role === "admin";
 
     await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
       id: exerciseId,
@@ -1875,8 +1884,8 @@ export async function createCatalogExercise(
       muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
       equipment: String(formData.get("equipment") ?? "").trim(),
       instructions: String(formData.get("instructions") ?? "").trim(),
-      videoSource: String(formData.get("videoSource") ?? "none"),
-      videoUrl: String(formData.get("videoUrl") ?? "").trim(),
+      videoSource: canManageDefaultVideos ? String(formData.get("videoSource") ?? "none") : "none",
+      videoUrl: canManageDefaultVideos ? String(formData.get("videoUrl") ?? "").trim() : "",
       ownerOnly: true,
       isActive: true,
       createdBy: currentUser.uid,
@@ -1898,28 +1907,38 @@ export async function updateCatalogExercise(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireOwner();
+    const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const db = requireFirebase();
     const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
     const name = requireText(formData, "name", "Exercise name");
     const now = new Date().toISOString();
+    const canManageDefaultVideos = currentUser.role === "admin";
 
-    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(
-      {
+    const updatePayload: Record<string, unknown> = {
+        id: exerciseId,
+        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
         name,
         muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
         equipment: String(formData.get("equipment") ?? "").trim(),
         instructions: String(formData.get("instructions") ?? "").trim(),
-        videoSource: String(formData.get("videoSource") ?? "none"),
-        videoUrl: String(formData.get("videoUrl") ?? "").trim(),
         thumbnailUrl: String(formData.get("thumbnailUrl") ?? "").trim(),
+        ownerOnly: true,
+        isActive: true,
+        updatedBy: currentUser.uid,
         updatedAt: now
-      },
-      { merge: true }
-    );
+      };
+
+    if (canManageDefaultVideos) {
+      updatePayload.videoSource = String(formData.get("videoSource") ?? "none");
+      updatePayload.videoUrl = String(formData.get("videoUrl") ?? "").trim();
+    }
+
+    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(updatePayload, { merge: true });
 
     revalidatePath("/owner/exercises");
+    revalidatePath("/owner/programs");
+    revalidatePath("/member");
     return success(`${name} updated.`);
   } catch (error) {
     return failure(error, "Unable to update exercise.");

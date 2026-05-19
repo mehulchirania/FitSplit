@@ -312,7 +312,7 @@ export async function getMembers(gymId?: string): Promise<{
       email: String(data.email),
       phone: String(data.phone ?? ""),
       joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
-      avatarInitials: String(data.avatarInitials ?? name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB"),
+      avatarInitials: String(data.avatarInitials ?? (name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
       goal: String(data.goal ?? "General fitness"),
       isActive: data.isActive !== false
     };
@@ -368,7 +368,7 @@ export async function getMemberDetail(memberId: string): Promise<{
     email: String(data.email),
     phone: String(data.phone ?? ""),
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
-    avatarInitials: String(data.avatarInitials ?? memberName.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB"),
+    avatarInitials: String(data.avatarInitials ?? (memberName.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
     goal: String(data.goal ?? "General fitness"),
     isActive: data.isActive !== false
   };
@@ -408,20 +408,23 @@ export async function getExerciseCatalog(gymId?: string): Promise<{
     };
   }
 
-  if (snapshot.empty) {
-    return { exercises: [], catalog: [], isPersisted: true };
-  }
+  const defaultExercisesById = new Map<string, Exercise>();
+  mockExercises.forEach((exercise) => defaultExercisesById.set(exercise.id, exercise));
 
   const persistedExercises: Exercise[] = snapshot.docs.map((doc) => {
     const data = doc.data();
+    const defaultExercise = defaultExercisesById.get(doc.id);
+    const persistedVideoUrl = String(data.videoUrl ?? "").trim();
+    const videoUrl = persistedVideoUrl || defaultExercise?.videoUrl || "";
+    const persistedVideoSource = String(data.videoSource ?? "").trim() as Exercise["videoSource"];
     return {
       id: doc.id,
       name: String(data.name),
       muscleGroup: String(data.muscleGroup ?? "Chest") as MuscleGroup,
       equipment: String(data.equipment ?? ""),
       instructions: String(data.instructions ?? ""),
-      videoSource: String(data.videoSource ?? "none") as Exercise["videoSource"],
-      videoUrl: String(data.videoUrl ?? ""),
+      videoSource: videoUrl ? (persistedVideoSource === "none" ? "youtube" : persistedVideoSource || "youtube") : "none",
+      videoUrl,
       thumbnailUrl: String(
         data.thumbnailUrl ??
           "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80"
@@ -430,7 +433,12 @@ export async function getExerciseCatalog(gymId?: string): Promise<{
     };
   });
 
-  const allExercises = persistedExercises;
+  const exercisesById = new Map<string, Exercise>();
+  mockExercises.forEach((exercise) => exercisesById.set(exercise.id, exercise));
+  persistedExercises.forEach((exercise) => exercisesById.set(exercise.id, exercise));
+  const allExercises = Array.from(exercisesById.values()).sort((left, right) =>
+    left.name.localeCompare(right.name)
+  );
   const muscleGroups = Array.from(
     new Set(allExercises.map((exercise) => exercise.muscleGroup))
   );
@@ -593,9 +601,15 @@ export async function getWorkoutPrograms(gymId?: string): Promise<{
   isPersisted: boolean;
 }> {
   const targetGymId = gymId ?? PRIMARY_GYM_ID;
+  const predefinedPrograms: WorkoutProgram[] = mockPrograms
+    .filter((program) => program.days.some((day) => day.exercises.length > 0))
+    .map((program) => ({
+      ...program,
+      source: "predefined"
+    }));
 
   if (!hasFirebaseAdminConfig()) {
-    return { programs: mockPrograms, isPersisted: false };
+    return { programs: predefinedPrograms, isPersisted: false };
   }
 
   let snapshot;
@@ -608,14 +622,10 @@ export async function getWorkoutPrograms(gymId?: string): Promise<{
       .where("isActive", "==", true)
       .get();
   } catch {
-    return { programs: mockPrograms, isPersisted: false };
+    return { programs: predefinedPrograms, isPersisted: false };
   }
 
-  if (snapshot.empty) {
-    return { programs: [], isPersisted: true };
-  }
-
-  const programs: WorkoutProgram[] = snapshot.docs
+  const gymPrograms: WorkoutProgram[] = snapshot.docs
     .map((doc) => {
       const data = doc.data();
       return {
@@ -625,11 +635,24 @@ export async function getWorkoutPrograms(gymId?: string): Promise<{
         goal: String(data.goal ?? "Structured training"),
         difficulty: String(data.difficulty ?? "intermediate") as Difficulty,
         daysPerWeek: Number(data.daysPerWeek ?? 1),
+        source: "gym" as const,
         splitType: String(data.splitType ?? "custom") as WorkoutProgram["splitType"],
         days: Array.isArray(data.days) ? data.days : []
       };
     })
     .sort((left, right) => left.title.localeCompare(right.title));
+
+  const programsById = new Map<string, WorkoutProgram>();
+  predefinedPrograms.forEach((program) => programsById.set(program.id, program));
+  gymPrograms.forEach((program) => programsById.set(program.id, program));
+
+  const programs = Array.from(programsById.values()).sort((left, right) => {
+    if (left.source !== right.source) {
+      return left.source === "predefined" ? -1 : 1;
+    }
+
+    return left.title.localeCompare(right.title);
+  });
 
   return { programs, isPersisted: true };
 }

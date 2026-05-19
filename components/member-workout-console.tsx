@@ -608,8 +608,8 @@ export function MemberWorkoutConsole({
   }
 
   return (
-    <section className="content-grid">
-      <div className="list-panel">
+    <section className="member-training-layout">
+      <div className="member-workout-main">
         <div className="panel-title">
           <h2>
             <Dumbbell /> Today&apos;s workout
@@ -656,7 +656,7 @@ export function MemberWorkoutConsole({
           )}
         </div>
 
-        <div className="notification-list">
+        <div className="member-workout-body">
           <div className="weekly-schedule">
             <div className="day-tabs-wrap"><div className="day-tabs" aria-label="Weekly workout days">
               {program.days.map((day, index) => (
@@ -745,7 +745,7 @@ export function MemberWorkoutConsole({
 
       </div>
 
-      <aside className="list-panel member-workout-side">
+      <aside className="member-workout-side">
         <div className="lift-log-panel">
           <div className="panel-title lift-log-title">
             <div className="lift-log-heading">

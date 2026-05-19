@@ -17,6 +17,7 @@ type CatalogExercise = {
   id: string;
   name: string;
   mechanic: string;
+  video_url?: string;
 };
 
 type RawSplit = {
@@ -231,8 +232,8 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       muscleGroup: muscleGroup as MuscleGroup,
       equipment: catalogExercise.mechanic,
       instructions: getCoachingNotes(catalogExercise.name, catalogExercise.mechanic, muscleGroup),
-      videoSource: "none" as const,
-      videoUrl: "",
+      videoSource: catalogExercise.video_url ? "youtube" as const : "none" as const,
+      videoUrl: catalogExercise.video_url ?? "",
       thumbnailUrl:
         muscleThumbnails[muscleGroup] ??
         "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80",
@@ -318,6 +319,7 @@ export const programs: WorkoutProgram[] = workoutSource.training_splits.map((spl
     goal: split.is_custom ? "Owner-selected custom routine" : "Structured hypertrophy training",
     difficulty: split.split_id === "split_04" ? "advanced" : "intermediate",
     daysPerWeek: trainingDays.length,
+    source: "predefined",
     splitType: splitTypeFor(split),
     days: split.schedule.map((day) => ({
       id: `${split.split_id}-day-${day.day}`,
