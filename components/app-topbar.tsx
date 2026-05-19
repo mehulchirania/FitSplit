@@ -335,13 +335,18 @@ export function AppTopbar({
                 </>
               )}
               {role === "member" && (
-                <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
-                  Today&apos;s Workout
-                </Link>
+                <>
+                  <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
+                    Dashboard
+                  </Link>
+                  <Link href="/member/exercises" onClick={() => setIsDrawerOpen(false)}>
+                    Exercise Library
+                  </Link>
+                  <Link href="/profile" onClick={() => setIsDrawerOpen(false)}>
+                    My Profile
+                  </Link>
+                </>
               )}
-              <Link href="/activity" onClick={() => setIsDrawerOpen(false)}>
-                Activity
-              </Link>
               <Link href="/about" onClick={() => setIsDrawerOpen(false)}>
                 About
               </Link>

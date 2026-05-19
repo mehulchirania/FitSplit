@@ -127,7 +127,7 @@ export function OwnerAiCapacityPanel({
               );
             })
           ) : (
-            <p>No active workout sessions. Ask members to use Start Workout when they begin.</p>
+            <p>No active workout sessions right now.</p>
           )}
         </div>
         <button className="button button-secondary" onClick={() => router.refresh()} type="button">

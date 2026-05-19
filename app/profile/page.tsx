@@ -240,7 +240,7 @@ export default async function ProfilePage() {
         </aside>
       </section>
 
-      <ProfileForm memberId={memberId} profile={profile} trainers={trainers} />
+      <ProfileForm memberId={memberId} profile={profile} trainers={trainers} isReadOnlyTrainer={true} />
 
       <section className="list-panel" style={{ marginTop: 16 }}>
         <div className="panel-title">

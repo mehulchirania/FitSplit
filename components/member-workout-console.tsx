@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { endWorkoutSession, logLiftSet, saveMemberAiTrainerNote, startWorkoutSession, syncOfflineLifts } from "@/lib/firebase/actions";
+import { endWorkoutSession, logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
 import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
@@ -391,53 +391,6 @@ export function MemberWorkoutConsole({
     return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
   }
 
-  async function handleStartWorkout() {
-    setIsSessionPending(true);
-    setSessionStatus(null);
-    const newSessionId = `session-${memberId}-${Date.now()}`;
-    const formData = new FormData();
-    formData.set("memberId", memberId);
-    formData.set("sessionId", newSessionId);
-    formData.set("deviceInfo", navigator.userAgent.slice(0, 200));
-
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) =>
-        navigator.geolocation
-          ? navigator.geolocation.getCurrentPosition(resolve, reject, {
-              enableHighAccuracy: true,
-              maximumAge: 0,
-              timeout: 10000
-            })
-          : reject(new Error("Location permission is required to start workout."))
-      );
-
-      formData.set("latitude", String(position.coords.latitude));
-      formData.set("longitude", String(position.coords.longitude));
-    } catch (error) {
-      setIsSessionPending(false);
-      setSessionStatus({
-        status: "error",
-        message: error instanceof Error
-          ? error.message
-          : "Location permission is required to start workout."
-      });
-      return;
-    }
-
-    const result = await startWorkoutSession(initialFormActionState, formData);
-    setIsSessionPending(false);
-
-    if (result.status === "success") {
-      const now = Date.now();
-      window.localStorage.setItem("fitsplit-session-id", newSessionId);
-      window.localStorage.setItem("fitsplit-session-start", String(now));
-      setSessionId(newSessionId);
-      setIsSessionActive(true);
-      setElapsedSeconds(0);
-    } else {
-      setSessionStatus(result);
-    }
-  }
 
   async function handleEndWorkout() {
     if (!sessionId) return;
@@ -619,42 +572,28 @@ export function MemberWorkoutConsole({
           </span>
         </div>
 
-        <div className="workout-session-bar">
-          {isSessionActive ? (
-            <>
-              <span className="session-elapsed">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                {formatElapsed(elapsedSeconds)}
-                {elapsedSeconds >= 3 * 3600 && <span className="status-pill status-expired" style={{ marginLeft: 8 }}>Auto-ends at 4h</span>}
-              </span>
-              <button
-                className="button button-danger session-end-btn"
-                disabled={isSessionPending}
-                onClick={handleEndWorkout}
-                type="button"
-              >
-                {isSessionPending ? "Ending..." : "End Workout"}
-              </button>
-            </>
-          ) : (
-            <>
-              <span className="session-idle-copy">Track your session — tap Start to begin.</span>
-              <button
-                className="button button-primary session-start-btn"
-                disabled={isSessionPending}
-                onClick={handleStartWorkout}
-                type="button"
-              >
-                {isSessionPending ? "Starting..." : "Start Workout"}
-              </button>
-            </>
-          )}
-          {sessionStatus && (
-            <span className={`form-message form-message-${sessionStatus.status}`} style={{ marginLeft: 12 }}>
-              {sessionStatus.message}
+        {isSessionActive && (
+          <div className="workout-session-bar">
+            <span className="session-elapsed">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              {formatElapsed(elapsedSeconds)}
+              {elapsedSeconds >= 3 * 3600 && <span className="status-pill status-expired" style={{ marginLeft: 8 }}>Auto-ends at 4h</span>}
             </span>
-          )}
-        </div>
+            <button
+              className="button button-danger session-end-btn"
+              disabled={isSessionPending}
+              onClick={handleEndWorkout}
+              type="button"
+            >
+              {isSessionPending ? "Ending..." : "End Workout"}
+            </button>
+            {sessionStatus && (
+              <span className={`form-message form-message-${sessionStatus.status}`} style={{ marginLeft: 12 }}>
+                {sessionStatus.message}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="member-workout-body">
           <div className="weekly-schedule">

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Activity, Mail } from "@/components/icons";
+import { Activity, Mail, Dumbbell } from "@/components/icons";
 import { submitContactMessage } from "@/lib/firebase/actions";
 
 const socialLinks = [
@@ -36,6 +36,24 @@ export default async function AboutPage() {
             Built to support active gym workspaces where AI acts like a
             Semi-Personal Trainer for every member.
           </p>
+        </aside>
+      </section>
+
+      <section className="content-grid" style={{ marginBottom: 40 }}>
+        <aside className="summary-panel" style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr", gap: 24 }}>
+          <div>
+            <div className="panel-title">
+              <h2>
+                <Dumbbell /> Exercise Demonstration Credits
+              </h2>
+            </div>
+            <p style={{ marginTop: 16 }}>
+              All exercise demonstration videos in the FitSplit catalog are sourced and curated from the official <strong>@DeltaBolic</strong> YouTube channel. We sincerely appreciate their dedication to providing high-quality, verified instructional fitness content which powers our Semi-Personal Trainer experience.
+            </p>
+            <a href="https://www.youtube.com/@DeltaBolic" target="_blank" className="button button-secondary" style={{ marginTop: 24, display: "inline-flex" }}>
+              Visit @DeltaBolic on YouTube
+            </a>
+          </div>
         </aside>
       </section>
 

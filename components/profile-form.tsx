@@ -15,11 +15,13 @@ const slots = [
 export function ProfileForm({
   memberId,
   profile,
-  trainers = []
+  trainers = [],
+  isReadOnlyTrainer = false
 }: {
   memberId: string;
   profile: ProfileMetrics;
   trainers?: Pick<Member, "id" | "fullName" | "staffType">[];
+  isReadOnlyTrainer?: boolean;
 }) {
   const [height, setHeight] = useState(String(profile.heightCm ?? ""));
   const [weight, setWeight] = useState(String(profile.weightKg ?? ""));
@@ -149,7 +151,15 @@ export function ProfileForm({
         </label>
         <label>
           Assigned trainer
-          {trainers.length > 0 ? (
+          {isReadOnlyTrainer ? (
+            <input
+              defaultValue={profile.assignedTrainer || "Not yet assigned"}
+              name="assignedTrainer"
+              readOnly
+              style={{ cursor: "default", opacity: 0.65, pointerEvents: "none" }}
+              tabIndex={-1}
+            />
+          ) : trainers.length > 0 ? (
             <select defaultValue={profile.assignedTrainer ?? ""} name="assignedTrainer">
               <option value="">No trainer assigned</option>
               {trainers.map((t) => (
