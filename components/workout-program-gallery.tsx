@@ -1,9 +1,14 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 import { Dumbbell, X } from "@/components/icons";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
-import type { Exercise, Member, ProgramAssignment, WorkoutDay, WorkoutProgram } from "@/types/domain";
+import { CustomPlanBuilder } from "@/components/custom-plan-builder";
+import { deleteCustomWorkoutProgram } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
+import type { Exercise, Member, MuscleGroup, ProgramAssignment, WorkoutDay, WorkoutProgram } from "@/types/domain";
+
+type CatalogGroup = { muscleGroup: MuscleGroup; exercises: Exercise[] };
 
 const splitLabels: Record<string, string> = {
   ppl_x2: "PPL x 2",
@@ -44,11 +49,17 @@ function assignmentNames(
 function ProgramCard({
   assignedNames,
   exerciseNames,
+  isCustom,
+  onDelete,
+  onEdit,
   onView,
   program
 }: {
   assignedNames: string[];
   exerciseNames: Map<string, string>;
+  isCustom: boolean;
+  onDelete?: () => void;
+  onEdit?: () => void;
   onView: () => void;
   program: WorkoutProgram;
 }) {
@@ -61,7 +72,7 @@ function ProgramCard({
         <div className="program-card-topline">
           <p className="eyebrow">{splitLabels[program.splitType]}</p>
           <span className="status-pill status-neutral">
-            {program.source === "gym" ? "Custom" : "Predefined"}
+            {isCustom ? "Custom" : "Predefined"}
           </span>
         </div>
         <h2>
@@ -104,9 +115,23 @@ function ProgramCard({
           </strong>
         </div>
 
-        <button className="button button-primary" onClick={onView} type="button">
-          View full plan
-        </button>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <button className="button button-primary" onClick={onView} type="button" style={{ flex: 1 }}>
+            View plan
+          </button>
+          {isCustom && onEdit && (
+            <button className="button button-secondary" onClick={onEdit} type="button" style={{ flex: 1 }}>
+              Edit
+            </button>
+          )}
+          {isCustom && onDelete && (
+            <button className="button button-secondary" onClick={onDelete} type="button"
+              style={{ background: "color-mix(in srgb,var(--danger) 10%,var(--bg-elevated))", color: "var(--danger)", border: "1px solid color-mix(in srgb,var(--danger) 25%,transparent)", flex: "0 0 auto" }}
+            >
+              Delete
+            </button>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -114,47 +139,112 @@ function ProgramCard({
 
 export function WorkoutProgramGallery({
   assignments,
+  catalog = [],
   exercises,
   members,
   programs
 }: {
   assignments: ProgramAssignment[];
+  catalog?: CatalogGroup[];
   exercises: Exercise[];
   members: Member[];
   programs: WorkoutProgram[];
 }) {
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
-  const exerciseNames = useMemo(() => exerciseNameById(exercises), [exercises]);
-  const predefinedPrograms = programs.filter((program) => program.source !== "gym");
-  const customPrograms = programs.filter((program) => program.source === "gym");
+  const [editProgram, setEditProgram] = useState<WorkoutProgram | null>(null);
+  const [showPredefined, setShowPredefined] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
+  const [isDeleting, startDelete] = useTransition();
 
-  function renderSection(title: string, description: string, sectionPrograms: WorkoutProgram[]) {
+  const exerciseNames = useMemo(() => exerciseNameById(exercises), [exercises]);
+  const predefinedPrograms = programs.filter((p) => p.source !== "gym");
+  const customPrograms = programs.filter((p) => p.source === "gym");
+
+  function handleDelete(programId: string, programTitle: string) {
+    startDelete(async () => {
+      const fd = new FormData();
+      fd.set("programId", programId);
+      fd.set("programTitle", programTitle);
+      const result = await deleteCustomWorkoutProgram(initialFormActionState, fd);
+      setDeleteStatus(result.message);
+      setConfirmDeleteId(null);
+    });
+  }
+
+  function renderCustomSection() {
     return (
       <section className="list-panel program-library-section">
         <div className="panel-title">
           <div>
-            <h2>{title}</h2>
-            <p className="member-meta">{description}</p>
+            <h2>Custom gym plans</h2>
+            <p className="member-meta">Programs created by this gym — edit or delete them at any time.</p>
           </div>
           <span className="status-pill status-neutral">
-            {sectionPrograms.length} plan{sectionPrograms.length === 1 ? "" : "s"}
+            {customPrograms.length} plan{customPrograms.length === 1 ? "" : "s"}
           </span>
         </div>
-        {sectionPrograms.length ? (
+        {deleteStatus && (
+          <p style={{ padding: "8px 20px", fontSize: "0.82rem", color: "var(--brand-strong)", fontWeight: 600 }}>
+            {deleteStatus}
+          </p>
+        )}
+        {customPrograms.length ? (
           <div className="program-grid program-grid-compact">
-            {sectionPrograms.map((program) => (
+            {customPrograms.map((program) => (
               <ProgramCard
                 assignedNames={assignmentNames(program, assignments, members)}
                 exerciseNames={exerciseNames}
+                isCustom
                 key={program.id}
-                onView={() => setSelectedProgram(program)}
+                onDelete={() => setConfirmDeleteId(program.id)}
+                onEdit={() => { setEditProgram(program); setSelectedProgram(null); }}
+                onView={() => { setSelectedProgram(program); setEditProgram(null); }}
                 program={program}
               />
             ))}
           </div>
         ) : (
           <div className="empty-state">
-            <p>No custom plans have been saved for this gym yet.</p>
+            <p>No custom plans saved yet. Use the builder below to create your first gym plan.</p>
+          </div>
+        )}
+      </section>
+    );
+  }
+
+  function renderPredefinedSection() {
+    return (
+      <section className="list-panel program-library-section">
+        <div className="panel-title">
+          <div>
+            <h2>Predefined workout plans</h2>
+            <p className="member-meta">Built-in splits from the FitSplit catalog — assign to members but cannot be edited.</p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="status-pill status-neutral">{predefinedPrograms.length} plans</span>
+            <button
+              type="button"
+              className="button button-secondary"
+              onClick={() => setShowPredefined((v) => !v)}
+              style={{ fontSize: "0.78rem", padding: "4px 10px", minHeight: 28 }}
+            >
+              {showPredefined ? "Hide" : "Show"}
+            </button>
+          </div>
+        </div>
+        {showPredefined && (
+          <div className="program-grid program-grid-compact">
+            {predefinedPrograms.map((program) => (
+              <ProgramCard
+                assignedNames={assignmentNames(program, assignments, members)}
+                exerciseNames={exerciseNames}
+                isCustom={false}
+                key={program.id}
+                onView={() => { setSelectedProgram(program); setEditProgram(null); }}
+                program={program}
+              />
+            ))}
           </div>
         )}
       </section>
@@ -164,19 +254,14 @@ export function WorkoutProgramGallery({
   return (
     <>
       <div className="program-library">
-        {renderSection(
-          "Predefined workout plans",
-          "Built-in splits from the FitSplit catalog, already mapped to exercise names, sets, and reps.",
-          predefinedPrograms
-        )}
-        {renderSection(
-          "Custom gym plans",
-          "Owner-created programs saved by this gym, with member assignment visibility.",
-          customPrograms
-        )}
+        {/* Custom plans at top — what the owner built */}
+        {renderCustomSection()}
+        {/* Predefined plans collapsed by default */}
+        {renderPredefinedSection()}
       </div>
 
-      {selectedProgram ? (
+      {/* View full plan dialog */}
+      {selectedProgram && !editProgram ? (
         <div className="dialog-backdrop" role="presentation">
           <div aria-modal="true" className="program-dialog" role="dialog">
             <div className="panel-title">
@@ -201,6 +286,62 @@ export function WorkoutProgramGallery({
           </div>
         </div>
       ) : null}
+
+      {/* Edit program dialog */}
+      {editProgram && catalog.length > 0 ? (
+        <div className="dialog-backdrop" role="presentation">
+          <div aria-modal="true" className="program-dialog" role="dialog" style={{ maxWidth: 680, overflow: "auto", maxHeight: "90vh" }}>
+            <div className="panel-title" style={{ marginBottom: 0 }}>
+              <h2>Edit plan</h2>
+              <button
+                aria-label="Close editor"
+                className="icon-button neutral-icon-button"
+                onClick={() => setEditProgram(null)}
+                type="button"
+              >
+                <X />
+              </button>
+            </div>
+            <CustomPlanBuilder
+              catalog={catalog}
+              initialProgram={editProgram}
+              onSuccess={() => setEditProgram(null)}
+            />
+          </div>
+        </div>
+      ) : null}
+
+      {/* Delete confirmation dialog */}
+      {confirmDeleteId && (
+        <div className="dialog-backdrop" role="presentation">
+          <div aria-modal="true" className="confirm-dialog" role="dialog">
+            <h2>Delete this plan?</h2>
+            <p style={{ color: "var(--text-soft)", fontSize: "0.9rem" }}>
+              This will permanently remove the plan. Members currently assigned to it will lose their assignment.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
+              <button
+                className="button button-secondary"
+                onClick={() => setConfirmDeleteId(null)}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="button button-danger"
+                disabled={isDeleting}
+                onClick={() => {
+                  const program = customPrograms.find((p) => p.id === confirmDeleteId);
+                  if (program) handleDelete(program.id, program.title);
+                }}
+                type="button"
+              >
+                {isDeleting ? "Deleting..." : "Delete plan"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

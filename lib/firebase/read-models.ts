@@ -3,6 +3,7 @@ import type {
   AttendanceRecord,
   Difficulty,
   Exercise,
+  ExerciseRequest,
   GymNotice,
   GymNoticeType,
   GymWorkspace,
@@ -457,10 +458,14 @@ export async function getExerciseCatalog(gymId?: string): Promise<{
     };
   });
 
-  const exercisesById = new Map<string, Exercise>();
-  mockExercises.forEach((exercise) => exercisesById.set(exercise.id, exercise));
-  persistedExercises.forEach((exercise) => exercisesById.set(exercise.id, exercise));
-  const allExercises = Array.from(exercisesById.values()).sort((left, right) =>
+  // Merge mock + persisted exercises. Use name-based deduplication so that
+  // exercises added via createCatalogExercise don't appear twice alongside the
+  // same entry from workouts.json (which uses stable slug IDs, not UUIDs).
+  // Firebase-persisted version wins when names collide (it may have custom video/notes).
+  const exercisesByName = new Map<string, Exercise>();
+  mockExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), ex));
+  persistedExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), ex));
+  const allExercises = Array.from(exercisesByName.values()).sort((left, right) =>
     left.name.localeCompare(right.name)
   );
   const muscleGroups = Array.from(
@@ -1177,6 +1182,46 @@ export async function getContactMessages(): Promise<{
     return { messages, isPersisted: true };
   } catch {
     return { messages: [], isPersisted: false };
+  }
+}
+
+export async function getPendingExerciseRequests(): Promise<{
+  requests: ExerciseRequest[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { requests: [], isPersisted: false };
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.exerciseRequests)
+      .where("status", "==", "pending")
+      .get();
+
+    const requests: ExerciseRequest[] = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          gymId: String(data.gymId ?? ""),
+          gymName: data.gymName ? String(data.gymName) : undefined,
+          requestedBy: String(data.requestedBy ?? ""),
+          name: String(data.name ?? ""),
+          muscleGroup: String(data.muscleGroup ?? ""),
+          equipment: data.equipment ? String(data.equipment) : undefined,
+          instructions: data.instructions ? String(data.instructions) : undefined,
+          status: "pending" as const,
+          createdAt: String(data.createdAt ?? new Date().toISOString()),
+          updatedAt: data.updatedAt ? String(data.updatedAt) : undefined
+        };
+      })
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+    return { requests, isPersisted: true };
+  } catch {
+    return { requests: [], isPersisted: false };
   }
 }
 

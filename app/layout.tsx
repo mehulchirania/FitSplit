@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { AppFooter } from "@/components/app-footer";
 import { AppTopbar } from "@/components/app-topbar";
-import { BackButton } from "@/components/back-button";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -107,7 +106,6 @@ export default async function RootLayout({
             role={currentUser?.role}
             unreadInboxCount={unreadInboxCount}
           />
-          <BackButton role={currentUser?.role} />
           {children}
           {currentUser?.role === "member" && <AppFooter />}
           <MobileBottomNav role={currentUser?.role} />

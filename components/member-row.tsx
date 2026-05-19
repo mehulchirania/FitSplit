@@ -1,59 +1,74 @@
 "use client";
 
 import Link from "next/link";
-import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { useActionState } from "react";
 import { toggleMemberAccess } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
 import type { Member } from "@/types/domain";
 
-export function MemberRow({ member }: { member: Member }) {
-  return (
-    <div className="member-row">
-      <span className="avatar">{member.avatarInitials}</span>
+export function MemberRow({
+  member,
+  hasPlan = false
+}: {
+  member: Member;
+  hasPlan?: boolean;
+}) {
+  const [, action, isPending] = useActionState(toggleMemberAccess, initialFormActionState);
 
-      <div className="member-row-info">
-        <span className="member-name">{member.fullName}</span>
-        <span className="member-meta member-row-meta">
-          <span className="member-row-goal">{member.goal}</span>
+  return (
+    <div className="member-card-row">
+      {/* Avatar */}
+      <span className="mcard-avatar" aria-hidden="true">{member.avatarInitials}</span>
+
+      {/* Identity */}
+      <div className="mcard-identity">
+        <div className="mcard-name-row">
+          <span className="mcard-name">{member.fullName}</span>
+          <span className={`mcard-plan-badge ${hasPlan ? "badge-has-plan" : "badge-no-plan"}`}>
+            {hasPlan ? "Plan set" : "No plan"}
+          </span>
+          {!member.isActive && (
+            <span className="mcard-plan-badge" style={{ background: "color-mix(in srgb, var(--danger) 14%, transparent)", color: "var(--danger)" }}>
+              Suspended
+            </span>
+          )}
+        </div>
+        <div className="mcard-meta">
+          {member.goal && <span className="mcard-goal">{member.goal}</span>}
           {member.phone && (
             <a
-              className="member-row-phone"
+              className="mcard-phone"
               href={`tel:${member.phone}`}
               onClick={(e) => e.stopPropagation()}
             >
               {member.phone}
             </a>
           )}
-          <span className="member-row-joined">Joined {member.joinedAt}</span>
-        </span>
+          <span className="mcard-joined">Joined {member.joinedAt}</span>
+        </div>
       </div>
 
-      <span
-        className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`}
-        aria-label={member.isActive ? "Active member" : "Inactive member"}
-      >
-        {member.isActive ? "Active" : "Inactive"}
-      </span>
-
-      <ConfirmActionForm
-        action={toggleMemberAccess}
-        className="member-access-inline"
-        confirmMessage={
-          member.isActive
-            ? "This will disable the member's login access."
-            : "This will re-enable the member's login access."
-        }
-        confirmTitle={member.isActive ? "Suspend access?" : "Restore access?"}
-        pendingLabel="Updating..."
-        submitClassName={`access-toggle member-row-toggle ${member.isActive ? "is-on" : "is-off"}`}
-        submitLabel={member.isActive ? "Suspend" : "Restore"}
-      >
-        <input name="memberId" type="hidden" value={member.id} />
-        <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
-      </ConfirmActionForm>
-
-      <Link className="button button-secondary" href={`/owner/members/${member.id}`}>
-        View
-      </Link>
+      {/* Actions — no confirm modal, direct submit for speed */}
+      <div className="mcard-actions">
+        <form action={action} style={{ display: "contents" }}>
+          <input name="memberId" type="hidden" value={member.id} />
+          <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
+          <button
+            className={`mcard-toggle ${member.isActive ? "mcard-toggle-suspend" : "mcard-toggle-restore"}`}
+            disabled={isPending}
+            title={member.isActive ? "Suspend access" : "Restore access"}
+            type="submit"
+          >
+            {isPending ? "…" : member.isActive ? "Suspend" : "Restore"}
+          </button>
+        </form>
+        <Link
+          className="button button-secondary mcard-view-btn"
+          href={`/owner/members/${member.id}`}
+        >
+          View
+        </Link>
+      </div>
     </div>
   );
 }

@@ -53,7 +53,7 @@ export const gyms: GymWorkspace[] = [
     ownerUserId: "santosh-shg",
     status: "active",
     expiryWarningDays: 7,
-    memberCount: 4,
+    memberCount: 15,
     logoUrl: "/shg-gym-logo.jpeg",
     notices: [
       {
@@ -109,6 +109,35 @@ export const gyms: GymWorkspace[] = [
     status: "active",
     expiryWarningDays: 7,
     memberCount: 0
+  },
+  {
+    id: "titan-gym",
+    name: "Titan Fitness Club",
+    slug: "titan-gym",
+    ownerName: "Titan Owner",
+    ownerUserId: "titan-owner-1",
+    status: "active",
+    expiryWarningDays: 7,
+    memberCount: 20,
+    notices: [
+      {
+        id: "titan-notice-1",
+        type: "rule",
+        title: "No dropping of weights — lower them with control.",
+        body: "Protect equipment and fellow members.",
+        isActive: true,
+        order: 0,
+        createdAt: "2026-01-01"
+      },
+      {
+        id: "titan-notice-2",
+        type: "tip",
+        title: "Protein within 30 minutes of training accelerates recovery.",
+        isActive: true,
+        order: 1,
+        createdAt: "2026-01-01"
+      }
+    ]
   }
 ];
 
@@ -187,7 +216,41 @@ export const members: Member[] = [
     age: 28,
     heightCm: 180,
     weightKg: 78
-  }
+  },
+
+  /* ── SHG extra members (scroll testing) ── */
+  { id: "shg-rohan",  fullName: "Rohan Verma",    email: "rohan.v@example.com",   phone: "+91 98001 11001", joinedAt: "2026-01-10", avatarInitials: "RV", goal: "Build lean muscle",          isActive: true  },
+  { id: "shg-priya",  fullName: "Priya Nair",     email: "priya.n@example.com",   phone: "+91 98001 11002", joinedAt: "2026-02-14", avatarInitials: "PN", goal: "Weight loss",                isActive: true  },
+  { id: "shg-arjun",  fullName: "Arjun Patel",    email: "arjun.p@example.com",   phone: "+91 98001 11003", joinedAt: "2026-03-08", avatarInitials: "AP", goal: "Strength training",           isActive: true  },
+  { id: "shg-divya",  fullName: "Divya Menon",    email: "divya.m@example.com",   phone: "+91 98001 11004", joinedAt: "2026-01-22", avatarInitials: "DM", goal: "Toning and flexibility",     isActive: true  },
+  { id: "shg-vikram", fullName: "Vikram Singh",   email: "vikram.s@example.com",  phone: "+91 98001 11005", joinedAt: "2025-12-05", avatarInitials: "VS", goal: "Athletic performance",        isActive: true  },
+  { id: "shg-anjali", fullName: "Anjali Desai",   email: "anjali.d@example.com",  phone: "+91 98001 11006", joinedAt: "2026-04-18", avatarInitials: "AD", goal: "Beginner fitness",            isActive: true  },
+  { id: "shg-suresh", fullName: "Suresh Kumar",   email: "suresh.k@example.com",  phone: "+91 98001 11007", joinedAt: "2025-11-20", avatarInitials: "SK", goal: "Fat loss",                    isActive: false },
+  { id: "shg-pooja",  fullName: "Pooja Reddy",    email: "pooja.r@example.com",   phone: "+91 98001 11008", joinedAt: "2026-02-28", avatarInitials: "PR", goal: "Build strength",              isActive: true  },
+  { id: "shg-rahul",  fullName: "Rahul Gupta",    email: "rahul.g@example.com",   phone: "+91 98001 11009", joinedAt: "2026-03-15", avatarInitials: "RG", goal: "Increase muscle mass",        isActive: true  },
+  { id: "shg-sneha",  fullName: "Sneha Joshi",    email: "sneha.j@example.com",   phone: "+91 98001 11010", joinedAt: "2025-10-30", avatarInitials: "SJ", goal: "General fitness",             isActive: false },
+
+  /* ── Titan Fitness Club members ── */
+  { id: "titan-ravi",      fullName: "Ravi Shankar",      email: "ravi.s@titan.com",      phone: "+91 97000 20001", joinedAt: "2026-01-05", avatarInitials: "RS", goal: "Powerlifting",                isActive: true  },
+  { id: "titan-kavya",     fullName: "Kavya Krishnan",    email: "kavya.k@titan.com",     phone: "+91 97000 20002", joinedAt: "2026-01-12", avatarInitials: "KK", goal: "Endurance training",          isActive: true  },
+  { id: "titan-amit",      fullName: "Amit Yadav",        email: "amit.y@titan.com",      phone: "+91 97000 20003", joinedAt: "2026-01-18", avatarInitials: "AY", goal: "Body recomposition",          isActive: true  },
+  { id: "titan-sonal",     fullName: "Sonal Mehta",       email: "sonal.m@titan.com",     phone: "+91 97000 20004", joinedAt: "2026-01-25", avatarInitials: "SM", goal: "Weight loss",                 isActive: true  },
+  { id: "titan-deepak",    fullName: "Deepak Bose",       email: "deepak.b@titan.com",    phone: "+91 97000 20005", joinedAt: "2026-02-03", avatarInitials: "DB", goal: "Hypertrophy",                 isActive: true  },
+  { id: "titan-neha",      fullName: "Neha Kapoor",       email: "neha.k@titan.com",      phone: "+91 97000 20006", joinedAt: "2026-02-10", avatarInitials: "NK", goal: "Functional fitness",          isActive: true  },
+  { id: "titan-kiran",     fullName: "Kiran Tiwari",      email: "kiran.t@titan.com",     phone: "+91 97000 20007", joinedAt: "2026-02-17", avatarInitials: "KT", goal: "Athletic conditioning",       isActive: true  },
+  { id: "titan-sanjay",    fullName: "Sanjay Bhatt",      email: "sanjay.b@titan.com",    phone: "+91 97000 20008", joinedAt: "2026-02-22", avatarInitials: "SB", goal: "Strength and power",          isActive: false },
+  { id: "titan-ananya",    fullName: "Ananya Pillai",     email: "ananya.p@titan.com",    phone: "+91 97000 20009", joinedAt: "2026-03-01", avatarInitials: "AP", goal: "Core strength",               isActive: true  },
+  { id: "titan-mohit",     fullName: "Mohit Saxena",      email: "mohit.s@titan.com",     phone: "+91 97000 20010", joinedAt: "2026-03-08", avatarInitials: "MS", goal: "Build muscle",                isActive: true  },
+  { id: "titan-ishaan",    fullName: "Ishaan Malhotra",   email: "ishaan.m@titan.com",    phone: "+91 97000 20011", joinedAt: "2026-03-15", avatarInitials: "IM", goal: "Weight loss",                 isActive: true  },
+  { id: "titan-tanvi",     fullName: "Tanvi Choudhary",   email: "tanvi.c@titan.com",     phone: "+91 97000 20012", joinedAt: "2026-03-20", avatarInitials: "TC", goal: "Flexibility and strength",    isActive: true  },
+  { id: "titan-gaurav",    fullName: "Gaurav Rane",       email: "gaurav.r@titan.com",    phone: "+91 97000 20013", joinedAt: "2026-03-28", avatarInitials: "GR", goal: "Cardio conditioning",         isActive: false },
+  { id: "titan-poornima",  fullName: "Poornima Das",      email: "poornima.d@titan.com",  phone: "+91 97000 20014", joinedAt: "2026-04-02", avatarInitials: "PD", goal: "Lean muscle",                 isActive: true  },
+  { id: "titan-sachin",    fullName: "Sachin Pandey",     email: "sachin.p@titan.com",    phone: "+91 97000 20015", joinedAt: "2026-04-08", avatarInitials: "SP", goal: "Strength training",           isActive: true  },
+  { id: "titan-alisha",    fullName: "Alisha Fernandes",  email: "alisha.f@titan.com",    phone: "+91 97000 20016", joinedAt: "2026-04-12", avatarInitials: "AF", goal: "Toning",                      isActive: true  },
+  { id: "titan-varun",     fullName: "Varun Mathur",      email: "varun.m@titan.com",     phone: "+91 97000 20017", joinedAt: "2026-04-20", avatarInitials: "VM", goal: "Fat loss",                    isActive: true  },
+  { id: "titan-nandini",   fullName: "Nandini Iyer",      email: "nandini.i@titan.com",   phone: "+91 97000 20018", joinedAt: "2026-04-25", avatarInitials: "NI", goal: "Beginner fitness",            isActive: true  },
+  { id: "titan-aryan",     fullName: "Aryan Kapadia",     email: "aryan.k@titan.com",     phone: "+91 97000 20019", joinedAt: "2026-05-01", avatarInitials: "AK", goal: "Muscle building",             isActive: true  },
+  { id: "titan-meghna",    fullName: "Meghna Sharma",     email: "meghna.s@titan.com",    phone: "+91 97000 20020", joinedAt: "2026-05-05", avatarInitials: "MS", goal: "General fitness",             isActive: true  }
 ];
 
 export const memberships: Membership[] = [
@@ -400,7 +463,23 @@ export const assignments: ProgramAssignment[] = [
     programId: "split_custom_template",
     assignedAt: "2026-04-20T16:00:00+05:30",
     status: "active"
-  }
+  },
+
+  /* ── SHG extra assignments (4 of 10 new members) ── */
+  { id: "assignment-shg-rohan",  memberId: "shg-rohan",  programId: "split_01", assignedAt: "2026-02-01T09:00:00+05:30", status: "active" },
+  { id: "assignment-shg-arjun",  memberId: "shg-arjun",  programId: "split_03", assignedAt: "2026-03-12T10:30:00+05:30", status: "active" },
+  { id: "assignment-shg-vikram", memberId: "shg-vikram", programId: "split_02", assignedAt: "2026-01-10T11:00:00+05:30", status: "active" },
+  { id: "assignment-shg-pooja",  memberId: "shg-pooja",  programId: "split_04", assignedAt: "2026-03-05T08:00:00+05:30", status: "active" },
+
+  /* ── Titan assignments (8 of 20 members) ── */
+  { id: "assignment-titan-ravi",     memberId: "titan-ravi",     programId: "split_02", assignedAt: "2026-01-10T09:00:00+05:30", status: "active" },
+  { id: "assignment-titan-kavya",    memberId: "titan-kavya",    programId: "split_01", assignedAt: "2026-01-18T10:00:00+05:30", status: "active" },
+  { id: "assignment-titan-amit",     memberId: "titan-amit",     programId: "split_03", assignedAt: "2026-01-22T11:00:00+05:30", status: "active" },
+  { id: "assignment-titan-deepak",   memberId: "titan-deepak",   programId: "split_02", assignedAt: "2026-02-08T09:30:00+05:30", status: "active" },
+  { id: "assignment-titan-kiran",    memberId: "titan-kiran",    programId: "split_04", assignedAt: "2026-02-20T08:00:00+05:30", status: "active" },
+  { id: "assignment-titan-ananya",   memberId: "titan-ananya",   programId: "split_01", assignedAt: "2026-03-05T10:00:00+05:30", status: "active" },
+  { id: "assignment-titan-mohit",    memberId: "titan-mohit",    programId: "split_03", assignedAt: "2026-03-12T11:30:00+05:30", status: "active" },
+  { id: "assignment-titan-sachin",   memberId: "titan-sachin",   programId: "split_02", assignedAt: "2026-04-10T09:00:00+05:30", status: "active" }
 ];
 
 export const notifications: Notification[] = [

@@ -806,7 +806,13 @@ export async function updateProfileMetrics(
     }
     const now = new Date().toISOString();
 
-    await db.collection(collectionPaths.profiles).doc(memberId).set(
+    const profileRef = db.collection(collectionPaths.profiles).doc(memberId);
+    const existingProfile = (await profileRef.get()).data() || {};
+    const assignedTrainer = currentUser.role === "member"
+      ? (existingProfile.assignedTrainer || "")
+      : String(formData.get("assignedTrainer") ?? "").trim();
+
+    await profileRef.set(
       {
         fullName,
         email,
@@ -821,7 +827,7 @@ export async function updateProfileMetrics(
         primarySlot: String(formData.get("primarySlot") ?? "A"),
         secondarySlot: String(formData.get("secondarySlot") ?? "D"),
         injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
-        assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
+        assignedTrainer,
         updatedAt: now
       },
       { merge: true }
@@ -1861,6 +1867,231 @@ export async function markContactMessageRead(
     return success("Message marked as read.");
   } catch (error) {
     return failure(error, "Unable to update message.");
+  }
+}
+
+export async function requestCatalogExercise(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const name = requireText(formData, "name", "Exercise name");
+    const muscleGroup = requireText(formData, "muscleGroup", "Muscle group");
+
+    if (!hasFirebaseAdminConfig()) {
+      return success(`"${name}" request noted. Connect Firebase to save requests for admin review.`);
+    }
+
+    const db = requireFirebase();
+    const requestId = randomUUID();
+    const notificationId = randomUUID();
+    const now = new Date().toISOString();
+
+    // Get gym name for the notification body
+    const gymDoc = await db.collection(collectionPaths.gyms).doc(currentUser.gymId ?? PRIMARY_GYM_ID).get();
+    const gymName = String(gymDoc.data()?.name ?? currentUser.gymId ?? "A gym");
+
+    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set({
+      id: requestId,
+      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      gymName,
+      requestedBy: currentUser.uid,
+      name,
+      muscleGroup,
+      equipment: String(formData.get("equipment") ?? "").trim(),
+      instructions: String(formData.get("instructions") ?? "").trim(),
+      status: "pending",
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+      id: notificationId,
+      recipientRole: "admin",
+      recipientId: "admin-fitsplit",
+      type: "exercise_request",
+      title: "New exercise catalog request",
+      body: `${gymName} wants to add "${name}" (${muscleGroup}) to the catalog.`,
+      exerciseRequestId: requestId,
+      createdAt: now
+    });
+
+    revalidatePath("/admin/exercises");
+
+    return success(`Request to add "${name}" sent to admin for review.`);
+  } catch (error) {
+    return failure(error, "Unable to send exercise request.");
+  }
+}
+
+export async function approveCatalogExerciseRequest(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const requestId = requireText(formData, "requestId", "Request ID");
+    const now = new Date().toISOString();
+
+    const requestDoc = await db.collection(collectionPaths.exerciseRequests).doc(requestId).get();
+    if (!requestDoc.exists) throw new Error("Exercise request not found.");
+
+    const data = requestDoc.data()!;
+    const name = String(formData.get("name") ?? data.name ?? "");
+    const muscleGroup = String(formData.get("muscleGroup") ?? data.muscleGroup ?? "");
+    const gymId = String(data.gymId ?? PRIMARY_GYM_ID);
+
+    if (!name || !muscleGroup) throw new Error("Name and muscle group are required.");
+
+    const exerciseId = randomUUID();
+    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
+      id: exerciseId,
+      gymId,
+      name,
+      muscleGroup,
+      equipment: String(formData.get("equipment") ?? data.equipment ?? "").trim(),
+      instructions: String(formData.get("instructions") ?? data.instructions ?? "").trim(),
+      videoSource: "none",
+      videoUrl: "",
+      gymVideoUrl: "",
+      gymVideoSource: "none",
+      thumbnailUrl: "",
+      ownerOnly: true,
+      isActive: true,
+      createdBy: "admin-fitsplit",
+      approvedFromRequestId: requestId,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(
+      { status: "approved", approvedAt: now, updatedAt: now },
+      { merge: true }
+    );
+
+    revalidatePath("/admin/exercises");
+    revalidatePath("/owner/exercises");
+    revalidatePath("/owner/programs");
+
+    return success(`"${name}" added to the exercise catalog.`);
+  } catch (error) {
+    return failure(error, "Unable to approve exercise request.");
+  }
+}
+
+export async function rejectCatalogExerciseRequest(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const requestId = requireText(formData, "requestId", "Request ID");
+    const now = new Date().toISOString();
+
+    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(
+      { status: "rejected", rejectedAt: now, updatedAt: now },
+      { merge: true }
+    );
+
+    revalidatePath("/admin/exercises");
+    return success("Exercise request dismissed.");
+  } catch (error) {
+    return failure(error, "Unable to dismiss request.");
+  }
+}
+
+export async function deleteCustomWorkoutProgram(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const programId = requireText(formData, "programId", "Program ID");
+    const programTitle = String(formData.get("programTitle") ?? "Program").trim();
+
+    await db.collection(collectionPaths.workoutPrograms).doc(programId).delete();
+
+    revalidatePath("/owner/programs");
+    revalidatePath("/owner/members");
+
+    return success(`${programTitle} was deleted.`);
+  } catch (error) {
+    return failure(error, "Unable to delete program.");
+  }
+}
+
+export async function updateCustomWorkoutProgram(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const programId = requireText(formData, "programId", "Program ID");
+    const title = requireText(formData, "title", "Program title");
+    const now = new Date().toISOString();
+
+    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string };
+    const daysJson = String(formData.get("days") ?? "").trim();
+    let dayInputs: DayInput[];
+
+    try {
+      dayInputs = JSON.parse(daysJson);
+    } catch {
+      throw new Error("Invalid days format.");
+    }
+
+    if (!dayInputs.length) throw new Error("A plan must have at least one day.");
+
+    const days = await Promise.all(
+      dayInputs.map(async (dayInput, i) => {
+        const resolvedIds = await Promise.all(
+          dayInput.exerciseIds.map((id) => resolveExerciseRecordId(id))
+        );
+        return {
+          id: randomUUID(),
+          title: dayInput.title || `Day ${i + 1}`,
+          dayNumber: i + 1,
+          focus: "Owner-created custom day",
+          exercises: resolvedIds.map((exerciseId, idx) => ({
+            exerciseId,
+            sortOrder: idx + 1,
+            sets: dayInput.sets ?? 3,
+            reps: dayInput.reps ?? "8-12",
+            restSeconds: Number(formData.get("restSeconds") ?? 75)
+          }))
+        };
+      })
+    );
+
+    await db.collection(collectionPaths.workoutPrograms).doc(programId).set(
+      {
+        title,
+        description: String(formData.get("description") ?? "").trim(),
+        goal: String(formData.get("goal") ?? "Custom member plan").trim(),
+        difficulty: String(formData.get("difficulty") ?? "beginner"),
+        daysPerWeek: days.length,
+        days,
+        updatedBy: currentUser.uid,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/owner/programs");
+
+    return success(`${title} was updated.`);
+  } catch (error) {
+    return failure(error, "Unable to update custom plan.");
   }
 }
 

@@ -116,7 +116,7 @@ export default async function AdminPage() {
         <ConfirmActionForm
           action={createOwnerProfile}
           className="form-panel"
-          confirmMessage="This creates a new gym staff login. They will receive an email with their credentials."
+          confirmMessage="This creates a Firebase Auth login with the email and default password 'password'. Share these credentials manually — no email is sent."
           confirmTitle="Create gym staff?"
           pendingLabel="Creating..."
           submitLabel="Create staff account"
@@ -175,6 +175,9 @@ export default async function AdminPage() {
               </select>
             </label>
           </div>
+          <p style={{ fontSize: "0.82rem", color: "var(--text-faint)", margin: "8px 0 0" }}>
+            Default login password is <code>password</code>. Share it with the staff member — no email is sent automatically.
+          </p>
         </ConfirmActionForm>
 
         <div className="form-panel">

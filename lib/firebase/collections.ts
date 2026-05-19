@@ -3,6 +3,7 @@ export const collectionPaths = {
   profiles: "profiles",
   memberships: "memberships",
   exerciseCatalog: "exerciseCatalog",
+  exerciseRequests: "exerciseRequests",
   workoutPrograms: "workoutPrograms",
   notifications: "notifications",
   workoutSplitTemplates: "workoutSplitTemplates",
@@ -13,7 +14,6 @@ export const collectionPaths = {
   contactMessages: "contactMessages",
   siteLinks: "siteLinks",
   attendanceRecords: "attendanceRecords"
-
 } as const;
 
 export const PRIMARY_GYM_ID = "shg";

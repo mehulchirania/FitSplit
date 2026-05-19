@@ -60,6 +60,7 @@ export default async function ProgramsPage() {
       {/* Primary: existing programs */}
       <WorkoutProgramGallery
         assignments={assignments}
+        catalog={catalog}
         exercises={exercises}
         members={members}
         programs={programs}

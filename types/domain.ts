@@ -146,11 +146,27 @@ export type Notification = {
     | "member_access_toggled"
     | "member_created"
     | "access_suspended"
-    | "access_restored";
+    | "access_restored"
+    | "exercise_request";
   title: string;
   body: string;
   createdAt: string;
   readAt?: string;
+  exerciseRequestId?: string;
+};
+
+export type ExerciseRequest = {
+  id: string;
+  gymId: string;
+  gymName?: string;
+  requestedBy: string;
+  name: string;
+  muscleGroup: string;
+  equipment?: string;
+  instructions?: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  updatedAt?: string;
 };
 
 export type LiftLog = {

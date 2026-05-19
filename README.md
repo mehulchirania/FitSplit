@@ -1,6 +1,6 @@
 # FitSplit
 
-FitSplit is a Firebase-backed gym management web app for Sri Shakthi Hanuman Gym (SHG Gym), with a second Dummy-Gym workspace included for admin testing. It uses Firebase Authentication, server-verified role sessions, Cloud Firestore app data, and an AI-assisted semi-personal trainer workflow.
+FitSplit is a Firebase-backed gym management web app for Sri Shakthi Hanuman Gym (SHG Gym), with Titan Fitness Club and a Dummy-Gym workspace included for admin testing. It uses Firebase Authentication, server-verified role sessions, Cloud Firestore app data, and an AI-assisted semi-personal trainer workflow.
 
 Live app:
 
@@ -69,7 +69,17 @@ The member `/member` page uses a premium `md-*` summary hero plus an isolated `m
 - `assignedTrainer` field on the member profile form uses a `<select>` dropdown populated from the gym's trainer roster.
 - Activity events are emitted on member create, access toggle (suspend/restore), and member delete.
 - Member list (`/owner/members`) shows phone number, join date, and a colour-coded Active/Inactive status badge per row.
-- Custom plan builder supports multiple workout days (up to 7): add/remove days, per-day exercise picker, title and sets/reps per day.
+- Custom plan builder supports multiple workout days (up to 7): add/remove days, filterable exercise picker grouped by muscle group, per-exercise sets/reps, custom free-text exercises, and a "Send to admin for catalog" checkbox.
+- Custom gym plans can now be edited (inline dialog) or deleted from the programs gallery. Delete shows a confirmation dialog. Predefined plans are collapsed by default in the gallery so custom plans are prominent.
+- Exercise catalog deduplicates by name when Firebase and mock data are both present — prevents duplicate entries when the same exercise exists in both sources.
+- Owners can request new exercises to be added to the admin catalog directly from the custom plan builder. Admin receives a notification and sees pending requests in `/admin/exercises` with a one-click review-and-approve form.
+- Back button removed from the app shell — breadcrumbs in page headers already provide full navigation context.
+- Fitness loading animation (barbell + pulsing dots) shows on every route-level `loading.tsx` boundary.
+- Dark-theme dropdowns and dialogs use an opaque `#1c1c1e` background so notification/profile menus are readable.
+- Member list (`/owner/members`) now has filter tabs (All / Has plan / Needs plan) and sort controls (Name / Newest / Oldest / Active first / Inactive first). Plan status is shown as a colour-coded badge per member row. Suspend/Restore is a direct form submit (no confirm modal).
+- Mock data expanded: 10 extra SHG members and 20 Titan Fitness Club members with mixed active/inactive status and plan assignments for realistic scroll and filter testing.
+- Titan Fitness Club gym workspace added to mock data.
+- Member trainer field is read-only for members on `/profile` — only owners/admins can change the assigned trainer.
 - `/owner/programs` separates predefined plans from custom gym plans and shows mapped catalog exercises, training-day counts, total exercises, and assigned members without stock image cards.
 - `/owner/exercises` supports inline editing with visible open/close controls, admin-only video URL management, and a compact clickable video indicator for exercises that include a form video.
 - Member workout rows show a `Play video` action for exercises with a video URL, including YouTube Shorts links.
@@ -102,6 +112,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 - Member-only dashboard with assigned weekly workout, GPS-backed start/end workout check-in, lift logging, attendance, profile metrics, injury/limitation handling, and notifications.
 - Exercise catalog and workout program builder backed by Firestore.
 - Exercise videos can be stored on catalog entries and played from assigned member workout rows.
+- Owner can request custom exercises to be added to admin catalog from the plan builder, with a "send to admin" checkbox — admin reviews, edits, and approves in one step from `/admin/exercises`.
 - AI injury/modification flow framed as a semi-personal trainer.
 - Activity feed scoped by role: owner/admin see gym-wide activity, members see their own events.
 - Dark mode, responsive UI, mobile bottom navigation, scroll-aware topbars, PWA manifest/service worker, cleaned app icons, and install banner.
@@ -130,6 +141,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 gyms
 profiles
 exerciseCatalog
+exerciseRequests
 workoutPrograms
 notifications
 workoutSplitTemplates
@@ -147,6 +159,7 @@ Important IDs:
 ```text
 SHG gym id: shg
 SHG owner id: santosh-shg
+Titan Fitness Club gym id: titan-gym (mock only)
 Dummy gym id: dummy-gym
 Dummy owner id: dummy-gym-owner-1
 Admin profile id: admin-fitsplit
@@ -277,6 +290,7 @@ firebase deploy --only apphosting:fitsplit --project fitsplit-29215
 - Firebase Storage avatar/staff image upload is still pending.
 - Firebase Cloud Messaging push reminders are still pending.
 - Production geofence coordinates must be configured before strict gym-radius attendance can be trusted.
+- Newly created gym staff (owner/trainer) accounts use default password `password`. No email is sent — credentials must be shared manually. Staff should change their password via `/profile` after first login. Login requires the **Staff** tab (not the Member/PIN tab).
 
 ## Co-Developer Notes
 

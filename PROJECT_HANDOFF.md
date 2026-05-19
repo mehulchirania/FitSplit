@@ -1,5 +1,91 @@
 # FitSplit Project Handoff
 
+## Latest Update — 2026-05-20: Fix misleading staff creation confirmation message
+
+### Problem
+- `app/admin/page.tsx` "Create gym staff?" confirmation dialog said "They will receive an email with their credentials." — FitSplit does not send any email. This caused confusion about how newly created owner/trainer accounts are accessed.
+
+### Fix (`app/admin/page.tsx`)
+- Updated `confirmMessage` to: "This creates a Firebase Auth login with the email and default password 'password'. Share these credentials manually — no email is sent."
+- Added inline hint below the form fields: "Default login password is `password`. Share it with the staff member — no email is sent automatically."
+
+### How to log in as a newly created gym staff account
+1. Open the FitSplit login page.
+2. Select the **Staff** tab (not the Member/PIN tab).
+3. Enter the **email** used when creating the account.
+4. Enter password: **`password`**
+5. Change the password via `/profile` after first login.
+
+Note: `titan-gym` exists in mock data only. To create a Titan owner in Firebase, first create the Titan Fitness Club gym workspace via `/admin/gyms`, then add the owner via `/admin` with that gym's real Firebase ID.
+
+---
+
+## Latest Update — 2026-05-20: UX polish, custom plan improvements, exercise requests
+
+### Back button removed
+- `BackButton` component removed from `app/layout.tsx` — breadcrumbs already provide navigation on all pages.
+- `.back-row` / `.back-button` CSS removed from `globals.css`.
+
+### Exercise duplicate fix
+- `getExerciseCatalog` in `lib/firebase/read-models.ts` now deduplicates by exercise name (case-insensitive) instead of ID. Firebase-persisted version wins over mock data when names collide. Prevents the same exercise appearing twice when Firebase + workouts.json are both present.
+
+### Custom plan builder (`components/custom-plan-builder.tsx`) — full rewrite
+- Exercise picker: text filter input + `optgroup`-style select grouped by muscle group.
+- Per-exercise sets/reps: each added exercise has its own editable sets/reps fields inline.
+- Custom exercise input: free-text field for exercises not in the catalog.
+- "Send to admin for catalog" checkbox appears when a custom exercise name is entered — includes muscle group, equipment, and optional notes fields.
+- Edit mode: accepts `initialProgram?: WorkoutProgram` prop — pre-fills title, goal, description, and all days. Calls `updateCustomWorkoutProgram` instead of `createCustomWorkoutProgram`.
+- Save no longer uses `ConfirmActionForm` — uses direct `useTransition` form submit.
+
+### Custom plan gallery (`components/workout-program-gallery.tsx`) — updated
+- Custom gym plans now shown at the **top** of the programs page (most relevant to owner).
+- Predefined plans are collapsed by default with a "Show/Hide" toggle.
+- Custom plan cards now have **Edit** and **Delete** buttons.
+  - Edit opens the `CustomPlanBuilder` in a modal dialog, pre-filled with existing plan data.
+  - Delete shows a confirmation dialog and calls `deleteCustomWorkoutProgram`.
+- Gallery accepts `catalog?: CatalogGroup[]` prop for the edit modal builder.
+
+### New server actions (`lib/firebase/actions.ts`)
+| Action | Description |
+|--------|-------------|
+| `requestCatalogExercise` | Owner submits a custom exercise request; saves to `exerciseRequests` collection and creates an admin notification. |
+| `approveCatalogExerciseRequest` | Admin edits details and approves — saves exercise to `exerciseCatalog`, marks request as approved. |
+| `rejectCatalogExerciseRequest` | Admin dismisses a pending request, sets status to `rejected`. |
+| `deleteCustomWorkoutProgram` | Owner/admin deletes a custom gym plan from Firestore. |
+| `updateCustomWorkoutProgram` | Updates an existing custom gym plan (days, exercises, title, etc.). |
+
+### New Firestore collection: `exerciseRequests`
+- Added to `lib/firebase/collections.ts`.
+- Fields: `id, gymId, gymName, requestedBy, name, muscleGroup, equipment, instructions, status, createdAt, updatedAt`.
+- `status`: `"pending" | "approved" | "rejected"`.
+
+### Admin exercise requests UI (`app/admin/exercises/page.tsx`)
+- Pending exercise requests shown at the top of the page with an alert pill.
+- Each request card shows name, muscle group, gym source, notes, a **Dismiss** button (one-click reject), and a **Review & Add to catalog** expandable form.
+- The form pre-fills with request data and lets admin edit before approving — single submit adds to catalog.
+
+### Domain types (`types/domain.ts`)
+- `Notification.type` union extended with `"exercise_request"`.
+- `Notification.exerciseRequestId?: string` optional field added.
+- New `ExerciseRequest` type added.
+
+### Mock data (`lib/mock-data.ts`)
+- 10 new SHG members added (varied goals, join dates Oct 2025–Apr 2026, 2 suspended).
+- 20 Titan Fitness Club members added (2 suspended).
+- Titan Fitness Club gym workspace added with 2 gym notices.
+- 4 new SHG assignments and 8 new Titan assignments added for plan-filter demo.
+- SHG `memberCount` updated to 15.
+
+### Member UX changes
+- `assignedTrainer` field on `/profile` is read-only for members — `isReadOnlyTrainer={true}` passed from `app/profile/page.tsx`.
+- Start Workout button removed from `MemberWorkoutConsole`; session bar only visible when an active session exists.
+
+### Loading states
+- `FitnessLoader` component (`components/fitness-loader.tsx`) — animated barbell with pulsing dots.
+- `loading.tsx` files added for root, `/member`, `/owner`, `/admin`, `/profile`.
+
+---
+
 ## Session 9 Plan — Admin Console Redesign (2026-05-18)
 
 ### Scope approved by Mehul. Implementation in progress.
@@ -40,6 +126,74 @@ This project is maintained by two AI co-developers — **Claude** and **Codex** 
 2. Keep `README.md` Current Status and Features sections accurate.
 
 This file is the canonical handoff document. Read it first when starting any new session.
+
+---
+
+## Product Direction Note - 2026-05-19: Remove manual workout start/end flow
+
+Mehul plans to remove the explicit `Start Workout` / `End Workout` button flow because most members are unlikely to use it consistently.
+
+Preferred direction:
+
+- Make `Log Sets` the primary in-gym action.
+- Treat the first logged set of the day as the implicit workout/session start.
+- Use logged sets as the attendance/proof-of-training signal instead of requiring a separate check-in.
+- Show lightweight status such as `Last trained today at 6:42 PM`.
+- Do not create attendance/session records when no sets are logged.
+- Avoid reintroducing manual start/end workout UX unless explicitly requested.
+
+---
+
+## Product Direction Note - 2026-05-19: AI gym-floor optimization
+
+FitSplit should differentiate from generic AI workout generators by using AI to optimize workout assignment around the real gym floor.
+
+Future AI program assignment should consider:
+
+- Existing member program assignments.
+- Member primary/secondary training time slots.
+- Assigned trainer.
+- Muscle-group overlap by day.
+- Exercise/equipment overlap by day.
+- Machine/equipment availability and expected crowding.
+- Historical busy hours and logged training behavior.
+
+When assigning a program, AI should surface:
+
+- Recommended workout program.
+- Schedule/machine crowding risk.
+- Overlap warnings, such as too many members training chest or using bench/cable stations in the same slot.
+- Suggested changes, such as shifting a member's push day, starting them on a different day in the split, or swapping an overloaded machine exercise for an equivalent alternative.
+
+The owner/trainer assignment UI should eventually support:
+
+- `Assign as-is`.
+- `Apply AI optimized schedule`.
+- `Pick another program`.
+
+This should position FitSplit as an AI training-operations tool for gyms, not just an AI workout generator.
+
+---
+
+## Product Direction Note - 2026-05-19: Owner muscle/equipment usage charts
+
+Owner dashboard should include a day-wise and slot-wise load map showing which muscle groups and machines/equipment are expected to be used.
+
+Recommended views:
+
+- Heatmap: day of week x muscle group.
+- Heatmap: day of week x equipment/machine.
+- Slot heatmap: time slot x muscle group/equipment.
+- Stacked bars: members per muscle group per day.
+- Warning cards for expected overload, such as `Bench stations overloaded Monday evening`.
+
+Example insights:
+
+- Monday: Chest high, Triceps medium, Bench press high, Cable machine high.
+- Tuesday: Back high, Biceps medium, Lat pulldown high.
+- Slot D: Chest very high, bench/cable demand high.
+
+AI should use this same load-map data to recommend better program assignments, stagger workout days, shift exercise selection, and reduce crowding.
 
 ---
 

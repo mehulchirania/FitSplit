@@ -4,8 +4,8 @@ import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { createCatalogExercise, resetExerciseVideos, updateCatalogExercise } from "@/lib/firebase/actions";
-import { getExerciseCatalog, getGymWorkspaces } from "@/lib/firebase/read-models";
+import { approveCatalogExerciseRequest, createCatalogExercise, rejectCatalogExerciseRequest, resetExerciseVideos, updateCatalogExercise } from "@/lib/firebase/actions";
+import { getExerciseCatalog, getGymWorkspaces, getPendingExerciseRequests } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
@@ -31,7 +31,10 @@ export default async function AdminExercisesPage({
   const selectedGymId = gymParam ?? gyms[0]?.id ?? "shg";
   const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
 
-  const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(selectedGymId);
+  const [{ exercises, catalog: exerciseCatalogByMuscle }, { requests: pendingRequests }] = await Promise.all([
+    getExerciseCatalog(selectedGymId),
+    getPendingExerciseRequests()
+  ]);
 
   return (
     <main className="page">
@@ -82,6 +85,84 @@ export default async function AdminExercisesPage({
           </div>
         </aside>
       </section>
+
+      {/* ── Pending exercise requests from gym owners ── */}
+      {pendingRequests.length > 0 && (
+        <section className="list-panel" style={{ marginBottom: 20 }}>
+          <div className="panel-title">
+            <h2><Dumbbell /> Exercise requests from gyms</h2>
+            <span className="status-pill status-expiring">{pendingRequests.length} pending</span>
+          </div>
+          <div className="notification-list">
+            {pendingRequests.map((req) => (
+              <article key={req.id} style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+                  <div>
+                    <strong style={{ fontSize: "0.95rem" }}>{req.name}</strong>
+                    <p style={{ color: "var(--text-soft)", fontSize: "0.82rem", margin: "2px 0 0" }}>
+                      {req.muscleGroup}{req.equipment ? ` · ${req.equipment}` : ""} · Requested by {req.gymName ?? req.gymId}
+                    </p>
+                    {req.instructions && (
+                      <p style={{ color: "var(--text-soft)", fontSize: "0.82rem", marginTop: 4, fontStyle: "italic" }}>{req.instructions}</p>
+                    )}
+                  </div>
+                  {/* One-click dismiss */}
+                  <form action={async (fd: FormData) => {
+                    "use server";
+                    await rejectCatalogExerciseRequest(fd);
+                  }}>
+                    <input name="requestId" type="hidden" value={req.id} />
+                    <button className="button button-secondary" style={{ fontSize: "0.78rem", padding: "4px 10px", minHeight: 28 }} type="submit">
+                      Dismiss
+                    </button>
+                  </form>
+                </div>
+
+                {/* Editable approve form */}
+                <details style={{ marginTop: 10 }}>
+                  <summary className="button button-primary" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem", padding: "6px 14px", listStyle: "none" }}>
+                    Review &amp; Add to catalog
+                  </summary>
+                  <form
+                    action={async (fd: FormData) => {
+                      "use server";
+                      await approveCatalogExerciseRequest(fd);
+                    }}
+                    style={{ marginTop: 10, display: "grid", gap: 10 }}
+                  >
+                    <input name="requestId" type="hidden" value={req.id} />
+                    <div className="form-grid">
+                      <label>
+                        Exercise name
+                        <input defaultValue={req.name} name="name" required />
+                      </label>
+                      <label>
+                        Muscle group
+                        <select defaultValue={req.muscleGroup} name="muscleGroup" required>
+                          {ALL_MUSCLE_GROUPS.map((mg) => (
+                            <option key={mg} value={mg}>{mg}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        Equipment
+                        <input defaultValue={req.equipment ?? ""} name="equipment" placeholder="e.g. Cable, Barbell" />
+                      </label>
+                    </div>
+                    <label>
+                      Coaching instructions
+                      <textarea defaultValue={req.instructions ?? ""} name="instructions" placeholder="Setup, cues, range of motion" rows={2} />
+                    </label>
+                    <button className="button button-primary" style={{ width: "fit-content" }} type="submit">
+                      Add to catalog
+                    </button>
+                  </form>
+                </details>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="catalog-grid">
         {exerciseCatalogByMuscle.map((group) => (
