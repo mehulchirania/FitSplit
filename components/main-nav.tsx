@@ -7,6 +7,8 @@ import type { Role } from "@/types/domain";
 const adminLinks = [
   { href: "/admin", label: "Dashboard" },
   { href: "/admin/gyms", label: "Gyms" },
+  { href: "/admin/exercises", label: "Exercises" },
+  { href: "/admin/programs", label: "Programs" },
   { href: "/admin/inbox", label: "Inbox" }
 ];
 

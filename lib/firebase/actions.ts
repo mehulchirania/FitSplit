@@ -8,6 +8,7 @@ import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
 import type { GymWorkspace, Role, WorkoutProgram } from "@/types/domain";
 import { getWorkoutPrograms } from "@/lib/firebase/read-models";
+import workoutsData from "@/lib/workouts.json";
 
 function requireFirebase() {
   if (!hasFirebaseAdminConfig()) {
@@ -1913,6 +1914,9 @@ export async function updateCatalogExercise(
     const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
     const name = requireText(formData, "name", "Exercise name");
     const now = new Date().toISOString();
+    const videoUrl = String(formData.get("videoUrl") ?? "").trim();
+    const gymVideoUrl = String(formData.get("gymVideoUrl") ?? "").trim();
+
     const updatePayload: Record<string, unknown> = {
         id: exerciseId,
         gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
@@ -1921,8 +1925,10 @@ export async function updateCatalogExercise(
         equipment: String(formData.get("equipment") ?? "").trim(),
         instructions: String(formData.get("instructions") ?? "").trim(),
         thumbnailUrl: String(formData.get("thumbnailUrl") ?? "").trim(),
-        videoSource: String(formData.get("videoSource") ?? "none"),
-        videoUrl: String(formData.get("videoUrl") ?? "").trim(),
+        videoSource: videoUrl ? String(formData.get("videoSource") ?? "youtube") : "none",
+        videoUrl,
+        gymVideoUrl,
+        gymVideoSource: gymVideoUrl ? String(formData.get("gymVideoSource") ?? "youtube") : "none",
         ownerOnly: true,
         isActive: true,
         updatedBy: currentUser.uid,
@@ -1931,12 +1937,58 @@ export async function updateCatalogExercise(
 
     await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(updatePayload, { merge: true });
 
+    revalidatePath("/admin/exercises");
     revalidatePath("/owner/exercises");
     revalidatePath("/owner/programs");
     revalidatePath("/member");
     return success(`${name} updated.`);
   } catch (error) {
     return failure(error, "Unable to update exercise.");
+  }
+}
+
+export async function resetExerciseVideos(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
+    const exerciseName = String(formData.get("exerciseName") ?? "").trim().toLowerCase();
+
+    // Look up defaults from the seeded workouts catalog
+    type CatalogEntry = { name: string; video_url?: string; gym_video_url?: string };
+    const catalog = (workoutsData as { exercise_catalog: Record<string, CatalogEntry[]> }).exercise_catalog;
+
+    let defaultVideoUrl = "";
+    let defaultGymVideoUrl = "";
+
+    for (const entries of Object.values(catalog)) {
+      const match = entries.find((e) => e.name.toLowerCase() === exerciseName);
+      if (match) {
+        defaultVideoUrl = match.video_url ?? "";
+        defaultGymVideoUrl = match.gym_video_url ?? "";
+        break;
+      }
+    }
+
+    const now = new Date().toISOString();
+    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).update({
+      videoUrl: defaultVideoUrl,
+      videoSource: defaultVideoUrl ? "youtube" : "none",
+      gymVideoUrl: defaultGymVideoUrl,
+      gymVideoSource: defaultGymVideoUrl ? "youtube" : "none",
+      updatedAt: now,
+    });
+
+    revalidatePath("/admin/exercises");
+    revalidatePath("/owner/exercises");
+    revalidatePath("/member");
+    return success("Videos reset to default.");
+  } catch (error) {
+    return failure(error, "Unable to reset videos.");
   }
 }
 

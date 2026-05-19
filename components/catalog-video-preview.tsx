@@ -1,0 +1,133 @@
+"use client";
+
+import { useState } from "react";
+import { Video, X } from "@/components/icons";
+
+function getYouTubeEmbedUrl(videoUrl: string): string | null {
+  if (!videoUrl) return null;
+  try {
+    const url = new URL(videoUrl);
+    if (url.hostname.includes("youtube.com")) {
+      const id = url.searchParams.get("v");
+      if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+      const shortsId = url.pathname.match(/\/shorts\/([^/?]+)/)?.[1];
+      if (shortsId) return `https://www.youtube.com/embed/${shortsId}?autoplay=1&rel=0`;
+    }
+    if (url.hostname === "youtu.be") {
+      const id = url.pathname.slice(1).split("?")[0];
+      if (id) return `https://www.youtube.com/embed/${id}?autoplay=1&rel=0`;
+    }
+  } catch {
+    // not a valid URL
+  }
+  return null;
+}
+
+type VideoType = "tutorial" | "demo";
+
+export function CatalogVideoPreview({
+  exerciseName,
+  gymVideoUrl = "",
+  muscleGroup,
+  videoUrl = "",
+}: {
+  exerciseName: string;
+  gymVideoUrl?: string;
+  muscleGroup: string;
+  videoUrl?: string;
+}) {
+  const [activeVideo, setActiveVideo] = useState<VideoType | null>(null);
+
+  const activeRawUrl = activeVideo
+    ? (activeVideo === "demo" ? gymVideoUrl : videoUrl)
+    : null;
+  const activeEmbedUrl = activeRawUrl ? getYouTubeEmbedUrl(activeRawUrl) : null;
+
+  const hasTutorial = Boolean(videoUrl);
+  const hasDemo = Boolean(gymVideoUrl);
+
+  if (!hasTutorial && !hasDemo) return null;
+
+  return (
+    <>
+      <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
+        {hasTutorial && (
+          <button
+            aria-label={`Preview ${exerciseName} tutorial`}
+            className="video-indicator"
+            onClick={() => setActiveVideo("tutorial")}
+            title="Tutorial video"
+            type="button"
+          >
+            <Video />
+          </button>
+        )}
+        {hasDemo && (
+          <button
+            aria-label={`Preview ${exerciseName} gym demo`}
+            className="video-indicator"
+            onClick={() => setActiveVideo("demo")}
+            style={{ opacity: 0.7 }}
+            title="Gym demo video"
+            type="button"
+          >
+            <Video />
+          </button>
+        )}
+      </div>
+
+      {activeVideo && (
+        <div
+          className="video-modal-backdrop"
+          onClick={() => setActiveVideo(null)}
+          role="presentation"
+        >
+          <div
+            className="video-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="video-modal-header">
+              <div>
+                <p className="eyebrow">
+                  {muscleGroup}
+                  {" · "}
+                  {activeVideo === "demo" ? "Gym Demo" : "Tutorial"}
+                </p>
+                <h3 style={{ margin: 0, fontSize: "1rem" }}>{exerciseName}</h3>
+              </div>
+              <button
+                aria-label="Close video"
+                className="icon-button neutral-icon-button"
+                onClick={() => setActiveVideo(null)}
+                type="button"
+              >
+                <X />
+              </button>
+            </div>
+            {activeEmbedUrl ? (
+              <iframe
+                allow="autoplay; encrypted-media"
+                allowFullScreen
+                className="video-embed"
+                src={activeEmbedUrl}
+                title={`${exerciseName} ${activeVideo === "demo" ? "gym demo" : "tutorial"}`}
+              />
+            ) : (
+              <div style={{ padding: "32px", textAlign: "center", color: "var(--text-soft)" }}>
+                <p>This video opens outside FitSplit.</p>
+                <a
+                  href={activeRawUrl ?? ""}
+                  rel="noopener noreferrer"
+                  style={{ color: "var(--brand)" }}
+                  target="_blank"
+                >
+                  Open video
+                </a>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}

@@ -198,6 +198,7 @@ html[data-theme="light"] .theme-logo-light {
   align-items: center;
   display: flex;
   gap: 8px;
+  margin-left: auto;
 }
 
 @media (max-width: 560px) {
@@ -6506,12 +6507,12 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 .md-hero-copy { flex: 1; min-width: 260px; }
 .md-greeting {
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
   color: var(--brand);
-  margin: 0 0 6px;
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
 }
 .md-hero-title {
   font-size: clamp(24px, 3vw, 36px);
@@ -7219,13 +7220,11 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
     padding: 0 16px;
     gap: 16px;
   }
-  .md-hero { padding: 20px 0 16px; margin-bottom: 20px; }
+  .md-hero { margin-bottom: 18px; }
   .md-hero-inner {
-    flex-direction: column;
-    gap: 16px;
-    padding: 0 16px;
+    gap: 18px;
   }
-  .md-hero-metrics { width: 100%; }
+  .md-hero-metrics { align-self: stretch; }
   .list-panel { padding: 16px; }
   .lift-log-fields { grid-template-columns: 1fr 1fr; }
 }
@@ -7355,35 +7354,44 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 
 .md-page {
-  padding-top: 6px;
+  padding-top: 4px;
 }
 
 .md-hero {
-  margin-bottom: 22px;
-  padding: 8px 0 0;
+  margin-bottom: 24px;
+  padding: 0 clamp(12px, 3vw, 24px);
 }
 
 .md-hero-inner {
   align-items: stretch;
-  background: color-mix(in srgb, var(--bg-elevated) 66%, transparent);
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--bg-elevated) 90%, var(--brand) 10%) 0%,
+    var(--bg-elevated) 55%
+  );
   border: 1px solid var(--border);
   border-radius: 28px;
-  box-shadow: 0 18px 60px rgb(0 0 0 / 0.18);
+  border-top: 3px solid var(--brand);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.24), 0 1px 0 rgb(255 255 255 / 0.06) inset;
   display: grid;
-  gap: 22px;
+  gap: 24px;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  margin: 0 auto;
   max-width: 1180px;
-  padding: clamp(18px, 3vw, 28px);
+  overflow: hidden;
+  padding: clamp(22px, 3vw, 32px);
 }
 
 .md-hero-copy {
   align-content: center;
   display: grid;
+  gap: 0;
   min-width: 0;
 }
 
 .md-hero-title {
   font-size: clamp(1.65rem, 3vw, 2.55rem);
+  margin-bottom: 16px;
   max-width: 760px;
   overflow-wrap: anywhere;
 }
@@ -7393,11 +7401,14 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
 }
 
 .md-badge {
+  font-size: 0.75rem;
+  font-weight: 650;
   line-height: 1.2;
+  padding: 5px 13px;
 }
 
 .md-hero-metrics {
-  align-self: stretch;
+  align-self: center;
   min-width: 0;
 }
 
@@ -7552,6 +7563,10 @@ html[data-theme="light"] option {
     grid-template-columns: 1fr;
   }
 
+  .md-hero-metrics {
+    align-self: stretch;
+  }
+
   .member-workout-side {
     max-height: none;
     position: static;
@@ -7577,9 +7592,13 @@ html[data-theme="light"] option {
     width: min(340px, calc(100vw - 24px));
   }
 
+  .md-hero {
+    padding: 0 12px;
+  }
+
   .md-hero-inner {
     border-radius: 22px;
-    margin: 0 12px;
+    margin: 0;
     padding: 18px;
   }
 

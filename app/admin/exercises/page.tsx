@@ -1,22 +1,16 @@
+import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { createCatalogExercise, resetExerciseVideos, updateCatalogExercise } from "@/lib/firebase/actions";
-import { getExerciseCatalog } from "@/lib/firebase/read-models";
+import { getExerciseCatalog, getGymWorkspaces } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
 const ALL_MUSCLE_GROUPS = [
-  "Back",
-  "Biceps",
-  "Cardio",
-  "Chest",
-  "Core",
-  "Legs",
-  "Shoulders",
-  "Triceps"
+  "Back", "Biceps", "Cardio", "Chest", "Core", "Legs", "Shoulders", "Triceps"
 ];
 
 const VIDEO_SOURCES = [
@@ -25,23 +19,51 @@ const VIDEO_SOURCES = [
   { value: "vimeo", label: "Vimeo" },
 ];
 
-export default async function ExerciseCatalogPage() {
-  const currentUser = await requireRole(["admin", "owner"]);
-  const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(currentUser.gymId);
+export default async function AdminExercisesPage({
+  searchParams
+}: {
+  searchParams: Promise<{ gym?: string }>;
+}) {
+  await requireRole(["admin"]);
+
+  const { gym: gymParam } = await searchParams;
+  const { gyms } = await getGymWorkspaces();
+  const selectedGymId = gymParam ?? gyms[0]?.id ?? "shg";
+  const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
+
+  const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(selectedGymId);
 
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Exercise Catalog" }]} />
-          <h1>Exercise library</h1>
+          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Exercise Catalog" }]} />
+          <h1>Exercise catalog</h1>
           <p>
-            Owner-managed catalog used to build all workout programs. Members only see exercises that appear in their assigned plan.
+            Review and edit exercise definitions, video links, and coaching notes across all gyms.
           </p>
+
+          {/* Gym selector */}
+          {gyms.length > 1 && (
+            <div className="quick-actions" style={{ marginTop: 16 }}>
+              {gyms.map((gym) => (
+                <Link
+                  key={gym.id}
+                  className={`button ${gym.id === selectedGymId ? "button-primary" : "button-secondary"}`}
+                  href={`/admin/exercises?gym=${gym.id}`}
+                >
+                  {gym.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
+
         <aside className="summary-panel">
           <div className="panel-title">
-            <h2>Catalog</h2>
+            <h2>
+              <Dumbbell /> {selectedGym?.name ?? "Catalog"}
+            </h2>
             <span className="status-pill status-active">{exercises.length} exercises</span>
           </div>
           <div className="detail-window">
@@ -121,10 +143,8 @@ export default async function ExerciseCatalogPage() {
                           <label>
                             Muscle group
                             <select defaultValue={exercise.muscleGroup} name="muscleGroup" required>
-                              {ALL_MUSCLE_GROUPS.map((muscleGroup) => (
-                                <option key={muscleGroup} value={muscleGroup}>
-                                  {muscleGroup}
-                                </option>
+                              {ALL_MUSCLE_GROUPS.map((mg) => (
+                                <option key={mg} value={mg}>{mg}</option>
                               ))}
                             </select>
                           </label>
@@ -140,7 +160,7 @@ export default async function ExerciseCatalogPage() {
                           {/* Tutorial video */}
                           <label>
                             Tutorial video URL
-                            <input defaultValue={exercise.videoUrl} name="videoUrl" placeholder="https://youtube.com/watch?v=..." type="url" />
+                            <input defaultValue={exercise.videoUrl} name="videoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
                           </label>
                           <label>
                             Tutorial video source
@@ -198,17 +218,17 @@ export default async function ExerciseCatalogPage() {
         ))}
       </section>
 
-      {exerciseCatalogByMuscle.length === 0 ? (
+      {exerciseCatalogByMuscle.length === 0 && (
         <div className="md-empty" style={{ marginTop: 16 }}>
           <h2>No exercises yet</h2>
           <p>Add the first exercise using the form below.</p>
         </div>
-      ) : null}
+      )}
 
       <section className="list-panel" id="add-exercise" style={{ marginTop: 20 }}>
         <div className="panel-title">
           <h2>Add new exercise</h2>
-          <span className="status-pill status-neutral">Owner only</span>
+          <span className="status-pill status-neutral">Admin</span>
         </div>
         <div className="notification-list">
           <ConfirmActionForm
@@ -227,10 +247,8 @@ export default async function ExerciseCatalogPage() {
               <label>
                 Muscle group
                 <select defaultValue="Chest" name="muscleGroup" required>
-                  {ALL_MUSCLE_GROUPS.map((muscleGroup) => (
-                    <option key={muscleGroup} value={muscleGroup}>
-                      {muscleGroup}
-                    </option>
+                  {ALL_MUSCLE_GROUPS.map((mg) => (
+                    <option key={mg} value={mg}>{mg}</option>
                   ))}
                 </select>
               </label>
@@ -242,10 +260,9 @@ export default async function ExerciseCatalogPage() {
                 Thumbnail URL
                 <input name="thumbnailUrl" placeholder="https://..." type="url" />
               </label>
-              {/* Tutorial video */}
               <label>
                 Tutorial video URL
-                <input name="videoUrl" placeholder="https://youtube.com/watch?v=..." type="url" />
+                <input name="videoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
               </label>
               <label>
                 Tutorial video source
@@ -255,7 +272,6 @@ export default async function ExerciseCatalogPage() {
                   ))}
                 </select>
               </label>
-              {/* Gym demo video */}
               <label>
                 Gym demo video URL
                 <input name="gymVideoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
