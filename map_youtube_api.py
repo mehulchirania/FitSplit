@@ -1,3 +1,4 @@
+import os
 import urllib.request
 import urllib.parse
 import json
@@ -5,11 +6,25 @@ import difflib
 import codecs
 import sys
 
+# Load .env.local if present (simple key=value parser, no dependencies required)
+env_path = os.path.join(os.path.dirname(__file__), ".env.local")
+if os.path.exists(env_path):
+    with open(env_path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, _, value = line.partition("=")
+                os.environ.setdefault(key.strip(), value.strip())
+
 # Ensure stdout supports utf-8
 sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
 
-API_KEY = "AIzaSyAE4E7HcJlp1yK0QB12k6qhlajIzGHU_BQ"
+API_KEY = os.environ.get("YOUTUBE_API_KEY", "")
 PLAYLIST_ID = "UUerweoBkwQOb_zwx3NfUD1g"
+
+if not API_KEY:
+    print("Error: YOUTUBE_API_KEY is not set. Add it to .env.local or the environment.")
+    sys.exit(1)
 
 def get_all_videos():
     videos = {}

@@ -1913,8 +1913,6 @@ export async function updateCatalogExercise(
     const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
     const name = requireText(formData, "name", "Exercise name");
     const now = new Date().toISOString();
-    const canManageDefaultVideos = currentUser.role === "admin";
-
     const updatePayload: Record<string, unknown> = {
         id: exerciseId,
         gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
@@ -1923,16 +1921,13 @@ export async function updateCatalogExercise(
         equipment: String(formData.get("equipment") ?? "").trim(),
         instructions: String(formData.get("instructions") ?? "").trim(),
         thumbnailUrl: String(formData.get("thumbnailUrl") ?? "").trim(),
+        videoSource: String(formData.get("videoSource") ?? "none"),
+        videoUrl: String(formData.get("videoUrl") ?? "").trim(),
         ownerOnly: true,
         isActive: true,
         updatedBy: currentUser.uid,
         updatedAt: now
       };
-
-    if (canManageDefaultVideos) {
-      updatePayload.videoSource = String(formData.get("videoSource") ?? "none");
-      updatePayload.videoUrl = String(formData.get("videoUrl") ?? "").trim();
-    }
 
     await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(updatePayload, { merge: true });
 

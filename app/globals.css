@@ -7067,6 +7067,14 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   padding: 5px 10px;
   white-space: nowrap;
 }
+.exercise-video-button--demo {
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand);
+}
+.exercise-video-button--demo:hover {
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
 
 /* YouTube / video modal */
 .video-modal-backdrop {

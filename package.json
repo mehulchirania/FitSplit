@@ -9,6 +9,7 @@
     "seed:auth": "node scripts/seed-firebase-auth.mjs",
     "seed:firebase": "node scripts/seed-firebase.mjs",
     "seed:demo": "node scripts/seed-demo-firestore.mjs",
+    "patch:videos": "node scripts/patch-exercise-videos.mjs",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"

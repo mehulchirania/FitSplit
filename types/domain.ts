@@ -71,6 +71,8 @@ export type Exercise = {
   instructions: string;
   videoSource: VideoSource;
   videoUrl: string;
+  gymVideoUrl: string;
+  gymVideoSource: VideoSource;
   thumbnailUrl: string;
   ownerOnly: boolean;
 };

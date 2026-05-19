@@ -221,6 +221,17 @@
   transform: translateY(-1px);
 }
 
+.member-workout-body .exercise-video-button--demo {
+  background: transparent;
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+.member-workout-body .exercise-video-button--demo:hover {
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  transform: translateY(-1px);
+}
+
 .member-workout-side {
   display: grid;
   gap: 14px;

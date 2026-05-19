@@ -60,6 +60,8 @@ function getYouTubeEmbedUrl(videoUrl: string): string | null {
   return null;
 }
 
+type VideoType = "tutorial" | "demo";
+
 export function ExerciseList({
   exercises,
   items
@@ -67,9 +69,17 @@ export function ExerciseList({
   exercises: Exercise[];
   items: WorkoutExercise[];
 }) {
-  const [videoExercise, setVideoExercise] = useState<Exercise | null>(null);
+  const [activeVideo, setActiveVideo] = useState<{ exercise: Exercise; type: VideoType } | null>(null);
 
-  const embedUrl = videoExercise ? getYouTubeEmbedUrl(videoExercise.videoUrl) : null;
+  const activeUrl = activeVideo
+    ? getYouTubeEmbedUrl(
+        activeVideo.type === "demo" ? activeVideo.exercise.gymVideoUrl : activeVideo.exercise.videoUrl
+      )
+    : null;
+
+  const activeRawUrl = activeVideo
+    ? (activeVideo.type === "demo" ? activeVideo.exercise.gymVideoUrl : activeVideo.exercise.videoUrl)
+    : null;
 
   return (
     <>
@@ -78,7 +88,8 @@ export function ExerciseList({
           const exercise = exercises.find((e) => e.id === item.exerciseId);
           if (!exercise) return null;
 
-          const hasVideo = Boolean(exercise.videoUrl && exercise.videoUrl !== "");
+          const hasTutorial = Boolean(exercise.videoUrl);
+          const hasDemo = Boolean(exercise.gymVideoUrl);
 
           return (
             <article className="exercise-row" key={`${exercise.id}-${index}`}>
@@ -108,13 +119,24 @@ export function ExerciseList({
               </div>
               <div className="exercise-row-actions">
                 <span className="exercise-prescription">{getPrescription(item)}</span>
-                {hasVideo && (
+                {hasTutorial && (
                   <button
                     className="exercise-video-button"
-                    onClick={() => setVideoExercise(exercise)}
+                    onClick={() => setActiveVideo({ exercise, type: "tutorial" })}
+                    title="Form tutorial video"
                     type="button"
                   >
-                    <Video /> Play video
+                    <Video /> Tutorial
+                  </button>
+                )}
+                {hasDemo && (
+                  <button
+                    className="exercise-video-button exercise-video-button--demo"
+                    onClick={() => setActiveVideo({ exercise, type: "demo" })}
+                    title="Gym demo video"
+                    type="button"
+                  >
+                    <Video /> Gym Demo
                   </button>
                 )}
               </div>
@@ -124,10 +146,10 @@ export function ExerciseList({
       </div>
 
       {/* YouTube video modal */}
-      {videoExercise && (
+      {activeVideo && (
         <div
           className="video-modal-backdrop"
-          onClick={() => setVideoExercise(null)}
+          onClick={() => setActiveVideo(null)}
           role="presentation"
         >
           <div
@@ -136,31 +158,35 @@ export function ExerciseList({
           >
             <div className="video-modal-header">
               <div>
-                <p className="eyebrow">{videoExercise.muscleGroup}</p>
-                <h3 style={{ margin: 0, fontSize: "1rem" }}>{videoExercise.name}</h3>
+                <p className="eyebrow">
+                  {activeVideo.exercise.muscleGroup}
+                  {" · "}
+                  {activeVideo.type === "demo" ? "Gym Demo" : "Tutorial"}
+                </p>
+                <h3 style={{ margin: 0, fontSize: "1rem" }}>{activeVideo.exercise.name}</h3>
               </div>
               <button
                 aria-label="Close video"
                 className="icon-button neutral-icon-button"
-                onClick={() => setVideoExercise(null)}
+                onClick={() => setActiveVideo(null)}
                 type="button"
               >
                 <X />
               </button>
             </div>
-            {embedUrl ? (
+            {activeUrl ? (
               <iframe
                 allow="autoplay; encrypted-media"
                 allowFullScreen
                 className="video-embed"
-                src={embedUrl}
-                title={`${videoExercise.name} form guide`}
+                src={activeUrl}
+                title={`${activeVideo.exercise.name} ${activeVideo.type === "demo" ? "gym demo" : "form tutorial"}`}
               />
             ) : (
               <div style={{ padding: "32px", textAlign: "center", color: "var(--text-soft)" }}>
-                <p>This video source opens outside FitSplit.</p>
-                <a href={videoExercise.videoUrl} rel="noopener noreferrer" style={{ color: "var(--brand)" }} target="_blank">
-                  Open video source
+                <p>This video opens outside FitSplit.</p>
+                <a href={activeRawUrl ?? ""} rel="noopener noreferrer" style={{ color: "var(--brand)" }} target="_blank">
+                  Open video
                 </a>
               </div>
             )}

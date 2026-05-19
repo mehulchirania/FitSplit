@@ -18,6 +18,7 @@ type CatalogExercise = {
   name: string;
   mechanic: string;
   video_url?: string;
+  gym_video_url?: string;
 };
 
 type RawSplit = {
@@ -234,6 +235,8 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       instructions: getCoachingNotes(catalogExercise.name, catalogExercise.mechanic, muscleGroup),
       videoSource: catalogExercise.video_url ? "youtube" as const : "none" as const,
       videoUrl: catalogExercise.video_url ?? "",
+      gymVideoUrl: catalogExercise.gym_video_url ?? "",
+      gymVideoSource: catalogExercise.gym_video_url ? "youtube" as const : "none" as const,
       thumbnailUrl:
         muscleThumbnails[muscleGroup] ??
         "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80",
@@ -248,6 +251,8 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       instructions: "Hold band at chest height, pull apart, squeezing shoulder blades.",
       videoSource: "none",
       videoUrl: "",
+      gymVideoUrl: "",
+      gymVideoSource: "none",
       thumbnailUrl: muscleThumbnails["Shoulders"],
       ownerOnly: false
     },
@@ -259,6 +264,8 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       instructions: "On all fours, arch back up, then dip back down slowly.",
       videoSource: "none",
       videoUrl: "",
+      gymVideoUrl: "",
+      gymVideoSource: "none",
       thumbnailUrl: muscleThumbnails["Back"],
       ownerOnly: false
     },
@@ -270,6 +277,8 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       instructions: "Stand on one leg, pull other foot to glutes, keep knees together.",
       videoSource: "none",
       videoUrl: "",
+      gymVideoUrl: "",
+      gymVideoSource: "none",
       thumbnailUrl: muscleThumbnails["Legs"],
       ownerOnly: false
     }

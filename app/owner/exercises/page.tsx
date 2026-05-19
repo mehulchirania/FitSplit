@@ -20,7 +20,7 @@ const ALL_MUSCLE_GROUPS = [
 
 export default async function ExerciseCatalogPage() {
   const currentUser = await requireRole(["admin", "owner"]);
-  const canManageDefaultVideos = currentUser.role === "admin";
+  const canManageDefaultVideos = currentUser.role === "admin" || currentUser.role === "owner";
   const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(currentUser.gymId);
 
   return (
