@@ -3276,6 +3276,15 @@ body {
   color: var(--text);
 }
 
+/* Active link state — shows which top-nav section the user is currently in */
+.topnav a.is-active,
+.topnav a[aria-current="page"] {
+  background: var(--brand-soft, color-mix(in srgb, var(--brand) 12%, transparent));
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand);
+  font-weight: 700;
+}
+
 .icon-button,
 .theme-toggle,
 .button {
@@ -5733,6 +5742,16 @@ html[data-theme="light"] .contact-form textarea {
   .mobile-bottom-nav a:hover {
     background: var(--surface-strong);
     color: var(--text);
+  }
+
+  .mobile-bottom-nav a.is-active,
+  .mobile-bottom-nav a[aria-current="page"] {
+    background: color-mix(in srgb, var(--brand) 14%, transparent);
+    color: var(--brand);
+  }
+  .mobile-bottom-nav a.is-active svg,
+  .mobile-bottom-nav a[aria-current="page"] svg {
+    color: var(--brand);
   }
 
   .pwa-install-banner {
@@ -8284,6 +8303,79 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   flex-wrap: wrap;
   gap: 10px;
   min-width: 0;
+}
+
+/* Workout history page — daily workout cards */
+.history-day-card {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+}
+.history-day-card:last-child {
+  border-bottom: none;
+}
+.history-day-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.history-day-logs {
+  display: grid;
+  gap: 8px;
+}
+.history-log-row {
+  align-items: center;
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  display: grid;
+  font-size: 0.86rem;
+  gap: 10px;
+  grid-template-columns: 1fr auto auto;
+  padding: 8px 12px;
+}
+.history-log-name {
+  align-items: center;
+  display: flex;
+  font-weight: 600;
+  gap: 4px;
+}
+.history-log-stats {
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.history-log-time {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 540px) {
+  .history-log-row {
+    font-size: 0.82rem;
+    grid-template-columns: 1fr auto;
+  }
+  .history-log-time {
+    display: none;
+  }
+}
+
+/* "Last time" hint under the exercise select in the lift log form */
+.lift-log-last-hint {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin: 4px 0 8px;
+  padding: 6px 10px;
+}
+.lift-log-last-hint strong {
+  color: var(--text);
+  font-weight: 700;
+}
+.lift-log-last-hint--empty {
+  color: var(--text-faint);
+  font-style: italic;
 }
 
 .lift-log-success {

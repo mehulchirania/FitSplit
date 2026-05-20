@@ -9,8 +9,32 @@ import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisp
 
 export const dynamic = "force-dynamic";
 
-export default async function ProfilePage() {
+export default async function ProfilePage({
+  searchParams
+}: {
+  searchParams?: Promise<{ forceChange?: string }>;
+}) {
   const currentUser = await requireAuth();
+  const params = (await searchParams) ?? {};
+  const forceChange = params.forceChange === "1" || currentUser.mustChangePassword === true;
+
+  const forceChangeBanner = forceChange ? (
+    <section
+      className="form-panel"
+      style={{
+        background: "color-mix(in srgb, var(--warning, #f5b945) 14%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--warning, #f5b945) 40%, var(--border))",
+        marginBottom: 16
+      }}
+    >
+      <h2 style={{ margin: 0, fontSize: "1rem" }}>Change your password to continue</h2>
+      <p style={{ margin: "6px 0 0", fontSize: "0.88rem", color: "var(--text-soft)" }}>
+        Your account is using the default password <code>password</code>. Please choose a new password
+        below before using the rest of the app. You&apos;ll be redirected here on every page until this
+        is done.
+      </p>
+    </section>
+  ) : null;
 
   const passwordChangeForm = (
     <section className="list-panel" style={{ marginTop: 16 }}>
@@ -61,6 +85,8 @@ export default async function ProfilePage() {
             <p>Platform-level administrator. Manages all gym workspaces and staff access.</p>
           </div>
         </section>
+
+        {forceChangeBanner}
 
         {/* Profile card */}
         <div className="profile-card-admin">
@@ -198,6 +224,7 @@ export default async function ProfilePage() {
             </div>
           </aside>
         </section>
+        {forceChangeBanner}
         {passwordChangeForm}
       </main>
     );

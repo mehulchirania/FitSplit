@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
@@ -62,6 +63,51 @@ export default async function MemberDashboard() {
       .map((log) => new Date(log.loggedAt!).toDateString())
   ).size;
 
+  // Weekly streak — count consecutive ISO-weeks (Mon-Sun) with ≥1 logged lift,
+  // walking backwards from the current week. Stops at the first empty week.
+  // Members see a single number that goes up by 1 each week they train, 0 if
+  // they break the chain.
+  const weeklyStreak = (() => {
+    if (liftLogs.length === 0) return 0;
+    const trainedWeekKeys = new Set(
+      liftLogs
+        .filter((log) => log.loggedAt)
+        .map((log) => {
+          const d = new Date(log.loggedAt!);
+          // Snap to that week's Monday for a stable bucket key
+          const day = (d.getDay() + 6) % 7;
+          d.setDate(d.getDate() - day);
+          d.setHours(0, 0, 0, 0);
+          return d.toISOString().slice(0, 10);
+        })
+    );
+    let streak = 0;
+    const cursor = new Date(startOfWeek);
+    while (true) {
+      const key = cursor.toISOString().slice(0, 10);
+      if (trainedWeekKeys.has(key)) {
+        streak += 1;
+        cursor.setDate(cursor.getDate() - 7);
+      } else {
+        break;
+      }
+    }
+    // Grace: if this week hasn't started training yet, still count the streak
+    // from last week so we don't show "0" on Monday morning before the first set.
+    if (streak === 0 && daysTrainedThisWeek === 0) {
+      const lastWeekStart = new Date(startOfWeek);
+      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+      if (trainedWeekKeys.has(lastWeekStart.toISOString().slice(0, 10))) {
+        const c = new Date(lastWeekStart);
+        while (trainedWeekKeys.has(c.toISOString().slice(0, 10))) {
+          streak += 1;
+          c.setDate(c.getDate() - 7);
+        }
+      }
+    }
+    return streak;
+  })();
+
   return (
     <main className="md-page">
       <header className="md-hero">
@@ -84,15 +130,20 @@ export default async function MemberDashboard() {
 
           <div className="md-hero-summary" aria-label="Training summary">
             <div className="md-hero-stat">
+              <span>Streak</span>
+              <strong>{weeklyStreak > 0 ? `🔥 ${weeklyStreak}` : "—"}</strong>
+              <small>{weeklyStreak === 1 ? "week" : "weeks"} in a row</small>
+            </div>
+            <div className="md-hero-stat">
               <span>This week</span>
               <strong>{daysTrainedThisWeek}</strong>
               <small>training day{daysTrainedThisWeek === 1 ? "" : "s"}</small>
             </div>
-            <div className="md-hero-stat">
+            <Link href="/member/history" className="md-hero-stat md-hero-stat--link">
               <span>Lift logs</span>
               <strong>{liftLogs.length}</strong>
-              <small>sets saved</small>
-            </div>
+              <small>sets saved · view history</small>
+            </Link>
             <div className="md-hero-stat">
               <span>Status</span>
               <strong>{program ? "Ready" : "Pending"}</strong>

@@ -19,9 +19,16 @@ const ownerLinks = [
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
+function isActiveLink(pathname: string, href: string) {
+  // Exact match for the dashboard ("/admin", "/owner")
+  // Prefix match (with trailing slash) for nested routes ("/admin/gyms/abc" matches "/admin/gyms")
+  if (pathname === href) return true;
+  return pathname.startsWith(href + "/");
+}
+
 export function MainNav({ role }: { role?: Role }) {
   const pathname = usePathname();
-  
+
   if (!role || role === "member" || pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
     return null;
   }
@@ -32,11 +39,19 @@ export function MainNav({ role }: { role?: Role }) {
 
   return (
     <nav className="topnav" aria-label="Primary navigation">
-      {links.map((link) => (
-        <Link key={link.href} href={link.href}>
-          {link.label}
-        </Link>
-      ))}
+      {links.map((link) => {
+        const active = isActiveLink(pathname, link.href);
+        return (
+          <Link
+            aria-current={active ? "page" : undefined}
+            className={active ? "is-active" : ""}
+            href={link.href}
+            key={link.href}
+          >
+            {link.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 }

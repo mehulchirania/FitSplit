@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Plus, X } from "@/components/icons";
 import { assignProgramToMember, createAndAssignCustomProgram } from "@/lib/firebase/actions";
@@ -105,10 +105,12 @@ function PickPlanForm({
 
 function BuildCustomForm({
   catalog,
-  member
+  member,
+  onContentChange
 }: {
   catalog: CatalogGroup[];
   member: Member;
+  onContentChange?: (hasContent: boolean) => void;
 }) {
   const [days, setDays] = useState<PlanDay[]>(() => [makeDay(1)]);
   const [activeDayIdx, setActiveDayIdx] = useState(0);
@@ -119,6 +121,12 @@ function BuildCustomForm({
   const [title, setTitle] = useState(`${member.fullName}'s Plan`);
 
   const activeDay = days[activeDayIdx] ?? days[0];
+
+  // Report content state to parent so it can warn before tab-switching
+  const hasContent = days.some((d) => d.entries.length > 0);
+  useEffect(() => {
+    onContentChange?.(hasContent);
+  }, [hasContent, onContentChange]);
 
   const filtered = useMemo(() => {
     const q = filter.toLowerCase();
@@ -381,6 +389,20 @@ export function ProgramAssignmentForm({
   programs: WorkoutProgram[];
 }) {
   const [mode, setMode] = useState<"pick" | "build">("pick");
+  const [hasUnsavedCustom, setHasUnsavedCustom] = useState(false);
+
+  const handleSwitchMode = useCallback((next: "pick" | "build") => {
+    if (next === mode) return;
+    // Warn before switching AWAY from the custom builder if exercises were added
+    if (mode === "build" && hasUnsavedCustom) {
+      const ok = typeof window !== "undefined"
+        ? window.confirm("You have unsaved exercises in the custom builder. Switch tabs and discard them?")
+        : true;
+      if (!ok) return;
+      setHasUnsavedCustom(false);
+    }
+    setMode(next);
+  }, [hasUnsavedCustom, mode]);
 
   const modeBtnBase: React.CSSProperties = {
     flex: 1, padding: "8px 12px", border: "none", cursor: "pointer",
@@ -395,7 +417,7 @@ export function ProgramAssignmentForm({
       {/* Mode toggle tabs */}
       <div style={{ display: "flex", borderBottom: "1px solid var(--border)", marginBottom: 18, gap: 0 }}>
         <button
-          onClick={() => setMode("pick")}
+          onClick={() => handleSwitchMode("pick")}
           style={{
             ...modeBtnBase,
             color: mode === "pick" ? "var(--brand)" : "var(--text-soft)",
@@ -406,7 +428,7 @@ export function ProgramAssignmentForm({
           Pick a plan
         </button>
         <button
-          onClick={() => setMode("build")}
+          onClick={() => handleSwitchMode("build")}
           style={{
             ...modeBtnBase,
             color: mode === "build" ? "var(--brand)" : "var(--text-soft)",
@@ -429,6 +451,7 @@ export function ProgramAssignmentForm({
         <BuildCustomForm
           catalog={catalog}
           member={member}
+          onContentChange={setHasUnsavedCustom}
         />
       )}
     </div>

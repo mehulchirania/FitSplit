@@ -10,6 +10,7 @@ import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
+import { RestTimer } from "@/components/rest-timer";
 import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/progress-chart").then(mod => mod.ProgressChart), {
@@ -289,6 +290,20 @@ export function MemberWorkoutConsole({
     }
     return acc;
   }, new Map());
+
+  // Most recent log per exercise — drives the "Last time" hint under the lift form.
+  // liftLogs are already ordered newest-first, so the first match wins.
+  const lastLogByExercise = liftLogs.reduce<Map<string, LiftLog>>((acc, log) => {
+    if (log.exerciseId && !acc.has(log.exerciseId)) {
+      acc.set(log.exerciseId, log);
+    }
+    return acc;
+  }, new Map());
+
+  // Which exercise is currently selected in the log-set form (drives the hint
+  // and the PR summary highlight). Tracked in component state so we can react
+  // to the <select onChange> instead of querying the DOM.
+  const [selectedExerciseIdForForm, setSelectedExerciseIdForForm] = useState<string>("");
 
   const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
   const aiStorageKey = `fitsplit-ai-trainer-${memberId}-${program.id}`;
@@ -731,7 +746,12 @@ export function MemberWorkoutConsole({
 
             <label className="lift-log-exercise-field">
               Exercise
-              <select name="exerciseId" required>
+              <select
+                name="exerciseId"
+                onChange={(e) => setSelectedExerciseIdForForm(e.target.value)}
+                required
+                value={selectedExerciseIdForForm || uniqueLoggableExercises[0]?.exerciseId || ""}
+              >
                 {uniqueLoggableExercises.map((item) => (
                   <option key={item.exerciseId} value={item.exerciseId}>
                     {getExerciseName(item.exerciseId, exercises)}
@@ -739,6 +759,27 @@ export function MemberWorkoutConsole({
                 ))}
               </select>
             </label>
+
+            {/* "Last time" hint — shows the most recent lift for the selected exercise.
+                Gives users a fast reference point without needing to open lift history. */}
+            {(() => {
+              const targetId = selectedExerciseIdForForm || uniqueLoggableExercises[0]?.exerciseId;
+              const lastLog = targetId ? lastLogByExercise.get(targetId) : undefined;
+              const isPR = lastLog && lastLog.weight === prMap.get(lastLog.exerciseId);
+              if (!lastLog) {
+                return (
+                  <p className="lift-log-last-hint lift-log-last-hint--empty">
+                    No prior logs for this exercise yet.
+                  </p>
+                );
+              }
+              return (
+                <p className="lift-log-last-hint">
+                  Last time: <strong>{lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}</strong>
+                  {isPR ? <span className="pr-chip" style={{ marginLeft: 8 }}>PR</span> : null}
+                </p>
+              );
+            })()}
 
             <div className="lift-log-fields">
               <label>
@@ -759,6 +800,11 @@ export function MemberWorkoutConsole({
               Log Set
             </button>
           </form>
+
+          {/* Rest timer — fires an audible beep when the rest interval is up. */}
+          <div style={{ marginTop: 14 }}>
+            <RestTimer />
+          </div>
 
           <details className="member-details-panel">
             <summary className="member-details-summary">

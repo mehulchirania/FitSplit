@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AddMemberForm } from "@/components/add-member-form";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
@@ -102,43 +103,55 @@ export default async function MembersPage({
 
       {/* ── Filter + Sort bar ── */}
       <div className="members-filter-bar">
-        {/* Filter tabs */}
+        {/* Filter tabs — use Link for soft navigation, preserves scroll & state */}
         <nav className="members-filter-tabs" aria-label="Filter members">
-          <a
+          <Link
+            aria-current={filter === "all" ? "page" : undefined}
             className={filter === "all" ? "is-selected" : ""}
             href={href("all", sort)}
+            replace
+            scroll={false}
           >
             All
             <span className="ftab-count">{totalCount}</span>
-          </a>
-          <a
+          </Link>
+          <Link
+            aria-current={filter === "plan" ? "page" : undefined}
             className={filter === "plan" ? "is-selected" : ""}
             href={href("plan", sort)}
+            replace
+            scroll={false}
           >
             Has plan
             <span className="ftab-count">{withPlanCount}</span>
-          </a>
-          <a
+          </Link>
+          <Link
+            aria-current={filter === "no-plan" ? "page" : undefined}
             className={filter === "no-plan" ? "is-selected" : ""}
             href={href("no-plan", sort)}
+            replace
+            scroll={false}
           >
             Needs plan
             <span className={`ftab-count ${noPlanCount > 0 ? "ftab-alert" : ""}`}>
               {noPlanCount}
             </span>
-          </a>
+          </Link>
         </nav>
 
         {/* Sort tabs */}
         <div className="sort-tabs" aria-label="Sort members">
           {sortOptions.map((opt) => (
-            <a
+            <Link
+              aria-current={sort === opt.value ? "page" : undefined}
               className={sort === opt.value ? "is-selected" : ""}
               href={href(filter, opt.value)}
               key={opt.value}
+              replace
+              scroll={false}
             >
               {opt.label}
-            </a>
+            </Link>
           ))}
         </div>
       </div>

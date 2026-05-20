@@ -1,6 +1,6 @@
 "use server";
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import type { DocumentData } from "firebase-admin/firestore";
@@ -27,6 +27,7 @@ type ProfileRecord = {
   staffType?: string;
   defaultGymId: string;
   isActive: boolean;
+  mustChangePassword?: boolean;
 };
 
 export type AuthenticatedUser = {
@@ -37,6 +38,10 @@ export type AuthenticatedUser = {
   staffType?: string;
   gymId: string;
   memberId?: string;
+  /** True if this staff account is on the default password and must change it
+   * before using the rest of the app. Set on staff creation, cleared by
+   * changeStaffPassword. Only applies to role === "owner" (gym staff). */
+  mustChangePassword?: boolean;
 };
 
 type DemoLogin = {
@@ -231,7 +236,8 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
     role,
     staffType: data.staffType ? String(data.staffType) : undefined,
     defaultGymId: String(data.defaultGymId ?? ""),
-    isActive: data.isActive !== false
+    isActive: data.isActive !== false,
+    mustChangePassword: data.mustChangePassword === true
   };
 }
 
@@ -323,7 +329,8 @@ function authUserFromProfile(profile: ProfileRecord): AuthenticatedUser {
     role: profile.role,
     staffType: profile.staffType,
     gymId: profile.defaultGymId,
-    memberId: profile.role === "member" ? profile.id : undefined
+    memberId: profile.role === "member" ? profile.id : undefined,
+    mustChangePassword: profile.mustChangePassword === true
   };
 }
 
@@ -647,6 +654,18 @@ export async function requireRole(allowedRoles: Role[]) {
 
   if (!allowedRoles.includes(user.role)) {
     redirect(redirectForRole(user.role));
+  }
+
+  // Force-redirect new staff to /profile until they rotate the default password.
+  // The middleware sets `x-pathname` on every protected request so we can detect
+  // whether we're already on /profile and avoid a redirect loop.
+  if (user.mustChangePassword && user.role === "owner") {
+    const headerList = await headers();
+    const pathname = headerList.get("x-pathname") ?? "";
+    const isOnProfile = pathname.startsWith("/profile");
+    if (!isOnProfile) {
+      redirect("/profile?forceChange=1");
+    }
   }
 
   return user;

@@ -1,5 +1,87 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-20: E2E audit, perf caching, security guards, member features
+
+Full e2e audit + execution batch covering UX bugs, security gaps, member-side features, and performance caching. Detailed analysis recorded below.
+
+### Performance — Firestore caching layer
+- `lib/firebase/read-models.ts`: wrapped `getMembers`, `getExerciseCatalog`, `getWorkoutPrograms` in Next.js `unstable_cache` with per-gym tags (`gym:${gymId}`). TTLs: members 60s, programs 120s, exercises 300s. A global `gym-data` tag still works as a fallback for code paths that don't know the gymId.
+- `lib/firebase/actions.ts`: `success()` helper now calls `revalidateTag("gym-data")` on every successful mutation, OR `revalidateTag(\`gym:${gymId}\`)` when the gymId is explicitly passed. Coarse but correct — actions can opt into per-gym invalidation by passing their gymId.
+- Repeat navigations within the TTL window now serve from RAM instead of hitting Firestore (one of the biggest causes of the "every page takes a lot of time to load" complaint).
+
+### Critical UX bugs fixed
+- **Members page filter/sort tabs:** `app/owner/members/page.tsx` used `<a href>` for filter and sort, forcing a full page reload (losing scroll position and selection). Switched to Next.js `<Link>` with `replace` + `scroll={false}`. Each link also got `aria-current="page"` when selected.
+- **Main top navigation lacked active state:** `components/main-nav.tsx` now reads `usePathname()` and marks the active link with `aria-current="page"` and `is-active`. CSS rule added in `app/globals.css` (`.topnav a.is-active`) so the user can see which section they're in.
+- **Mobile bottom nav lacked active state:** same treatment in `components/mobile-bottom-nav.tsx` + matching `.mobile-bottom-nav a.is-active` styles. Added a "History" tab for members linking to the new `/member/history` page.
+- **Program assignment tab-switch loss:** when the owner built half a custom plan and clicked "Pick a plan" they silently lost the work. `ProgramAssignmentForm` now tracks `hasUnsavedCustom` content via an `onContentChange` callback from `BuildCustomForm`, and `window.confirm`s before discarding it.
+
+### Security — cross-gym member action guards
+- Added `assertMemberBelongsToCallerGym(user, memberId)` helper in `lib/firebase/actions.ts`. Verifies the target member's `gymId` matches the calling user's gym. Admins bypass, members are still limited to their own ID, owners are blocked from acting on members of another gym.
+- Applied to: `assignProgramToMember`, `createAndAssignCustomProgram`, `toggleMemberAccess`, `resetPassword`, `deleteMemberProfile`. Previously these only checked `requireRole(["admin", "owner"])` and trusted whatever memberId came from the form.
+
+### Security — force password change for new staff
+- New staff profiles created via `createOwnerProfile` now carry `mustChangePassword: true`. Cleared in `changeStaffPassword` after a successful rotation.
+- `AuthenticatedUser` type + `ProfileRecord` shape + `authUserFromProfile` updated to surface the flag.
+- `requireRole` redirects staff with the flag set to `/profile?forceChange=1` unless they're already on `/profile`. Path resolution depends on `middleware.ts` now forwarding the current pathname via an `x-pathname` request header (the middleware reuses this for all protected requests, not just the force-change check).
+- `/profile` shows a warning banner when `forceChange=1` is in the URL OR the flag is on the current user.
+
+### Member features
+- **Workout history page** at `/member/history` — new route. Groups lift logs by calendar day, shows muscle groups trained, PR count, weight × sets × reps per entry, total workouts/sets/volume across all-time. Linked from the mobile bottom nav and from the member dashboard's "Lift logs" stat card.
+- **Weekly streak counter** on the member dashboard. Walks back through ISO weeks from the current week and counts consecutive weeks with ≥1 lift log. Grace logic prevents the counter going to 0 on Monday morning before the first set. Displayed as "🔥 N" in the hero summary.
+- **"Last time" hint** under the lift log form. Shows `weight × sets × reps` for the most recent log of the selected exercise, plus a PR badge if that lift was the user's all-time max. Updates live when the exercise dropdown changes.
+- **Rest timer wired in.** The `RestTimer` component already existed but wasn't rendered anywhere. Now appears below the lift log form in `MemberWorkoutConsole` with 60s/90s/120s presets and an audible beep when the interval expires.
+
+### Component API additions
+- `ConfirmActionForm` accepts a `requireConfirmation?: boolean` prop (default true). When false, the form submits immediately without the "are you sure?" modal — useful for non-destructive edits like updating a phone number. Documented inline.
+
+### Performance — N+1 follow-ups
+- Renamed internal callers of `getMembers/getExerciseCatalog/getWorkoutPrograms` to the `*Uncached` variants inside `read-models.ts` (`getGymFloorLoadMap` was the only one). External callers (pages, actions) keep using the cached exports.
+
+### Files touched
+- `app/globals.css` — active-link CSS for `.topnav` and `.mobile-bottom-nav`; `.lift-log-last-hint` and `.history-day-*` styles
+- `app/styles/member.css` — `.md-hero-stat--link` styling
+- `app/member/page.tsx` — streak computation + display, "Lift logs" stat now links to /member/history
+- `app/member/history/page.tsx` — new route
+- `app/owner/members/page.tsx` — `<Link>` for filter/sort with `aria-current`
+- `app/owner/members/[memberId]/page.tsx` — passes `catalog` to `ProgramAssignmentForm`
+- `app/profile/page.tsx` — forceChange banner on staff/admin variants
+- `components/main-nav.tsx` — active state via `usePathname`
+- `components/mobile-bottom-nav.tsx` — active state + History tab for members
+- `components/member-workout-console.tsx` — RestTimer, last-time hint, selected exercise state
+- `components/program-assignment-form.tsx` — tab-switch guard via `onContentChange` callback
+- `components/confirm-action-form.tsx` — `requireConfirmation` prop
+- `middleware.ts` — forwards `x-pathname` request header
+- `lib/auth.ts` — `mustChangePassword` plumbing through ProfileRecord/AuthenticatedUser/authUserFromProfile/toProfile + redirect logic in `requireRole`
+- `lib/firebase/actions.ts` — `assertMemberBelongsToCallerGym` helper applied to 5 actions; `mustChangePassword: true` set on staff creation, cleared in `changeStaffPassword`; per-gym revalidateTag in `success()`
+- `lib/firebase/read-models.ts` — unstable_cache wrappers with per-gym tags
+
+### Verification
+- `npm run typecheck` passes.
+
+### Deferred (recorded in the audit; not shipped this session)
+These are scoped and ranked. Each is bounded enough to ship in a future session.
+
+1. **Optimistic lift logging** via `useOptimistic` — would make set logging feel instant. Current impl already does a partial optimistic update via `setLiftLogs(...)` but goes through the action round-trip first. Conversion is medium-risk because of the offline-logs interaction.
+2. **Split `globals.css` (~9k lines) and `lib/firebase/actions.ts` (~2.7k lines)** into per-feature files. Pure tech debt but unblocks future UI work. Should be done in one focused session, not piecemeal.
+3. **Replace rule-based "AI Semi-Personal Trainer" swap logic** in `MemberWorkoutConsole` with actual Gemini calls through `lib/ai.ts`. Currently it's a hardcoded knee/shoulder/back lookup in `getInjuryRule`. Either rename to "Smart Swaps"/"Recovery Mode" OR wire to a real LLM.
+4. **PIN security** — 4-digit PIN is 10,000 combinations. Add a lockout-after-N-failed-attempts counter on the profile doc, OR bump to 6 digits, OR finish OTP-based login (already on the original TODO list).
+5. **Body weight / progress log** — add a `bodyMetricLogs` collection with `loggedAt`, `weightKg`, optional `photoUrl`, surface as a chart on `/profile`. Gives members a reason to open the app on off-days.
+6. **Trainer notes per session** — quick free-text field a trainer can attach to a member after observing a session, surfaced on the member's next visit.
+7. **Member self-report "Today only" injury flag** that auto-triggers the AI swap for that day's session only (no trainer-in-the-loop).
+8. **Owner dashboard "Needs attention" lane** — members who haven't logged in 14+ days, declining frequency week-over-week, hitting PRs this week (recognition lever).
+9. **Bulk operations** on the members page (multi-select → assign program / suspend / message).
+10. **Empty states with primary actions** on `/activity`, `/owner/programs`, `/admin/inbox`. Currently they have copy but no CTA.
+11. **Audit log for sensitive actions** — "owner X reset member Y's PIN", "admin Z created staff for gym W". The `activityEvents` collection exists, just isn't used for these flows yet.
+12. **Validation consolidation** via zod schemas in actions — current parsing is scattered between `requireText` and inline `String(formData.get(...))`. Standardising would reduce footguns.
+13. **`useActionState` consistency** — `AddMemberForm` rolls its own `useTransition + setState`. Convert to match the pattern used by `ConfirmActionForm`.
+14. **CSP + security headers** in `next.config.js`. Fiddly with Firebase + Gemini but worth doing once.
+15. **Workout templates** ("duplicate Monday onto Wednesday"), exercise variations (band/dumbbell/cable variants), payment/membership tracker (TODO from original handoff).
+16. **`getCurrentUser` per-request cache** — only meaningfully wins if multiple components call it independently in one render, which isn't the current pattern.
+17. **`Member` + `ProfileMetrics` duality** — same person, two types. Could collapse into a single `MemberProfile` to reduce confusion.
+18. **Inline `style={{...}}` cleanup** — large refactor. Extract a `tokens.css` (`--space-xs/sm/md/lg`, `--radius-sm/md`, `--font-xs/sm/base/lg/xl`) and replace inline values progressively.
+
+---
+
 ## Latest Update - 2026-05-20: Member dashboard hero and macro placement
 
 - Reworked `/member` first screen so the hero focuses on the assigned workout plan, gym, week, weekly training count, lift logs, and plan status.

@@ -21,6 +21,7 @@ export function ConfirmActionForm({
   confirmTitle = "Confirm update",
   onBeforeConfirm,
   pendingLabel = "Saving...",
+  requireConfirmation = true,
   style,
   submitClassName,
   submitLabel,
@@ -35,6 +36,13 @@ export function ConfirmActionForm({
   confirmTitle?: string;
   onBeforeConfirm?: () => void;
   pendingLabel?: string;
+  /**
+   * When true (default), shows a "are you sure?" modal before submitting.
+   * Set to false for non-destructive forms (editing a phone number, toggling
+   * a notice). The form will submit immediately on click and the result is
+   * surfaced inline instead of in a modal.
+   */
+  requireConfirmation?: boolean;
   style?: CSSProperties;
   submitClassName?: string;
   submitLabel: string;
@@ -58,13 +66,21 @@ export function ConfirmActionForm({
       return;
     }
 
-    event.preventDefault();
-    setDismissedMessage("");
-
     if (!event.currentTarget.reportValidity()) {
+      event.preventDefault();
       return;
     }
 
+    setDismissedMessage("");
+
+    // requireConfirmation === false → submit immediately, no modal
+    if (!requireConfirmation) {
+      setIsConfirmedSubmit(true);
+      // Let native form submission proceed
+      return;
+    }
+
+    event.preventDefault();
     setIsDialogOpen(true);
   }
 

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { Role } from "@/types/domain";
 import { Activity, Dumbbell, Mail, Settings, UserRound, UsersRound } from "@/components/icons";
 
@@ -25,12 +28,22 @@ function linksForRole(role: Role) {
 
   return [
     { href: "/member", label: "Workout", icon: Dumbbell },
-    { href: "/activity", label: "Activity", icon: Activity },
+    { href: "/member/history", label: "History", icon: Activity },
+    { href: "/activity", label: "Feed", icon: Activity },
     { href: "/profile", label: "Profile", icon: UserRound }
   ];
 }
 
+function isActiveLink(pathname: string, href: string) {
+  if (pathname === href) return true;
+  // Match nested routes (e.g. /owner/members/abc highlights "Members")
+  // BUT do NOT let a longer parent like "/owner" capture /owner/members
+  // by only matching when there's a trailing slash after the prefix.
+  return pathname.startsWith(href + "/");
+}
+
 export function MobileBottomNav({ role }: { role?: Role }) {
+  const pathname = usePathname();
   if (!role) {
     return null;
   }
@@ -39,8 +52,14 @@ export function MobileBottomNav({ role }: { role?: Role }) {
     <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
       {linksForRole(role).map((item) => {
         const Icon = item.icon;
+        const active = isActiveLink(pathname, item.href);
         return (
-          <Link href={item.href} key={item.href}>
+          <Link
+            aria-current={active ? "page" : undefined}
+            className={active ? "is-active" : ""}
+            href={item.href}
+            key={item.href}
+          >
             <Icon />
             <span>{item.label}</span>
           </Link>

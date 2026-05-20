@@ -1378,25 +1378,36 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
 }
 
 // ─── Cached exports ──────────────────────────────────────────────────────────
-// These wrap the heavy read functions in Next.js unstable_cache so repeat reads
-// across navigations / users in the same gym hit RAM instead of Firestore.
-// 60s TTL is a safety net; server actions that mutate this data call
-// revalidateTag() to bust the relevant cache immediately.
+// Each cached read also gets a per-gym tag (`gym:${gymId}`) so a mutation in one
+// gym doesn't invalidate caches for other gyms. A global "gym-data" tag stays as
+// a safety-net fallback for actions that don't know their gymId.
+//
+// TTLs are safety nets — actions call revalidateTag() to bust immediately.
 
-export const getMembers = unstable_cache(
-  getMembersUncached,
-  ["read:getMembers"],
-  { tags: ["members", "gym-data"], revalidate: 60 }
-);
+function gymTag(gymId?: string) {
+  return gymId ? `gym:${gymId}` : "gym:default";
+}
 
-export const getExerciseCatalog = unstable_cache(
-  getExerciseCatalogUncached,
-  ["read:getExerciseCatalog"],
-  { tags: ["exercises", "gym-data"], revalidate: 300 }
-);
+export async function getMembers(gymId?: string) {
+  return unstable_cache(
+    getMembersUncached,
+    ["read:getMembers", gymId ?? "default"],
+    { tags: ["members", "gym-data", gymTag(gymId)], revalidate: 60 }
+  )(gymId);
+}
 
-export const getWorkoutPrograms = unstable_cache(
-  getWorkoutProgramsUncached,
-  ["read:getWorkoutPrograms"],
-  { tags: ["programs", "gym-data"], revalidate: 120 }
-);
+export async function getExerciseCatalog(gymId?: string) {
+  return unstable_cache(
+    getExerciseCatalogUncached,
+    ["read:getExerciseCatalog", gymId ?? "default"],
+    { tags: ["exercises", "gym-data", gymTag(gymId)], revalidate: 300 }
+  )(gymId);
+}
+
+export async function getWorkoutPrograms(gymId?: string) {
+  return unstable_cache(
+    getWorkoutProgramsUncached,
+    ["read:getWorkoutPrograms", gymId ?? "default"],
+    { tags: ["programs", "gym-data", gymTag(gymId)], revalidate: 120 }
+  )(gymId);
+}

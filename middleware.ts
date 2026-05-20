@@ -15,12 +15,21 @@ const roleHome: Record<string, string> = {
   owner: "/owner"
 };
 
+// Forwards the current pathname as a custom request header so server-side
+// code (e.g. requireRole) can read it via next/headers without parsing the URL.
+// Used by the "must change password on first login" guard for staff.
+function withPathnameHeader(request: NextRequest) {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const route = protectedRoutes.find(({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`));
 
   if (!route) {
-    return NextResponse.next();
+    return withPathnameHeader(request);
   }
 
   const session = request.cookies.get("fitsplit-session")?.value;
@@ -34,7 +43,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(roleHome[role] ?? "/", request.url));
   }
 
-  return NextResponse.next();
+  return withPathnameHeader(request);
 }
 
 export const config = {

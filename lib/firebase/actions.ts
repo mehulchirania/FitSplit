@@ -132,13 +132,18 @@ function getActionFormData(
   return maybeFormData ?? (previousStateOrFormData as FormData);
 }
 
-function success(message: string): FormActionState {
-  // Any successful mutation invalidates the gym-scoped data cache so the next
-  // read pulls fresh data from Firestore. Cheap call — only flips a flag.
+function success(message: string, gymId?: string): FormActionState {
+  // Bust the cache so the next read pulls fresh data.
+  // If we know the gymId, use the per-gym tag (doesn't punish other gyms).
+  // Otherwise fall back to the global "gym-data" tag.
   try {
-    revalidateTag("gym-data");
+    if (gymId) {
+      revalidateTag(`gym:${gymId}`);
+    } else {
+      revalidateTag("gym-data");
+    }
   } catch {
-    // revalidateTag is a noop outside a request context (e.g. tests); ignore
+    // revalidateTag is a noop outside a request context; ignore
   }
   return { status: "success", message };
 }
@@ -238,6 +243,37 @@ function assertCanManageMember(
 ) {
   if (user.role === "member" && user.memberId !== memberId) {
     throw new Error("You can only update your own member account.");
+  }
+}
+
+/**
+ * Stronger guard for owner/trainer/staff actions that target a memberId.
+ * Verifies the member actually belongs to the calling user's gym.
+ * Admin bypasses the check. Members can only act on themselves (same as the
+ * sync helper above).
+ *
+ * Use this in any owner-side action where memberId comes from FormData,
+ * since a malicious client can put any UUID in there.
+ */
+async function assertMemberBelongsToCallerGym(
+  user: Awaited<ReturnType<typeof requireAuth>>,
+  memberId: string
+) {
+  assertCanManageMember(user, memberId);
+  if (user.role === "admin") return;
+  if (user.role === "member") return; // already covered by sync check above
+  if (!user.gymId) {
+    throw new Error("Your account is not assigned to a gym.");
+  }
+  if (!hasFirebaseAdminConfig()) return; // mock mode — no Firestore to check
+  const db = requireFirebase();
+  const profile = await db.collection(collectionPaths.profiles).doc(memberId).get();
+  if (!profile.exists) {
+    throw new Error("Member not found.");
+  }
+  const profileGymId = profile.data()?.gymId;
+  if (profileGymId !== user.gymId) {
+    throw new Error("This member is not part of your gym.");
   }
 }
 
@@ -731,6 +767,7 @@ export async function assignProgramToMember(
     const activityId = randomUUID();
     const memberId = requireText(formData, "memberId", "Member");
     const programId = requireText(formData, "programId", "Workout program");
+    await assertMemberBelongsToCallerGym(currentUser, memberId);
     const now = new Date().toISOString();
 
     const assignGymId = currentUser.gymId ?? PRIMARY_GYM_ID;
@@ -1145,6 +1182,8 @@ export async function resetPassword(
     const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const userId = requireText(formData, "userId", "User ID");
+    // Block owners from resetting members of other gyms. Admin bypasses inside the helper.
+    await assertMemberBelongsToCallerGym(currentUser, userId);
     const { auth, db } = requireFirebaseServices();
     
     const rawNewPassword = String(formData.get("newPassword") || formData.get("newPin") || "password").trim();
@@ -1249,6 +1288,19 @@ export async function changeStaffPassword(
 
     await auth.updateUser(currentUser.uid, { password: newPassword });
 
+    // Clear the "must change password on first login" flag, if it was set.
+    // Wrapped in try/catch so an existing-staff password rotation doesn't fail
+    // if the doc happens to be missing — the auth update is the source of truth.
+    try {
+      const { db } = requireFirebaseServices();
+      await db.collection(collectionPaths.profiles).doc(currentUser.uid).set(
+        { mustChangePassword: false, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    } catch (e) {
+      console.warn("Could not clear mustChangePassword flag:", e);
+    }
+
     return success("Password changed successfully.");
   } catch (error) {
     console.error("Unable to change password", error);
@@ -1305,6 +1357,7 @@ export async function toggleMemberAccess(
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member ID");
+    await assertMemberBelongsToCallerGym(user, memberId);
     const isActive = formData.get("isActive") === "true";
     const now = new Date().toISOString();
 
@@ -1355,6 +1408,7 @@ export async function deleteMemberProfile(
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member ID");
+    await assertMemberBelongsToCallerGym(user, memberId);
     const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
     const data = profileDoc.data();
 
@@ -1472,6 +1526,10 @@ export async function createOwnerProfile(
         .slice(0, 2)
         .toUpperCase(),
       isActive: true,
+      // Force first-login password change — every new staff account starts with
+      // the default password "password" and must rotate it before they can use
+      // any other page. Cleared in changeStaffPassword.
+      mustChangePassword: true,
       createdAt: now,
       updatedAt: now
     });
@@ -2635,6 +2693,7 @@ export async function createAndAssignCustomProgram(
     const db = requireFirebase();
 
     const memberId = requireText(formData, "memberId", "Member");
+    await assertMemberBelongsToCallerGym(currentUser, memberId);
     const memberName = String(formData.get("memberName") ?? "Member").trim();
     const title = requireText(formData, "title", "Program title");
     const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
