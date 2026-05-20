@@ -81,6 +81,7 @@ The member `/member` page uses a premium `md-*` summary hero plus an isolated `m
 - Titan Fitness Club gym workspace added to mock data.
 - Member trainer field is read-only for members on `/profile` — only owners/admins can change the assigned trainer.
 - `/owner/programs` separates predefined plans from custom gym plans and shows mapped catalog exercises, training-day counts, total exercises, and assigned members without stock image cards.
+- SHG now has Firestore-backed custom **Stage 2 Workouts** and **Stage 3 Workouts** imported from trainer spreadsheets, including 12 total training days, 180 catalog workout items, and 143 video links.
 - `/owner/exercises` supports inline editing with visible open/close controls, admin-only video URL management, and a compact clickable video indicator for exercises that include a form video.
 - Member workout rows show a `Play video` action for exercises with a video URL, including YouTube Shorts links.
 - `WorkspaceSwitcher` removed from owner pages (owners have one gym); kept on admin page for gym management link.
@@ -91,10 +92,11 @@ The member `/member` page uses a premium `md-*` summary hero plus an isolated `m
 | Role | Username / Mobile / Email | Password |
 | --- | --- | --- |
 | Admin | `admin` | `password` |
-| Owner | `santosh-shg` | `password` |
-| Trainer | `shg-trainer-1` | `password` |
-| Trainer | `shg-trainer-2` | `password` |
-| Owner | `dummy-gym-owner-1` | `password` |
+| Owner (SHG) | `santosh-shg` | `password` |
+| Trainer (SHG) | `shg-trainer-1` | `password` |
+| Trainer (SHG) | `shg-trainer-2` | `password` |
+| Owner (Titan) | `titan-owner-1` | `password` |
+| Owner (Dummy) | `dummy-gym-owner-1` | `password` |
 | Member | `mehulchirania` | `1234` |
 | Member | `9688227039` | `1234` |
 | Member | `mehul@example.com` | `1234` |
@@ -112,6 +114,7 @@ Mobile numbers are normalized, so `9688227039` resolves to `+91 9688227039`.
 - Member-only dashboard with assigned weekly workout, GPS-backed start/end workout check-in, lift logging, attendance, profile metrics, injury/limitation handling, and notifications.
 - Exercise catalog and workout program builder backed by Firestore.
 - Exercise videos can be stored on catalog entries and played from assigned member workout rows.
+- Exercise thumbnails are resolved from movement-specific WGER exercise images by exercise name, prefer animated GIFs where reliable matches exist, and can be clicked to open an enlarged in-app preview.
 - Owner can request custom exercises to be added to admin catalog from the plan builder, with a "send to admin" checkbox — admin reviews, edits, and approves in one step from `/admin/exercises`.
 - AI injury/modification flow framed as a semi-personal trainer.
 - Activity feed scoped by role: owner/admin see gym-wide activity, members see their own events.
@@ -280,6 +283,16 @@ Deploy App Hosting:
 
 ```bash
 firebase deploy --only apphosting:fitsplit --project fitsplit-29215
+```
+
+## Maintenance Scripts
+
+```bash
+npm run seed:auth         # Create / update Firebase Auth demo accounts
+npm run seed:demo         # Seed Firestore with SHG, Titan, dummy gym, members, programs
+npm run fix:exercises     # Clean up exerciseCatalog: Title Case names, fix categories,
+                          # remove duplicates, inject SHG gym video URLs
+npm run patch:videos      # Patch exerciseCatalog videoUrl from workouts.json
 ```
 
 ## Known Caveats

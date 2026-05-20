@@ -7210,6 +7210,47 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   justify-content: center;
   border: 1px solid var(--border);
 }
+.thumbnail-preview-trigger {
+  appearance: none;
+  cursor: zoom-in;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.thumbnail-preview-trigger:not(:disabled)::after {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.58);
+  border-radius: 999px;
+  color: #fff;
+  content: "View";
+  display: flex;
+  font-size: 0.62rem;
+  font-weight: 800;
+  inset: auto 5px 5px 5px;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  padding: 3px 0;
+  position: absolute;
+  text-transform: uppercase;
+  transform: translateY(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.thumbnail-preview-trigger:not(:disabled):hover,
+.thumbnail-preview-trigger:not(:disabled):focus-visible {
+  border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1px);
+}
+.thumbnail-preview-trigger:not(:disabled):hover::after,
+.thumbnail-preview-trigger:not(:disabled):focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+.thumbnail-preview-trigger:disabled {
+  cursor: default;
+}
 .exercise-edit-details summary::-webkit-details-marker { display: none; }
 .exercise-edit-details > summary {
   cursor: pointer;
@@ -7324,6 +7365,48 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   aspect-ratio: 16 / 9;
   display: block;
   border: none;
+}
+
+/* Image preview modal */
+.image-modal-backdrop {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.84);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 220;
+}
+.image-modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+  max-height: min(780px, 92vh);
+  max-width: min(760px, 94vw);
+  overflow: hidden;
+  width: 100%;
+}
+.image-modal-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 18px;
+}
+.image-modal-header h3 {
+  color: var(--text);
+  font-size: 1rem;
+  margin: 0;
+}
+.image-modal-media {
+  background: var(--bg-subtle);
+  display: block;
+  max-height: calc(92vh - 74px);
+  object-fit: contain;
+  width: 100%;
 }
 
 /* Workout session bar */

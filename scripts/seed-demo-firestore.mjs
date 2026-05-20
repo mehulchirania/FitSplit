@@ -3,16 +3,50 @@ import { getFirestore } from "firebase-admin/firestore";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
 import workoutsData from "../lib/workouts.json" with { type: "json" };
 
+// Load .env.local so the script works with npm run seed:demo without needing
+// shell-level env exports.
+const __dirname = dirname(fileURLToPath(import.meta.url));
+try {
+  const envContent = fs.readFileSync(resolve(__dirname, "../.env.local"), "utf-8");
+  for (const line of envContent.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) continue;
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const key = trimmed.slice(0, eq).trim();
+    let value = trimmed.slice(eq + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+    process.env[key] ??= value;
+  }
+} catch { /* no .env.local — rely on real env vars */ }
+
 const projectId = process.env.FIREBASE_PROJECT_ID || "fitsplit-29215";
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+
+// Resolve credentials: prefer inline vars, fall back to service account JSON file.
+let clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+let privateKey  = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+if ((!clientEmail || !privateKey) && process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+  try {
+    const sa = JSON.parse(fs.readFileSync(process.env.GOOGLE_APPLICATION_CREDENTIALS, "utf-8"));
+    clientEmail = clientEmail || sa.client_email;
+    privateKey  = privateKey  || sa.private_key;
+  } catch (e) {
+    console.warn("Warning: could not read GOOGLE_APPLICATION_CREDENTIALS file:", e.message);
+  }
+}
 const ownerId = "santosh-shg";
 const adminId = "admin-fitsplit";
 const gymId = "shg";
 const dummyGymId = "dummy-gym";
 const dummyOwnerId = "dummy-gym-owner-1";
+const titanGymId = "titan-gym";
+const titanOwnerId = "titan-owner-1";
 const now = new Date().toISOString();
 
 const members = [
@@ -258,6 +292,42 @@ const siteLinks = [
   { id: "02-linkedin", label: "LinkedIn profile", href: "#" },
   { id: "03-youtube", label: "YouTube profile", href: "#" },
   { id: "04-email", label: "mehul@example.com", href: "mailto:mehul@example.com" }
+];
+
+// ── Titan Fitness Club seed data ──────────────────────────────────────────────
+
+const titanMembers = [
+  { id: "titan-ravi",     fullName: "Ravi Shankar",     email: "ravi.s@titan.com",     phone: "+91 97000 20001", joinedAt: "2026-01-05", avatarInitials: "RS", goal: "Powerlifting",            isActive: true  },
+  { id: "titan-kavya",    fullName: "Kavya Krishnan",   email: "kavya.k@titan.com",    phone: "+91 97000 20002", joinedAt: "2026-01-12", avatarInitials: "KK", goal: "Endurance training",      isActive: true  },
+  { id: "titan-amit",     fullName: "Amit Yadav",       email: "amit.y@titan.com",     phone: "+91 97000 20003", joinedAt: "2026-01-18", avatarInitials: "AY", goal: "Body recomposition",      isActive: true  },
+  { id: "titan-sonal",    fullName: "Sonal Mehta",      email: "sonal.m@titan.com",    phone: "+91 97000 20004", joinedAt: "2026-01-25", avatarInitials: "SM", goal: "Weight loss",             isActive: true  },
+  { id: "titan-deepak",   fullName: "Deepak Bose",      email: "deepak.b@titan.com",   phone: "+91 97000 20005", joinedAt: "2026-02-03", avatarInitials: "DB", goal: "Hypertrophy",             isActive: true  },
+  { id: "titan-neha",     fullName: "Neha Kapoor",      email: "neha.k@titan.com",     phone: "+91 97000 20006", joinedAt: "2026-02-10", avatarInitials: "NK", goal: "Functional fitness",      isActive: true  },
+  { id: "titan-kiran",    fullName: "Kiran Tiwari",     email: "kiran.t@titan.com",    phone: "+91 97000 20007", joinedAt: "2026-02-17", avatarInitials: "KT", goal: "Athletic conditioning",   isActive: true  },
+  { id: "titan-sanjay",   fullName: "Sanjay Bhatt",     email: "sanjay.b@titan.com",   phone: "+91 97000 20008", joinedAt: "2026-02-22", avatarInitials: "SB", goal: "Strength and power",      isActive: false },
+  { id: "titan-ananya",   fullName: "Ananya Pillai",    email: "ananya.p@titan.com",   phone: "+91 97000 20009", joinedAt: "2026-03-01", avatarInitials: "AP", goal: "Core strength",           isActive: true  },
+  { id: "titan-mohit",    fullName: "Mohit Saxena",     email: "mohit.s@titan.com",    phone: "+91 97000 20010", joinedAt: "2026-03-08", avatarInitials: "MS", goal: "Build muscle",            isActive: true  },
+  { id: "titan-ishaan",   fullName: "Ishaan Malhotra",  email: "ishaan.m@titan.com",   phone: "+91 97000 20011", joinedAt: "2026-03-15", avatarInitials: "IM", goal: "Weight loss",             isActive: true  },
+  { id: "titan-tanvi",    fullName: "Tanvi Choudhary",  email: "tanvi.c@titan.com",    phone: "+91 97000 20012", joinedAt: "2026-03-20", avatarInitials: "TC", goal: "Flexibility and strength", isActive: true  },
+  { id: "titan-gaurav",   fullName: "Gaurav Rane",      email: "gaurav.r@titan.com",   phone: "+91 97000 20013", joinedAt: "2026-03-28", avatarInitials: "GR", goal: "Cardio conditioning",     isActive: false },
+  { id: "titan-poornima", fullName: "Poornima Das",     email: "poornima.d@titan.com", phone: "+91 97000 20014", joinedAt: "2026-04-02", avatarInitials: "PD", goal: "Lean muscle",             isActive: true  },
+  { id: "titan-sachin",   fullName: "Sachin Pandey",    email: "sachin.p@titan.com",   phone: "+91 97000 20015", joinedAt: "2026-04-08", avatarInitials: "SP", goal: "Strength training",       isActive: true  },
+  { id: "titan-alisha",   fullName: "Alisha Fernandes", email: "alisha.f@titan.com",   phone: "+91 97000 20016", joinedAt: "2026-04-12", avatarInitials: "AF", goal: "Toning",                  isActive: true  },
+  { id: "titan-varun",    fullName: "Varun Mathur",     email: "varun.m@titan.com",    phone: "+91 97000 20017", joinedAt: "2026-04-20", avatarInitials: "VM", goal: "Fat loss",                isActive: true  },
+  { id: "titan-nandini",  fullName: "Nandini Iyer",     email: "nandini.i@titan.com",  phone: "+91 97000 20018", joinedAt: "2026-04-25", avatarInitials: "NI", goal: "Beginner fitness",        isActive: true  },
+  { id: "titan-aryan",    fullName: "Aryan Kapadia",    email: "aryan.k@titan.com",    phone: "+91 97000 20019", joinedAt: "2026-05-01", avatarInitials: "AK", goal: "Muscle building",         isActive: true  },
+  { id: "titan-meghna",   fullName: "Meghna Sharma",    email: "meghna.s@titan.com",   phone: "+91 97000 20020", joinedAt: "2026-05-05", avatarInitials: "MS", goal: "General fitness",         isActive: true  },
+];
+
+const titanProgramAssignments = [
+  { id: "assignment-titan-ravi",    memberId: "titan-ravi",    programId: "split_02", assignedAt: "2026-01-10T09:00:00+05:30", status: "active" },
+  { id: "assignment-titan-kavya",   memberId: "titan-kavya",   programId: "split_01", assignedAt: "2026-01-18T10:00:00+05:30", status: "active" },
+  { id: "assignment-titan-amit",    memberId: "titan-amit",    programId: "split_03", assignedAt: "2026-01-22T11:00:00+05:30", status: "active" },
+  { id: "assignment-titan-deepak",  memberId: "titan-deepak",  programId: "split_02", assignedAt: "2026-02-08T09:30:00+05:30", status: "active" },
+  { id: "assignment-titan-kiran",   memberId: "titan-kiran",   programId: "split_04", assignedAt: "2026-02-20T08:00:00+05:30", status: "active" },
+  { id: "assignment-titan-ananya",  memberId: "titan-ananya",  programId: "split_01", assignedAt: "2026-03-05T10:00:00+05:30", status: "active" },
+  { id: "assignment-titan-mohit",   memberId: "titan-mohit",   programId: "split_03", assignedAt: "2026-03-12T11:00:00+05:30", status: "active" },
+  { id: "assignment-titan-sachin",  memberId: "titan-sachin",  programId: "split_02", assignedAt: "2026-04-10T09:00:00+05:30", status: "active" },
 ];
 
 const muscleThumbnails = {
@@ -589,6 +659,59 @@ for (const event of activityEvents) {
 for (const link of siteLinks) {
   await setDoc("siteLinks", link.id, {
     ...link,
+    updatedAt: now
+  });
+}
+
+// ── Titan Fitness Club workspace ─────────────────────────────────────────────
+
+await setDoc("gyms", titanGymId, {
+  id: titanGymId,
+  name: "Titan Fitness Club",
+  slug: titanGymId,
+  ownerName: "Titan Owner",
+  ownerUserId: titanOwnerId,
+  expiryWarningDays: 7,
+  memberCount: titanMembers.length,
+  status: "active",
+  location: "Mumbai, Maharashtra",
+  updatedAt: now
+});
+
+await setDoc("profiles", titanOwnerId, {
+  id: titanOwnerId,
+  fullName: "Titan Owner",
+  email: "titan-owner-1@fitsplit.app",
+  authEmail: "titan-owner-1@fitsplit.app",
+  username: "titan-owner-1",
+  avatarInitials: "TO",
+  role: "owner",
+  staffType: "owner",
+  defaultGymId: titanGymId,
+  isActive: true,
+  createdAt: now,
+  updatedAt: now
+});
+
+for (const member of titanMembers) {
+  await setDoc("profiles", member.id, {
+    ...member,
+    authEmail: member.email.toLowerCase(),
+    username: member.email.toLowerCase(),
+    role: "member",
+    defaultGymId: titanGymId,
+    isActive: member.isActive,
+    createdAt: member.joinedAt,
+    updatedAt: now
+  });
+}
+
+for (const assignment of titanProgramAssignments) {
+  await setDoc("programAssignments", assignment.id, {
+    ...assignment,
+    gymId: titanGymId,
+    createdBy: titanOwnerId,
+    createdAt: assignment.assignedAt,
     updatedAt: now
   });
 }

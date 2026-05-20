@@ -718,7 +718,7 @@ async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: str
     return pickProgramWithoutAi(programPool, memberGoal);
   }
 
-  const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
+  const model = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
   const prompt = [
     "Pick the best FitSplit workout program id for this gym member.",
     "Return only one exact id from the list. No markdown.",
@@ -737,7 +737,7 @@ async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: str
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: { maxOutputTokens: 32, temperature: 0.2 }
         }),
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey },
         method: "POST"
       }
     );

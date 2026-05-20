@@ -51,7 +51,7 @@ export async function generateWorkoutSummary(memberId: string) {
     `;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: process.env.GEMINI_MODEL ?? "gemini-flash-latest",
       contents: prompt,
     });
 

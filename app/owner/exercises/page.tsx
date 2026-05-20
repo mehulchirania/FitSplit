@@ -1,6 +1,7 @@
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
+import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { createCatalogExercise, resetExerciseVideos, updateCatalogExercise } from "@/lib/firebase/actions";
@@ -78,12 +79,11 @@ export default async function ExerciseCatalogPage() {
                 <div className="catalog-exercise-entry" key={exercise.id}>
                   <details className="exercise-edit-details">
                     <summary className="catalog-exercise-row">
-                      <div
+                      <ExerciseThumbnailPreview
+                        alt={exercise.name}
                         className="catalog-exercise-thumb"
-                        style={exercise.thumbnailUrl ? { backgroundImage: `url(${exercise.thumbnailUrl})` } : undefined}
-                      >
-                        {!exercise.thumbnailUrl ? <Dumbbell className="catalog-thumb-placeholder" /> : null}
-                      </div>
+                        thumbnailUrl={exercise.thumbnailUrl}
+                      />
                       <div className="catalog-exercise-copy">
                         <strong>{exercise.name}</strong>
                         <p>{[exercise.equipment].filter(Boolean).join(" / ")}</p>

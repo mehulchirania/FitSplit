@@ -1,5 +1,148 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-20: Click-to-enlarge exercise thumbnails and GIF preference
+
+- Added `components/exercise-thumbnail-preview.tsx`.
+- Exercise thumbnails are now buttons that open an in-app enlarged image modal with Escape/click-outside close support.
+- Wired the thumbnail preview into:
+  - Assigned workout exercise rows via `components/exercise-list.tsx`.
+  - Owner exercise catalog at `/owner/exercises`.
+  - Admin exercise catalog at `/admin/exercises`.
+  - Member exercise library at `/member/exercises`.
+- Added shared modal/thumbnail hover styles in `app/globals.css`.
+- Updated `lib/exercise-thumbnails.ts` to prefer animated WGER GIF assets where reliable matches exist, including dumbbell curls, rear delt rows, overhead triceps extensions, split squats, and goblet squats.
+
+### Verification
+- `npm run typecheck` passes.
+- Local dev server route `http://localhost:3000` responds with HTTP 200.
+- Browser plugin JS execution was not exposed in this session, so interactive click QA should be done manually in the running app.
+
+---
+
+## Latest Update - 2026-05-20: Exercise thumbnails replaced with movement-specific sources
+
+- Added `lib/exercise-thumbnails.ts` with a catalog-wide thumbnail resolver.
+- Replaced the old random generic Unsplash gym fallback with WGER public exercise-image URLs selected by exercise-name keywords.
+- `lib/mock-data.ts` now maps predefined `workouts.json` catalog exercises through the resolver.
+- `lib/firebase/read-models.ts` now maps Firestore-backed exercises through the resolver when `thumbnailUrl` is blank or still points at the old generic Unsplash fallback.
+- Coverage includes common catalog and SHG workbook movements: bench/incline/decline press, chest fly/cable crossover, lat pulldown, pull-ups, rows, shoulder press, lateral raise, rear delt/face pull, curls, triceps pushdown/extensions/dips, squats, leg press, leg curls/extensions, lunges, hip thrusts, calf work, crunches, leg raises, planks, twists, and related fallbacks by muscle group.
+
+### Verification
+- `npm run typecheck` passes.
+- Spot checks resolve Barbell Bench Press, Incline Dumbbell Press, Lat Pulldown, Standing Barbell Shoulder Press, Leg Press, and Triceps Push Down to matching WGER exercise images.
+
+---
+
+## Latest Update — 2026-05-20: Exercise catalog cleanup script + seed .env.local fix
+
+### Problems
+1. `npm run seed:demo` failed with "Missing FIREBASE_CLIENT_EMAIL" because `seed-demo-firestore.mjs` didn't load `.env.local` (unlike the other scripts).
+2. Stage 2/3 exercises imported by Codex into Firestore had: incorrect categories, duplicate entries, bad casing ("barbell squat" instead of "Barbell Squat"), and typos. Gym video URLs from the SHG channel were missing on these exercises.
+
+### Changes
+
+**`scripts/seed-demo-firestore.mjs`**
+- Added `.env.local` loading (same pattern as `seed-firebase.mjs` / `seed-firebase-auth.mjs`). `npm run seed:demo` now works without manually exporting env vars in the shell.
+
+**`scripts/fix-exercise-catalog.mjs`** (new)
+- Reads all `exerciseCatalog` docs for `gymId: "shg"` from Firestore
+- Normalises names to Title Case; applies 200+ explicit canonical name mappings (e.g. "barbell bicep curl" → "Barbell Curl", "rdl" → "Romanian Deadlift")
+- Re-categorises exercises using pattern-matching when the stored category looks wrong
+- Deduplicates — for exercises resolving to the same canonical name, keeps the doc with more data (video URL / longer instructions) and deletes the others
+- Injects `gymVideoUrl` / `gymVideoSource` from the full SHG YouTube channel mapping (same 100+ exercises as `map-shg-videos.mjs`)
+- Commits changes in Firestore batches of 400 ops
+
+**`package.json`**
+- Added `"fix:exercises": "node scripts/fix-exercise-catalog.mjs"` script
+
+**`README.md`**
+- Added Maintenance Scripts section documenting all seed/fix scripts
+
+### How to run
+```bash
+npm run seed:demo      # now works — reads .env.local automatically
+npm run fix:exercises  # clean up exerciseCatalog in Firestore
+```
+
+---
+
+## Latest Update — 2026-05-20: Titan Fitness Club full Firestore wiring
+
+### Root cause diagnosis
+`titan-gym` existed only in `lib/mock-data.ts`. When Firebase Admin is configured, `getGymWorkspaces()` reads Firestore exclusively — mock data is invisible. If the admin created the gym via the console without specifying the slug, `slugifyGymName("Titan Fitness Club")` generated `titan-fitness-club`, producing a different workspace ID from the mock data `titan-gym`, causing a split between two non-matching workspaces.
+
+### Changes made
+
+**`scripts/seed-demo-firestore.mjs`**
+- Added `titanGymId = "titan-gym"` and `titanOwnerId = "titan-owner-1"` constants
+- Seeds `gyms/titan-gym` — Titan Fitness Club workspace with `status: "active"`, `memberCount: 20`
+- Seeds `profiles/titan-owner-1` — owner profile with `username: "titan-owner-1"`, `authEmail: "titan-owner-1@fitsplit.app"`, `defaultGymId: "titan-gym"`
+- Seeds all 20 Titan member profiles (matching mock-data IDs `titan-ravi` … `titan-meghna`) with `defaultGymId: "titan-gym"`
+- Seeds 8 program assignments for Titan members
+
+**`scripts/seed-firebase-auth.mjs`**
+- Added `titan-owner-1` Firebase Auth user — `email: "titan-owner-1@fitsplit.app"`, password `password`, claims `{ role: "owner", gymId: "titan-gym" }`
+
+**`lib/auth.ts`**
+- Added `"titan-owner-1"` to `demoLogins` — resolves username without Firestore lookup
+
+**`README.md`**
+- Added Titan owner to Demo Login Credentials table
+
+### How to apply
+```bash
+npm run seed:auth    # creates titan-owner-1 Firebase Auth account
+npm run seed:demo    # writes titan-gym, titan-owner-1, 20 Titan members to Firestore
+```
+
+After seeding: login as `titan-owner-1` / `password` on the **Staff** tab.
+
+If the admin previously created a gym with slug `titan-fitness-club` via the console, delete it from `/admin/gyms` — the seed creates the canonical `titan-gym` workspace.
+
+---
+
+## Latest Update - 2026-05-20: Gemini API mapped to FitSplit AI features
+
+- Updated local `.env.local` with `GEMINI_API_KEY` and `GEMINI_MODEL=gemini-flash-latest`.
+- Mapped the model setting into both FitSplit AI paths:
+  - Member AI workout/progress summary in `lib/ai.ts`.
+  - Owner/admin AI program assignment picker in `lib/firebase/actions.ts`.
+- Updated the program assignment Gemini request to send the API key through the `X-goog-api-key` header, matching Google's current REST example.
+- Verified the Gemini endpoint locally with a small `gemini-flash-latest:generateContent` request; API returned HTTP 200.
+- `npm run typecheck` passes.
+
+### Deployment note
+- Add the same `GEMINI_API_KEY` and `GEMINI_MODEL=gemini-flash-latest` values to Firebase App Hosting / production environment before relying on hosted AI features.
+- Because the API key was pasted into chat, rotate/restrict the key in Google AI Studio or Google Cloud before production use.
+
+---
+
+## Latest Update - 2026-05-20: SHG Stage 2 and Stage 3 workout import
+
+### Data import
+- Imported the trainer spreadsheets from:
+  - `C:\Users\mehul\Downloads\stage 2 workout-2 (2).xlsx`
+  - `C:\Users\mehul\Downloads\stage 3 workout (2).xlsx`
+- Created two active SHG gym workout programs in Firestore:
+  - `workoutPrograms/shg-stage-2-workouts` -> **Stage 2 Workouts**
+  - `workoutPrograms/shg-stage-3-workouts` -> **Stage 3 Workouts**
+- Both are stored as `source: "gym"`, `splitType: "custom"`, `gymId: "shg"`, `createdBy: "santosh-shg"`.
+
+### Imported structure
+- Stage 2 Workouts: 6 days, 91 workout items, 76 video links.
+- Stage 3 Workouts: 6 days, 89 workout items, 67 video links.
+- Added 180 deterministic SHG exercise catalog records with IDs like:
+  - `stage-2-workouts-d1-01`
+  - `stage-3-workouts-d1-01`
+- Video links were copied into both `videoUrl` and `gymVideoUrl` so users who can view assigned workouts/catalog exercises can play the videos through the existing video UI.
+
+### Verification
+- Firestore read-back confirmed both program docs exist under project `fitsplit-29215`.
+- Firestore query confirmed `exerciseCatalog` has 180 `source: "stage_workbook"` SHG records, 143 with videos.
+- These programs should now appear in owner program assignment/dropdown flows together with predefined plans and other SHG custom plans.
+
+---
+
 ## Latest Update — 2026-05-20: Fix misleading staff creation confirmation message
 
 ### Problem
@@ -1860,4 +2003,3 @@ GitHub push passed to:
 ```text
 https://github.com/mehulchirania/FitSplit
 ```
-

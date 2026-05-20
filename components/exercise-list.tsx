@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
 import { Video, X } from "@/components/icons";
 import type { Exercise, WorkoutExercise } from "@/types/domain";
 
@@ -93,9 +94,10 @@ export function ExerciseList({
 
           return (
             <article className="exercise-row" key={`${exercise.id}-${index}`}>
-              <div
+              <ExerciseThumbnailPreview
+                alt={exercise.name}
                 className="exercise-thumb"
-                style={exercise.thumbnailUrl ? { backgroundImage: `url(${exercise.thumbnailUrl})` } : undefined}
+                thumbnailUrl={exercise.thumbnailUrl}
               />
               <div className="exercise-row-copy">
                 <h3>{exercise.name}</h3>

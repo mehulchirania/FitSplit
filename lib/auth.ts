@@ -86,6 +86,13 @@ const demoLogins: Record<string, DemoLogin> = {
     gymId: "dummy-gym",
     role: "owner"
   },
+  "titan-owner-1": {
+    uid: "titan-owner-1",
+    authEmail: "titan-owner-1@fitsplit.app",
+    fullName: "Titan Owner",
+    gymId: "titan-gym",
+    role: "owner"
+  },
   "aarav@example.com": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",

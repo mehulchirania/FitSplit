@@ -2,6 +2,7 @@ import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
+import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
 
 export const dynamic = "force-dynamic";
 
@@ -38,12 +39,11 @@ export default async function MemberExerciseLibraryPage() {
               {group.exercises.map((exercise) => (
                 <div className="catalog-exercise-entry" key={exercise.id}>
                   <div className="catalog-exercise-row" style={{ padding: "16px 20px" }}>
-                    <div
+                    <ExerciseThumbnailPreview
+                      alt={exercise.name}
                       className="catalog-exercise-thumb"
-                      style={exercise.thumbnailUrl ? { backgroundImage: `url(${exercise.thumbnailUrl})` } : undefined}
-                    >
-                      {!exercise.thumbnailUrl ? <Dumbbell className="catalog-thumb-placeholder" /> : null}
-                    </div>
+                      thumbnailUrl={exercise.thumbnailUrl}
+                    />
                     <div className="catalog-exercise-copy">
                       <strong>{exercise.name}</strong>
                       <p>{[exercise.equipment].filter(Boolean).join(" / ")}</p>

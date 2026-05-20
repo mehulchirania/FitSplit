@@ -85,6 +85,13 @@ const users = [
     gymId: "dummy-gym"
   },
   {
+    uid: "titan-owner-1",
+    email: "titan-owner-1@fitsplit.app",
+    displayName: "Titan Owner",
+    role: "owner",
+    gymId: "titan-gym"
+  },
+  {
     uid: "member-aarav",
     email: "aarav@example.com",
     phoneNumber: "+919876543210",

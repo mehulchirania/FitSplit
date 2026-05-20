@@ -1,4 +1,5 @@
 import workoutsData from "./workouts.json";
+import { getExerciseThumbnail } from "./exercise-thumbnails";
 import type {
   AttendanceRecord,
   Exercise,
@@ -344,9 +345,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       videoUrl: catalogExercise.video_url ?? "",
       gymVideoUrl: catalogExercise.gym_video_url ?? "",
       gymVideoSource: catalogExercise.gym_video_url ? "youtube" as const : "none" as const,
-      thumbnailUrl:
-        muscleThumbnails[muscleGroup] ??
-        "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80",
+      thumbnailUrl: getExerciseThumbnail(catalogExercise.name, muscleGroup as MuscleGroup),
       ownerOnly: true
     }))
   ).concat([

@@ -30,6 +30,7 @@ import {
   programs as mockPrograms,
   workoutSessions as mockWorkoutSessions
 } from "@/lib/mock-data";
+import { getExerciseThumbnail, isGenericExerciseThumbnail } from "@/lib/exercise-thumbnails";
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 
@@ -440,20 +441,21 @@ export async function getExerciseCatalog(gymId?: string): Promise<{
     const persistedVideoSource = String(data.videoSource ?? "").trim() as Exercise["videoSource"];
     const gymVideoUrl = String(data.gymVideoUrl ?? "").trim();
     const persistedGymVideoSource = String(data.gymVideoSource ?? "").trim() as Exercise["gymVideoSource"];
+    const muscleGroup = String(data.muscleGroup ?? "Chest") as MuscleGroup;
+    const storedThumbnailUrl = String(data.thumbnailUrl ?? "").trim();
     return {
       id: doc.id,
       name: String(data.name),
-      muscleGroup: String(data.muscleGroup ?? "Chest") as MuscleGroup,
+      muscleGroup,
       equipment: String(data.equipment ?? ""),
       instructions: String(data.instructions ?? ""),
       videoSource: videoUrl ? (persistedVideoSource === "none" ? "youtube" : persistedVideoSource || "youtube") : "none",
       videoUrl,
       gymVideoUrl,
       gymVideoSource: gymVideoUrl ? (persistedGymVideoSource === "none" ? "youtube" : persistedGymVideoSource || "youtube") : "none",
-      thumbnailUrl: String(
-        data.thumbnailUrl ??
-          "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80"
-      ),
+      thumbnailUrl: isGenericExerciseThumbnail(storedThumbnailUrl)
+        ? getExerciseThumbnail(String(data.name), muscleGroup)
+        : storedThumbnailUrl,
       ownerOnly: true
     };
   });
