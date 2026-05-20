@@ -3,6 +3,7 @@ import type {
   ActivityEvent,
   AttendanceRecord,
   BodyMetricLog,
+  DayLog,
   Difficulty,
   Exercise,
   ExerciseRequest,
@@ -15,6 +16,7 @@ import type {
   Notification,
   ProfileMetrics,
   ProgramAssignment,
+  SkipReason,
   SiteLink,
   WorkoutSession,
   WorkoutProgram,
@@ -735,6 +737,45 @@ export async function getBodyMetricLogsForMember(memberId: string): Promise<{
   } catch (error) {
     console.warn("getBodyMetricLogsForMember failed:", error);
     return { logs: [], isPersisted: false };
+  }
+}
+
+export async function getDayLogsForMember(memberId: string): Promise<{
+  dayLogs: DayLog[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { dayLogs: [], isPersisted: false };
+  }
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.dayLogs)
+      .where("memberId", "==", memberId)
+      .get();
+    const validSkipReasons = new Set<string>(["rest", "no_time", "equipment", "sick", "other"]);
+    const dayLogs: DayLog[] = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        const rawReason = data.skipReason ? String(data.skipReason) : undefined;
+        return {
+          id: doc.id,
+          memberId: String(data.memberId ?? memberId),
+          gymId: data.gymId ? String(data.gymId) : undefined,
+          programId: String(data.programId ?? ""),
+          dayId: String(data.dayId ?? ""),
+          weekStart: String(data.weekStart ?? ""),
+          status: data.status === "modified" ? "modified" : "skipped",
+          skipReason: rawReason && validSkipReasons.has(rawReason) ? (rawReason as SkipReason) : undefined,
+          note: data.note ? String(data.note) : undefined,
+          loggedAt: String(data.loggedAt ?? new Date().toISOString())
+        } satisfies DayLog;
+      })
+      .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
+    return { dayLogs, isPersisted: true };
+  } catch (error) {
+    console.warn("getDayLogsForMember failed:", error);
+    return { dayLogs: [], isPersisted: false };
   }
 }
 

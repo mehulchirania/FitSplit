@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { endWorkoutSession, logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
+import { clearDayLog, endWorkoutSession, logDayStatus, logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
 import { generateSmartSwaps } from "@/lib/ai";
-import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
+import type { DayLog, Exercise, LiftLog, SkipReason, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
@@ -19,6 +19,23 @@ const ProgressChart = dynamic(() => import("@/components/progress-chart").then(m
 });
 
 const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+/** Returns the ISO date string (YYYY-MM-DD) for the Monday of the given date's week. */
+function getWeekStart(date: Date = new Date()): string {
+  const d = new Date(date);
+  const day = (d.getDay() + 6) % 7; // shift so Monday = 0
+  d.setDate(d.getDate() - day);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+}
+
+const SKIP_REASONS: { value: SkipReason; label: string }[] = [
+  { value: "rest",      label: "Rest day" },
+  { value: "no_time",   label: "No time" },
+  { value: "equipment", label: "No equipment" },
+  { value: "sick",      label: "Feeling sick" },
+  { value: "other",     label: "Other" },
+];
 
 type Modification = {
   injury: string;
@@ -249,14 +266,18 @@ function getDayMuscleTargets(items: WorkoutExercise[], exercises: Exercise[]) {
 
 export function MemberWorkoutConsole({
   exercises,
+  gymId,
   initialActiveSessionCount: _initialActiveSessionCount,
+  initialDayLogs = [],
   initialInjuryNote = "",
   initialLiftLogs,
   memberId,
   program
 }: {
   exercises: Exercise[];
+  gymId: string;
   initialActiveSessionCount: number;
+  initialDayLogs?: DayLog[];
   initialInjuryNote?: string;
   initialLiftLogs: LiftLog[];
   memberId: string;
@@ -283,6 +304,15 @@ export function MemberWorkoutConsole({
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
   );
+  // Day-skip / did-something-else state
+  const [dayLogs, setDayLogs] = useState<DayLog[]>(initialDayLogs);
+  const [skipMode, setSkipMode] = useState<"none" | "skip" | "other">("none");
+  const [skipReason, setSkipReason] = useState<SkipReason | "">("");
+  const [skipNote, setSkipNote] = useState("");
+  const [isDayLogging, setIsDayLogging] = useState(false);
+  const [dayLogStatus, setDayLogStatus] = useState<FormActionState | null>(null);
+  // The current week's Monday — stable for the lifetime of this render
+  const weekStart = useMemo(() => getWeekStart(), []);
   // Max weight per exercise for PR detection
   const prMap = liftLogs.reduce<Map<string, number>>((acc, log) => {
     if (log.weight && log.exerciseId) {
@@ -314,6 +344,22 @@ export function MemberWorkoutConsole({
   const dayMuscleTargets = getDayMuscleTargets(loggableExercises, exercises);
   const uniqueLoggableExercises = Array.from(
     new Map(loggableExercises.map((item) => [item.exerciseId, item])).values()
+  );
+
+  // DayLog for the currently selected day in the current week
+  const currentDayLog = useMemo(
+    () => dayLogs.find((dl) => dl.dayId === selectedDay?.id && dl.weekStart === weekStart) ?? null,
+    [dayLogs, selectedDay, weekStart]
+  );
+
+  // Exercises NOT already in today's plan — for the "other exercises" optgroup
+  const plannedExerciseIds = useMemo(
+    () => new Set(uniqueLoggableExercises.map((e) => e.exerciseId)),
+    [uniqueLoggableExercises]
+  );
+  const otherExercises = useMemo(
+    () => exercises.filter((e) => !plannedExerciseIds.has(e.id)),
+    [exercises, plannedExerciseIds]
   );
 
   // Restore session state from localStorage on mount
@@ -485,6 +531,60 @@ export function MemberWorkoutConsole({
     void saveMemberAiTrainerNote(initialFormActionState, formData);
   }
 
+  async function saveDayLog() {
+    if (!selectedDay) return;
+    if (skipMode === "skip" && !skipReason) return;
+    setIsDayLogging(true);
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("programId", program.id);
+    formData.set("dayId", selectedDay.id);
+    formData.set("weekStart", weekStart);
+    formData.set("status", skipMode === "other" ? "modified" : "skipped");
+    if (skipMode === "skip" && skipReason) formData.set("skipReason", skipReason);
+    if (skipNote.trim()) formData.set("note", skipNote.trim());
+    const result = await logDayStatus(initialFormActionState, formData);
+    setIsDayLogging(false);
+    setDayLogStatus(result);
+    if (result.status === "success") {
+      // Optimistic local update so the UI reflects immediately
+      const newLog: DayLog = {
+        id: `${memberId}_${selectedDay.id}_${weekStart}`,
+        memberId,
+        gymId,
+        programId: program.id,
+        dayId: selectedDay.id,
+        weekStart,
+        status: skipMode === "other" ? "modified" : "skipped",
+        skipReason: skipMode === "skip" && skipReason ? skipReason : undefined,
+        note: skipNote.trim() || undefined,
+        loggedAt: new Date().toISOString()
+      };
+      setDayLogs((prev) => {
+        const filtered = prev.filter((dl) => !(dl.dayId === selectedDay.id && dl.weekStart === weekStart));
+        return [newLog, ...filtered];
+      });
+      setSkipMode("none");
+      setSkipReason("");
+      setSkipNote("");
+    }
+  }
+
+  async function removeDayLog() {
+    if (!selectedDay) return;
+    setIsDayLogging(true);
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("dayId", selectedDay.id);
+    formData.set("weekStart", weekStart);
+    const result = await clearDayLog(initialFormActionState, formData);
+    setIsDayLogging(false);
+    if (result.status === "success") {
+      setDayLogs((prev) => prev.filter((dl) => !(dl.dayId === selectedDay.id && dl.weekStart === weekStart)));
+      setDayLogStatus(null);
+    }
+  }
+
   function clearInjuryCustomization() {
     setInjury("");
     setModification(null);
@@ -502,6 +602,11 @@ export function MemberWorkoutConsole({
   function selectWorkoutDay(index: number) {
     const nextDay = program.days[index];
     setSelectedDayIndex(index);
+    // Reset skip form so it doesn't bleed across days
+    setSkipMode("none");
+    setSkipReason("");
+    setSkipNote("");
+    setDayLogStatus(null);
 
     const nextInjury = injury.trim();
     if (nextDay && nextInjury) {
@@ -635,17 +740,29 @@ export function MemberWorkoutConsole({
         <div className="member-workout-body">
           <div className="weekly-schedule">
             <div className="day-tabs-wrap"><div className="day-tabs" aria-label="Weekly workout days">
-              {program.days.map((day, index) => (
-                <button
-                  className={selectedDayIndex === index ? "is-selected" : ""}
-                  key={day.id}
-                  onClick={() => selectWorkoutDay(index)}
-                  type="button"
-                >
-                  <span>{dayNames[index] ?? `Day ${day.dayNumber}`}</span>
-                  <strong>{day.title}</strong>
-                </button>
-              ))}
+              {program.days.map((day, index) => {
+                const tabLog = dayLogs.find((dl) => dl.dayId === day.id && dl.weekStart === weekStart);
+                return (
+                  <button
+                    className={[
+                      selectedDayIndex === index ? "is-selected" : "",
+                      tabLog?.status === "skipped" ? "day-tab-skipped" : "",
+                      tabLog?.status === "modified" ? "day-tab-modified" : ""
+                    ].filter(Boolean).join(" ")}
+                    key={day.id}
+                    onClick={() => selectWorkoutDay(index)}
+                    type="button"
+                  >
+                    <span>{dayNames[index] ?? `Day ${day.dayNumber}`}</span>
+                    <strong>{day.title}</strong>
+                    {tabLog && (
+                      <em className="day-tab-status-dot" aria-label={tabLog.status === "skipped" ? "Skipped" : "Modified"}>
+                        {tabLog.status === "skipped" ? "⏭" : "📝"}
+                      </em>
+                    )}
+                  </button>
+                );
+              })}
             </div></div>
             {modification ? (
               <div className="workout-mode-toggle" role="tablist" aria-label="Workout version">
@@ -714,6 +831,142 @@ export function MemberWorkoutConsole({
                 {(workoutMode === "default" || !modification) && (
                   <ExerciseList exercises={exercises} items={visibleWorkoutDay.exercises} />
                 )}
+
+                {/* ── Day-skip / did-something-else section ── */}
+                <div className="day-log-section">
+                  {currentDayLog ? (
+                    // Already have a log — show the status and an undo button
+                    <div className={`day-log-status day-log-status--${currentDayLog.status}`}>
+                      <div className="day-log-status-body">
+                        <span className="day-log-status-icon">
+                          {currentDayLog.status === "skipped" ? "⏭" : "📝"}
+                        </span>
+                        <div>
+                          <strong>
+                            {currentDayLog.status === "skipped"
+                              ? `Skipped${currentDayLog.skipReason ? ` · ${SKIP_REASONS.find((r) => r.value === currentDayLog.skipReason)?.label ?? currentDayLog.skipReason}` : ""}`
+                              : "Did something else"}
+                          </strong>
+                          {currentDayLog.note && (
+                            <p className="day-log-status-note">{currentDayLog.note}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        className="button-link day-log-undo"
+                        disabled={isDayLogging}
+                        onClick={removeDayLog}
+                        type="button"
+                      >
+                        Undo
+                      </button>
+                    </div>
+                  ) : skipMode === "none" ? (
+                    // Default — offer skip or "did something else"
+                    <div className="day-log-actions">
+                      <span className="day-log-actions-label">Didn&apos;t follow the plan?</span>
+                      <button
+                        className="button-ghost day-log-btn"
+                        onClick={() => { setSkipMode("skip"); setSkipReason(""); setSkipNote(""); }}
+                        type="button"
+                      >
+                        ⏭ Skip this day
+                      </button>
+                      <button
+                        className="button-ghost day-log-btn"
+                        onClick={() => { setSkipMode("other"); setSkipNote(""); }}
+                        type="button"
+                      >
+                        📝 I did something else
+                      </button>
+                    </div>
+                  ) : skipMode === "skip" ? (
+                    // Skip flow — pick a reason
+                    <div className="day-log-form">
+                      <p className="day-log-form-title">Why are you skipping?</p>
+                      <div className="day-log-reason-chips">
+                        {SKIP_REASONS.map((r) => (
+                          <button
+                            className={`day-log-chip${skipReason === r.value ? " is-selected" : ""}`}
+                            key={r.value}
+                            onClick={() => setSkipReason(r.value)}
+                            type="button"
+                          >
+                            {r.label}
+                          </button>
+                        ))}
+                      </div>
+                      <label className="day-log-note-label">
+                        Note <span className="day-log-optional">(optional)</span>
+                        <textarea
+                          className="day-log-textarea"
+                          maxLength={400}
+                          onChange={(e) => setSkipNote(e.target.value)}
+                          placeholder="Any extra context..."
+                          rows={2}
+                          value={skipNote}
+                        />
+                      </label>
+                      <div className="day-log-form-actions">
+                        <button
+                          className="button button-primary"
+                          disabled={isDayLogging || !skipReason}
+                          onClick={saveDayLog}
+                          type="button"
+                        >
+                          {isDayLogging ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          className="button button-secondary"
+                          disabled={isDayLogging}
+                          onClick={() => { setSkipMode("none"); setSkipReason(""); setSkipNote(""); }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {dayLogStatus?.status === "error" && (
+                        <p className="form-message form-message-error">{dayLogStatus.message}</p>
+                      )}
+                    </div>
+                  ) : (
+                    // "Did something else" flow — free-text note
+                    <div className="day-log-form">
+                      <label className="day-log-note-label">
+                        <p className="day-log-form-title">What did you do instead?</p>
+                        <textarea
+                          className="day-log-textarea"
+                          maxLength={400}
+                          onChange={(e) => setSkipNote(e.target.value)}
+                          placeholder="e.g. 30 min run, yoga session, swimming..."
+                          rows={3}
+                          value={skipNote}
+                        />
+                      </label>
+                      <div className="day-log-form-actions">
+                        <button
+                          className="button button-primary"
+                          disabled={isDayLogging || !skipNote.trim()}
+                          onClick={saveDayLog}
+                          type="button"
+                        >
+                          {isDayLogging ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          className="button button-secondary"
+                          disabled={isDayLogging}
+                          onClick={() => { setSkipMode("none"); setSkipNote(""); }}
+                          type="button"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {dayLogStatus?.status === "error" && (
+                        <p className="form-message form-message-error">{dayLogStatus.message}</p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </article>
             ) : null}
           </div>
@@ -752,11 +1005,24 @@ export function MemberWorkoutConsole({
                 required
                 value={selectedExerciseIdForForm || uniqueLoggableExercises[0]?.exerciseId || ""}
               >
-                {uniqueLoggableExercises.map((item) => (
-                  <option key={item.exerciseId} value={item.exerciseId}>
-                    {getExerciseName(item.exerciseId, exercises)}
-                  </option>
-                ))}
+                {uniqueLoggableExercises.length > 0 && (
+                  <optgroup label="Today's plan">
+                    {uniqueLoggableExercises.map((item) => (
+                      <option key={item.exerciseId} value={item.exerciseId}>
+                        {getExerciseName(item.exerciseId, exercises)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                {otherExercises.length > 0 && (
+                  <optgroup label="Other exercises">
+                    {otherExercises.map((ex) => (
+                      <option key={ex.id} value={ex.id}>
+                        {ex.name} ({ex.muscleGroup})
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
               </select>
             </label>
 

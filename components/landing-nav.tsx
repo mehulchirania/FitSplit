@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ThemeToggle } from "./theme-toggle";
 
 const navLinks = [
   { href: "#top", label: "Home" },
@@ -112,10 +111,6 @@ export function LandingNav() {
       </div>
 
       <div className={`landing-nav-links ${isOpen ? "is-open" : ""}`}>
-        <div className="landing-menu-theme">
-          <span>Theme</span>
-          <ThemeToggle />
-        </div>
         {navLinks.map((link) => (
           <a href={link.href} key={link.href} onClick={() => setIsOpen(false)}>
             {link.label}

@@ -1,5 +1,109 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-20: Day-skip & did-something-else feature
+
+Members don't always follow their program exactly. This adds full week-aware deviation tracking so the app reflects reality instead of silently pretending every day was completed.
+
+### What was built
+
+**`DayLog` — new data model**
+- `types/domain.ts`: `DayLog` type + `SkipReason` union (`rest | no_time | equipment | sick | other`).
+- `lib/firebase/collections.ts`: `dayLogs` collection key registered.
+- Firestore document ID is deterministic: `${memberId}_${dayId}_${weekStart}` — second save for the same week slot is a silent upsert, never a duplicate.
+
+**New server actions (`lib/firebase/actions.ts`)**
+- `logDayStatus` — saves a `DayLog` with `status: "skipped"` (+ optional reason + optional note) or `status: "modified"` (free-text note of what they did instead). ISO-date validation on `weekStart`; 400-char cap on notes.
+- `clearDayLog` — deletes the deterministic doc; used by the "Undo" button.
+
+**New read model (`lib/firebase/read-models.ts`)**
+- `getDayLogsForMember(memberId)` — returns all `DayLog[]` for a member, newest first.
+- Import added to read-models type imports (`DayLog`, `SkipReason`).
+
+**`MemberWorkoutConsole` changes (`components/member-workout-console.tsx`)**
+- New props: `gymId: string`, `initialDayLogs?: DayLog[]`.
+- `getWeekStart()` helper (Monday of current week, ISO string) used as the stable week bucket key.
+- `SKIP_REASONS` constant array drives chip labels.
+- `currentDayLog` derived from state: the `DayLog` matching the currently selected day + this week's `weekStart`.
+- Day tabs: show `⏭` / `📝` emoji badge when a day has a log this week. Skipped tabs get a strikethrough title; modified tabs get brand-colour title.
+- Exercise `<select>` now uses `<optgroup>`: "Today's plan" (assigned exercises) + "Other exercises" (full catalog, with muscle group label). Members can log any exercise in the catalog without switching modes.
+- Day-log section below each exercise list:
+  - **No log yet** → "Didn't follow the plan?" prompt with two ghost buttons: "⏭ Skip this day" and "📝 I did something else".
+  - **Skip flow** → reason chips (5 options) + optional textarea note → Save/Cancel.
+  - **Did-something-else flow** → textarea ("e.g. 30 min run, yoga, swimming…") → Save/Cancel.
+  - **Log already exists** → status banner showing reason/note + "Undo" link.
+- All saves are optimistic: local state updates immediately; Firestore write happens async.
+- `selectWorkoutDay` resets skip mode/reason/note so forms don't bleed across day tabs.
+
+**`app/member/page.tsx`**
+- Fetches `getDayLogsForMember` in the parallel `Promise.all`.
+- Passes `gymId` and `initialDayLogs` to `MemberWorkoutConsole`.
+
+**`app/member/history/page.tsx`**
+- Fetches `getDayLogsForMember` alongside lift logs.
+- Builds `standaloneDayLogs` — days with a skip/modify record but no lift logs — and merges them with lift-log buckets, sorted newest-first.
+- Skipped/modified days show a pill badge in the card header.
+- `dayLog.note` renders as a dashed-border note block above the lift rows (or alone for standalone entries).
+
+**CSS**
+- `app/styles/member.css`: `.day-tab-skipped`, `.day-tab-modified`, `.day-tab-status-dot`, `.day-log-section`, `.day-log-actions`, `.day-log-btn`, `.day-log-form`, `.day-log-chip`, `.day-log-note-label`, `.day-log-textarea`, `.day-log-form-actions`, `.day-log-status`, `.day-log-status--skipped`, `.day-log-status--modified`, `.day-log-status-body`, `.day-log-status-icon`, `.day-log-status-note`, `.day-log-undo`.
+- `app/styles/09-profile-history-notices-loader.css`: `.history-day-note`, `.history-day-note-icon`.
+
+### Verification
+- `npx tsc --noEmit` passes (zero errors).
+
+### Deferred — still NOT done
+1. **Optimistic lift logging via `useOptimistic`** — partial optimistic update already in place via `setLiftLogs`. Full refactor is medium-risk due to offline-log interaction.
+2. **Split `lib/firebase/actions.ts` (~3k lines)** — pure tech debt; no user value.
+3. **Replace rule-based AI swap logic with real Gemini** — `getInjuryRule` is a hardcoded 3-branch lookup. Wire to `lib/ai.ts`.
+4. **Bulk member operations** — multi-select + suspend/restore/message.
+5. **"Today only" injury flag** — session-level state; couples with #3.
+6. **Validation via zod** — scattered `requireText` + inline parsing.
+7. **`useActionState` for `AddMemberForm`** — cosmetic; works today.
+8. **FCM push notifications** — service worker + token registration + server messaging.
+9. **Workout templates, exercise variations, payment/membership tracker** — each a standalone feature.
+10. **`Member` + `ProfileMetrics` merge** — same person, two types.
+11. **Inline `style={{...}}` cleanup + tokens.css extraction**.
+
+---
+
+## Latest Update - 2026-05-20: Global CSS split and route QA
+
+Completed the focused CSS split that had been sitting in the deferred list. This was intentionally done as a behavior-preserving refactor first: the original cascade order is preserved in `app/layout.tsx`, and `app/globals.css` is now just a pointer file.
+
+### CSS file map
+- `app/styles/00-base-shell.css` - tokens, reset, app shell, topbar, shared grids.
+- `app/styles/01-owner-members.css` - owner member list and member detail layouts.
+- `app/styles/02-shared-components.css` - shared forms, dialogs, status pills, schedules, assignment controls.
+- `app/styles/03-visual-refresh.css` - visual refresh cards, dashboard headers, active nav treatment.
+- `app/styles/04-loader-animation.css` - Uiverse-style loading animation.
+- `app/styles/05-theme-polish.css` - neutral/dark theme polish, glass surfaces, app-wide overrides.
+- `app/styles/06-programs-mobile-legacy-landing.css` - program library, mobile nav/footer, legacy landing compatibility rules.
+- `app/styles/07-member-dashboard-legacy.css` - older `.md-*` member dashboard rules retained for cascade compatibility.
+- `app/styles/08-admin-catalog-media.css` - admin panels, catalog rows, video/image modals, lift/session panels.
+- `app/styles/09-profile-history-notices-loader.css` - profile body-weight UI, workout history, notice board, animated footer, fitness loader.
+- Existing isolated files remain: `app/styles/forms.css`, `app/styles/member.css`, and route-scoped `app/landing.css`.
+
+### Build fixes found during split
+- A split boundary landed inside an old decorative CSS comment, leaving raw section text in `07-member-dashboard-legacy.css`. Wrapped it back into a valid comment so production minification succeeds.
+- Replaced several `center / cover` background shorthands with explicit `background-position`, `background-size`, and `background-repeat` declarations. This avoids cssnano-simple selector parsing failures during `next build`.
+- Added explicit chart container minimum sizing plus `ResponsiveContainer minWidth={0}` in `ProgressChart` and `ProgressiveOverloadChart`; `/profile` no longer emits the Recharts `width(-1) and height(-1)` warning during local reload.
+- Restarted the local dev server on `http://localhost:3000` after discovering the browser was still serving a stale pre-split CSS bundle.
+
+### Verification
+- `npm run typecheck` passes.
+- `npm run build` passes.
+- Unauthenticated route probe: `/` returns 200; protected routes correctly return 307 redirects instead of 500s.
+- Browser QA at mobile-width viewport showed no horizontal overflow after restart on:
+  - Public landing `/`
+  - Member: `/member`, `/profile`, `/activity`, `/about`, `/member/exercises`, `/member/history`
+  - Admin: `/admin`, `/admin/gyms`, `/admin/gyms/shg`, `/admin/inbox`, `/admin/exercises`, `/admin/programs`
+  - Owner: `/owner`, `/owner/members`, `/owner/members/member-mehul`, `/owner/exercises`, `/owner/programs`, `/activity`, `/profile`, `/about`
+- Login modal still opens from landing. Verified member login with `mehul@example.com` + PIN `1234`, admin login with `admin` + `password`, and owner login with `santosh-shg` + `password`.
+
+### Notes
+- This split is organizational only; it does not yet convert CSS into CSS Modules or component-scoped styles.
+- `lib/firebase/actions.ts` is still large and unsplit.
+
 ## Latest Update - 2026-05-20: Body weight tracking, coach notes, lockout, audit log, CSP
 
 Second batch from the e2e audit. Worked through the deferred list from the previous entry, focusing on items with clear scope and member value. Skipped the multi-hour refactors (split files, replace rule-based AI, inline style cleanup, Member/Profile merge) — they need their own focused sessions.
@@ -79,7 +183,7 @@ Second batch from the e2e audit. Worked through the deferred list from the previ
 
 ### Deferred — still NOT done (with honest scope reasons)
 1. **Optimistic lift logging via `useOptimistic`** — `MemberWorkoutConsole` already does optimistic prepend via `setLiftLogs`. The full `useOptimistic` refactor is medium-risk because of the offline-log interaction (`fitsplit-offline-logs` localStorage path). Worth a dedicated session that also reworks the offline-sync flow.
-2. **Split `globals.css` (~9k lines) and `lib/firebase/actions.ts` (~2.9k lines)** — pure refactor with no user value. Best done in one focused session with a careful import audit.
+2. **Split `lib/firebase/actions.ts` (~2.9k lines)** — still pending. `globals.css` has now been split into ordered files under `app/styles/`.
 3. **Replace rule-based "AI Trainer" swap logic with real Gemini** — the `getInjuryRule` function in `MemberWorkoutConsole` is a hardcoded knee/shoulder/back lookup. Either rename ("Smart Swaps" / "Recovery Mode") OR wire to `lib/ai.ts`. Substantial work; needs prompt tuning + cost monitoring.
 4. **Bulk operations on members page** — multi-select + bulk suspend/restore/message. Needs a client-side wrapper component and new server actions. Roughly a 2-hour standalone feature with its own UX considerations (select-all-on-page vs select-all-filtered, optimistic UI for many parallel writes, what to do if 3 of 10 fail).
 5. **"Today only" injury flag** — touches session-level state and reroutes the AI swap logic. Couples with #3 above and the existing `injuryNotes` model.
@@ -154,7 +258,7 @@ Full e2e audit + execution batch covering UX bugs, security gaps, member-side fe
 These are scoped and ranked. Each is bounded enough to ship in a future session.
 
 1. **Optimistic lift logging** via `useOptimistic` — would make set logging feel instant. Current impl already does a partial optimistic update via `setLiftLogs(...)` but goes through the action round-trip first. Conversion is medium-risk because of the offline-logs interaction.
-2. **Split `globals.css` (~9k lines) and `lib/firebase/actions.ts` (~2.7k lines)** into per-feature files. Pure tech debt but unblocks future UI work. Should be done in one focused session, not piecemeal.
+2. **Split `lib/firebase/actions.ts` (~2.7k lines)** into per-feature files. Pure tech debt but unblocks future UI work. `globals.css` was split on 2026-05-20.
 3. **Replace rule-based "AI Semi-Personal Trainer" swap logic** in `MemberWorkoutConsole` with actual Gemini calls through `lib/ai.ts`. Currently it's a hardcoded knee/shoulder/back lookup in `getInjuryRule`. Either rename to "Smart Swaps"/"Recovery Mode" OR wire to a real LLM.
 4. **PIN security** — 4-digit PIN is 10,000 combinations. Add a lockout-after-N-failed-attempts counter on the profile doc, OR bump to 6 digits, OR finish OTP-based login (already on the original TODO list).
 5. **Body weight / progress log** — add a `bodyMetricLogs` collection with `loggedAt`, `weightKg`, optional `photoUrl`, surface as a chart on `/profile`. Gives members a reason to open the app on off-days.

@@ -1,0 +1,321 @@
+/* Legacy member dashboard blocks retained for cascade compatibility.
+   Split mechanically from app/globals.css; preserve import order in app/layout.tsx. */
+/* MEMBER DASHBOARD  ·  md-* prefix
+   ═══════════════════════════════════════════════════════════════════ */
+
+.md-page {
+  min-height: 100dvh;
+  padding-bottom: 80px;
+}
+
+/* ── Hero ── */
+.md-hero {
+  padding: 32px 0 28px;
+  margin-bottom: 32px;
+  border: none;
+}
+.md-hero-inner {
+  display: flex;
+  align-items: flex-start;
+  gap: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  flex-wrap: wrap;
+}
+.md-hero-copy { flex: 1; min-width: 260px; }
+.md-greeting {
+  color: var(--brand);
+  font-size: 0.72rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  margin: 0 0 10px;
+  text-transform: uppercase;
+}
+.md-hero-title {
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 14px;
+}
+.md-hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.md-badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  color: var(--text-soft);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+}
+.md-badge-accent {
+  background: var(--brand-soft);
+  border-color: rgba(200,241,53,.25);
+  color: var(--brand);
+}
+.md-hero-metrics { flex-shrink: 0; }
+
+/* ── Empty state ── */
+.md-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  max-width: 400px;
+  margin: 80px auto;
+  padding: 0 24px;
+  text-align: center;
+}
+.md-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.md-empty h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.md-empty p {
+  font-size: 14px;
+  color: var(--text-soft);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ── Workout console panels ── */
+.content-grid {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 24px;
+  align-items: start;
+}
+.list-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+}
+.panel-title h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+/* Day tabs */
+.day-tabs-wrap {
+  position: relative;
+  margin-bottom: 20px;
+}
+.day-tabs-wrap::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 4px;
+  width: 40px;
+  background: linear-gradient(to right, transparent, var(--bg-elevated));
+  pointer-events: none;
+}
+.day-tabs {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+.day-tabs::-webkit-scrollbar { display: none; }
+.day-tabs button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-soft);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 140ms ease;
+  flex-shrink: 0;
+}
+.day-tabs button:hover { background: var(--bg-subtle); color: var(--text); }
+.day-tabs button.is-selected {
+  background: var(--brand-soft);
+  border-color: rgba(200,241,53,.3);
+  color: var(--brand);
+}
+.day-tabs span { font-size: 11px; font-weight: 500; }
+.day-tabs strong { font-size: 13px; font-weight: 700; }
+
+/* Workout mode toggle */
+.workout-mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4px;
+  margin-bottom: 20px;
+}
+.workout-mode-toggle button {
+  flex: 1;
+  padding: 6px 12px;
+  border-radius: 7px;
+  border: none;
+  background: transparent;
+  color: var(--text-soft);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 140ms ease;
+}
+.workout-mode-toggle button.is-selected {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+}
+
+/* Selected workout day */
+.selected-workout-day .eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-bottom: 4px;
+}
+.selected-workout-day > p { color: var(--text-soft); font-size: 14px; margin: 0 0 12px; }
+.day-muscle-targets {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.day-muscle-targets span {
+  font-size: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 10px;
+  color: var(--text-soft);
+}
+
+/* AI trainer side panel */
+.injury-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+}
+.injury-card h2 {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.injury-card p {
+  font-size: 13px;
+  color: var(--text-soft);
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.injury-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-soft);
+  margin-bottom: 12px;
+}
+.injury-card textarea {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font-size: 13px;
+  resize: vertical;
+  min-height: 72px;
+  font-family: inherit;
+}
+.injury-card textarea:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+
+/* AI modification panel */
+.ai-modification-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--brand);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ai-modification-panel h2 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+
+/* Breadcrumb trail */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.breadcrumb-sep {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+}
+.breadcrumb-link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-soft);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+.breadcrumb-link:hover {
+  color: var(--brand);
+}
+.breadcrumb-current {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--brand);
+}

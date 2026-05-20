@@ -1,0 +1,739 @@
+/* Admin panels, catalog rows, media/video/image modals, session/lift panels.
+   Split mechanically from app/globals.css; preserve import order in app/layout.tsx. */
+
+/* Admin stats strip */
+.admin-stats-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.admin-stat {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.admin-stat-value {
+  font-size: 1.7rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1;
+  margin-bottom: 5px;
+  letter-spacing: -0.02em;
+}
+.admin-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Admin gym table */
+.admin-gym-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.admin-gym-table th,
+.admin-gym-table td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.admin-gym-table th {
+  font-size: 0.72rem;
+  color: var(--text-soft);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+.admin-gym-table tr:last-child td {
+  border-bottom: none;
+}
+
+.gym-logo-manager {
+  gap: 16px;
+}
+
+.gym-logo-current,
+.gym-logo-editor {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  padding: 14px;
+}
+
+.gym-brand-preview {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  min-height: 74px;
+}
+
+.gym-brand-preview > img,
+.gym-logo-placeholder {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: block;
+  height: 58px;
+  object-fit: contain;
+  padding: 5px;
+  width: 58px;
+}
+
+.gym-brand-preview > span:not(.gym-logo-placeholder) {
+  color: var(--text-faint);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.gym-logo-placeholder {
+  align-items: center;
+  color: var(--text-soft);
+  display: inline-flex;
+  font-weight: 900;
+  justify-content: center;
+}
+
+.gym-logo-editor {
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.gym-logo-canvas {
+  aspect-ratio: 1;
+  background: #0a0a0a;
+  border: 1px dashed var(--border);
+  border-radius: 18px;
+  display: block;
+  max-width: 280px;
+  width: 100%;
+}
+
+.gym-logo-empty {
+  color: var(--text-faint);
+  font-size: 0.84rem;
+  font-weight: 700;
+  max-width: 220px;
+  position: absolute;
+  text-align: center;
+}
+
+.gym-logo-controls {
+  display: grid;
+  gap: 12px;
+}
+
+.gym-logo-controls label {
+  color: var(--text-soft);
+  display: grid;
+  font-size: 0.82rem;
+  font-weight: 800;
+  gap: 6px;
+}
+
+.gym-logo-controls input[type="range"] {
+  accent-color: var(--brand);
+}
+
+/* Admin profile card */
+.profile-card-admin {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px 28px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 4px;
+  flex-wrap: wrap;
+}
+.profile-avatar-lg {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--brand);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Exercise catalog per-exercise edit */
+.catalog-exercise-entry {
+  border-bottom: 1px solid var(--border);
+}
+.catalog-exercise-entry:last-child {
+  border-bottom: none;
+}
+.catalog-exercise-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+}
+.catalog-exercise-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  background-size: cover;
+  background-position: center;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+}
+.thumbnail-preview-trigger {
+  appearance: none;
+  cursor: zoom-in;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+.thumbnail-preview-trigger:not(:disabled)::after {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.58);
+  border-radius: 999px;
+  color: #fff;
+  content: "View";
+  display: flex;
+  font-size: 0.62rem;
+  font-weight: 800;
+  inset: auto 5px 5px 5px;
+  justify-content: center;
+  letter-spacing: 0.04em;
+  opacity: 0;
+  padding: 3px 0;
+  position: absolute;
+  text-transform: uppercase;
+  transform: translateY(4px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.thumbnail-preview-trigger:not(:disabled):hover,
+.thumbnail-preview-trigger:not(:disabled):focus-visible {
+  border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  transform: translateY(-1px);
+}
+.thumbnail-preview-trigger:not(:disabled):hover::after,
+.thumbnail-preview-trigger:not(:disabled):focus-visible::after {
+  opacity: 1;
+  transform: translateY(0);
+}
+.thumbnail-preview-trigger:disabled {
+  cursor: default;
+}
+.exercise-edit-details summary::-webkit-details-marker { display: none; }
+.exercise-edit-details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+.exercise-edit-details[open] > summary {
+  background: var(--bg-subtle);
+}
+.exercise-edit-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+  margin: 0 0 12px;
+}
+.catalog-exercise-copy {
+  flex: 1;
+  min-width: 0;
+}
+.catalog-exercise-copy strong {
+  color: var(--text);
+  display: block;
+  font-size: 0.92rem;
+}
+.catalog-exercise-copy p {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  margin: 2px 0 0;
+}
+.catalog-exercise-actions {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+}
+.video-indicator {
+  align-items: center;
+  background: var(--brand-soft);
+  border: 1px solid color-mix(in srgb, var(--brand) 34%, var(--border));
+  border-radius: 999px;
+  color: var(--brand-strong);
+  display: inline-flex;
+  height: 30px;
+  justify-content: center;
+  text-decoration: none;
+  width: 30px;
+}
+.video-indicator svg,
+.exercise-video-button svg {
+  height: 14px;
+  width: 14px;
+}
+.catalog-edit-toggle {
+  min-width: 86px;
+  padding: 6px 12px;
+}
+.catalog-edit-close {
+  display: none;
+}
+.exercise-edit-details[open] .catalog-edit-open {
+  display: none;
+}
+.exercise-edit-details[open] .catalog-edit-close {
+  display: inline;
+}
+.exercise-video-button {
+  align-items: center;
+  display: inline-flex;
+  font-size: 0.75rem;
+  gap: 6px;
+  padding: 5px 10px;
+  white-space: nowrap;
+}
+.exercise-video-button--demo {
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
+  color: var(--brand);
+}
+.exercise-video-button--demo:hover {
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
+
+/* YouTube / video modal */
+.video-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.82);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  padding: 16px;
+}
+.video-modal {
+  background: var(--bg-elevated);
+  border-radius: var(--radius);
+  overflow: hidden;
+  width: 100%;
+  max-width: 700px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+}
+/* Portrait modal (YouTube Shorts) — narrow container so 9:16 doesn't stretch */
+.video-modal--portrait {
+  max-width: 380px;
+}
+.video-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+/* Landscape embed (default) */
+.video-embed {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  border: none;
+}
+/* Portrait embed (YouTube Shorts 9:16) */
+.video-embed--portrait {
+  aspect-ratio: 9 / 16;
+  width: auto;
+  /* Cap height so it doesn't overflow the viewport on small screens */
+  max-height: min(65vh, 560px);
+  /* Centre inside the narrow modal */
+  margin: 0 auto;
+}
+
+/* Image preview modal */
+.image-modal-backdrop {
+  align-items: center;
+  background: rgba(0, 0, 0, 0.84);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 16px;
+  position: fixed;
+  z-index: 220;
+}
+.image-modal {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+  max-height: min(780px, 92vh);
+  max-width: min(760px, 94vw);
+  overflow: hidden;
+  width: 100%;
+}
+.image-modal-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 18px;
+}
+.image-modal-header h3 {
+  color: var(--text);
+  font-size: 1rem;
+  margin: 0;
+}
+.image-modal-media {
+  background: var(--bg-subtle);
+  display: block;
+  max-height: calc(92vh - 74px);
+  object-fit: contain;
+  width: 100%;
+}
+
+/* Workout session bar */
+.workout-session-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 0 0 12px;
+  flex-wrap: wrap;
+}
+.session-elapsed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--brand);
+  flex: 1;
+}
+.session-end-btn {
+  font-size: 13px;
+  padding: 6px 16px;
+}
+
+/* Lift log panel */
+.lift-log-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.lift-log-panel h2 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
+
+/* Sidebar: sticky, scrollable internally */
+.list-panel.member-workout-side {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.member-workout-side {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: sticky;
+  top: 80px;
+  max-height: calc(100vh - 100px);
+  scrollbar-width: none;
+}
+
+/* Lift log table */
+.lift-log-table { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.lift-log-table div {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  align-items: center;
+}
+.lift-log-table div:first-child {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-bottom: 4px;
+}
+.lift-log-table div + div { background: var(--bg-subtle); }
+.lift-log-table span { color: var(--text-soft); }
+.lift-log-table span:first-child { color: var(--text); font-weight: 500; }
+
+/* muscle-targets inside exercise-row */
+.muscle-targets {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 4px 0 2px;
+}
+.muscle-targets span {
+  font-size: 11px;
+  color: var(--text-faint);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 7px;
+}
+
+/* lift log fields grid */
+.lift-log-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 860px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+    padding: 0 16px;
+    gap: 16px;
+  }
+  .md-hero { margin-bottom: 18px; }
+  .md-hero-inner {
+    gap: 18px;
+  }
+  .md-hero-metrics { align-self: stretch; }
+  .list-panel { padding: 16px; }
+  .lift-log-fields { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 480px) {
+  .lift-log-fields { grid-template-columns: 1fr; }
+  .md-hero-title { font-size: 22px; }
+}
+
+/* Member dashboard polish: stable header, anchored menus, and responsive lift logging. */
+.topbar {
+  overflow: visible;
+  z-index: 900;
+}
+
+.topbar-actions,
+.notification-menu,
+.profile-menu {
+  min-width: max-content;
+  position: relative;
+}
+
+.profile-dropdown {
+  border-radius: 16px;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.38);
+  gap: 6px;
+  max-width: calc(100vw - 24px);
+  padding: 8px;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 220px;
+  z-index: 1200;
+}
+
+.profile-dropdown a,
+.profile-dropdown button {
+  align-items: center;
+  display: flex;
+  justify-content: flex-start;
+  line-height: 1.15;
+  min-height: 42px;
+  white-space: nowrap;
+}
+
+.notification-dropdown {
+  animation: dropdown-in 200ms var(--slow) both;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgb(0 0 0 / 0.38);
+  display: grid;
+  gap: 12px;
+  max-width: calc(100vw - 24px);
+  padding: 14px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  width: 360px;
+  z-index: 1200;
+}
+
+.notification-dropdown-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.notification-dropdown-header h2 {
+  color: var(--text);
+  font-size: 1rem;
+  margin: 2px 0 0;
+}
+
+.notification-dropdown-list {
+  display: grid;
+  gap: 8px;
+}
+
+.notification-dropdown-item {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: 10px;
+}
+
+.notification-dropdown-item strong,
+.notification-dropdown-item p {
+  overflow-wrap: anywhere;
+}
+
+.notification-dropdown-item p,
+.notification-empty {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  line-height: 1.45;
+  margin: 3px 0 0;
+}
+
+.notification-dot {
+  background: var(--brand);
+  border-radius: 999px;
+  height: 8px;
+  margin-top: 6px;
+  width: 8px;
+}
+
+.notification-badge {
+  align-items: center;
+  background: var(--brand);
+  border: 2px solid var(--bg-elevated);
+  border-radius: 999px;
+  color: var(--primary-foreground);
+  display: inline-flex;
+  font-size: 0.68rem;
+  font-weight: 900;
+  height: 18px;
+  justify-content: center;
+  min-width: 18px;
+  padding: 0 4px;
+  position: absolute;
+  right: -4px;
+  top: -5px;
+}
+
+.md-page {
+  padding-top: 4px;
+}
+
+.md-hero {
+  margin-bottom: 24px;
+  padding: 0 clamp(12px, 3vw, 24px);
+}
+
+.md-hero-inner {
+  align-items: stretch;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--bg-elevated) 90%, var(--brand) 10%) 0%,
+    var(--bg-elevated) 55%
+  );
+  border: 1px solid var(--border);
+  border-radius: 28px;
+  border-top: 3px solid var(--brand);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.24), 0 1px 0 rgb(255 255 255 / 0.06) inset;
+  display: grid;
+  gap: 24px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  margin: 0 auto;
+  max-width: 1180px;
+  overflow: hidden;
+  padding: clamp(22px, 3vw, 32px);
+}
+
+.md-hero-copy {
+  align-content: center;
+  display: grid;
+  gap: 0;
+  min-width: 0;
+}
+
+.md-hero-title {
+  font-size: clamp(1.65rem, 3vw, 2.55rem);
+  margin-bottom: 16px;
+  max-width: 760px;
+  overflow-wrap: anywhere;
+}
+
+.md-hero-meta {
+  max-width: 760px;
+}
+
+.md-badge {
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.2;
+  padding: 5px 13px;
+}
+
+.md-hero-metrics {
+  align-self: center;
+  min-width: 0;
+}
+
+.content-grid {
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
+  max-width: 1180px;
+}
+
+.list-panel.member-workout-side {
+  padding: 14px;
+}
+
+.member-workout-side {
+  gap: 14px;
+  top: 92px;
+}
+
+.lift-log-panel {
+  display: grid;
+  gap: 14px;
+}
+
+.lift-log-title {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 0;
+}
+
+.lift-log-heading {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  min-width: 0;
+}

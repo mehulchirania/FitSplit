@@ -271,3 +271,29 @@ export type ContactMessage = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type SkipReason = "rest" | "no_time" | "equipment" | "sick" | "other";
+
+/**
+ * Records when a member intentionally deviates from their planned day for a
+ * given week. Two statuses:
+ *   "skipped"  — member did not train that day (with an optional reason).
+ *   "modified" — member did something other than the assigned plan (free-text note).
+ *
+ * The document ID is deterministic: `${memberId}_${dayId}_${weekStart}` so
+ * a second save for the same slot is an upsert, not a duplicate.
+ */
+export type DayLog = {
+  id: string;
+  memberId: string;
+  gymId?: string;
+  programId: string;
+  dayId: string;
+  /** ISO date string of that week's Monday, e.g. "2026-05-18" */
+  weekStart: string;
+  status: "skipped" | "modified";
+  skipReason?: SkipReason;
+  /** Free-text note — what they did instead, or extra context for the skip */
+  note?: string;
+  loggedAt: string;
+};

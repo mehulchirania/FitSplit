@@ -10,6 +10,16 @@ import { getAdminNotifications, getGymDetail, getMemberNotifications, getUnreadC
 import type { Notification } from "@/types/domain";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
+import "./styles/00-base-shell.css";
+import "./styles/01-owner-members.css";
+import "./styles/02-shared-components.css";
+import "./styles/03-visual-refresh.css";
+import "./styles/04-loader-animation.css";
+import "./styles/05-theme-polish.css";
+import "./styles/06-programs-mobile-legacy-landing.css";
+import "./styles/07-member-dashboard-legacy.css";
+import "./styles/08-admin-catalog-media.css";
+import "./styles/09-profile-history-notices-loader.css";
 import "./styles/forms.css";
 import "./styles/member.css";
 
@@ -85,9 +95,7 @@ export default async function RootLayout({
           dangerouslySetInnerHTML={{
             __html: `
               try {
-                const saved = localStorage.getItem('fitsplit-theme');
-                const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-                document.documentElement.dataset.theme = saved || preferred || 'dark';
+                document.documentElement.dataset.theme = 'dark';
               } catch (_) {}
             `
           }}

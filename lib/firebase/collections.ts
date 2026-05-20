@@ -14,7 +14,8 @@ export const collectionPaths = {
   contactMessages: "contactMessages",
   siteLinks: "siteLinks",
   attendanceRecords: "attendanceRecords",
-  bodyMetricLogs: "bodyMetricLogs"
+  bodyMetricLogs: "bodyMetricLogs",
+  dayLogs: "dayLogs"
 } as const;
 
 export const PRIMARY_GYM_ID = "shg";

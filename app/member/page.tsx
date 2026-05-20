@@ -6,6 +6,7 @@ import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
+  getDayLogsForMember,
   getExerciseCatalog,
   getGymDetail,
   getLiftLogsForMember,
@@ -33,7 +34,8 @@ export default async function MemberDashboard() {
     { liftLogs },
     { exercises },
     { sessions },
-    { gym }
+    { gym },
+    { dayLogs }
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
     getProgramAssignmentForMember(currentMemberId),
@@ -41,7 +43,8 @@ export default async function MemberDashboard() {
     getLiftLogsForMember(currentMemberId),
     getExerciseCatalog(currentUser.gymId),
     getActiveWorkoutSessions(currentUser.gymId),
-    getGymDetail(currentUser.gymId)
+    getGymDetail(currentUser.gymId),
+    getDayLogsForMember(currentMemberId)
   ]);
 
   if (!member) return null;
@@ -188,7 +191,9 @@ export default async function MemberDashboard() {
       {program ? (
         <MemberWorkoutConsole
           exercises={exercises}
+          gymId={currentUser.gymId ?? ""}
           initialActiveSessionCount={sessions.length}
+          initialDayLogs={dayLogs}
           initialInjuryNote={profile.injuryNotes}
           initialLiftLogs={liftLogs}
           memberId={member.id}

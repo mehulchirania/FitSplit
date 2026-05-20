@@ -86,8 +86,8 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
       </div>
 
       {/* Chart */}
-      <div style={{ height: 180 }}>
-        <ResponsiveContainer width="100%" height="100%">
+      <div style={{ height: 180, minHeight: 180, minWidth: 0 }}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
             <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" vertical={false} />
             <XAxis

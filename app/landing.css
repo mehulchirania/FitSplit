@@ -98,8 +98,10 @@
 }
 
 .landing-hero::before {
-  background: url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1800&q=82")
-    center / cover no-repeat;
+  background-image: url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1800&q=82");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   border-radius: 34px;
   content: "";
   filter: grayscale(1);
@@ -3185,7 +3187,10 @@ html[data-theme="light"] .landing-microcopy {
   background:
     linear-gradient(90deg, rgba(10, 10, 10, 0.94) 0%, rgba(10, 10, 10, 0.78) 52%, rgba(10, 10, 10, 0.94) 100%),
     linear-gradient(180deg, rgba(10, 10, 10, 0.2) 0%, #0a0a0a 100%),
-    url("/bg-image.png") center / cover no-repeat;
+    url("/bg-image.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
   opacity: 0.56;
   z-index: -3;
 }

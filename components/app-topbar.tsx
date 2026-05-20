@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { MainNav } from "@/components/main-nav";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { Bell, Menu, UserRound, X } from "@/components/icons";
 
 import { logoutUser } from "@/lib/auth";
@@ -283,11 +282,6 @@ export function AppTopbar({
               >
                 Close
               </button>
-            </div>
-
-            <div className="drawer-section">
-              <span>Theme</span>
-              <ThemeToggle />
             </div>
 
             <nav className="drawer-links" aria-label="Menu links">

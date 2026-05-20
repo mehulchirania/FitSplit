@@ -103,9 +103,9 @@ export function ProgressiveOverloadChart({
         </select>
       </div>
 
-      <div style={{ width: "100%", height: 320 }}>
+      <div style={{ width: "100%", height: 320, minHeight: 320, minWidth: 0 }}>
         {chartData.length > 0 ? (
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <LineChart
               data={chartData}
               margin={{ top: 10, right: 10, bottom: 5, left: -20 }}

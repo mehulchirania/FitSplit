@@ -319,6 +319,171 @@
   border-color: color-mix(in srgb, var(--brand) 42%, var(--border));
 }
 
+/* Day tab — skipped/modified indicators */
+.member-workout-body .day-tabs button.day-tab-skipped {
+  opacity: 0.7;
+}
+.member-workout-body .day-tabs button.day-tab-skipped strong {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-faint);
+}
+.member-workout-body .day-tabs button.day-tab-modified strong {
+  color: var(--brand);
+}
+.member-workout-body .day-tabs .day-tab-status-dot {
+  display: block;
+  font-size: 0.8rem;
+  font-style: normal;
+  margin-top: 2px;
+}
+
+/* ── Day-log section (skip / did-something-else) ── */
+.day-log-section {
+  border-top: 1px dashed var(--border);
+  margin-top: 8px;
+  padding-top: 14px;
+}
+
+/* Prompt row ("Didn't follow the plan?") */
+.day-log-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.day-log-actions-label {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  margin-right: 4px;
+}
+.day-log-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  transition: background 0.15s, color 0.15s;
+}
+.day-log-btn:hover {
+  background: var(--bg-subtle);
+  border-color: var(--brand);
+  color: var(--text);
+}
+
+/* Inline skip / modify form */
+.day-log-form {
+  display: grid;
+  gap: 10px;
+}
+.day-log-form-title {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 600;
+  margin: 0;
+}
+.day-log-reason-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.day-log-chip {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 5px 13px;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.day-log-chip.is-selected {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+  font-weight: 600;
+}
+.day-log-chip:hover:not(.is-selected) {
+  background: var(--bg-elevated);
+  border-color: var(--text-faint);
+}
+.day-log-note-label {
+  display: grid;
+  font-size: 0.82rem;
+  font-weight: 500;
+  gap: 5px;
+  margin: 0;
+}
+.day-log-optional {
+  color: var(--text-faint);
+  font-weight: 400;
+}
+.day-log-textarea {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-size: 0.84rem;
+  padding: 8px 11px;
+  resize: vertical;
+  width: 100%;
+}
+.day-log-textarea:focus {
+  border-color: var(--brand);
+  outline: none;
+}
+.day-log-form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Existing skip/modify status banner */
+.day-log-status {
+  align-items: flex-start;
+  border-radius: 12px;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 12px;
+}
+.day-log-status--skipped {
+  background: color-mix(in srgb, var(--text-faint) 8%, var(--bg-subtle));
+  border: 1px solid var(--border);
+}
+.day-log-status--modified {
+  background: color-mix(in srgb, var(--brand) 7%, var(--bg-subtle));
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, var(--border));
+}
+.day-log-status-body {
+  align-items: flex-start;
+  display: flex;
+  gap: 9px;
+}
+.day-log-status-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+.day-log-status-note {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin: 3px 0 0;
+}
+.day-log-undo {
+  background: none;
+  border: none;
+  color: var(--text-faint);
+  cursor: pointer;
+  font-size: 0.76rem;
+  flex-shrink: 0;
+  padding: 2px 0;
+  text-decoration: underline;
+}
+.day-log-undo:hover {
+  color: var(--text-soft);
+}
+
 .member-workout-body .selected-workout-day {
   background: color-mix(in srgb, var(--bg-subtle) 78%, transparent);
   border: 1px solid var(--border);

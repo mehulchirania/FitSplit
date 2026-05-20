@@ -2964,3 +2964,96 @@ export async function updateCoachNote(
   }
 }
 
+/**
+ * Member records how they deviated from their planned day for a given week.
+ * Two modes:
+ *   status="skipped"  — they didn't train (optional reason + note).
+ *   status="modified" — they did something other than the plan (note describes it).
+ *
+ * The Firestore document ID is deterministic (`${memberId}_${dayId}_${weekStart}`)
+ * so a second call for the same slot is an upsert, not a duplicate row.
+ */
+export async function logDayStatus(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const memberId = String(formData.get("memberId") ?? currentUser.memberId ?? currentUser.uid).trim();
+    const programId = requireText(formData, "programId", "Program ID");
+    const dayId = requireText(formData, "dayId", "Day ID");
+    const weekStart = requireText(formData, "weekStart", "Week start");
+    const rawStatus = String(formData.get("status") ?? "skipped");
+    const status = rawStatus === "modified" ? "modified" : "skipped";
+    const skipReason = formData.get("skipReason") ? String(formData.get("skipReason")).trim() : null;
+    const rawNote = String(formData.get("note") ?? "").trim();
+
+    if (!memberId) throw new Error("Member ID is required.");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) throw new Error("Invalid week start date.");
+    if (rawNote.length > 400) throw new Error("Note must be under 400 characters.");
+
+    const db = requireFirebase();
+    const now = new Date().toISOString();
+
+    // Deterministic ID → upsert semantics: same member+day+week = one record
+    const docId = `${memberId}_${dayId}_${weekStart}`;
+
+    await db.collection(collectionPaths.dayLogs).doc(docId).set(
+      {
+        memberId,
+        gymId: currentUser.gymId ?? null,
+        programId,
+        dayId,
+        weekStart,
+        status,
+        skipReason: skipReason ?? null,
+        note: rawNote || null,
+        loggedAt: now,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath("/member");
+    revalidatePath("/member/history");
+
+    return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.");
+  } catch (error) {
+    console.error("Unable to log day status", error);
+    return failure(error, "Could not save. Please try again.");
+  }
+}
+
+/**
+ * Undo a day-skip or modification note for the current week's slot.
+ */
+export async function clearDayLog(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const memberId = String(formData.get("memberId") ?? currentUser.memberId ?? currentUser.uid).trim();
+    const dayId = requireText(formData, "dayId", "Day ID");
+    const weekStart = requireText(formData, "weekStart", "Week start");
+
+    if (!memberId) throw new Error("Member ID is required.");
+
+    const db = requireFirebase();
+    const docId = `${memberId}_${dayId}_${weekStart}`;
+    await db.collection(collectionPaths.dayLogs).doc(docId).delete();
+
+    revalidatePath("/member");
+    revalidatePath("/member/history");
+
+    return success("Day log cleared.");
+  } catch (error) {
+    console.error("Unable to clear day log", error);
+    return failure(error, "Could not clear. Please try again.");
+  }
+}
+
