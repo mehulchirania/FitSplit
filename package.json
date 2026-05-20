@@ -9,6 +9,7 @@
     "seed:auth": "node scripts/seed-firebase-auth.mjs",
     "seed:firebase": "node scripts/seed-firebase.mjs",
     "seed:demo": "node scripts/seed-demo-firestore.mjs",
+    "backfill:member-access": "node scripts/backfill-member-access.mjs",
     "patch:videos": "node scripts/patch-exercise-videos.mjs",
     "fix:exercises": "node scripts/fix-exercise-catalog.mjs",
     "start": "next start",

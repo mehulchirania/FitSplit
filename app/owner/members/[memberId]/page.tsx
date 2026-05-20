@@ -1,20 +1,20 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
+﻿import { notFound } from "next/navigation";
 import { AiProgramBrief } from "@/components/ai-program-brief";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Dumbbell, X } from "@/components/icons";
+import { Activity, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
+import { MemberContextEditor } from "@/components/member-context-editor";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
 import {
   deleteMemberProfile,
   resetPassword,
-  toggleMemberAccess,
-  updateMemberProfile
+  toggleMemberAccess
 } from "@/lib/firebase/actions";
 import {
   getExerciseCatalog,
+  getLiftLogsForMember,
   getMemberDetail,
   getProfileMetrics,
   getProgramAssignmentForMember,
@@ -23,216 +23,262 @@ import {
 
 export const dynamic = "force-dynamic";
 
+function formatShortDate(value?: string) {
+  if (!value) return "Not recorded";
+
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric"
+    }).format(new Date(value));
+  } catch {
+    return value;
+  }
+}
+
 export default async function MemberDetailPage({
   params
 }: {
   params: Promise<{ memberId: string }>;
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
-
   const { memberId } = await params;
+
   const [
     { member },
     { assignment },
     { programs },
     { exercises },
-    { profile }
+    { profile },
+    { liftLogs }
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
     getWorkoutPrograms(currentUser.gymId),
     getExerciseCatalog(currentUser.gymId),
-    getProfileMetrics(memberId)
+    getProfileMetrics(memberId),
+    getLiftLogsForMember(memberId)
   ]);
 
-  if (!member) {
-    notFound();
-  }
+  if (!member) notFound();
 
-  const program = programs.find((item) => item.id === assignment?.programId);
+  const program = programs.find((p) => p.id === assignment?.programId);
+  const bmi =
+    profile.weightKg && profile.heightCm
+      ? (profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1)
+      : null;
+  const trainingDays = program?.days.filter((day) => day.exercises.length > 0) ?? [];
+  const totalExercises = trainingDays.reduce((count, day) => count + day.exercises.length, 0);
+  const lastLiftLog = liftLogs[0];
 
   return (
     <main className="page">
-      <section className="dashboard-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Members", href: "/owner/members" }, { label: member.fullName }]} />
-          <h1>{member.fullName}</h1>
-          <p>
-            {member.goal}. Use this workspace to update training profile
-            details, review assigned weekly programming, and prepare future AI
-            draft flows.
-          </p>
-          <div className="quick-actions">
-            <Link className="button button-primary" href="/owner/members">
-              Back to members
-            </Link>
+      <section className="mpd-hero">
+        <div className="mpd-hero-top">
+          <Breadcrumb
+            crumbs={[
+              { label: "Dashboard", href: "/owner" },
+              { label: "Members", href: "/owner/members" },
+              { label: member.fullName }
+            ]}
+          />
+
+          <div className="mpd-identity">
+            <span className="mpd-avatar">{member.avatarInitials}</span>
+            <div>
+              <div className="mpd-name-row">
+                <h1 className="mpd-name">{member.fullName}</h1>
+                <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`}>
+                  {member.isActive ? "Active" : "Suspended"}
+                </span>
+                {program ? (
+                  <span className="status-pill status-neutral mpd-program-pill">
+                    <Dumbbell /> {program.title}
+                  </span>
+                ) : (
+                  <span className="status-pill status-expiring">Needs program</span>
+                )}
+              </div>
+              <div className="mpd-meta">
+                {member.goal ? (
+                  <span className="mpd-meta-item">
+                    <UserRound /> {member.goal}
+                  </span>
+                ) : null}
+                <span className="mpd-meta-item mpd-joined">Joined {member.joinedAt}</span>
+              </div>
+            </div>
           </div>
+
+          <dl className="mpd-contact-list" aria-label="Member contact and login details">
+            <div>
+              <dt>Username</dt>
+              <dd className="mpd-username">{member.username ?? "Not set"}</dd>
+            </div>
+            <div>
+              <dt>Email</dt>
+              <dd>
+                <Mail /> {member.email}
+              </dd>
+            </div>
+            <div>
+              <dt>Phone</dt>
+              <dd>
+                <Phone /> {member.phone || "Not recorded"}
+              </dd>
+            </div>
+          </dl>
         </div>
 
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>
-              <Dumbbell /> Training assignment
-            </h2>
-            <span className="status-pill status-active">
-              {program ? "Program assigned" : "Needs program"}
-            </span>
+        <div className="mpd-metrics">
+          <div className="mpd-metric">
+            <strong>{program ? trainingDays.length : 0}</strong>
+            <span>Training days</span>
           </div>
-          <div className="detail-window">
-            <span>
-              Current program
-              <strong>{program?.title ?? "Not assigned"}</strong>
-            </span>
-            <span>
-              Weekly days
-              <strong>{program?.days.length ?? 0}</strong>
-            </span>
-            <span>
-              Assigned
-              <strong>{assignment ? "Active" : "Pending"}</strong>
-            </span>
-            <span>
-              Goal
-              <strong>{member.goal}</strong>
-            </span>
+          <div className="mpd-metric">
+            <strong>{program ? totalExercises : 0}</strong>
+            <span>Exercises</span>
           </div>
+          <div className="mpd-metric">
+            <strong>{assignment ? formatShortDate(assignment.assignedAt) : "Not assigned"}</strong>
+            <span>Assigned</span>
+          </div>
+          <div className="mpd-metric">
+            <strong>{lastLiftLog ? formatShortDate(lastLiftLog.loggedAt) : "No logs"}</strong>
+            <span>Last lift</span>
+          </div>
+          <div className="mpd-metric">
+            <strong>{profile.assignedTrainer || "Unassigned"}</strong>
+            <span>Trainer</span>
+          </div>
+        </div>
+      </section>
 
-          {(profile.weightKg || profile.heightCm || profile.age) && (
-            <>
-              <div className="panel-title" style={{ marginTop: 16 }}>
-                <h2>Body metrics</h2>
-                <span className="status-pill status-neutral">Member-reported</span>
+      <div className="mpd-workspace-layout">
+        <section className="mpd-primary-stack">
+          {program ? (
+            <div className="list-panel mpd-main-schedule">
+              <div className="panel-title">
+                <div>
+                  <p className="eyebrow">Current assignment</p>
+                  <h2>
+                    <Dumbbell /> Weekly schedule
+                  </h2>
+                </div>
+                <span className="status-pill status-neutral">{program.title}</span>
               </div>
-              <div className="detail-window">
-                {profile.weightKg ? <span>Weight<strong>{profile.weightKg} kg</strong></span> : null}
-                {profile.heightCm ? <span>Height<strong>{profile.heightCm} cm</strong></span> : null}
-                {profile.age ? <span>Age<strong>{profile.age}</strong></span> : null}
-                {profile.weightKg && profile.heightCm ? (
-                  <span>BMI<strong>{(profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1)}</strong></span>
-                ) : null}
-                {profile.primarySlot ? <span>Primary slot<strong>Slot {profile.primarySlot}</strong></span> : null}
-              </div>
-            </>
-          )}
-        </aside>
-      </section>
-
-      <section className="content-grid">
-        <ConfirmActionForm
-          action={updateMemberProfile}
-          className="form-panel"
-          confirmMessage="This will update the member profile information visible to the owner and member."
-          confirmTitle="Save member edits?"
-          pendingLabel="Saving details..."
-          submitLabel="Save member details"
-        >
-          <h2>Edit member</h2>
-          <input name="memberId" type="hidden" value={member.id} />
-          <div className="form-grid">
-            <label>
-              Full name
-              <input name="fullName" defaultValue={member.fullName} required />
-            </label>
-            <label>
-              Email
-              <input name="email" type="email" defaultValue={member.email} required />
-            </label>
-            <label>
-              Phone
-              <input name="phone" defaultValue={member.phone} />
-            </label>
-            <label>
-              Goal
-              <input name="goal" defaultValue={member.goal} />
-            </label>
-          </div>
-        </ConfirmActionForm>
-
-        <ProgramAssignmentForm
-          currentProgramId={assignment?.programId}
-          member={member}
-          programs={programs}
-        />
-      </section>
-
-      <section className="content-grid" style={{ marginTop: 16 }}>
-        <AiProgramBrief
-          defaultGoal={member.goal}
-          memberId={member.id}
-          memberName={member.fullName}
-        />
-        
-        <ConfirmActionForm
-          action={toggleMemberAccess}
-          className="form-panel access-toggle-panel"
-          confirmMessage={member.isActive ? "This will disable the member's login access." : "This will re-enable the member's login access."}
-          confirmTitle={member.isActive ? "Suspend member access?" : "Restore member access?"}
-          pendingLabel="Updating access..."
-          submitClassName={`access-toggle ${member.isActive ? "is-on" : "is-off"}`}
-          submitLabel={member.isActive ? "Active" : "Inactive"}
-        >
-          <h2>Access Control</h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-soft)" }}>
-            {member.isActive 
-              ? "Member login is currently enabled. Toggle to make this member inactive." 
-              : "Member login is currently disabled. Toggle to make this member active."}
-          </p>
-          <input name="memberId" type="hidden" value={member.id} />
-          <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
-        </ConfirmActionForm>
-
-        <ConfirmActionForm
-          action={resetPassword}
-          className="form-panel"
-          confirmMessage="This will reset the member's login PIN to a new value. Are you sure?"
-          confirmTitle="Reset Member PIN"
-          pendingLabel="Resetting..."
-          submitLabel="Reset PIN"
-        >
-          <h2>Account PIN</h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-soft)" }}>
-            If a member has forgotten their PIN, you can reset it here. The default reset PIN is '1234'.
-          </p>
-          <input name="userId" type="hidden" value={member.id} />
-          <label>
-            New 4-digit PIN
-            <input inputMode="numeric" name="newPin" pattern="\d{4}" defaultValue="1234" maxLength={4} required />
-          </label>
-        </ConfirmActionForm>
-
-        <ConfirmActionForm
-          action={deleteMemberProfile}
-          className="form-panel danger-panel"
-          confirmMessage="This permanently deletes the member profile and disables their app access."
-          confirmTitle="Delete this member?"
-          pendingLabel="Deleting member..."
-          submitClassName="button button-danger"
-          submitLabel="Delete member"
-          successRedirect="/owner/members"
-        >
-          <h2>
-            <X /> Delete member
-          </h2>
-          <p style={{ marginBottom: "16px", color: "var(--text-soft)" }}>
-            Remove this member only when the profile was created by mistake or is no longer needed.
-          </p>
-          <input name="memberId" type="hidden" value={member.id} />
-        </ConfirmActionForm>
-      </section>
-
-      <section className="content-grid" style={{ marginTop: 16 }}>
-        {program ? (
-          <div className="list-panel">
-            <div className="panel-title">
-              <h2>
-                <Dumbbell /> Assigned weekly schedule
-              </h2>
-              <span className="status-pill status-neutral">{program.title}</span>
+              <WeeklyProgramSchedule exercises={exercises} program={program} />
             </div>
-            <WeeklyProgramSchedule exercises={exercises} program={program} />
-          </div>
-        ) : null}
-      </section>
+          ) : (
+            <div className="list-panel mpd-empty-schedule">
+              <Dumbbell />
+              <h2>No active program assigned</h2>
+              <p>Assign a saved program or use the AI match panel to pick the best available plan.</p>
+            </div>
+          )}
+
+          <MemberContextEditor bmi={bmi} member={member} profile={profile} />
+        </section>
+
+        <aside className="mpd-side-stack">
+          <ProgramAssignmentForm
+            currentProgramId={assignment?.programId}
+            member={member}
+            programs={programs}
+          />
+
+          <AiProgramBrief
+            defaultGoal={member.goal}
+            memberId={member.id}
+            memberName={member.fullName}
+          />
+
+          <section className="form-panel mpd-account-panel">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">Member login</p>
+                <h2>
+                  <Activity /> Account access
+                </h2>
+                <p className="mpd-login-username">
+                  Username: <strong>{member.username ?? "Not set"}</strong>
+                </p>
+              </div>
+              <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`}>
+                {member.isActive ? "Enabled" : "Suspended"}
+              </span>
+            </div>
+            <ConfirmActionForm
+              action={toggleMemberAccess}
+              className="mpd-account-section"
+              confirmMessage={
+                member.isActive
+                  ? "This will disable the member's login access immediately."
+                  : "This will restore the member's login access."
+              }
+              confirmTitle={member.isActive ? "Suspend member?" : "Restore member?"}
+              pendingLabel="Updating..."
+              submitClassName={`access-toggle ${member.isActive ? "is-on" : "is-off"}`}
+              submitLabel={member.isActive ? "Access enabled" : "Access suspended"}
+            >
+              <input name="memberId" type="hidden" value={member.id} />
+              <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
+              <p className="mpd-section-hint">
+                {member.isActive
+                  ? "Toggle only when this member should no longer access their workout app."
+                  : "Restore when this member should regain app access."}
+              </p>
+            </ConfirmActionForm>
+
+            <ConfirmActionForm
+              action={resetPassword}
+              className="mpd-account-section"
+              confirmMessage="This will reset the member's login PIN."
+              confirmTitle="Reset PIN?"
+              pendingLabel="Resetting..."
+              submitLabel="Reset PIN"
+            >
+              <input name="userId" type="hidden" value={member.id} />
+              <p className="mpd-section-label">Reset login PIN</p>
+              <label>
+                <input
+                  inputMode="numeric"
+                  maxLength={4}
+                  name="newPin"
+                  pattern="\d{4}"
+                  placeholder="Enter new 4-digit PIN"
+                  required
+                />
+              </label>
+            </ConfirmActionForm>
+          </section>
+
+          <details className="form-panel mpd-collapsible-panel mpd-danger-panel">
+            <summary>
+              <span>
+                <X /> Danger zone
+              </span>
+            </summary>
+            <ConfirmActionForm
+              action={deleteMemberProfile}
+              className="mpd-account-section"
+              confirmMessage="This permanently deletes the member and all their data. This cannot be undone."
+              confirmTitle="Delete member?"
+              pendingLabel="Deleting..."
+              submitClassName="button button-danger"
+              submitLabel="Delete member"
+              successRedirect="/owner/members"
+            >
+              <input name="memberId" type="hidden" value={member.id} />
+              <p className="mpd-section-hint">
+                Permanently removes this profile, assignments, lift logs, notifications, and sessions.
+              </p>
+            </ConfirmActionForm>
+          </details>
+        </aside>
+      </div>
     </main>
   );
 }
+

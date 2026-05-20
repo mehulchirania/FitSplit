@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { endWorkoutSession, logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
+import { generateSmartSwaps } from "@/lib/ai";
 import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
@@ -276,6 +277,7 @@ export function MemberWorkoutConsole({
   const [offlineLogsCount, setOfflineLogsCount] = useState(0);
   const [logSuccess, setLogSuccess] = useState(false);
   const [isNewPR, setIsNewPR] = useState(false);
+  const [isAiSwapping, setIsAiSwapping] = useState(false);
   const liftFormRef = useRef<HTMLFormElement>(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
     getDefaultDayIndex(program.days.length)
@@ -428,19 +430,39 @@ export function MemberWorkoutConsole({
     );
   }
 
-  function updateInjury() {
+  async function updateInjury() {
     const nextInjury = injury.trim();
-    if (!nextInjury) {
+    if (!nextInjury || !selectedDay) {
       return;
     }
 
-    if (!selectedDay) {
-      return;
+    setIsAiSwapping(true);
+    try {
+      const aiResult = await generateSmartSwaps(memberId, selectedDay.exercises, nextInjury, exercises);
+      if (aiResult && aiResult.routine && aiResult.routine.length > 0) {
+        setModification({
+          injury: nextInjury,
+          summary: aiResult.summary || "Smart anatomical adjustments applied by Gemini.",
+          swaps: aiResult.swaps || [],
+          addedStretches: aiResult.addedStretches || [],
+          routine: aiResult.routine
+        });
+        setWorkoutMode("ai");
+        persistAiCustomization(nextInjury, selectedDayIndex, "ai");
+      } else {
+        // Fallback to local heuristic
+        setModification(createModification(selectedDay, nextInjury, exercises));
+        setWorkoutMode("ai");
+        persistAiCustomization(nextInjury, selectedDayIndex, "ai");
+      }
+    } catch (e) {
+      console.warn("AI Smart Swaps call failed, using client heuristics...", e);
+      setModification(createModification(selectedDay, nextInjury, exercises));
+      setWorkoutMode("ai");
+      persistAiCustomization(nextInjury, selectedDayIndex, "ai");
+    } finally {
+      setIsAiSwapping(false);
     }
-
-    setModification(createModification(selectedDay, nextInjury, exercises));
-    setWorkoutMode("ai");
-    persistAiCustomization(nextInjury, selectedDayIndex, "ai");
 
     const formData = new FormData();
     formData.set("memberId", memberId);
@@ -797,8 +819,8 @@ export function MemberWorkoutConsole({
               value={injury}
             />
           </label>
-          <button className="button button-primary" onClick={updateInjury} type="button">
-            Update Injury/Limitation
+          <button className="button button-primary" onClick={updateInjury} type="button" disabled={isAiSwapping}>
+            {isAiSwapping ? "Applying AI Swaps..." : "Update Injury/Limitation"}
           </button>
         </div>
 

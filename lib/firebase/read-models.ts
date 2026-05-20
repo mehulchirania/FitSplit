@@ -328,6 +328,11 @@ export async function getMembers(gymId?: string): Promise<{
   const members: Member[] = profileSnapshot.docs.map((doc) => {
     const data = doc.data();
     const name = String(data.fullName ?? "");
+    const username =
+      String(data.username ?? "").trim() ||
+      String(data.phone ?? "").trim() ||
+      String(data.email ?? "").trim() ||
+      undefined;
     return {
       id: doc.id,
       fullName: name,
@@ -336,7 +341,8 @@ export async function getMembers(gymId?: string): Promise<{
       joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
       avatarInitials: String(data.avatarInitials ?? (name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
       goal: String(data.goal ?? "General fitness"),
-      isActive: data.isActive !== false
+      isActive: data.isActive !== false,
+      username
     };
   });
 
@@ -384,6 +390,11 @@ export async function getMemberDetail(memberId: string): Promise<{
   }
 
   const memberName = String(data.fullName ?? "");
+  const username =
+    String(data.username ?? "").trim() ||
+    String(data.phone ?? "").trim() ||
+    String(data.email ?? "").trim() ||
+    undefined;
   const member: Member = {
     id: profileDoc.id,
     fullName: memberName,
@@ -392,7 +403,8 @@ export async function getMemberDetail(memberId: string): Promise<{
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? (memberName.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
     goal: String(data.goal ?? "General fitness"),
-    isActive: data.isActive !== false
+    isActive: data.isActive !== false,
+    username
   };
 
   return { member, isPersisted: true };
@@ -464,8 +476,10 @@ export async function getExerciseCatalog(gymId?: string): Promise<{
   // exercises added via createCatalogExercise don't appear twice alongside the
   // same entry from workouts.json (which uses stable slug IDs, not UUIDs).
   // Firebase-persisted version wins when names collide (it may have custom video/notes).
+  // Mock exercises never carry gym-specific demo videos — strip gymVideoUrl so one
+  // gym's demo footage is never visible to another gym's users.
   const exercisesByName = new Map<string, Exercise>();
-  mockExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), ex));
+  mockExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), { ...ex, gymVideoUrl: "", gymVideoSource: "none" }));
   persistedExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), ex));
   const allExercises = Array.from(exercisesByName.values()).sort((left, right) =>
     left.name.localeCompare(right.name)
@@ -1243,4 +1257,121 @@ export async function getUnreadContactMessageCount(): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+export type SlotLoad = {
+  slotId: "A" | "B" | "C" | "D";
+  label: string;
+  time: string;
+  memberCount: number;
+  exercises: { exerciseName: string; count: number }[];
+};
+
+export async function getGymFloorLoadMap(gymId: string): Promise<{
+  slots: SlotLoad[];
+}> {
+  // 1. Fetch active assignments in gym
+  const [
+    { assignments },
+    { members },
+    { programs },
+    { exercises }
+  ] = await Promise.all([
+    getActiveProgramAssignments(gymId),
+    getMembers(gymId),
+    getWorkoutPrograms(gymId),
+    getExerciseCatalog(gymId)
+  ]);
+
+  // 2. Fetch all profiles to find slots for members
+  const memberSlots: Record<string, { primary: string; secondary: string }> = {};
+  
+  if (hasFirebaseAdminConfig()) {
+    try {
+      const { db } = getFirebaseAdminServices();
+      const snapshot = await db.collection(collectionPaths.profiles).where("defaultGymId", "==", gymId).get();
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        memberSlots[doc.id] = {
+          primary: String(data.primarySlot || "A"),
+          secondary: String(data.secondarySlot || "D")
+        };
+      });
+    } catch (e) {
+      console.error("Failed to query profiles for floor load mapping", e);
+    }
+  }
+
+  // Fallback slots from mock data or default
+  members.forEach(member => {
+    if (!memberSlots[member.id]) {
+      const code = member.fullName.charCodeAt(0) % 4;
+      const slotsList = ["A", "B", "C", "D"];
+      memberSlots[member.id] = {
+        primary: slotsList[code],
+        secondary: slotsList[(code + 2) % 4]
+      };
+    }
+  });
+
+  // 3. Initialize aggregator structure
+  const slotDetails = {
+    A: { label: "Slot A", time: "6 AM - 10 AM", memberCount: 0, exercises: {} as Record<string, number> },
+    B: { label: "Slot B", time: "10 AM - 12 PM", memberCount: 0, exercises: {} as Record<string, number> },
+    C: { label: "Slot C", time: "4 PM - 6 PM", memberCount: 0, exercises: {} as Record<string, number> },
+    D: { label: "Slot D", time: "6 PM - 9 PM", memberCount: 0, exercises: {} as Record<string, number> }
+  };
+
+  // 4. For each active program assignment, find what exercises they are doing and accumulate
+  assignments.forEach(assignment => {
+    const memberId = assignment.memberId;
+    const programId = assignment.programId;
+    const slots = memberSlots[memberId] || { primary: "A", secondary: "D" };
+
+    const program = programs.find(p => p.id === programId);
+    if (!program) return;
+
+    // Increment member headcount in these slots
+    if (slots.primary && slotDetails[slots.primary as keyof typeof slotDetails]) {
+      slotDetails[slots.primary as keyof typeof slotDetails].memberCount += 1;
+    }
+    if (slots.secondary && slots.secondary !== slots.primary && slotDetails[slots.secondary as keyof typeof slotDetails]) {
+      slotDetails[slots.secondary as keyof typeof slotDetails].memberCount += 1;
+    }
+
+    // Accumulate exercises across their program days into both preferred slots
+    program.days.forEach(day => {
+      day.exercises.forEach(we => {
+        const ex = exercises.find(e => e.id === we.exerciseId);
+        const name = ex?.name || "Exercise";
+
+        // Increment count in slots
+        [slots.primary, slots.secondary].forEach(slotId => {
+          if (slotId && slotDetails[slotId as keyof typeof slotDetails]) {
+            const slot = slotDetails[slotId as keyof typeof slotDetails];
+            slot.exercises[name] = (slot.exercises[name] || 0) + 1;
+          }
+        });
+      });
+    });
+  });
+
+  // 5. Format into final list
+  const slots: SlotLoad[] = (["A", "B", "C", "D"] as const).map(id => {
+    const s = slotDetails[id];
+    const exerciseList = Object.entries(s.exercises)
+      .map(([exerciseName, count]) => ({ exerciseName, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5); // top 5 congested exercises
+
+    return {
+      slotId: id,
+      label: s.label,
+      time: s.time,
+      memberCount: s.memberCount,
+      exercises: exerciseList
+    };
+  });
+
+  return { slots };
 }

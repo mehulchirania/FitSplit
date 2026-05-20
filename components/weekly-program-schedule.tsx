@@ -21,6 +21,11 @@ export function WeeklyProgramSchedule({
   const defaultDayIndex = useMemo(() => getDefaultDayIndex(program.days.length), [program.days.length]);
   const [selectedIndex, setSelectedIndex] = useState(defaultDayIndex);
   const selectedDay = program.days[selectedIndex] ?? program.days[0];
+  const selectedFocus = selectedDay?.focus?.trim() ?? "";
+  const selectedTitle = selectedDay?.title?.trim() ?? "";
+  const shouldShowFocus =
+    selectedFocus &&
+    selectedFocus.toLowerCase() !== selectedTitle.toLowerCase();
 
   if (!selectedDay) {
     return null;
@@ -44,7 +49,7 @@ export function WeeklyProgramSchedule({
       <article className="selected-workout-day">
         <p className="eyebrow">{dayNames[selectedIndex] ?? `Day ${selectedDay.dayNumber}`}</p>
         <h2>{selectedDay.title}</h2>
-        <p>{selectedDay.focus}</p>
+        {shouldShowFocus ? <p>{selectedDay.focus}</p> : null}
         <ExerciseList exercises={exercises} items={selectedDay.exercises} />
       </article>
     </div>

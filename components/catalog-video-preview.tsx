@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Video, X } from "@/components/icons";
 
 function getYouTubeEmbedUrl(videoUrl: string): string | null {
@@ -21,6 +22,15 @@ function getYouTubeEmbedUrl(videoUrl: string): string | null {
     // not a valid URL
   }
   return null;
+}
+
+function isPortraitVideo(videoUrl: string | null | undefined): boolean {
+  if (!videoUrl) return false;
+  try {
+    return Boolean(new URL(videoUrl).pathname.match(/\/shorts\//));
+  } catch {
+    return false;
+  }
 }
 
 type VideoType = "tutorial" | "demo";
@@ -76,14 +86,14 @@ export function CatalogVideoPreview({
         )}
       </div>
 
-      {activeVideo && (
+      {activeVideo && typeof document !== "undefined" && createPortal(
         <div
           className="video-modal-backdrop"
           onClick={() => setActiveVideo(null)}
           role="presentation"
         >
           <div
-            className="video-modal"
+            className={`video-modal${isPortraitVideo(activeRawUrl) ? " video-modal--portrait" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="video-modal-header">
@@ -108,7 +118,7 @@ export function CatalogVideoPreview({
               <iframe
                 allow="autoplay; encrypted-media"
                 allowFullScreen
-                className="video-embed"
+                className={`video-embed${isPortraitVideo(activeRawUrl) ? " video-embed--portrait" : ""}`}
                 src={activeEmbedUrl}
                 title={`${exerciseName} ${activeVideo === "demo" ? "gym demo" : "tutorial"}`}
               />
@@ -126,7 +136,8 @@ export function CatalogVideoPreview({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

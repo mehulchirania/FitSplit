@@ -675,6 +675,7 @@ await setDoc("gyms", titanGymId, {
   memberCount: titanMembers.length,
   status: "active",
   location: "Mumbai, Maharashtra",
+  logoUrl: "/titan-v2-fitness-logo.svg",
   updatedAt: now
 });
 

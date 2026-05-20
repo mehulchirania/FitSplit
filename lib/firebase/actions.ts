@@ -548,6 +548,15 @@ export async function updateMemberProfile(
 
     assertCanManageGym(user, gymId);
 
+    const macroNutritionTarget = {
+      calories: formData.get("macroCalories") ? Number(formData.get("macroCalories")) : 0,
+      protein: formData.get("macroProtein") ? Number(formData.get("macroProtein")) : 0,
+      carbs: formData.get("macroCarbs") ? Number(formData.get("macroCarbs")) : 0,
+      fat: formData.get("macroFat") ? Number(formData.get("macroFat")) : 0,
+      waterLiters: formData.get("macroWater") ? Number(formData.get("macroWater")) : 0,
+      notes: String(formData.get("macroNotes") ?? "").trim()
+    };
+
     await db.collection(collectionPaths.profiles).doc(memberId).set(
       {
         id: memberId,
@@ -559,6 +568,7 @@ export async function updateMemberProfile(
         role: "member",
         defaultGymId: gymId,
         goal: String(formData.get("goal") ?? "General fitness").trim(),
+        macroNutritionTarget,
         avatarInitials: fullName
           .split(" ")
           .map((part) => part[0])
@@ -588,6 +598,104 @@ export async function updateMemberProfile(
   } catch (error) {
     console.error("Unable to update member profile", error);
     return failure(error, "Unable to update member details. Please try again.");
+  }
+}
+
+export async function updateOwnerMemberContext(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const user = await requireRole(["admin", "owner"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const { auth, db } = requireFirebaseServices();
+    const memberId = requireText(formData, "memberId", "Member");
+    const fullName = requireText(formData, "fullName", "Full name");
+    const email = requireText(formData, "email", "Email").toLowerCase();
+    assertValidEmail(email);
+    const phone = String(formData.get("phone") ?? "").trim();
+    if (phone) {
+      assertValidPhone(phone, "Phone");
+    }
+
+    const profileRef = db.collection(collectionPaths.profiles).doc(memberId);
+    const profileDoc = await profileRef.get();
+    if (!profileDoc.exists) {
+      throw new Error("Member profile was not found.");
+    }
+
+    const existingProfile = profileDoc.data() ?? {};
+    if (existingProfile.role !== "member") {
+      throw new Error("Only member profiles can be edited here.");
+    }
+
+    const gymId = String(existingProfile.defaultGymId ?? user.gymId ?? PRIMARY_GYM_ID);
+    assertCanManageGym(user, gymId);
+
+    const now = new Date().toISOString();
+    const numericOrDelete = (key: string) => {
+      const value = String(formData.get(key) ?? "").trim();
+      return value ? Number(value) : null;
+    };
+    const username = String(existingProfile.username ?? "").trim() || phone || email;
+    const authEmail = String(existingProfile.authEmail ?? memberAuthEmail(memberId));
+
+    await profileRef.set(
+      {
+        id: memberId,
+        fullName,
+        email,
+        phone,
+        username,
+        authEmail,
+        role: "member",
+        defaultGymId: gymId,
+        goal: String(formData.get("goal") ?? "General fitness").trim() || "General fitness",
+        age: numericOrDelete("age"),
+        gender: String(formData.get("gender") ?? "").trim(),
+        dob: String(formData.get("dob") ?? "").trim(),
+        heightCm: numericOrDelete("heightCm"),
+        weightKg: numericOrDelete("weightKg"),
+        fitnessGoals: String(formData.get("fitnessGoals") ?? "").trim(),
+        medicalNotes: String(formData.get("medicalNotes") ?? "").trim(),
+        injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
+        primarySlot: String(formData.get("primarySlot") ?? "").trim() || "A",
+        secondarySlot: String(formData.get("secondarySlot") ?? "").trim() || "D",
+        assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
+        avatarInitials: fullName
+          .split(" ")
+          .map((part) => part[0])
+          .join("")
+          .slice(0, 2)
+          .toUpperCase(),
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    await upsertAuthUser(
+      auth,
+      {
+        email: authEmail,
+        fullName,
+        uid: memberId,
+        role: "member",
+        gymId,
+        isActive: existingProfile.isActive !== false
+      },
+      "pin-1234"
+    );
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/member");
+    revalidatePath("/profile");
+
+    return success(`${fullName}'s profile context was updated.`);
+  } catch (error) {
+    console.error("Unable to update member context", error);
+    return failure(error, "Unable to update member context. Please try again.");
   }
 }
 
@@ -1025,22 +1133,84 @@ export async function resetPassword(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireOwner();
+    const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const userId = requireText(formData, "userId", "User ID");
-    const { auth } = requireFirebaseServices();
+    const { auth, db } = requireFirebaseServices();
     
-    // We can also handle a "newPin" or "newPassword" field if provided, otherwise default to "password"
     const rawNewPassword = String(formData.get("newPassword") || formData.get("newPin") || "password").trim();
     let newPassword = rawNewPassword;
-    if (formData.get("newPin")) {
+    const isPinReset = Boolean(formData.get("newPin"));
+    if (isPinReset) {
       assertValidPin(rawNewPassword);
       newPassword = `pin-${rawNewPassword}`;
     }
-    
-    await auth.updateUser(userId, { password: newPassword });
 
-    return success("PIN reset successfully.");
+    const profileRef = db.collection(collectionPaths.profiles).doc(userId);
+    const profileDoc = await profileRef.get();
+    const profile = profileDoc.data() ?? {};
+    const gymId = String(profile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    assertCanManageGym(currentUser, gymId);
+
+    let authEmail = String(profile.authEmail ?? memberAuthEmail(userId));
+    const fullName = String(profile.fullName ?? userId);
+    const role = String(profile.role ?? "member") as Role;
+    const username =
+      String(profile.username ?? "").trim() ||
+      String(profile.phone ?? "").trim() ||
+      String(profile.email ?? "").trim() ||
+      userId;
+
+    try {
+      await upsertAuthUser(
+        auth,
+        {
+          email: authEmail,
+          fullName,
+          uid: userId,
+          role,
+          gymId,
+          isActive: profile.isActive !== false
+        },
+        newPassword,
+        true
+      );
+    } catch (error: any) {
+      if (role !== "member" || error?.code !== "auth/email-already-exists") {
+        throw error;
+      }
+
+      authEmail = memberAuthEmail(userId);
+      await upsertAuthUser(
+        auth,
+        {
+          email: authEmail,
+          fullName,
+          uid: userId,
+          role,
+          gymId,
+          isActive: profile.isActive !== false
+        },
+        newPassword,
+        true
+      );
+    }
+
+    if (role === "member") {
+      await profileRef.set(
+        {
+          authEmail,
+          username,
+          updatedAt: new Date().toISOString()
+        },
+        { merge: true }
+      );
+    }
+
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${userId}`);
+
+    return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.");
   } catch (error) {
     console.error("Unable to reset password", error);
     return failure(error, "Could not reset access code.");

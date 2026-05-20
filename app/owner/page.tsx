@@ -5,6 +5,7 @@ import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { OwnerAiCapacityPanel } from "@/components/owner-ai-capacity-panel";
 import { GymNoticeManager } from "@/components/gym-notice-manager";
+import { GymFloorLoadMap } from "@/components/gym-floor-load-map";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveProgramAssignments,
@@ -13,7 +14,8 @@ import {
   getGymDetail,
   getMembers,
   getOwnerNotifications,
-  getWorkoutPrograms
+  getWorkoutPrograms,
+  getGymFloorLoadMap
 } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +33,8 @@ export default async function OwnerDashboard() {
     { programs },
     { gym },
     { sessions },
-    { assignments }
+    { assignments },
+    { slots }
   ] = await Promise.all([
     getMembers(gymId),
     getOwnerNotifications(gymId),
@@ -39,7 +42,8 @@ export default async function OwnerDashboard() {
     getWorkoutPrograms(gymId),
     getGymDetail(gymId),
     getActiveWorkoutSessions(gymId),
-    getActiveProgramAssignments(gymId)
+    getActiveProgramAssignments(gymId),
+    getGymFloorLoadMap(gymId)
   ]);
 
   const assignedMemberIds = new Set(assignments.map((assignment) => assignment.memberId));
@@ -101,6 +105,10 @@ export default async function OwnerDashboard() {
           <p className="tip"><Activity /> {sessions.length}</p>
           <p className="second-text">Active workouts</p>
         </article>
+      </section>
+
+      <section style={{ marginTop: 16 }}>
+        <GymFloorLoadMap slots={slots} />
       </section>
 
       <section className="content-grid" style={{ marginTop: 16 }}>

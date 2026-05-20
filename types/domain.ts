@@ -60,6 +60,7 @@ export type Member = {
   avatarInitials: string;
   goal: string;
   isActive: boolean;
+  username?: string;
   staffType?: "owner" | "trainer" | "staff";
   age?: number;
   weightKg?: number;
@@ -196,6 +197,15 @@ export type SiteLink = {
   href: string;
 };
 
+export type MacroNutritionTarget = {
+  calories?: number;
+  protein?: number;
+  carbs?: number;
+  fat?: number;
+  waterLiters?: number;
+  notes?: string;
+};
+
 export type ProfileMetrics = {
   fullName: string;
   email: string;
@@ -211,6 +221,7 @@ export type ProfileMetrics = {
   secondarySlot?: "A" | "B" | "C" | "D";
   injuryNotes?: string;
   assignedTrainer?: string;
+  macroNutritionTarget?: MacroNutritionTarget;
 };
 
 export type WorkoutSession = {

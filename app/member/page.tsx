@@ -1,5 +1,6 @@
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { EditableMetrics } from "@/components/editable-metrics";
+import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { requireRole } from "@/lib/auth";
 import {
@@ -91,6 +92,11 @@ export default async function MemberDashboard() {
           </div>
         </div>
       </header>
+
+      {/* ── Macro Nutrition Section ── */}
+      <div style={{ maxWidth: 1180, margin: "24px auto 0", padding: "0 clamp(12px, 3vw, 20px)" }}>
+        <MacroProgressPanel memberId={member.id} target={profile.macroNutritionTarget} />
+      </div>
 
       {/* ── Workout Console ── */}
       {program ? (<MemberWorkoutConsole

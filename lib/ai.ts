@@ -102,3 +102,96 @@ function generateLocalInsights(liftLogs: any[], exercises: any[]) {
   
   return insights.join(" ");
 }
+
+export async function generateSmartSwaps(
+  memberId: string,
+  dayExercises: any[],
+  injuryDescription: string,
+  exercises: any[]
+) {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role === "member" && (currentUser.memberId ?? currentUser.uid) !== memberId) {
+      throw new Error("Not authorized to view this member's data.");
+    }
+
+    if (!injuryDescription || injuryDescription.trim() === "") {
+      return null;
+    }
+
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY is not set.");
+    }
+
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+    
+    // Filter catalog down to minimize prompt token count
+    const catalogJson = exercises.map(e => ({
+      id: e.id,
+      name: e.name,
+      muscleGroup: e.muscleGroup,
+      equipment: e.equipment,
+      instructions: e.instructions
+    }));
+
+    const dayExercisesJson = dayExercises.map(de => {
+      const exName = exercises.find(e => e.id === de.exerciseId)?.name || "Unknown Exercise";
+      const exGroup = exercises.find(e => e.id === de.exerciseId)?.muscleGroup || "Unknown";
+      return {
+        exerciseId: de.exerciseId,
+        name: exName,
+        muscleGroup: exGroup,
+        sets: de.sets,
+        reps: de.reps,
+        restSeconds: de.restSeconds,
+        notes: de.notes
+      };
+    });
+
+    const prompt = `
+      You are an elite sports physiotherapist and certified strength and conditioning specialist (CSCS).
+      A member has reported the following physical limitation/injury: "${injuryDescription}".
+      
+      Here is their scheduled workout for today:
+      ${JSON.stringify(dayExercisesJson, null, 2)}
+      
+      Here is the complete gym exercise catalog:
+      ${JSON.stringify(catalogJson, null, 2)}
+      
+      Your tasks:
+      1. Inspect the scheduled workout. Identify any exercises that are contraindicated or unsafe for the reported injury/limitation.
+      2. For each contraindicated exercise, suggest an alternative exercise ONLY from the provided complete gym exercise catalog. Try to keep the target muscle group similar unless the entire muscle group is contraindicated.
+      3. If an exercise is safe, keep it as-is.
+      4. Provide a general clinical summary of the routine changes (1-2 sentences).
+      5. Provide an explanation per swap (1 sentence).
+      6. Output a final list of exercises for their workout, maintaining the correct schema.
+      
+      You must respond strictly in valid JSON format. Do not wrap your response in markdown code blocks. The JSON response must strictly conform to this structure:
+      {
+        "injury": "${injuryDescription}",
+        "summary": "Clinical summary of modifications...",
+        "swaps": [
+          { "from": "Name of original exercise", "to": "Name of alternative exercise", "reason": "Explanation of swap..." }
+        ],
+        "addedStretches": [],
+        "routine": [
+          { "exerciseId": "id_from_catalog", "sets": 3, "reps": "12", "restSeconds": 60, "notes": "AI swap note" }
+        ]
+      }
+    `;
+
+    const response = await ai.models.generateContent({
+      model: process.env.GEMINI_MODEL ?? "gemini-flash-latest",
+      contents: prompt,
+    });
+
+    const responseText = response.text || "";
+    const jsonText = responseText.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
+    const result = JSON.parse(jsonText);
+    return result;
+  } catch (error) {
+    console.error("AI swap generation failed. Falling back to local heuristics...", error);
+    return null;
+  }
+}
+

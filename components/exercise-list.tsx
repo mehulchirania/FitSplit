@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
 import { Video, X } from "@/components/icons";
 import type { Exercise, WorkoutExercise } from "@/types/domain";
@@ -59,6 +60,16 @@ function getYouTubeEmbedUrl(videoUrl: string): string | null {
     // not a valid URL
   }
   return null;
+}
+
+function isPortraitVideo(videoUrl: string | null): boolean {
+  if (!videoUrl) return false;
+  try {
+    const url = new URL(videoUrl);
+    return Boolean(url.pathname.match(/\/shorts\//));
+  } catch {
+    return false;
+  }
 }
 
 type VideoType = "tutorial" | "demo";
@@ -147,15 +158,15 @@ export function ExerciseList({
         })}
       </div>
 
-      {/* YouTube video modal */}
-      {activeVideo && (
+      {/* YouTube video modal — rendered into document.body via portal so position:fixed is never clipped by a parent transform */}
+      {activeVideo && typeof document !== "undefined" && createPortal(
         <div
           className="video-modal-backdrop"
           onClick={() => setActiveVideo(null)}
           role="presentation"
         >
           <div
-            className="video-modal"
+            className={`video-modal${isPortraitVideo(activeRawUrl) ? " video-modal--portrait" : ""}`}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="video-modal-header">
@@ -180,7 +191,7 @@ export function ExerciseList({
               <iframe
                 allow="autoplay; encrypted-media"
                 allowFullScreen
-                className="video-embed"
+                className={`video-embed${isPortraitVideo(activeRawUrl) ? " video-embed--portrait" : ""}`}
                 src={activeUrl}
                 title={`${activeVideo.exercise.name} ${activeVideo.type === "demo" ? "gym demo" : "form tutorial"}`}
               />
@@ -193,7 +204,8 @@ export function ExerciseList({
               </div>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

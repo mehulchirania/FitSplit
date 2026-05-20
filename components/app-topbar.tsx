@@ -153,7 +153,7 @@ export function AppTopbar({
             )}
           </button>
           <Link className="brand" href={role === "admin" ? "/admin" : role === "owner" ? "/owner" : role === "member" ? "/member" : "/"}>
-            {role === "member" && gymLogoUrl ? (
+            {gymLogoUrl ? (
               <span className="gym-brand-lockup" aria-label={`FitSplit x ${gymName ?? "gym"}`}>
                 <span className="theme-logo brand-icon-wrap" aria-hidden="true">
                   <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />

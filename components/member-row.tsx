@@ -23,7 +23,7 @@ export function MemberRow({
       {/* Identity */}
       <div className="mcard-identity">
         <div className="mcard-name-row">
-          <span className="mcard-name">{member.fullName}</span>
+          <Link className="mcard-name mcard-name-link" href={`/owner/members/${member.id}`}>{member.fullName}</Link>
           <span className={`mcard-plan-badge ${hasPlan ? "badge-has-plan" : "badge-no-plan"}`}>
             {hasPlan ? "Plan set" : "No plan"}
           </span>
@@ -34,6 +34,7 @@ export function MemberRow({
           )}
         </div>
         <div className="mcard-meta">
+          {member.username && <span className="mcard-username">@{member.username}</span>}
           {member.goal && <span className="mcard-goal">{member.goal}</span>}
           {member.phone && (
             <a
@@ -62,12 +63,6 @@ export function MemberRow({
             {isPending ? "…" : member.isActive ? "Suspend" : "Restore"}
           </button>
         </form>
-        <Link
-          className="button button-secondary mcard-view-btn"
-          href={`/owner/members/${member.id}`}
-        >
-          View
-        </Link>
       </div>
     </div>
   );

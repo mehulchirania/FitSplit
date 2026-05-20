@@ -439,6 +439,10 @@ export async function createLocalDemoSession(
     };
   }
 
+  // Clear any stale Firebase session cookie so getCurrentUser uses the
+  // compatibility cookies we're about to set, not a previous user's session.
+  await clearAuthCookies();
+
   const user = authUserFromDemo(demoLogin);
   await setSessionCompatibilityCookies(user);
 
@@ -458,7 +462,44 @@ export async function loginWithCredentials(formData: FormData) {
     return { status: "error" as const, message: "Enter your login details." };
   }
 
-  if (findDemoLogin(identifier)) {
+  const demoLogin = findDemoLogin(identifier);
+
+  if (demoLogin) {
+    // Validate role and password locally first (fast, no network).
+    const roleError = validateExpectedRole(demoLogin.role, mode);
+    if (roleError) return { status: "error" as const, message: roleError };
+
+    const expectedPassword = demoLogin.role === "member" ? "1234" : "password";
+    if (password !== expectedPassword) {
+      return {
+        status: "error" as const,
+        message: demoLogin.role === "member" ? "Invalid PIN." : "Invalid password."
+      };
+    }
+
+    // When Firebase Admin is configured, do a real Firebase Auth sign-in so a
+    // proper fitsplit-session cookie is created — this clears any stale session
+    // from a previous login. Fall back to compatibility cookies if Auth fails.
+    if (hasFirebaseAdminConfig()) {
+      const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+      if (apiKey) {
+        const fbPassword = demoLogin.role === "member" ? `pin-${password}` : password;
+        const resp = await fetch(
+          `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: demoLogin.authEmail, password: fbPassword, returnSecureToken: true })
+          }
+        );
+        if (resp.ok) {
+          const payload = (await resp.json()) as { idToken?: string };
+          if (payload.idToken) return createSession(payload.idToken);
+        }
+      }
+    }
+
+    // No Firebase Admin or Firebase Auth sign-in failed — use compatibility cookies.
     return createLocalDemoSession(identifier, password, mode);
   }
 

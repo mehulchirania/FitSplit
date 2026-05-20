@@ -21,6 +21,8 @@ export function ProgramAssignmentForm({
     programs.find((program) => program.id === selectedProgramId) ?? programs[0];
   const predefinedPrograms = programs.filter((program) => program.source !== "gym");
   const gymPrograms = programs.filter((program) => program.source === "gym");
+  const selectedTrainingDays =
+    selectedProgram?.days.filter((day) => day.exercises.length > 0) ?? [];
 
   if (programs.length === 0) {
     return (
@@ -45,7 +47,7 @@ export function ProgramAssignmentForm({
       pendingLabel="Assigning program..."
       submitLabel="Assign selected program"
     >
-      <h2>Assign program</h2>
+      <h2>{currentProgramId ? "Change program" : "Assign program"}</h2>
       <input name="memberId" type="hidden" value={member.id} />
       <input name="memberName" type="hidden" value={member.fullName} />
       <input name="programTitle" type="hidden" value={selectedProgram?.title ?? ""} />
@@ -86,9 +88,16 @@ export function ProgramAssignmentForm({
           <small>
             {selectedProgram.goal} · {selectedProgram.days.length} weekly sessions · {selectedProgram.difficulty}
           </small>
+          <small>
+            {selectedTrainingDays
+              .slice(0, 3)
+              .map((day) => day.title)
+              .join(" / ")}
+            {selectedTrainingDays.length > 3 ? " / ..." : ""}
+          </small>
         </div>
       ) : null}
-      <p>The selected weekly schedule appears immediately on the member dashboard.</p>
+      <p>The selected weekly schedule appears immediately on the member dashboard after confirmation.</p>
     </ConfirmActionForm>
   );
 }

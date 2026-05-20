@@ -1,5 +1,42 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-20: Member detail editing and PIN access repair
+
+- Reworked `/owner/members/[memberId]` hero contact details into a separate right-side list with username, email, and phone visible at a glance.
+- Replaced the old disclosure-only edit area with a proper `Edit details` button, editable form, and `Cancel edit` option.
+- Owner/member detail editing now covers contact info, age, gender, DOB, height, weight, fitness goals, medical notes, injury notes, slots, and assigned trainer.
+- Added `updateOwnerMemberContext` server action to persist profile context fields in Firestore and keep member auth metadata intact.
+- Member usernames now fall back to phone/email when old Firestore rows do not have a dedicated `username`.
+- Reset PIN now backfills missing `username`/`authEmail` profile fields and creates/repairs the Firebase Auth user when needed before setting the new 4-digit PIN.
+- Added `scripts/backfill-member-access.mjs` plus `npm run backfill:member-access` to patch existing member profile/auth access data when Firebase Admin env vars are available in the shell.
+
+### Verification
+- `npm run typecheck` passes.
+- `npm run build` passes.
+- `http://localhost:3000/owner/members/titan-alisha` redirects unauthenticated requests to `/` with HTTP 307 locally; authenticated browser QA should be checked after login.
+- `npm run backfill:member-access` checked 28 member profiles and created 21 missing Firebase Auth users.
+
+---
+
+## Latest Update - 2026-05-20: Owner member detail UX rebuild
+
+- Rebuilt `/owner/members/[memberId]` around the trainer workflow.
+- Weekly schedule is now the primary content instead of being buried below edit/account forms.
+- Added a right-side action rail for changing programs, Gemini program matching, account access, PIN reset, and danger-zone deletion.
+- Account access and delete controls are collapsed behind intentional disclosure panels so destructive/admin actions do not compete with training tasks.
+- Added quick member summary metrics for training days, total exercises, assigned date, last lift log, and assigned trainer.
+- Added read-first member context cards for goal, body metrics, medical notes, and injury/pain notes.
+- Moved contact editing behind an "Edit contact details" disclosure panel.
+- Removed default `1234` from the reset PIN field; owner must intentionally enter a 4-digit PIN.
+- Tightened weekly schedule display so duplicate day title/focus text is not repeated.
+- Improved assignment preview copy to show sample training-day names and clarified that assignment happens after confirmation.
+
+### Verification
+- `npm run typecheck` passes.
+- `http://localhost:3000/owner/members/titan-alisha` responds with HTTP 200 locally.
+
+---
+
 ## Latest Update - 2026-05-20: Click-to-enlarge exercise thumbnails and GIF preference
 
 - Added `components/exercise-thumbnail-preview.tsx`.
