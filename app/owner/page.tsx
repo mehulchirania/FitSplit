@@ -53,6 +53,22 @@ export default async function OwnerDashboard() {
     ? Math.round((assignedMembers.length / members.length) * 100)
     : 0;
 
+  // "Needs attention" — sort the unassigned list by how long they've been waiting.
+  // Members who joined >7 days ago without a plan are flagged as urgent (red dot
+  // on their row). New joiners (≤7 days) are friendlier "welcome them" cases.
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  function getJoinedDate(joinedAt: string) {
+    const d = new Date(joinedAt);
+    return Number.isFinite(d.getTime()) ? d : new Date();
+  }
+  const unassignedSorted = [...unassignedMembers].sort((a, b) =>
+    getJoinedDate(a.joinedAt).getTime() - getJoinedDate(b.joinedAt).getTime()
+  );
+  const urgentUnassignedCount = unassignedSorted.filter(
+    (m) => getJoinedDate(m.joinedAt) < sevenDaysAgo
+  ).length;
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "20px" }}>
@@ -117,18 +133,36 @@ export default async function OwnerDashboard() {
             <h2>
               <UsersRound /> Members needing plans
             </h2>
-            <Link className="button button-secondary" href="/owner/members">
-              View all
-            </Link>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              {urgentUnassignedCount > 0 && (
+                <span
+                  className="status-pill status-warning"
+                  title={`${urgentUnassignedCount} member${urgentUnassignedCount === 1 ? "" : "s"} have been waiting more than 7 days`}
+                >
+                  {urgentUnassignedCount} urgent
+                </span>
+              )}
+              <Link className="button button-secondary" href="/owner/members?filter=no-plan&sort=oldest">
+                View all
+              </Link>
+            </div>
           </div>
-          {unassignedMembers.length === 0 ? (
+          {unassignedSorted.length === 0 ? (
             <p style={{ padding: "20px 0", color: "var(--text-soft)", textAlign: "center", fontSize: "0.9rem" }}>
               All members have a program assigned.
             </p>
           ) : (
-            unassignedMembers.map((member) => (
+            unassignedSorted.slice(0, 6).map((member) => (
               <MemberRow member={member} key={member.id} />
             ))
+          )}
+          {unassignedSorted.length > 6 && (
+            <p style={{ padding: "12px 16px", textAlign: "center", fontSize: "0.82rem", color: "var(--text-soft)" }}>
+              +{unassignedSorted.length - 6} more —{" "}
+              <Link href="/owner/members?filter=no-plan&sort=oldest" style={{ color: "var(--brand)" }}>
+                view all
+              </Link>
+            </p>
           )}
         </div>
 

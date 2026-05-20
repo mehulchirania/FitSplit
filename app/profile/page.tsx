@@ -1,9 +1,18 @@
+import { BodyWeightLogger } from "@/components/body-weight-logger";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 import { requireAuth } from "@/lib/auth";
-import { getProfileMetrics, getLiftLogsForMember, getExerciseCatalog, getGymDetail, getGymWorkspaces, getOwnersForGym } from "@/lib/firebase/read-models";
+import {
+  getBodyMetricLogsForMember,
+  getProfileMetrics,
+  getLiftLogsForMember,
+  getExerciseCatalog,
+  getGymDetail,
+  getGymWorkspaces,
+  getOwnersForGym
+} from "@/lib/firebase/read-models";
 import { ProfileAiSummary } from "@/components/profile-ai-summary";
 import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisplayName } from "@/lib/firebase/actions";
 
@@ -232,11 +241,12 @@ export default async function ProfilePage({
 
   // Member profile — full view
   const memberId = currentUser.memberId ?? currentUser.uid;
-  const [{ profile }, { liftLogs }, { exercises }, { owners }] = await Promise.all([
+  const [{ profile }, { liftLogs }, { exercises }, { owners }, { logs: bodyMetricLogs }] = await Promise.all([
     getProfileMetrics(memberId),
     getLiftLogsForMember(memberId),
     getExerciseCatalog(),
-    getOwnersForGym(currentUser.gymId)
+    getOwnersForGym(currentUser.gymId),
+    getBodyMetricLogsForMember(memberId)
   ]);
   const trainers = owners.filter((o) => o.staffType === "trainer" || o.staffType === "owner");
 
@@ -300,6 +310,8 @@ export default async function ProfilePage({
           </ConfirmActionForm>
         </div>
       </section>
+
+      <BodyWeightLogger initialLogs={bodyMetricLogs} memberId={memberId} />
 
       <ProgressiveOverloadChart liftLogs={liftLogs} exercises={exercises} />
 

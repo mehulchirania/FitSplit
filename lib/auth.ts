@@ -1,5 +1,6 @@
 "use server";
 
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
@@ -369,6 +370,68 @@ function validateExpectedRole(role: Role, expectedRole?: "member" | "staff") {
   return null;
 }
 
+// ─── Login lockout ─────────────────────────────────────────────────────────
+// After MAX_FAILED_ATTEMPTS consecutive failures, the account is locked for
+// LOCKOUT_MINUTES. This sits in front of Firebase Auth — Firebase has its own
+// per-IP throttling but it kicks in too late for brute-force-by-PIN, where 10k
+// permutations are easily reachable in under a minute.
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
+async function findProfileRefByEmail(email: string) {
+  if (!hasFirebaseAdminConfig()) return null;
+  const { db } = getFirebaseAdminServices();
+  const normalized = email.trim().toLowerCase();
+  // Check authEmail first (most common), then fall back to email.
+  for (const field of ["authEmail", "email"] as const) {
+    const snap = await db
+      .collection(collectionPaths.profiles)
+      .where(field, "==", normalized)
+      .limit(1)
+      .get();
+    if (!snap.empty) return snap.docs[0].ref;
+  }
+  return null;
+}
+
+async function checkLoginLockout(email: string): Promise<{ locked: boolean; minutesRemaining?: number }> {
+  const ref = await findProfileRefByEmail(email);
+  if (!ref) return { locked: false };
+  const data = (await ref.get()).data() ?? {};
+  const lockedUntil = data.lockedUntil ? new Date(String(data.lockedUntil)) : null;
+  if (lockedUntil && lockedUntil.getTime() > Date.now()) {
+    const minutesRemaining = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000));
+    return { locked: true, minutesRemaining };
+  }
+  return { locked: false };
+}
+
+async function incrementLoginFailure(email: string) {
+  const ref = await findProfileRefByEmail(email);
+  if (!ref) return;
+  const data = (await ref.get()).data() ?? {};
+  const current = Number(data.failedLoginAttempts ?? 0);
+  const next = current + 1;
+  const update: Record<string, unknown> = {
+    failedLoginAttempts: next,
+    lastFailedLoginAt: new Date().toISOString()
+  };
+  if (next >= MAX_FAILED_ATTEMPTS) {
+    const lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60_000);
+    update.lockedUntil = lockedUntil.toISOString();
+  }
+  await ref.set(update, { merge: true });
+}
+
+async function clearLoginAttempts(email: string) {
+  const ref = await findProfileRefByEmail(email);
+  if (!ref) return;
+  await ref.set(
+    { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
+    { merge: true }
+  );
+}
+
 export async function resolveLoginIdentifier(identifier: string, expectedRole?: "member" | "staff") {
   const cleanIdentifier = identifier.trim();
 
@@ -526,6 +589,17 @@ export async function loginWithCredentials(formData: FormData) {
     return { status: "error" as const, message: "Firebase client API key is not configured." };
   }
 
+  // Lockout check — bail out early if this account is currently locked from too
+  // many failed attempts. Don't reveal whether the account exists; the error
+  // message is generic on purpose.
+  const lockState = await checkLoginLockout(resolved.email);
+  if (lockState.locked) {
+    return {
+      status: "error" as const,
+      message: `Too many failed attempts. Try again in about ${lockState.minutesRemaining} minute${lockState.minutesRemaining === 1 ? "" : "s"}.`
+    };
+  }
+
   const firebasePassword = mode === "member" ? `pin-${password}` : password;
   const response = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
@@ -541,6 +615,10 @@ export async function loginWithCredentials(formData: FormData) {
   );
 
   if (!response.ok) {
+    // Increment the failure counter so repeated wrong attempts trigger a lock.
+    // Best-effort — if the write fails (mock mode, etc.) we still return the
+    // standard auth error.
+    try { await incrementLoginFailure(resolved.email); } catch {}
     return {
       status: "error" as const,
       message: mode === "member" ? "Invalid mobile/email or PIN." : "Invalid username or password."
@@ -552,6 +630,10 @@ export async function loginWithCredentials(formData: FormData) {
   if (!payload.idToken) {
     return { status: "error" as const, message: "Unable to sign in. Please try again." };
   }
+
+  // Successful auth — wipe the failure counter so a future wrong PIN starts
+  // fresh from 0.
+  try { await clearLoginAttempts(resolved.email); } catch {}
 
   return createSession(payload.idToken);
 }
@@ -594,7 +676,16 @@ export async function createSession(idToken: string) {
   }
 }
 
+// Per-request memoization — if multiple components in the same render call
+// getCurrentUser (e.g. a layout + a page), the cookie verification + Firestore
+// lookup only runs once. React's cache() is scoped to a single request so this
+// is safe to share across server components.
+const getCurrentUserCached = cache(_getCurrentUserImpl);
 export async function getCurrentUser(): Promise<AuthenticatedUser | null> {
+  return getCurrentUserCached();
+}
+
+async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
   const cookieStore = await cookies();
   const session = cookieStore.get(sessionCookieName)?.value;
 

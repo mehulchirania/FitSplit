@@ -8305,6 +8305,109 @@ html[data-theme="light"] .fs3-logo-mark .theme-logo-light {
   min-width: 0;
 }
 
+/* Body weight logger — /profile (member) */
+.bwl-grid {
+  display: grid;
+  gap: 14px;
+  padding: 4px 20px 20px;
+}
+.bwl-headline {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  justify-content: space-between;
+}
+.bwl-current {
+  display: grid;
+  gap: 2px;
+}
+.bwl-current span {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+.bwl-current strong {
+  color: var(--text);
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+.bwl-deltas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bwl-delta {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  display: grid;
+  gap: 1px;
+  min-width: 56px;
+  padding: 6px 10px;
+  text-align: center;
+}
+.bwl-delta span {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.bwl-delta strong {
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+.bwl-delta--down strong {
+  color: var(--brand);
+}
+.bwl-delta--up strong {
+  color: var(--danger);
+}
+.bwl-delta--flat strong {
+  color: var(--text-soft);
+}
+.bwl-delta--empty strong {
+  color: var(--text-faint);
+}
+.bwl-chart {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+}
+.bwl-chart-axis {
+  color: var(--text-faint);
+  display: flex;
+  font-size: 0.72rem;
+  justify-content: space-between;
+}
+.bwl-empty {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0;
+  padding: 8px 0;
+}
+.bwl-form {
+  display: grid;
+  gap: 10px;
+}
+.bwl-form-row {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 540px) {
+  .bwl-form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Workout history page — daily workout cards */
 .history-day-card {
   border-bottom: 1px solid var(--border);

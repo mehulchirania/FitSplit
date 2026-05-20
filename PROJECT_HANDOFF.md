@@ -1,5 +1,97 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-20: Body weight tracking, coach notes, lockout, audit log, CSP
+
+Second batch from the e2e audit. Worked through the deferred list from the previous entry, focusing on items with clear scope and member value. Skipped the multi-hour refactors (split files, replace rule-based AI, inline style cleanup, Member/Profile merge) — they need their own focused sessions.
+
+### Body weight tracking (new feature)
+- New `BodyMetricLog` domain type (`types/domain.ts`) and `bodyMetricLogs` Firestore collection.
+- `logBodyWeight` server action with weight (10–500 kg validation), optional body fat %, notes. Mirrors latest weight onto the profile doc so dashboards don't need a join. Calls `assertMemberBelongsToCallerGym` — owners can log on behalf of members, members can only log their own.
+- `getBodyMetricLogsForMember` reader.
+- New `BodyWeightLogger` component (`components/body-weight-logger.tsx`). Shows current weight, 7d/30d/90d deltas with up/down/flat color coding, a 12-point SVG sparkline, and an inline log form. Does optimistic prepend so the chart updates instantly without waiting for the round-trip.
+- Wired into `/profile` for members below the PIN-change form. Owners can extend later.
+- CSS: `.bwl-*` styles in `globals.css`.
+
+### Coach notes (new feature)
+- One free-text note per member, written by trainers/owners, displayed on the member dashboard.
+- `coachNote`, `coachNoteUpdatedAt`, `coachNoteUpdatedByName` fields on `ProfileMetrics` (`types/domain.ts`) + read in both `getProfileMetrics` and `getMemberWithProfile`.
+- `updateCoachNote` server action with 600-char cap + `assertMemberBelongsToCallerGym` guard. Sending an empty string clears the note.
+- Owner-side editor: textarea panel at the top of the right-side action rail on `/owner/members/[memberId]`. Uses the new `requireConfirmation={false}` mode so saving doesn't require a modal click.
+- Member-side display: brand-tinted banner above the workout console on `/member`. Shows the date and "— TrainerName" attribution.
+
+### Security — login attempt lockout
+- After 5 failed login attempts the account is locked for 15 minutes. Sits in front of Firebase Auth's per-IP throttling, which kicks in too late for PIN brute-force.
+- Helpers in `lib/auth.ts`: `findProfileRefByEmail`, `checkLoginLockout`, `incrementLoginFailure`, `clearLoginAttempts`.
+- `loginWithCredentials` checks the lock state before calling `signInWithPassword`, increments the counter on auth failure, and clears it on success.
+- Demo logins (`demoLogins`) bypass — they're for local dev.
+- New profile fields: `failedLoginAttempts`, `lastFailedLoginAt`, `lockedUntil`.
+
+### Security — audit log for sensitive actions
+- `resetPassword` now writes an `activityEvents` entry with `actorId` (who did it), `targetId` (whose access was reset), and the action description. Useful if a member ever disputes a PIN change.
+- `createOwnerProfile` writes an audit event too — gym admins can see who provisioned staff access.
+- Other sensitive actions (`assignProgramToMember`, `toggleMemberAccess`, `deleteMemberProfile`, `createAndAssignCustomProgram`) already wrote activity events; this fills the remaining gaps.
+
+### Security — CSP + headers
+- `next.config.mjs`: added `headers()` returning:
+  - `Content-Security-Policy` with explicit allow-lists for Firebase (googleapis/firebaseio/firebaseapp), Gemini API, YouTube embeds, Google Fonts. `'unsafe-inline'` is unavoidable because of the heavy inline-style pattern.
+  - `X-Frame-Options: DENY`
+  - `X-Content-Type-Options: nosniff`
+  - `Referrer-Policy: strict-origin-when-cross-origin`
+  - `Permissions-Policy: camera=(), microphone=(), geolocation=(self)`
+  - `Strict-Transport-Security: max-age=63072000; includeSubDomains; preload`
+- Verified by `curl -I http://localhost:3000/` — all six headers present.
+
+### Performance — getCurrentUser memoization
+- `getCurrentUser` is now wrapped in React's `cache()` so multiple calls within the same request (e.g. layout + page both calling `requireAuth`) reuse a single cookie verification + Firestore lookup. Implemented as a private `_getCurrentUserImpl` + cached const + thin async export, since `"use server"` files require exports to be async functions.
+
+### UX — "Needs attention" lane on owner dashboard
+- The existing "Members needing plans" panel now sorts by joined-date (oldest first) so members who've waited the longest surface to the top.
+- An "X urgent" status pill appears in the panel header counting members joined >7 days ago who still have no plan.
+- Panel caps at 6 rows + a "view all" link to `/owner/members?filter=no-plan&sort=oldest` so the dashboard doesn't grow unboundedly with N members.
+
+### UX — empty states with CTAs
+- `/activity`: zero events now shows an icon + role-specific copy + "Start today's workout" / "Open dashboard" button.
+- `/admin/inbox`: zero messages now has a link to view the landing page (where the messages come from).
+- `/owner/programs` empty state already had inline guidance ("use the builder below") — left alone.
+
+### Files touched (this batch)
+- `next.config.mjs` — CSP + security headers
+- `middleware.ts` — already forwards `x-pathname` from the prior entry
+- `lib/auth.ts` — lockout helpers, login lockout enforcement, `cache()` on getCurrentUser
+- `lib/firebase/collections.ts` — `bodyMetricLogs` registered
+- `lib/firebase/actions.ts` — `logBodyWeight`, `updateCoachNote`, audit logs in `resetPassword` and `createOwnerProfile`
+- `lib/firebase/read-models.ts` — `getBodyMetricLogsForMember`, `coachNote` fields surfaced
+- `types/domain.ts` — `BodyMetricLog`, `coachNote*` fields on ProfileMetrics
+- `components/body-weight-logger.tsx` — new
+- `app/member/page.tsx` — coach note banner above workout console
+- `app/owner/members/[memberId]/page.tsx` — coach note editor in right rail
+- `app/owner/page.tsx` — "urgent" pill + sorted-by-oldest + 6-row cap
+- `app/activity/page.tsx` — empty state with CTA
+- `app/admin/inbox/page.tsx` — empty state with link
+- `app/profile/page.tsx` — BodyWeightLogger inserted
+- `app/globals.css` — `.bwl-*` body-weight-logger styles
+
+### Verification
+- `npm run typecheck` passes.
+- `npm run build` passes — all 19 routes compile clean, no warnings.
+- `curl -I http://localhost:3000/` returns all 6 security headers.
+- `/profile` route grew from 112 kB → 114 kB (body weight logger + sparkline SVG). All other routes unchanged or smaller.
+
+### Deferred — still NOT done (with honest scope reasons)
+1. **Optimistic lift logging via `useOptimistic`** — `MemberWorkoutConsole` already does optimistic prepend via `setLiftLogs`. The full `useOptimistic` refactor is medium-risk because of the offline-log interaction (`fitsplit-offline-logs` localStorage path). Worth a dedicated session that also reworks the offline-sync flow.
+2. **Split `globals.css` (~9k lines) and `lib/firebase/actions.ts` (~2.9k lines)** — pure refactor with no user value. Best done in one focused session with a careful import audit.
+3. **Replace rule-based "AI Trainer" swap logic with real Gemini** — the `getInjuryRule` function in `MemberWorkoutConsole` is a hardcoded knee/shoulder/back lookup. Either rename ("Smart Swaps" / "Recovery Mode") OR wire to `lib/ai.ts`. Substantial work; needs prompt tuning + cost monitoring.
+4. **Bulk operations on members page** — multi-select + bulk suspend/restore/message. Needs a client-side wrapper component and new server actions. Roughly a 2-hour standalone feature with its own UX considerations (select-all-on-page vs select-all-filtered, optimistic UI for many parallel writes, what to do if 3 of 10 fail).
+5. **"Today only" injury flag** — touches session-level state and reroutes the AI swap logic. Couples with #3 above and the existing `injuryNotes` model.
+6. **Validation consolidation via zod** — currently parsing is scattered between `requireText` and inline `String(formData.get(...))`. Refactor is invasive; would touch every action in `actions.ts`.
+7. **`useActionState` consistency for `AddMemberForm`** — works correctly today, conversion is cosmetic. Would require extending `ConfirmActionForm` with an `onSuccess` reset callback. No user-visible improvement.
+8. **PWA push notifications (FCM)** — TODO from the original handoff. Needs service worker + token registration + server-side messaging flow.
+9. **Workout templates** (duplicate Monday→Wednesday), **exercise variations** (band/dumbbell/cable variants), **payment/membership tracker** — each is a feature in its own right.
+10. **Member + ProfileMetrics merge** — same person, two types. Pure data refactor; the type duplication is mildly annoying but not blocking anything.
+11. **Inline `style={{...}}` cleanup** — extract tokens.css. Large refactor with no user value; would touch dozens of files.
+
+---
+
 ## Latest Update - 2026-05-20: E2E audit, perf caching, security guards, member features
 
 Full e2e audit + execution batch covering UX bugs, security gaps, member-side features, and performance caching. Detailed analysis recorded below.

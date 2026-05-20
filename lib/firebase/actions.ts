@@ -1255,10 +1255,29 @@ export async function resetPassword(
       );
     }
 
+    // Audit log: who reset whose access code, when. Helps if a member ever
+    // disputes "someone changed my login".
+    try {
+      const auditId = randomUUID();
+      await db.collection(collectionPaths.activityEvents).doc(auditId).set({
+        id: auditId,
+        gymId,
+        audience: "owner",
+        title: isPinReset ? "PIN reset" : "Password reset",
+        detail: `${currentUser.fullName} reset ${role === "member" ? "the PIN" : "the password"} for ${fullName}.`,
+        icon: "bell",
+        createdAt: new Date().toISOString(),
+        actorId: currentUser.uid,
+        targetId: userId
+      });
+    } catch (e) {
+      console.warn("Failed to write audit event for resetPassword:", e);
+    }
+
     revalidatePath("/owner/members");
     revalidatePath(`/owner/members/${userId}`);
 
-    return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.");
+    return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.", gymId);
   } catch (error) {
     console.error("Unable to reset password", error);
     return failure(error, "Could not reset access code.");
@@ -1534,10 +1553,28 @@ export async function createOwnerProfile(
       updatedAt: now
     });
 
+    // Audit log: admin created a new staff account. Tracks who provisioned
+    // gym access — useful for compliance and onboarding visibility.
+    try {
+      const auditId = randomUUID();
+      await db.collection(collectionPaths.activityEvents).doc(auditId).set({
+        id: auditId,
+        gymId,
+        audience: "owner",
+        title: `Staff account created — ${normalizedStaffType}`,
+        detail: `${fullName} (${email}) was added to the gym with the default password. They will be forced to change it on first login.`,
+        icon: "users",
+        createdAt: now,
+        targetId: ownerId
+      });
+    } catch (e) {
+      console.warn("Failed to write audit event for createOwnerProfile:", e);
+    }
+
     revalidatePath("/admin");
     revalidatePath(`/admin/gyms/${gymId}`);
 
-    return success(`${fullName} was added as gym ${normalizedStaffType}.`);
+    return success(`${fullName} was added as gym ${normalizedStaffType}.`, gymId);
   } catch (error) {
     return failure(error, "Unable to create gym staff profile.");
   }
@@ -2815,3 +2852,115 @@ export async function createAndAssignCustomProgram(
     return failure(error, "Unable to create custom workout. Please try again.");
   }
 }
+
+/**
+ * Log a body weight entry for the calling member (or for a member by an owner).
+ * Powers the body-weight progress chart on /profile. Owners can log on behalf
+ * of members (e.g. recording weigh-ins at the gym); members log their own.
+ */
+export async function logBodyWeight(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const memberId = String(formData.get("memberId") ?? currentUser.memberId ?? currentUser.uid).trim();
+    if (!memberId) throw new Error("Member ID is required.");
+    // Members can only log their own weight; owners must be in the same gym.
+    await assertMemberBelongsToCallerGym(currentUser, memberId);
+
+    const weightKg = Number(formData.get("weightKg") ?? 0);
+    if (!Number.isFinite(weightKg) || weightKg <= 0 || weightKg > 500) {
+      throw new Error("Weight must be a positive number under 500 kg.");
+    }
+    const bodyFatRaw = String(formData.get("bodyFatPct") ?? "").trim();
+    const bodyFatPct = bodyFatRaw ? Number(bodyFatRaw) : undefined;
+    if (bodyFatPct !== undefined && (!Number.isFinite(bodyFatPct) || bodyFatPct < 0 || bodyFatPct > 100)) {
+      throw new Error("Body fat percentage must be between 0 and 100.");
+    }
+    const notes = String(formData.get("notes") ?? "").trim();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    if (!hasFirebaseAdminConfig()) {
+      return success(`Weight ${weightKg} kg logged.`);
+    }
+
+    const db = requireFirebase();
+    const id = randomUUID();
+    await db.collection(collectionPaths.bodyMetricLogs).doc(id).set({
+      id,
+      memberId,
+      gymId,
+      weightKg,
+      ...(bodyFatPct !== undefined ? { bodyFatPct } : {}),
+      ...(notes ? { notes } : {}),
+      loggedAt: now,
+      createdAt: now
+    });
+
+    // Mirror onto profile so dashboards see the current value without a join.
+    try {
+      await db.collection(collectionPaths.profiles).doc(memberId).set(
+        { weightKg, updatedAt: now },
+        { merge: true }
+      );
+    } catch {
+      // best-effort; chart still works from the dedicated collection
+    }
+
+    revalidatePath("/profile");
+    revalidatePath("/member");
+    revalidatePath(`/owner/members/${memberId}`);
+
+    return success(`Weight ${weightKg} kg logged.`, gymId);
+  } catch (error) {
+    console.error("Unable to log body weight", error);
+    return failure(error, "Could not log weight. Please try again.");
+  }
+}
+
+/**
+ * Trainer/owner writes a short coaching note that surfaces on the member's
+ * dashboard. One note per member (latest only) — not a history. Members can
+ * see it but cannot edit. To clear, send an empty string.
+ */
+export async function updateCoachNote(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireRole(["admin", "owner"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const memberId = requireText(formData, "memberId", "Member ID");
+    await assertMemberBelongsToCallerGym(currentUser, memberId);
+
+    const rawNote = String(formData.get("coachNote") ?? "").trim();
+    // Cap length so it can't blow up the member dashboard
+    if (rawNote.length > 600) {
+      throw new Error("Note is too long. Keep it under 600 characters.");
+    }
+    const db = requireFirebase();
+    const now = new Date().toISOString();
+    await db.collection(collectionPaths.profiles).doc(memberId).set(
+      {
+        coachNote: rawNote,
+        coachNoteUpdatedAt: rawNote ? now : null,
+        coachNoteUpdatedBy: rawNote ? currentUser.uid : null,
+        coachNoteUpdatedByName: rawNote ? currentUser.fullName : null,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/member");
+
+    return success(rawNote ? "Coach note updated." : "Coach note cleared.", currentUser.gymId);
+  } catch (error) {
+    console.error("Unable to update coach note", error);
+    return failure(error, "Could not save coach note.");
+  }
+}
+

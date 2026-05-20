@@ -30,8 +30,14 @@ export default async function AdminInboxPage() {
           <span className="status-pill status-neutral">{messages.length} total</span>
         </div>
         {messages.length === 0 ? (
-          <div className="empty-state">
-            <p>No messages yet.</p>
+          <div className="empty-state" style={{ textAlign: "center", padding: "32px 16px" }}>
+            <h3>No messages yet</h3>
+            <p style={{ color: "var(--text-soft)", marginBottom: 14 }}>
+              Contact form submissions from the landing page will appear here.
+            </p>
+            <a className="button button-secondary" href="/" target="_blank" rel="noopener noreferrer">
+              View landing page
+            </a>
           </div>
         ) : (
           <div className="inbox-list">

@@ -153,6 +153,38 @@ export default async function MemberDashboard() {
         </div>
       </header>
 
+      {/* Coach note — surfaces the latest message from the gym's trainer/owner.
+          Renders above the workout console so members see it before training. */}
+      {profile.coachNote ? (
+        <section
+          className="member-dashboard-section"
+          aria-label="Note from your trainer"
+          style={{
+            background: "color-mix(in srgb, var(--brand) 8%, var(--bg-elevated))",
+            border: "1px solid color-mix(in srgb, var(--brand) 30%, var(--border))",
+            borderRadius: "var(--radius)",
+            padding: "14px 18px"
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+            <strong style={{ color: "var(--brand)", fontSize: "0.78rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+              Note from your trainer
+            </strong>
+            {profile.coachNoteUpdatedAt && (
+              <span style={{ color: "var(--text-faint)", fontSize: "0.72rem" }}>
+                {new Date(profile.coachNoteUpdatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+              </span>
+            )}
+          </div>
+          <p style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.5 }}>{profile.coachNote}</p>
+          {profile.coachNoteUpdatedByName && (
+            <p style={{ margin: "8px 0 0", fontSize: "0.78rem", color: "var(--text-soft)" }}>
+              — {profile.coachNoteUpdatedByName}
+            </p>
+          )}
+        </section>
+      ) : null}
+
       {program ? (
         <MemberWorkoutConsole
           exercises={exercises}

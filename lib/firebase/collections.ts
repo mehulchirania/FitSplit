@@ -13,7 +13,8 @@ export const collectionPaths = {
   workoutSessions: "workoutSessions",
   contactMessages: "contactMessages",
   siteLinks: "siteLinks",
-  attendanceRecords: "attendanceRecords"
+  attendanceRecords: "attendanceRecords",
+  bodyMetricLogs: "bodyMetricLogs"
 } as const;
 
 export const PRIMARY_GYM_ID = "shg";

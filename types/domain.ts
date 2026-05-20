@@ -181,6 +181,16 @@ export type LiftLog = {
   loggedAt: string;
 };
 
+export type BodyMetricLog = {
+  id: string;
+  memberId: string;
+  gymId?: string;
+  weightKg: number;
+  bodyFatPct?: number;
+  notes?: string;
+  loggedAt: string;
+};
+
 export type ActivityEvent = {
   id: string;
   audience: "owner" | "member";
@@ -222,6 +232,9 @@ export type ProfileMetrics = {
   injuryNotes?: string;
   assignedTrainer?: string;
   macroNutritionTarget?: MacroNutritionTarget;
+  coachNote?: string;
+  coachNoteUpdatedAt?: string;
+  coachNoteUpdatedByName?: string;
 };
 
 export type WorkoutSession = {

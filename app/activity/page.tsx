@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { requireAuth } from "@/lib/auth";
@@ -53,24 +54,42 @@ export default async function ActivityPage() {
           </span>
         </div>
         <div className="activity-feed">
-          {events.map((event) => {
-            const Icon = eventIcons[event.icon];
-            return (
-              <article className="activity-item" key={event.id}>
-                <span className="activity-icon">
-                  <Icon />
-                </span>
-                <div>
-                  <div className="toolbar">
-                    <h2>{event.title}</h2>
-                    <span className="status-pill status-neutral">{event.audience}</span>
+          {events.length === 0 ? (
+            <div className="empty-state" style={{ textAlign: "center", padding: "32px 16px" }}>
+              <Activity />
+              <h3 style={{ marginTop: 8 }}>No activity yet</h3>
+              <p style={{ color: "var(--text-soft)", marginBottom: 14 }}>
+                {currentUser.role === "member"
+                  ? "Log your first set or update your profile to see events here."
+                  : "Activity will appear here as members train and you manage assignments."}
+              </p>
+              <Link
+                className="button button-primary"
+                href={currentUser.role === "member" ? "/member" : "/owner"}
+              >
+                {currentUser.role === "member" ? "Start today's workout" : "Open dashboard"}
+              </Link>
+            </div>
+          ) : (
+            events.map((event) => {
+              const Icon = eventIcons[event.icon];
+              return (
+                <article className="activity-item" key={event.id}>
+                  <span className="activity-icon">
+                    <Icon />
+                  </span>
+                  <div>
+                    <div className="toolbar">
+                      <h2>{event.title}</h2>
+                      <span className="status-pill status-neutral">{event.audience}</span>
+                    </div>
+                    <p>{event.detail}</p>
+                    <span>{new Date(event.createdAt).toLocaleString("en-IN")}</span>
                   </div>
-                  <p>{event.detail}</p>
-                  <span>{new Date(event.createdAt).toLocaleString("en-IN")}</span>
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })
+          )}
         </div>
       </section>
     </main>

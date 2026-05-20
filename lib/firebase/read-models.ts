@@ -2,6 +2,7 @@ import { unstable_cache } from "next/cache";
 import type {
   ActivityEvent,
   AttendanceRecord,
+  BodyMetricLog,
   Difficulty,
   Exercise,
   ExerciseRequest,
@@ -703,6 +704,40 @@ async function getWorkoutProgramsUncached(gymId?: string): Promise<{
   return { programs, isPersisted: true };
 }
 
+export async function getBodyMetricLogsForMember(memberId: string): Promise<{
+  logs: BodyMetricLog[];
+  isPersisted: boolean;
+}> {
+  if (!hasFirebaseAdminConfig()) {
+    return { logs: [], isPersisted: false };
+  }
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(collectionPaths.bodyMetricLogs)
+      .where("memberId", "==", memberId)
+      .get();
+    const logs: BodyMetricLog[] = snapshot.docs
+      .map((doc) => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          memberId: String(data.memberId ?? memberId),
+          gymId: data.gymId ? String(data.gymId) : undefined,
+          weightKg: Number(data.weightKg ?? 0),
+          bodyFatPct: data.bodyFatPct != null ? Number(data.bodyFatPct) : undefined,
+          notes: data.notes ? String(data.notes) : undefined,
+          loggedAt: String(data.loggedAt ?? data.createdAt ?? new Date().toISOString())
+        };
+      })
+      .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
+    return { logs, isPersisted: true };
+  } catch (error) {
+    console.warn("getBodyMetricLogsForMember failed:", error);
+    return { logs: [], isPersisted: false };
+  }
+}
+
 export async function getLiftLogsForMember(memberId: string): Promise<{
   liftLogs: LiftLog[];
   isPersisted: boolean;
@@ -961,7 +996,10 @@ export async function getProfileMetrics(memberId: string): Promise<{
         primarySlot: String(data.primarySlot ?? fallback.primarySlot ?? "A") as ProfileMetrics["primarySlot"],
         secondarySlot: String(data.secondarySlot ?? fallback.secondarySlot ?? "D") as ProfileMetrics["secondarySlot"],
         injuryNotes: String(data.injuryNotes ?? fallback.injuryNotes ?? ""),
-        assignedTrainer: String(data.assignedTrainer ?? fallback.assignedTrainer ?? "")
+        assignedTrainer: String(data.assignedTrainer ?? fallback.assignedTrainer ?? ""),
+        coachNote: data.coachNote ? String(data.coachNote) : undefined,
+        coachNoteUpdatedAt: data.coachNoteUpdatedAt ? String(data.coachNoteUpdatedAt) : undefined,
+        coachNoteUpdatedByName: data.coachNoteUpdatedByName ? String(data.coachNoteUpdatedByName) : undefined
       },
       isPersisted: true
     };
@@ -1044,7 +1082,10 @@ export async function getMemberWithProfile(memberId: string): Promise<{
     primarySlot: String(data.primarySlot ?? fallbackProfile.primarySlot ?? "A") as ProfileMetrics["primarySlot"],
     secondarySlot: String(data.secondarySlot ?? fallbackProfile.secondarySlot ?? "D") as ProfileMetrics["secondarySlot"],
     injuryNotes: String(data.injuryNotes ?? fallbackProfile.injuryNotes ?? ""),
-    assignedTrainer: String(data.assignedTrainer ?? fallbackProfile.assignedTrainer ?? "")
+    assignedTrainer: String(data.assignedTrainer ?? fallbackProfile.assignedTrainer ?? ""),
+    coachNote: data.coachNote ? String(data.coachNote) : undefined,
+    coachNoteUpdatedAt: data.coachNoteUpdatedAt ? String(data.coachNoteUpdatedAt) : undefined,
+    coachNoteUpdatedByName: data.coachNoteUpdatedByName ? String(data.coachNoteUpdatedByName) : undefined
   };
 
   return { member, profile, isPersisted: true };

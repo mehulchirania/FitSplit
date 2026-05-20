@@ -10,7 +10,8 @@ import { requireRole } from "@/lib/auth";
 import {
   deleteMemberProfile,
   resetPassword,
-  toggleMemberAccess
+  toggleMemberAccess,
+  updateCoachNote
 } from "@/lib/firebase/actions";
 import {
   getExerciseCatalog,
@@ -182,6 +183,49 @@ export default async function MemberDetailPage({
         </section>
 
         <aside className="mpd-side-stack">
+          <ConfirmActionForm
+            action={updateCoachNote}
+            className="form-panel"
+            confirmMessage={`This will replace the visible coach note on ${member.fullName}'s dashboard.`}
+            confirmTitle="Update coach note?"
+            pendingLabel="Saving note..."
+            requireConfirmation={false}
+            submitLabel={profile.coachNote ? "Update coach note" : "Send coach note"}
+          >
+            <h2 style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+              <span>Coach note</span>
+              <span style={{ fontSize: "0.72rem", color: "var(--text-faint)", fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
+                shows on member dashboard
+              </span>
+            </h2>
+            <input name="memberId" type="hidden" value={member.id} />
+            <label>
+              Message
+              <textarea
+                defaultValue={profile.coachNote ?? ""}
+                maxLength={600}
+                name="coachNote"
+                placeholder={`e.g. ${member.fullName.split(" ")[0]}, drop to 70kg on squat next week. Form was breaking at 80kg.`}
+                rows={3}
+              />
+            </label>
+            {profile.coachNoteUpdatedAt && (
+              <p style={{ fontSize: "0.78rem", color: "var(--text-soft)", margin: "4px 0 0" }}>
+                Last updated{" "}
+                {new Date(profile.coachNoteUpdatedAt).toLocaleString("en-IN", {
+                  day: "numeric",
+                  month: "short",
+                  hour: "2-digit",
+                  minute: "2-digit"
+                })}
+                {profile.coachNoteUpdatedByName ? ` by ${profile.coachNoteUpdatedByName}` : ""}
+              </p>
+            )}
+            <p style={{ fontSize: "0.78rem", color: "var(--text-faint)", margin: "4px 0 0" }}>
+              Leave the field empty and save to clear the note.
+            </p>
+          </ConfirmActionForm>
+
           <ProgramAssignmentForm
             catalog={catalog}
             currentProgramId={assignment?.programId}
