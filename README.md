@@ -19,7 +19,7 @@ FitSplit leverages a modern, server-centric, high-performance stack:
 
 ### 🧠 AI Semi-Personal Trainer
 *   **Gemini-Powered Smart Swaps**: Members can log sudden injuries or pain points to dynamically request substitute movements. Gemini evaluates the exercise catalog, matches biomechanical requirements, and returns structured alternatives in real-time, falling back gracefully to robust client-side muscle-group heuristics if needed.
-*   **Macro Nutrition Coach**: Trainers can prescribe precise daily targets (Calories, Protein, Carbs, Fats, Water Liters, and Custom Advice) directly to member profiles. Members track their daily progress using a glassmorphic dashboard with quick incremental logging (+25g protein, +0.5L water) backed by offline-resilient `localStorage` synchronization.
+*   **Macro Nutrition Coach**: Trainers can prescribe precise daily targets (Calories, Protein, Carbs, Fats, Water Liters, and Custom Advice) directly to member profiles. Members track daily progress in a lower wellness section, keeping the first screen focused on the assigned workout and lift logging.
 
 ### 📊 Training Operations Command Center
 *   **Gym Floor Traffic Heatmap**: Full-width interactive heatmap displaying real-time member occupancy and equipment stress. The algorithm processes program assignments and preferred member slots to categorize traffic (Quiet 🟢, Moderate 🟡, Crowded 🔴), charts the Top 5 congested exercises in the slot, and offers operational coaching advice to balance the gym floor load.

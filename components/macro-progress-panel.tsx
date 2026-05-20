@@ -24,8 +24,6 @@ export function MacroProgressPanel({
     water: 0
   });
 
-  const [isClient, setIsClient] = useState(false);
-
   // Scoped localStorage key per member per calendar day
   const dateKey = useMemo(() => {
     const today = new Date().toDateString();
@@ -34,7 +32,6 @@ export function MacroProgressPanel({
 
   // Load from localStorage on client side mount
   useEffect(() => {
-    setIsClient(true);
     const stored = window.localStorage.getItem(dateKey);
     if (stored) {
       try {
@@ -52,13 +49,19 @@ export function MacroProgressPanel({
         ...prev,
         [key]: Math.max(0, Number((prev[key] + amount).toFixed(1)))
       };
-      window.localStorage.setItem(dateKey, JSON.stringify(updated));
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(dateKey, JSON.stringify(updated));
+      }
       return updated;
     });
   };
 
   // Reset helper
   const handleReset = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
     if (window.confirm("Are you sure you want to reset today's logged nutrition?")) {
       const resetState = { protein: 0, carbs: 0, fat: 0, water: 0 };
       setActual(resetState);
@@ -91,14 +94,6 @@ export function MacroProgressPanel({
     if (!goal) return 0;
     return Math.min(100, Math.round((value / goal) * 100));
   };
-
-  if (!isClient) {
-    return (
-      <div style={{ height: "180px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "var(--text-soft)", fontSize: "0.85rem" }}>Loading macros...</p>
-      </div>
-    );
-  }
 
   return (
     <div style={{

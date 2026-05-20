@@ -49,7 +49,7 @@ export default async function MemberDetailPage({
     { member },
     { assignment },
     { programs },
-    { exercises },
+    { exercises, catalog },
     { profile },
     { liftLogs }
   ] = await Promise.all([
@@ -183,6 +183,7 @@ export default async function MemberDetailPage({
 
         <aside className="mpd-side-stack">
           <ProgramAssignmentForm
+            catalog={catalog}
             currentProgramId={assignment?.programId}
             member={member}
             programs={programs}

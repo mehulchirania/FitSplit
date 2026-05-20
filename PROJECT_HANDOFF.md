@@ -1,5 +1,21 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-20: Member dashboard hero and macro placement
+
+- Reworked `/member` first screen so the hero focuses on the assigned workout plan, gym, week, weekly training count, lift logs, and plan status.
+- Removed body metrics from the hero to reduce clutter.
+- Moved macros into a lower `Body metrics & nutrition` wellness section, after the workout console and gym notices.
+- Fixed the macro panel so it renders immediately instead of staying on `Loading macros...`.
+- Added defensive topbar logo sizing in `app/styles/member.css` so FitSplit x gym branding cannot render at raw image dimensions.
+- Added responsive member dashboard section styles in `app/styles/member.css`; mobile check showed no horizontal overflow.
+
+### Verification
+- `npm run typecheck` passes.
+- `npm run build` passes.
+- Browser checked `/member` on desktop and mobile viewport after member login.
+
+---
+
 ## Latest Update - 2026-05-20: Member detail editing and PIN access repair
 
 - Reworked `/owner/members/[memberId]` hero contact details into a separate right-side list with username, email, and phone visible at a glance.

@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import type {
   ActivityEvent,
   AttendanceRecord,
@@ -297,7 +298,7 @@ export async function getRoleSummary(): Promise<{
   }
 }
 
-export async function getMembers(gymId?: string): Promise<{
+async function getMembersUncached(gymId?: string): Promise<{
   members: Member[];
   isPersisted: boolean;
 }> {
@@ -410,7 +411,7 @@ export async function getMemberDetail(memberId: string): Promise<{
   return { member, isPersisted: true };
 }
 
-export async function getExerciseCatalog(gymId?: string): Promise<{
+async function getExerciseCatalogUncached(gymId?: string): Promise<{
   exercises: Exercise[];
   catalog: Array<{ muscleGroup: MuscleGroup; exercises: Exercise[] }>;
   isPersisted: boolean;
@@ -641,7 +642,7 @@ export async function getMemberNotifications(memberId: string): Promise<{
   }
 }
 
-export async function getWorkoutPrograms(gymId?: string): Promise<{
+async function getWorkoutProgramsUncached(gymId?: string): Promise<{
   programs: WorkoutProgram[];
   isPersisted: boolean;
 }> {
@@ -1278,9 +1279,9 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
     { exercises }
   ] = await Promise.all([
     getActiveProgramAssignments(gymId),
-    getMembers(gymId),
-    getWorkoutPrograms(gymId),
-    getExerciseCatalog(gymId)
+    getMembersUncached(gymId),
+    getWorkoutProgramsUncached(gymId),
+    getExerciseCatalogUncached(gymId)
   ]);
 
   // 2. Fetch all profiles to find slots for members
@@ -1375,3 +1376,27 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
 
   return { slots };
 }
+
+// ─── Cached exports ──────────────────────────────────────────────────────────
+// These wrap the heavy read functions in Next.js unstable_cache so repeat reads
+// across navigations / users in the same gym hit RAM instead of Firestore.
+// 60s TTL is a safety net; server actions that mutate this data call
+// revalidateTag() to bust the relevant cache immediately.
+
+export const getMembers = unstable_cache(
+  getMembersUncached,
+  ["read:getMembers"],
+  { tags: ["members", "gym-data"], revalidate: 60 }
+);
+
+export const getExerciseCatalog = unstable_cache(
+  getExerciseCatalogUncached,
+  ["read:getExerciseCatalog"],
+  { tags: ["exercises", "gym-data"], revalidate: 300 }
+);
+
+export const getWorkoutPrograms = unstable_cache(
+  getWorkoutProgramsUncached,
+  ["read:getWorkoutPrograms"],
+  { tags: ["programs", "gym-data"], revalidate: 120 }
+);

@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
@@ -133,10 +133,19 @@ function getActionFormData(
 }
 
 function success(message: string): FormActionState {
+  // Any successful mutation invalidates the gym-scoped data cache so the next
+  // read pulls fresh data from Firestore. Cheap call — only flips a flag.
+  try {
+    revalidateTag("gym-data");
+  } catch {
+    // revalidateTag is a noop outside a request context (e.g. tests); ignore
+  }
   return { status: "success", message };
 }
 
 function failure(error: unknown, fallback: string): FormActionState {
+  // redirect() throws Error("NEXT_REDIRECT") — let it propagate so Next.js can actually redirect.
+  if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
   return {
     status: "error",
     message: error instanceof Error ? error.message : fallback
@@ -2210,7 +2219,7 @@ export async function updateCustomWorkoutProgram(
     const title = requireText(formData, "title", "Program title");
     const now = new Date().toISOString();
 
-    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string };
+    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string; entrySets?: number[]; entryReps?: string[] };
     const daysJson = String(formData.get("days") ?? "").trim();
     let dayInputs: DayInput[];
 
@@ -2235,8 +2244,8 @@ export async function updateCustomWorkoutProgram(
           exercises: resolvedIds.map((exerciseId, idx) => ({
             exerciseId,
             sortOrder: idx + 1,
-            sets: dayInput.sets ?? 3,
-            reps: dayInput.reps ?? "8-12",
+            sets: dayInput.entrySets?.[idx] ?? dayInput.sets ?? 3,
+            reps: dayInput.entryReps?.[idx] ?? dayInput.reps ?? "8-12",
             restSeconds: Number(formData.get("restSeconds") ?? 75)
           }))
         };
@@ -2544,7 +2553,7 @@ export async function createCustomWorkoutProgram(
 
     // Multi-day support: builder serialises days as JSON in the "days" field.
     // Fall back to single-day for backward compat.
-    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string };
+    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string; entrySets?: number[]; entryReps?: string[] };
     let dayInputs: DayInput[];
 
     const daysJson = String(formData.get("days") ?? "").trim();
@@ -2583,8 +2592,8 @@ export async function createCustomWorkoutProgram(
           exercises: resolvedIds.map((exerciseId, idx) => ({
             exerciseId,
             sortOrder: idx + 1,
-            sets: dayInput.sets ?? 3,
-            reps: dayInput.reps ?? "8-12",
+            sets: dayInput.entrySets?.[idx] ?? dayInput.sets ?? 3,
+            reps: dayInput.entryReps?.[idx] ?? dayInput.reps ?? "8-12",
             restSeconds: Number(formData.get("restSeconds") ?? 75)
           }))
         };
@@ -2613,5 +2622,137 @@ export async function createCustomWorkoutProgram(
   } catch (error) {
     console.error("Unable to create custom workout program", error);
     return failure(error, "Unable to save custom plan. Please try again.");
+  }
+}
+
+export async function createAndAssignCustomProgram(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireRole(["admin", "owner"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+
+    const memberId = requireText(formData, "memberId", "Member");
+    const memberName = String(formData.get("memberName") ?? "Member").trim();
+    const title = requireText(formData, "title", "Program title");
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const programId = randomUUID();
+    const assignmentId = randomUUID();
+    const notificationId = randomUUID();
+    const activityId = randomUUID();
+    const now = new Date().toISOString();
+
+    // Parse days JSON (same format as createCustomWorkoutProgram)
+    type DayInput = { title: string; exerciseIds: string[]; sets: number; reps: string; entrySets?: number[]; entryReps?: string[] };
+    const daysJson = String(formData.get("days") ?? "").trim();
+    let dayInputs: DayInput[];
+    try {
+      dayInputs = JSON.parse(daysJson);
+    } catch {
+      throw new Error("Invalid days format.");
+    }
+    if (!dayInputs.length) throw new Error("A plan must have at least one day.");
+
+    const totalExercises = dayInputs.reduce((sum, d) => sum + d.exerciseIds.length, 0);
+    if (totalExercises === 0) throw new Error("Add at least one exercise before saving.");
+
+    const days = await Promise.all(
+      dayInputs.map(async (dayInput, i) => {
+        const resolvedIds = await Promise.all(
+          dayInput.exerciseIds.map((id) => resolveExerciseRecordId(id))
+        );
+        return {
+          id: randomUUID(),
+          title: dayInput.title || `Day ${i + 1}`,
+          dayNumber: i + 1,
+          focus: "Member-specific custom plan",
+          exercises: resolvedIds.map((exerciseId, idx) => ({
+            exerciseId,
+            sortOrder: idx + 1,
+            sets: dayInput.entrySets?.[idx] ?? dayInput.sets ?? 3,
+            reps: dayInput.entryReps?.[idx] ?? dayInput.reps ?? "8-12",
+            restSeconds: Number(formData.get("restSeconds") ?? 75)
+          }))
+        };
+      })
+    );
+
+    // 1. Save the program to the gym's library so it appears on /owner/programs too
+    await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
+      id: programId,
+      gymId,
+      title,
+      description: String(formData.get("description") ?? "").trim() || `Custom plan built for ${memberName}`,
+      goal: String(formData.get("goal") ?? "Custom training").trim(),
+      difficulty: String(formData.get("difficulty") ?? "intermediate"),
+      daysPerWeek: days.length,
+      splitType: "custom",
+      isActive: true,
+      createdBy: currentUser.uid,
+      days,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    // 2. Cancel any existing active assignments for this member
+    const existing = await db
+      .collection(collectionPaths.programAssignments)
+      .where("gymId", "==", gymId)
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .get();
+    await Promise.all(
+      existing.docs.map((doc) => doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true }))
+    );
+
+    // 3. Create the assignment
+    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set({
+      id: assignmentId,
+      gymId,
+      memberId,
+      programId,
+      assignedAt: now,
+      status: "active",
+      createdBy: currentUser.uid,
+      createdAt: now,
+      updatedAt: now
+    });
+
+    // 4. Notify the member
+    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+      id: notificationId,
+      recipientRole: "member",
+      recipientId: memberId,
+      gymId,
+      type: "program_assigned",
+      title: "Workout program assigned",
+      body: `${title} is now available in your weekly schedule.`,
+      createdAt: now
+    });
+
+    // 5. Activity log
+    await db.collection(collectionPaths.activityEvents).doc(activityId).set({
+      id: activityId,
+      gymId,
+      audience: "owner",
+      title: `Custom program assigned — ${title}`,
+      detail: `${memberName} was assigned a custom ${days.length}-day plan.`,
+      icon: "dumbbell",
+      createdAt: now
+    });
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/owner/programs");
+    revalidatePath("/member");
+    revalidatePath("/activity");
+
+    return success(`${title} was created and assigned to ${memberName}.`);
+  } catch (error) {
+    console.error("Unable to create and assign custom program", error);
+    return failure(error, "Unable to create custom workout. Please try again.");
   }
 }
