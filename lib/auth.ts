@@ -224,12 +224,18 @@ async function getProfileById(uid: string) {
   if (legacyDoc.exists) {
     return toProfile(legacyDoc.id, legacyDoc.data());
   }
-  const [memberSnapshot, staffSnapshot] = await Promise.all([
-    db.collectionGroup("members").where("id", "==", uid).limit(1).get(),
-    db.collectionGroup("staff").where("id", "==", uid).limit(1).get()
-  ]);
-  const scopedDoc = memberSnapshot.docs[0] ?? staffSnapshot.docs[0];
-  return scopedDoc ? toProfile(scopedDoc.id, scopedDoc.data()) : null;
+  // Collection-group queries require collection-group-scope indexes. Guard with
+  // try/catch so a missing or still-building index doesn't crash the login path.
+  try {
+    const [memberSnapshot, staffSnapshot] = await Promise.all([
+      db.collectionGroup("members").where("id", "==", uid).limit(1).get(),
+      db.collectionGroup("staff").where("id", "==", uid).limit(1).get()
+    ]);
+    const scopedDoc = memberSnapshot.docs[0] ?? staffSnapshot.docs[0];
+    return scopedDoc ? toProfile(scopedDoc.id, scopedDoc.data()) : null;
+  } catch {
+    return null;
+  }
 }
 
 async function getProfileByEmail(email: string) {
@@ -521,6 +527,15 @@ export async function createLocalDemoSession(
 }
 
 export async function loginWithCredentials(formData: FormData) {
+  try {
+    return await _loginWithCredentials(formData);
+  } catch (error) {
+    console.error("[auth] loginWithCredentials unhandled error:", error);
+    return { status: "error" as const, message: "Unable to sign in. Please try again." };
+  }
+}
+
+async function _loginWithCredentials(formData: FormData) {
   const identifier = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "").trim();
   const mode = String(formData.get("mode") ?? "member") as "member" | "staff";
