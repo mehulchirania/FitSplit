@@ -100,7 +100,8 @@ export function ExerciseList({
           const exercise = exercises.find((e) => e.id === item.exerciseId);
           if (!exercise) return null;
 
-          const hasTutorial = Boolean(exercise.videoUrl);
+          // Only show tutorial when the gym owner hasn't hidden it
+          const hasTutorial = Boolean(exercise.videoUrl) && exercise.showTutorial !== false;
           const hasDemo = Boolean(exercise.gymVideoUrl);
 
           return (
@@ -146,10 +147,10 @@ export function ExerciseList({
                   <button
                     className="exercise-video-button exercise-video-button--demo"
                     onClick={() => setActiveVideo({ exercise, type: "demo" })}
-                    title="SHG Gym demo"
+                    title="Gym demo video"
                     type="button"
                   >
-                    <Video /> SHG Gym
+                    <Video /> Gym video
                   </button>
                 )}
               </div>

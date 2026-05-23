@@ -2951,6 +2951,78 @@ export async function resetExerciseVideos(
   }
 }
 
+/**
+ * Toggle the DeltaBolic/TylerPath tutorial visibility for a single exercise.
+ * Owner-only — updates (or creates) the gym-scoped exerciseCatalog doc.
+ */
+export async function setExerciseTutorialVisibility(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
+    const showTutorial = formData.get("showTutorial") === "true";
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+
+    await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(
+      { showTutorial, updatedAt: new Date().toISOString() },
+      { merge: true }
+    );
+
+    revalidatePath("/owner/exercises");
+    revalidatePath("/member");
+    revalidatePath("/member/exercises");
+    return success(showTutorial ? "Tutorial enabled for members." : "Tutorial hidden from members.");
+  } catch (error) {
+    return failure(error, "Unable to update tutorial visibility.");
+  }
+}
+
+/**
+ * Bulk-set tutorial visibility for every exercise in a muscle group.
+ * Caller passes a comma-separated list of exerciseIds (from the server-rendered page).
+ */
+export async function setMuscleGroupTutorialVisibility(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const db = requireFirebase();
+    const showTutorial = formData.get("showTutorial") === "true";
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const exerciseIds = String(formData.get("exerciseIds") ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    if (exerciseIds.length === 0) return success("Nothing to update.");
+
+    const now = new Date().toISOString();
+    const batch = db.batch();
+    for (const exerciseId of exerciseIds) {
+      const ref = scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId);
+      batch.set(ref, { showTutorial, updatedAt: now }, { merge: true });
+    }
+    await batch.commit();
+
+    revalidatePath("/owner/exercises");
+    revalidatePath("/member");
+    revalidatePath("/member/exercises");
+    return success(
+      showTutorial
+        ? "Tutorials enabled for this group."
+        : "Tutorials hidden for this group."
+    );
+  } catch (error) {
+    return failure(error, "Unable to update tutorial visibility.");
+  }
+}
+
 export async function addGymNotice(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData

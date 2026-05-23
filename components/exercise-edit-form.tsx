@@ -65,10 +65,13 @@ export function ExerciseEditForm({
   action,
   exercise,
   isCreate = false,
+  isOwner = false,
 }: {
   action: FormAction;
   exercise?: Exercise;
   isCreate?: boolean;
+  /** When true the form shows only gym-video + basic fields; tutorial URLs are read-only. */
+  isOwner?: boolean;
 }) {
   // ── equipment multi-select ────────────────────────────────────────────────
   const initialEquipment = splitEquipment(exercise?.equipment ?? "");
@@ -200,48 +203,98 @@ export function ExerciseEditForm({
       {/* ── Section: Videos ──────────────────────────────────────────── */}
       <div className="exercise-form-section">
         <h4 className="exercise-form-section-title">Videos</h4>
-        <p className="exercise-form-section-hint">
-          Add up to two videos — one tutorial (DeltaBolic/TylerPath) and one gym demo (SHG Gym).
-          The first DeltaBolic or TylerPath entry maps to the tutorial button; the SHG entry maps to the gym demo button.
-        </p>
 
-        <div className="video-entries">
-          {videos.map((entry, i) => (
-            <div className="video-entry-card" key={i}>
-              <div className="video-entry-header">
-                <select
-                  className="video-channel-select"
-                  onChange={(e) => updateVideo(i, "channel", e.target.value)}
-                  value={entry.channel}
-                >
-                  {VIDEO_CHANNELS.map((ch) => (
-                    <option key={ch.value} value={ch.value}>{ch.label}</option>
-                  ))}
-                </select>
-                <button
-                  className="video-entry-remove"
-                  onClick={() => removeVideo(i)}
-                  title="Remove this video"
-                  type="button"
-                >
-                  ✕
-                </button>
-              </div>
+        {isOwner ? (
+          /* Owner: only the gym-specific video is editable */
+          <>
+            <p className="exercise-form-section-hint">
+              Paste a link to your gym&apos;s own demo video for this exercise.
+              Members will see a &ldquo;Gym video&rdquo; button when a URL is set.
+            </p>
+
+            {/* Gym video URL — owner editable */}
+            <label>
+              Gym video URL
               <input
                 className="video-entry-url"
-                onChange={(e) => updateVideo(i, "url", e.target.value)}
+                onChange={(e) =>
+                  setVideos((prev) => {
+                    const shgIdx = prev.findIndex((v) => v.channel === "shg");
+                    if (shgIdx >= 0) {
+                      return prev.map((v, i) => (i === shgIdx ? { ...v, url: e.target.value } : v));
+                    }
+                    return [{ channel: "shg", url: e.target.value }];
+                  })
+                }
                 placeholder="https://www.youtube.com/shorts/..."
                 type="url"
-                value={entry.url}
+                value={shgEntry?.url ?? ""}
               />
-            </div>
-          ))}
-        </div>
+            </label>
 
-        {videos.length < 4 && (
-          <button className="video-add-btn" onClick={addVideo} type="button">
-            + Add video
-          </button>
+            {/* Tutorial video — read-only reference */}
+            {exercise?.videoUrl && (
+              <div className="tutorial-readonly-row">
+                <span className="tutorial-readonly-label">Tutorial (DeltaBolic / TylerPath)</span>
+                <a
+                  className="tutorial-readonly-url"
+                  href={exercise.videoUrl}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  {exercise.videoUrl}
+                </a>
+                <span className="tutorial-readonly-note">Managed by admin — use the toggle to show/hide for members.</span>
+              </div>
+            )}
+          </>
+        ) : (
+          /* Admin: full multi-channel video management */
+          <>
+            <p className="exercise-form-section-hint">
+              Add up to four video entries — the first DeltaBolic or TylerPath entry maps to the
+              tutorial button; the SHG entry maps to the gym demo button.
+            </p>
+
+            <div className="video-entries">
+              {videos.map((entry, i) => (
+                <div className="video-entry-card" key={i}>
+                  <div className="video-entry-header">
+                    <select
+                      className="video-channel-select"
+                      onChange={(e) => updateVideo(i, "channel", e.target.value)}
+                      value={entry.channel}
+                    >
+                      {VIDEO_CHANNELS.map((ch) => (
+                        <option key={ch.value} value={ch.value}>{ch.label}</option>
+                      ))}
+                    </select>
+                    <button
+                      className="video-entry-remove"
+                      onClick={() => removeVideo(i)}
+                      title="Remove this video"
+                      type="button"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  <input
+                    className="video-entry-url"
+                    onChange={(e) => updateVideo(i, "url", e.target.value)}
+                    placeholder="https://www.youtube.com/shorts/..."
+                    type="url"
+                    value={entry.url}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {videos.length < 4 && (
+              <button className="video-add-btn" onClick={addVideo} type="button">
+                + Add video
+              </button>
+            )}
+          </>
         )}
       </div>
 

@@ -524,6 +524,7 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
       source: (data.source === "custom" || data.source === "gym" || data.scope === "custom")
         ? "custom"
         : hasDefaultExercise ? "predefined" : "custom",
+      showTutorial: data.showTutorial !== false,
       skipDefaultOverride: isMirroredDefault && hasDefaultExercise
     };
   });
@@ -535,7 +536,7 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
   // Mock exercises never carry gym-specific demo videos — strip gymVideoUrl so one
   // gym's demo footage is never visible to another gym's users.
   const exercisesByName = new Map<string, Exercise>();
-  mockExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), { ...ex, gymVideoUrl: "", gymVideoSource: "none", source: "predefined" as const }));
+  mockExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), { ...ex, gymVideoUrl: "", gymVideoSource: "none", source: "predefined" as const, showTutorial: true }));
   persistedExercises.forEach((ex) => {
     if (ex.skipDefaultOverride && exercisesByName.has(ex.name.toLowerCase().trim())) {
       return;

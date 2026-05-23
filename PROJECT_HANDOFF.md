@@ -2499,3 +2499,98 @@ Verification:
 npm run typecheck
 npm run build
 ```
+
+## Latest Update - 2026-05-23: Dev/prod deployment plan and Firebase Functions roadmap
+
+### Desired release flow
+
+Use separate branches and separate deploy targets:
+
+```text
+feature branch
+  -> PR into develop
+  -> auto deploy to dev.fitsplit.in
+  -> test on dev
+  -> PR/merge develop into main
+  -> auto deploy to fitsplit.in
+```
+
+Recommended setup:
+
+- Production Firebase project/backend: current prod project, live branch `main`, custom domain `fitsplit.in`.
+- Development Firebase project/backend: separate Firebase project or separate App Hosting backend, live branch `develop`, custom domain `dev.fitsplit.in`.
+- Prefer a separate Firebase dev project so test Auth, Firestore, Storage, Functions, and seed data cannot affect real members.
+- Protect `main` in GitHub and require PR + passing checks before merge.
+- Protect `develop` if desired, but keep it as the integration branch for dev deployments.
+- Keep environment variables/secrets separate per environment.
+
+### Firebase Functions migration idea
+
+Move high-trust write operations out of Next server actions and into Firebase Cloud Functions gradually. The Next app can keep UI/server rendering, while Functions become the secure backend API and event processor.
+
+Suggested function groups:
+
+1. **Auth and access**
+   - `createMemberAccount`
+   - `createStaffAccount`
+   - `resetMemberPin`
+   - `resetStaffPassword`
+   - `setGymAccessStatus`
+   - `syncCustomClaims`
+
+2. **Gym admin**
+   - `createGym`
+   - `updateGym`
+   - `archiveGym`
+   - `restoreArchivedRecord`
+   - `purgeExpiredArchives` or Firestore TTL on `archives.retentionExpiresAt`
+
+3. **Members**
+   - `createMember`
+   - `updateMember`
+   - `archiveMember`
+   - `toggleMemberAccess`
+   - `updateMemberMetrics`
+   - `updateMedicalAndInjuryNotes`
+
+4. **Workout catalog and programs**
+   - `createCustomExercise`
+   - `updateCustomExercise`
+   - `adminUpdateDefaultExercise`
+   - `createCustomProgram`
+   - `updateCustomProgram`
+   - `archiveCustomProgram`
+   - `assignProgramToMember`
+
+5. **AI**
+   - `generateProgramDraft`
+   - `assignAiProgram`
+   - `suggestExerciseSubstitutionsForInjury`
+   - `optimizeScheduleForMachineOccupancy`
+   - `generateOwnerMachineUsageForecast`
+
+6. **Activity, notifications, and inbox**
+   - `createContactMessage`
+   - `markMessageRead`
+   - `createNotification`
+   - `clearNotifications`
+   - Firestore triggers for activity events and unread badges.
+
+7. **Logs and progress**
+   - `logLiftSet`
+   - `logBodyWeight`
+   - `logWorkoutDayStatus`
+   - `syncOfflineLiftLogs`
+
+8. **Scheduled jobs**
+   - Daily archive cleanup check.
+   - Daily reminder/notification generation.
+   - Weekly owner report: member adherence, muscle/machine demand, members needing plans.
+
+Migration approach:
+
+- Phase 1: Add `functions/` TypeScript workspace and implement callable HTTPS functions for the riskiest writes: create/delete member, assign program, delete/archive gym/program, reset PIN/password.
+- Phase 2: Change Next server actions into thin wrappers that call Functions.
+- Phase 3: Move event-based side effects into Firestore triggers, e.g. when `programAssignments` is created, automatically create notification/activity records.
+- Phase 4: Harden Firestore rules so clients and Next pages cannot bypass Functions for privileged writes.
+- Phase 5: Split dev/prod Firebase projects and deploy Functions independently per environment.

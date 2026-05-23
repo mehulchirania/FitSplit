@@ -91,6 +91,11 @@ export type Exercise = {
   ownerOnly: boolean;
   /** "predefined" = FitSplit default catalog; "custom" = gym-created or gym-overridden */
   source?: "predefined" | "custom";
+  /**
+   * Owner-controlled visibility of the DeltaBolic/TylerPath tutorial for members.
+   * Defaults to true. When false the tutorial button is hidden on the member dashboard.
+   */
+  showTutorial?: boolean;
 };
 
 export type WorkoutExercise = {

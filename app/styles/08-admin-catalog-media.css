@@ -1012,3 +1012,143 @@
   line-height: 1.5;
   margin: 0;
 }
+
+/* ── Tutorial toggle switch ────────────────────────────────────────────────── */
+.toggle-track {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  display: inline-block;
+  flex-shrink: 0;
+  height: 18px;
+  position: relative;
+  transition: background 160ms, border-color 160ms;
+  width: 32px;
+}
+.toggle-thumb {
+  background: var(--text-faint);
+  border-radius: 999px;
+  height: 12px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: left 160ms, background 160ms;
+  width: 12px;
+}
+
+/* Per-exercise toggle */
+.tutorial-toggle-btn {
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 4px 6px;
+  transition: background 120ms;
+}
+.tutorial-toggle-btn:hover {
+  background: var(--bg-subtle);
+}
+.tutorial-toggle-btn .toggle-label {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.tutorial-toggle-btn.is-on .toggle-track {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
+}
+.tutorial-toggle-btn.is-on .toggle-thumb {
+  background: var(--brand);
+  left: 16px;
+}
+.tutorial-toggle-btn.is-on .toggle-label {
+  color: var(--brand-strong);
+}
+.tutorial-toggle-btn.is-pending {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* Per-group master toggle */
+.group-tutorial-toggle {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 6px;
+  padding: 3px 10px 3px 6px;
+  transition: background 120ms, border-color 120ms;
+}
+.group-tutorial-toggle:hover {
+  background: var(--bg-subtle);
+  border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
+}
+.group-tutorial-toggle .toggle-label {
+  color: var(--text-faint);
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.group-tutorial-toggle.is-on {
+  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
+}
+.group-tutorial-toggle.is-on .toggle-track {
+  background: color-mix(in srgb, var(--brand) 22%, transparent);
+  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
+}
+.group-tutorial-toggle.is-on .toggle-thumb {
+  background: var(--brand);
+  left: 16px;
+}
+.group-tutorial-toggle.is-on .toggle-label {
+  color: var(--brand-strong);
+}
+.group-tutorial-toggle.is-pending {
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* ── Tutorial read-only display inside owner edit form ─────────────────────── */
+.tutorial-readonly-row {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-left: 3px solid color-mix(in srgb, var(--brand) 50%, var(--border));
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 4px;
+  padding: 10px 12px;
+}
+.tutorial-readonly-label {
+  color: var(--text-soft);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.tutorial-readonly-url {
+  color: var(--brand);
+  font-size: 0.8rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tutorial-readonly-note {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  font-style: italic;
+  margin-top: 2px;
+}
