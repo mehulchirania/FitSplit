@@ -244,14 +244,28 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
 
 async function getProfileById(uid: string) {
   const { db } = getFirebaseAdminServices();
-  const doc = await db.collection(collectionPaths.profiles).doc(uid).get();
-  return doc.exists ? toProfile(doc.id, doc.data()) : null;
+  const doc = await db.collection(collectionPaths.authProfiles).doc(uid).get();
+  if (doc.exists) {
+    return toProfile(doc.id, doc.data());
+  }
+  const legacyDoc = await db.collection(collectionPaths.profiles).doc(uid).get();
+  if (legacyDoc.exists) {
+    return toProfile(legacyDoc.id, legacyDoc.data());
+  }
+  const [memberSnapshot, staffSnapshot] = await Promise.all([
+    db.collectionGroup("members").where("id", "==", uid).limit(1).get(),
+    db.collectionGroup("staff").where("id", "==", uid).limit(1).get()
+  ]);
+  const scopedDoc = memberSnapshot.docs[0] ?? staffSnapshot.docs[0];
+  return scopedDoc ? toProfile(scopedDoc.id, scopedDoc.data()) : null;
 }
 
 async function getProfileByEmail(email: string) {
   const { db } = getFirebaseAdminServices();
   const normalizedEmail = email.trim().toLowerCase();
   const queries = await Promise.all([
+    db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
+    db.collection(collectionPaths.authProfiles).where("email", "==", normalizedEmail).limit(1).get(),
     db.collection(collectionPaths.profiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
     db.collection(collectionPaths.profiles).where("email", "==", normalizedEmail).limit(1).get()
   ]);
@@ -283,13 +297,24 @@ async function resolveProfileForIdentifier(identifier: string) {
   for (const field of ["username", "authEmail", "email", "phone"] as const) {
     for (const key of keys) {
       const snapshot = await db
-        .collection(collectionPaths.profiles)
+        .collection(collectionPaths.authProfiles)
         .where(field, "==", field.includes("email") ? key.toLowerCase() : key)
         .limit(1)
         .get();
 
       if (!snapshot.empty) {
         const doc = snapshot.docs[0];
+        return toProfile(doc.id, doc.data());
+      }
+
+      const legacySnapshot = await db
+        .collection(collectionPaths.profiles)
+        .where(field, "==", field.includes("email") ? key.toLowerCase() : key)
+        .limit(1)
+        .get();
+
+      if (!legacySnapshot.empty) {
+        const doc = legacySnapshot.docs[0];
         return toProfile(doc.id, doc.data());
       }
     }
@@ -385,7 +410,7 @@ async function findProfileRefByEmail(email: string) {
   // Check authEmail first (most common), then fall back to email.
   for (const field of ["authEmail", "email"] as const) {
     const snap = await db
-      .collection(collectionPaths.profiles)
+      .collection(collectionPaths.authProfiles)
       .where(field, "==", normalized)
       .limit(1)
       .get();

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/types/domain";
-import { Activity, Dumbbell, Mail, Settings, UserRound, UsersRound } from "@/components/icons";
+import { Activity, Calendar, Dumbbell, Mail, Settings, UserRound, UsersRound } from "@/components/icons";
 
 function linksForRole(role: Role) {
   if (role === "admin") {
@@ -20,8 +20,8 @@ function linksForRole(role: Role) {
     return [
       { href: "/owner", label: "Home", icon: Dumbbell },
       { href: "/owner/members", label: "Members", icon: UsersRound },
+      { href: "/owner/training", label: "Training", icon: Calendar },
       { href: "/owner/programs", label: "Plans", icon: Dumbbell },
-      { href: "/activity", label: "Activity", icon: Activity },
       { href: "/profile", label: "Profile", icon: UserRound }
     ];
   }
@@ -29,6 +29,7 @@ function linksForRole(role: Role) {
   return [
     { href: "/member", label: "Workout", icon: Dumbbell },
     { href: "/member/history", label: "History", icon: Activity },
+    { href: "/member/pt-history", label: "PT", icon: Calendar },
     { href: "/activity", label: "Feed", icon: Activity },
     { href: "/profile", label: "Profile", icon: UserRound }
   ];

@@ -167,7 +167,9 @@ export function AppTopbar({
                 <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
               </span>
             )}
-            <strong style={{ fontSize: "1.15rem", letterSpacing: "-0.01em" }}>FitSplit</strong>
+            <strong className={gymLogoUrl ? "brand-wordmark brand-wordmark--with-gym" : "brand-wordmark"}>
+              FitSplit
+            </strong>
           </Link>
         </div>
 
@@ -320,6 +322,9 @@ export function AppTopbar({
                   <Link href="/owner/members" onClick={() => setIsDrawerOpen(false)}>
                     Members
                   </Link>
+                  <Link href="/owner/training" onClick={() => setIsDrawerOpen(false)}>
+                    Training
+                  </Link>
                   <Link href="/owner/programs" onClick={() => setIsDrawerOpen(false)}>
                     Programs
                   </Link>
@@ -332,6 +337,12 @@ export function AppTopbar({
                 <>
                   <Link href="/member" onClick={() => setIsDrawerOpen(false)}>
                     Dashboard
+                  </Link>
+                  <Link href="/member/history" onClick={() => setIsDrawerOpen(false)}>
+                    Workout history
+                  </Link>
+                  <Link href="/member/pt-history" onClick={() => setIsDrawerOpen(false)}>
+                    PT Sessions
                   </Link>
                   <Link href="/member/exercises" onClick={() => setIsDrawerOpen(false)}>
                     Exercise Library

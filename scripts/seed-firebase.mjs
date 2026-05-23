@@ -46,6 +46,34 @@ initializeApp({ credential });
 
 const db = getFirestore();
 
+function authProfilePayload(profile) {
+  return {
+    id: profile.id,
+    authUid: profile.authUid ?? profile.id,
+    fullName: profile.fullName ?? "",
+    email: profile.email ?? "",
+    authEmail: profile.authEmail ?? profile.email ?? "",
+    username: profile.username ?? "",
+    phone: profile.phone ?? "",
+    role: profile.role,
+    staffType: profile.staffType ?? null,
+    defaultGymId: profile.defaultGymId ?? profile.gymId ?? gymId,
+    gymId: profile.gymId ?? profile.defaultGymId ?? gymId,
+    isActive: profile.isActive !== false,
+    mustChangePassword: profile.mustChangePassword ?? false,
+    authIndexOnly: true,
+    updatedAt: profile.updatedAt ?? new Date().toISOString()
+  };
+}
+
+async function setProfile(profile) {
+  const collection = profile.role === "member" ? "members" : "staff";
+  await db.collection("authProfiles").doc(profile.id).set(authProfilePayload(profile), { merge: true });
+  await db.collection("gyms").doc(profile.defaultGymId ?? gymId).collection(collection).doc(profile.id).set(profile, {
+    merge: true
+  });
+}
+
 async function seedWorkspace() {
   await db.collection("gyms").doc(gymId).set(
     {
@@ -60,8 +88,7 @@ async function seedWorkspace() {
     { merge: true }
   );
 
-  await db.collection("profiles").doc(ownerId).set(
-    {
+  await setProfile({
       id: ownerId,
       fullName: "Santosh SHG",
       email: "santosh-shg@fitsplit.app",
@@ -72,9 +99,7 @@ async function seedWorkspace() {
       defaultGymId: gymId,
       isActive: true,
       updatedAt: new Date().toISOString()
-    },
-    { merge: true }
-  );
+    });
 
   const trainers = [
     {
@@ -94,8 +119,7 @@ async function seedWorkspace() {
   ];
 
   for (const trainer of trainers) {
-    await db.collection("profiles").doc(trainer.id).set(
-      {
+    await setProfile({
         ...trainer,
         authEmail: trainer.email.toLowerCase(),
         role: "owner",
@@ -103,14 +127,14 @@ async function seedWorkspace() {
         defaultGymId: gymId,
         isActive: true,
         updatedAt: new Date().toISOString()
-      },
-      { merge: true }
-    );
+      });
   }
 }
 
 async function getOrCreateExercise(muscleGroup, exercise) {
   const existing = await db
+    .collection("gyms")
+    .doc(gymId)
     .collection("exerciseCatalog")
     .where("gymId", "==", gymId)
     .where("name", "==", exercise.name)
@@ -123,7 +147,7 @@ async function getOrCreateExercise(muscleGroup, exercise) {
 
   const id = randomUUID();
   const now = new Date().toISOString();
-  await db.collection("exerciseCatalog").doc(id).set({
+  await db.collection("gyms").doc(gymId).collection("exerciseCatalog").doc(id).set({
     id,
     gymId,
     name: exercise.name,
@@ -165,6 +189,8 @@ function splitTypeFor(split) {
 async function seedSplitTemplates(exerciseIdMap) {
   for (const split of workoutsData.training_splits) {
     const existing = await db
+      .collection("gyms")
+      .doc(gymId)
       .collection("workoutPrograms")
       .where("gymId", "==", gymId)
       .where("title", "==", split.name)
@@ -194,7 +220,7 @@ async function seedSplitTemplates(exerciseIdMap) {
         }))
     }));
 
-    await db.collection("workoutPrograms").doc(id).set({
+    await db.collection("gyms").doc(gymId).collection("workoutPrograms").doc(id).set({
       id,
       gymId,
       title: split.name,
@@ -210,7 +236,7 @@ async function seedSplitTemplates(exerciseIdMap) {
       updatedAt: now
     });
 
-    await db.collection("workoutSplitTemplates").doc(randomUUID()).set({
+    await db.collection("gyms").doc(gymId).collection("workoutSplitTemplates").doc(randomUUID()).set({
       gymId,
       name: split.name,
       splitType: splitTypeFor(split),
@@ -230,4 +256,3 @@ const exerciseIdMap = await seedExercises();
 await seedSplitTemplates(exerciseIdMap);
 
 console.log("Firebase seed complete for Sri Shakthi Hanuman Gym.");
-

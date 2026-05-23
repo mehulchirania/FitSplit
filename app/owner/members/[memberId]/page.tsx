@@ -2,7 +2,8 @@
 import { AiProgramBrief } from "@/components/ai-program-brief";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { Activity, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
+import Link from "next/link";
+import { Activity, Calendar, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
 import { MemberContextEditor } from "@/components/member-context-editor";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
@@ -19,6 +20,8 @@ import {
   getMemberDetail,
   getProfileMetrics,
   getProgramAssignmentForMember,
+  getPTSessionsForMember,
+  getTrainersForGym,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
 
@@ -52,14 +55,18 @@ export default async function MemberDetailPage({
     { programs },
     { exercises, catalog },
     { profile },
-    { liftLogs }
+    { liftLogs },
+    trainers,
+    ptSessions
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
     getWorkoutPrograms(currentUser.gymId),
     getExerciseCatalog(currentUser.gymId),
     getProfileMetrics(memberId),
-    getLiftLogsForMember(memberId)
+    getLiftLogsForMember(memberId),
+    getTrainersForGym(currentUser.gymId),
+    getPTSessionsForMember(currentUser.gymId, memberId)
   ]);
 
   if (!member) notFound();
@@ -153,6 +160,10 @@ export default async function MemberDetailPage({
             <strong>{profile.assignedTrainer || "Unassigned"}</strong>
             <span>Trainer</span>
           </div>
+          <div className="mpd-metric">
+            <strong>{ptSessions.filter((s) => s.status === "scheduled" || s.status === "active").length}</strong>
+            <span>PT upcoming</span>
+          </div>
         </div>
       </section>
 
@@ -179,7 +190,7 @@ export default async function MemberDetailPage({
             </div>
           )}
 
-          <MemberContextEditor bmi={bmi} member={member} profile={profile} />
+          <MemberContextEditor bmi={bmi} member={member} profile={profile} trainers={trainers} />
         </section>
 
         <aside className="mpd-side-stack">
@@ -297,6 +308,45 @@ export default async function MemberDetailPage({
                 />
               </label>
             </ConfirmActionForm>
+          </section>
+
+          {/* PT Sessions mini-panel */}
+          <section className="form-panel">
+            <div className="panel-title" style={{ marginBottom: 12 }}>
+              <div>
+                <p className="eyebrow">Personal training</p>
+                <h2><Calendar /> PT Sessions</h2>
+              </div>
+              <Link className="button button-secondary" href={`/owner/training?memberId=${member.id}`} style={{ fontSize: "0.82rem", padding: "6px 12px" }}>
+                Book session
+              </Link>
+            </div>
+            {ptSessions.length === 0 ? (
+              <p style={{ color: "var(--text-soft)", fontSize: "0.85rem" }}>No PT sessions yet.</p>
+            ) : (
+              <ul className="pt-session-mini-list">
+                {ptSessions.slice(0, 5).map((s) => (
+                  <li key={s.id} className="pt-session-mini-row">
+                    <div className="pt-mini-info">
+                      <span className="pt-mini-trainer">{s.trainerName ?? "Trainer"}</span>
+                      <span className="pt-mini-date">
+                        {new Date(s.scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                      </span>
+                    </div>
+                    <span className={`status-pill ${s.status === "active" ? "status-active" : s.status === "completed" ? "status-neutral" : s.status === "cancelled" ? "status-inactive" : "status-expiring"}`}>
+                      {s.status}
+                    </span>
+                  </li>
+                ))}
+                {ptSessions.length > 5 && (
+                  <li style={{ padding: "8px 0", textAlign: "center" }}>
+                    <Link href={`/owner/training?memberId=${member.id}`} style={{ fontSize: "0.82rem", color: "var(--brand)" }}>
+                      View all {ptSessions.length} sessions →
+                    </Link>
+                  </li>
+                )}
+              </ul>
+            )}
           </section>
 
           <details className="form-panel mpd-collapsible-panel mpd-danger-panel">

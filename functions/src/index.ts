@@ -68,6 +68,27 @@ function profileInitials(fullName: string) {
     .toUpperCase() || "FS";
 }
 
+function authProfilePayload(profileId: string, profile: Record<string, unknown>) {
+  const gymId = String(profile.defaultGymId ?? profile.gymId ?? primaryGymId);
+  return {
+    id: String(profile.id ?? profileId),
+    authUid: String(profile.authUid ?? profile.uid ?? profileId),
+    email: String(profile.email ?? ""),
+    authEmail: String(profile.authEmail ?? profile.email ?? ""),
+    username: profile.username ? String(profile.username) : "",
+    phone: profile.phone ? String(profile.phone) : "",
+    fullName: String(profile.fullName ?? "FitSplit user"),
+    role: String(profile.role ?? "member"),
+    staffType: profile.staffType ? String(profile.staffType) : "",
+    defaultGymId: gymId,
+    gymId,
+    isActive: profile.isActive !== false,
+    mustChangePassword: profile.mustChangePassword === true,
+    authIndexOnly: true,
+    updatedAt: String(profile.updatedAt ?? new Date().toISOString())
+  };
+}
+
 function getCallableUser(request: { auth?: { uid: string; token: Record<string, unknown> } | null }): CallableUser {
   if (!request.auth) {
     throw new HttpsError("unauthenticated", "Sign in before calling this action.");
@@ -94,7 +115,7 @@ function assertCanManageGym(user: CallableUser, gymId: string) {
 }
 
 async function assertMemberBelongsToGym(memberId: string, gymId: string) {
-  const profile = await db.collection("profiles").doc(memberId).get();
+  const profile = await db.collection("authProfiles").doc(memberId).get();
   const data = profile.data();
   if (!profile.exists || data?.role !== "member") {
     throw new HttpsError("not-found", "Member profile was not found.");
@@ -108,7 +129,7 @@ async function assertMemberBelongsToGym(memberId: string, gymId: string) {
 
 async function assertUsernameAvailable(username: string, exceptProfileId?: string) {
   const normalized = normalizeUsername(username);
-  const snapshot = await db.collection("profiles").where("username", "==", normalized).limit(2).get();
+  const snapshot = await db.collection("authProfiles").where("username", "==", normalized).limit(2).get();
   const conflict = snapshot.docs.find((doc) => doc.id !== exceptProfileId);
   if (conflict) {
     throw new HttpsError("already-exists", "That username is already in use.");
@@ -259,7 +280,7 @@ export const createMemberAccount = onCall({ region }, async (request) => {
       updatedAt: now
     };
 
-    await db.collection("profiles").doc(memberId).set(memberProfile);
+    await db.collection("authProfiles").doc(memberId).set(authProfilePayload(memberId, memberProfile));
     await mirrorProfileToGym(memberId, memberProfile);
     await db.collection("gyms").doc(gymId).set(
       {
@@ -335,7 +356,7 @@ export const createStaffAccount = onCall({ region }, async (request) => {
     createdAt: now,
     updatedAt: now
   };
-  await db.collection("profiles").doc(staffId).set(staffProfile);
+  await db.collection("authProfiles").doc(staffId).set(authProfilePayload(staffId, staffProfile));
   await mirrorProfileToGym(staffId, staffProfile);
 
   return { status: "success", staffId, message: `${fullName} was added as gym ${normalizedStaffType}.` };
@@ -350,7 +371,7 @@ export const toggleMemberAccess = onCall({ region }, async (request) => {
 
   const { data } = await assertMemberBelongsToGym(memberId, gymId);
   const now = new Date().toISOString();
-  await db.collection("profiles").doc(memberId).set({ isActive, updatedAt: now }, { merge: true });
+  await db.collection("authProfiles").doc(memberId).set({ isActive, updatedAt: now }, { merge: true });
   await mirrorProfileToGym(memberId, {
     ...data,
     id: memberId,
@@ -387,7 +408,7 @@ export const resetStaffPassword = onCall({ region }, async (request) => {
     throw new HttpsError("invalid-argument", "Password must be at least 6 characters.");
   }
   await auth.updateUser(userId, { password });
-  await db.collection("profiles").doc(userId).set({ mustChangePassword: true, updatedAt: new Date().toISOString() }, { merge: true });
+  await db.collection("authProfiles").doc(userId).set({ mustChangePassword: true, updatedAt: new Date().toISOString() }, { merge: true });
   return { status: "success", message: "Staff password was reset." };
 });
 
@@ -472,7 +493,7 @@ export const archiveMemberAccount = onCall({ region }, async (request) => {
   assertCanManageGym(user, gymId);
   const { data } = await assertMemberBelongsToGym(memberId, gymId);
 
-  const rootProfile = await db.collection("profiles").doc(memberId).get();
+  const rootProfile = await db.collection("authProfiles").doc(memberId).get();
   const scopedProfile = await gymDoc(gymId, "members", memberId).get();
   const [assignments, liftLogs, notifications, sessions, attendance] = await Promise.all([
     db.collection("programAssignments").where("memberId", "==", memberId).get(),
@@ -538,7 +559,7 @@ export const archiveGymWorkspace = onCall({ region }, async (request) => {
     throw new HttpsError("not-found", "Gym was not found.");
   }
 
-  const profiles = await db.collection("profiles").where("defaultGymId", "==", gymId).get();
+  const profiles = await db.collection("authProfiles").where("defaultGymId", "==", gymId).get();
   const activity = await db.collection("activityEvents").where("gymId", "==", gymId).get();
   const subcollections = await gym.ref.listCollections();
 
@@ -582,7 +603,7 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
     // has an owner/admin role.
     assertEmail(identifier, "Email");
     const snap = await db
-      .collection("profiles")
+      .collection("authProfiles")
       .where("email", "==", identifier)
       .where("role", "in", ["admin", "owner"])
       .limit(1)
@@ -595,7 +616,7 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
 
   // Member mode: look up by username first, then by personal email.
   const byUsername = await db
-    .collection("profiles")
+    .collection("authProfiles")
     .where("username", "==", normalizeUsername(identifier))
     .where("role", "==", "member")
     .limit(1)
@@ -612,7 +633,7 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
   // Fall back to personal email lookup (some older accounts may have used email
   // as username).
   const byEmail = await db
-    .collection("profiles")
+    .collection("authProfiles")
     .where("email", "==", identifier)
     .where("role", "==", "member")
     .limit(1)
@@ -633,3 +654,146 @@ export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hou
   const expired = await db.collection("archives").where("retentionExpiresAt", "<=", new Date()).limit(450).get();
   await deleteDocs(expired.docs);
 });
+
+// ─── Personal Training scheduled functions ───────────────────────────────────
+
+/**
+ * Notify members and trainers of upcoming PT sessions.
+ * Runs every 60 minutes and sends notifications for sessions starting in
+ * ~24 hours (±10 min window) or ~60 minutes (±10 min window).
+ * Marks each session with notified24h / notified1h flags to avoid duplicates.
+ */
+export const notifyUpcomingPTSessions = onSchedule(
+  { region, schedule: "every 60 minutes" },
+  async () => {
+    const now = new Date();
+
+    const windowTargets = [
+      { label: "24h", offsetMs: 24 * 60 * 60 * 1000, flag: "notified24h" },
+      { label: "1h",  offsetMs: 60 * 60 * 1000,      flag: "notified1h"  }
+    ] as const;
+
+    for (const { label, offsetMs, flag } of windowTargets) {
+      const windowStart = new Date(now.getTime() + offsetMs - 10 * 60 * 1000);
+      const windowEnd   = new Date(now.getTime() + offsetMs + 10 * 60 * 1000);
+
+      const snap = await db
+        .collection("ptSessions")
+        .where("status", "==", "scheduled")
+        .where("scheduledAt", ">=", windowStart.toISOString())
+        .where("scheduledAt", "<=", windowEnd.toISOString())
+        .where(flag, "==", false)
+        .limit(50)
+        .get();
+
+      if (snap.empty) continue;
+
+      const batch = db.batch();
+
+      for (const doc of snap.docs) {
+        const s = doc.data();
+        const gymId: string = s.gymId ?? primaryGymId;
+        const scheduledLocal = new Intl.DateTimeFormat("en-IN", {
+          day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"
+        }).format(new Date(s.scheduledAt));
+
+        // Notify member
+        const memberNotifId = randomUUID();
+        const memberNotif = {
+          id: memberNotifId,
+          gymId,
+          recipientId: s.memberId,
+          recipientRole: "member",
+          type: "pt_session_booked",
+          title: `PT session in ${label}`,
+          body: `Reminder: your PT session with ${s.trainerName ?? "your trainer"} is on ${scheduledLocal}.`,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString()
+        };
+        batch.set(db.collection("notifications").doc(memberNotifId), memberNotif);
+        batch.set(
+          db.collection(`gyms/${gymId}/notifications`).doc(memberNotifId),
+          { ...memberNotif, mirroredFromRootCollection: true }
+        );
+
+        // Notify trainer
+        const trainerNotifId = randomUUID();
+        const trainerNotif = {
+          id: trainerNotifId,
+          gymId,
+          recipientId: s.trainerId,
+          recipientRole: "owner",
+          type: "pt_session_booked",
+          title: `PT session in ${label}`,
+          body: `Reminder: PT session with ${s.memberName ?? "member"} is on ${scheduledLocal}.`,
+          createdAt: now.toISOString(),
+          updatedAt: now.toISOString()
+        };
+        batch.set(db.collection("notifications").doc(trainerNotifId), trainerNotif);
+        batch.set(
+          db.collection(`gyms/${gymId}/notifications`).doc(trainerNotifId),
+          { ...trainerNotif, mirroredFromRootCollection: true }
+        );
+
+        // Mark notified
+        batch.update(doc.ref, { [flag]: true, updatedAt: now.toISOString() });
+        batch.update(
+          db.collection(`gyms/${gymId}/ptSessions`).doc(doc.id),
+          { [flag]: true, updatedAt: now.toISOString() }
+        );
+      }
+
+      await batch.commit();
+      console.log(`[notifyUpcomingPTSessions] ${label} window: notified ${snap.size} session(s)`);
+    }
+  }
+);
+
+/**
+ * Auto-expire PT sessions that are stuck in "active" for more than 6 hours.
+ * A session lingering active past midnight is almost certainly abandoned —
+ * the trainer forgot to tap "End session". We cancel it with a system reason
+ * so it doesn't pollute the schedule.
+ *
+ * Runs daily at 2 AM IST (UTC+5:30 = 20:30 UTC previous day).
+ */
+export const autoExpireAbandonedPTSessions = onSchedule(
+  { region, schedule: "30 20 * * *" },   // 02:00 IST = 20:30 UTC
+  async () => {
+    const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6 hours ago
+    const now = new Date().toISOString();
+
+    const snap = await db
+      .collection("ptSessions")
+      .where("status", "==", "active")
+      .where("startedAt", "<=", cutoff.toISOString())
+      .limit(100)
+      .get();
+
+    if (snap.empty) {
+      console.log("[autoExpireAbandonedPTSessions] No abandoned sessions found.");
+      return;
+    }
+
+    const batch = db.batch();
+
+    for (const doc of snap.docs) {
+      const s = doc.data();
+      const gymId: string = s.gymId ?? primaryGymId;
+      const patch = {
+        status: "cancelled",
+        cancelReason: "Auto-cancelled: session was active for more than 6 hours without ending.",
+        updatedAt: now
+      };
+
+      batch.update(doc.ref, patch);
+      batch.update(
+        db.collection(`gyms/${gymId}/ptSessions`).doc(doc.id),
+        patch
+      );
+    }
+
+    await batch.commit();
+    console.log(`[autoExpireAbandonedPTSessions] Expired ${snap.size} abandoned session(s).`);
+  }
+);

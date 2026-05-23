@@ -52,7 +52,7 @@ const db = getFirestore();
 const auth = getAuth();
 const now = new Date().toISOString();
 
-const snapshot = await db.collection("profiles").where("role", "==", "member").get();
+const snapshot = await db.collectionGroup("members").where("role", "==", "member").get();
 let patchedProfiles = 0;
 let createdAuthUsers = 0;
 
@@ -70,6 +70,24 @@ for (const doc of snapshot.docs) {
   if (Object.keys(profilePatch).length) {
     profilePatch.updatedAt = now;
     await doc.ref.set(profilePatch, { merge: true });
+    await db.collection("authProfiles").doc(doc.id).set(
+      {
+        id: doc.id,
+        authUid: doc.id,
+        username: profilePatch.username ?? username,
+        authEmail: profilePatch.authEmail ?? authEmail,
+        email: data.email ?? "",
+        phone: data.phone ?? "",
+        fullName,
+        role: "member",
+        defaultGymId: gymId,
+        gymId,
+        isActive: data.isActive !== false,
+        authIndexOnly: true,
+        updatedAt: now
+      },
+      { merge: true }
+    );
     patchedProfiles += 1;
   }
 
@@ -104,9 +122,29 @@ for (const doc of snapshot.docs) {
         disabled: data.isActive === false
       });
       await doc.ref.set({ authEmail, updatedAt: now }, { merge: true });
+      await db.collection("authProfiles").doc(doc.id).set({ authEmail, updatedAt: now }, { merge: true });
     }
     createdAuthUsers += 1;
   }
+
+  await db.collection("authProfiles").doc(doc.id).set(
+    {
+      id: doc.id,
+      authUid: doc.id,
+      username,
+      authEmail,
+      email: data.email ?? "",
+      phone: data.phone ?? "",
+      fullName,
+      role: "member",
+      defaultGymId: gymId,
+      gymId,
+      isActive: data.isActive !== false,
+      authIndexOnly: true,
+      updatedAt: now
+    },
+    { merge: true }
+  );
 
   await auth.setCustomUserClaims(doc.id, {
     role: "member",

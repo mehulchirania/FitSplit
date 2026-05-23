@@ -12,6 +12,7 @@
     "seed:firebase": "node scripts/seed-firebase.mjs",
     "seed:demo": "node scripts/seed-demo-firestore.mjs",
     "migrate:gym-scoped": "node scripts/migrate-gym-scoped-firestore.mjs",
+    "migrate:tenant-cleanup": "node scripts/migrate-auth-profiles-and-clean-root.mjs",
     "backfill:member-access": "node scripts/backfill-member-access.mjs",
     "patch:videos": "node scripts/patch-exercise-videos.mjs",
     "sync:exercise-videos": "node scripts/sync-exercise-videos-from-workouts.mjs",

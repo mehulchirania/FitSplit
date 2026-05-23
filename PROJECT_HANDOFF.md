@@ -1,5 +1,158 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-23: Member dashboard layout polish after gym-scoped migration
+
+- Restarted localhost cleanly after `.next` references went stale; landing client bundle was returning 404, which broke landing hydration and the login modal. Local server is running on `http://localhost:3000`.
+- Verified landing login modal opens after restart.
+- Fixed member dashboard gym-scoped reads to avoid collection-group index failures: `/member`, `/member/history`, and member `/profile` now pass `currentUser.gymId` into lift log, day log, and assignment reads.
+- Verified `mehulchirania / 1234` reaches `/member` and shows the assigned `Modified Arnold Split x 2` program.
+- Fixed the signed-in member topbar layout so the FitSplit x gym-logo lockup does not duplicate the FitSplit wordmark into the profile/action area.
+- Updated the member hero summary grid from 3 columns to 4 columns on desktop because the page renders 4 stats. Tablet now uses 2 columns and mobile uses 1 clean row-per-stat layout.
+- Hardened mobile profile and notification dropdown placement by making them fixed-width-to-viewport overlays on small screens.
+- Tightened workout/exercise rows so thumbnails, exercise copy, prescription chips, and video buttons do not overflow or overlap.
+- Tightened the log-set form inside the side panel with safer input/select sizing and responsive field layout.
+- Verification: `npm run build` passed before the local dev restart; `npm run typecheck` passes after these fixes.
+
+## Latest Update - 2026-05-23: Personal Training (PT) — Phase 1 data layer
+
+### What was built
+
+End-to-end personal training booking and session management. Phase 1 covers all data infrastructure; UI phases follow.
+
+#### Access model (key requirement)
+Any gym staff member (owner or any trainer) can read and manage **any** PT session in the gym. This enables cover when the assigned trainer is unavailable — any available trainer can pick up the session. Members can only read their own sessions.
+
+#### New Firestore collections
+- `ptSessions` — one doc per PT booking (root mirror + `gyms/{gymId}/ptSessions`)
+- `ptLiftLogs` — one doc per lift set logged during a session (root mirror + `gyms/{gymId}/ptLiftLogs`)
+
+Both collections follow the dual-write pattern: gym-scoped is the primary path; root mirror supports admin queries.
+
+#### New types (`types/domain.ts`)
+- `PTSessionStatus` union: `scheduled | active | completed | cancelled`
+- `PTSession` — full booking record with trainer/member names, scheduledAt, durationMinutes, status, startedAt, endedAt, notes, cancelReason
+- `PTLiftLog` — per-set log captured during an active session; links back to ptSessionId; mirrors to liftLogs with `source: "trainer"` so member history auto-includes PT sets
+- `LiftLog` extended with `source?`, `ptSessionId?`, `loggedByTrainerId?`
+- `Notification["type"]` extended: `pt_session_booked | pt_session_started | pt_session_completed | pt_session_cancelled | pt_session_rescheduled`
+
+#### New server actions (`lib/firebase/actions.ts`)
+All actions use `requireGymStaff()` — any staff member of the gym (owner/trainer/staff), not just the assigned trainer.
+- `bookPTSession` — creates a `scheduled` session + notifies the member
+- `startPTSession` — transitions `scheduled → active`
+- `logPTLiftSet` — writes ptLiftLog + dual-writes to liftLogs (source: "trainer")
+- `completePTSession` — transitions `active → completed` + notifies the member
+- `cancelPTSession` — cancels with optional reason + notifies the member
+- `reschedulePTSession` — updates scheduledAt, optionally reassigns trainer, resets to scheduled + notifies the member
+
+#### New read models (`lib/firebase/read-models.ts`)
+- `getAllPTSessionsForGym(gymId)` — all sessions, scheduledAt desc; for owner hub
+- `getPTSessionsForTrainer(gymId, trainerId)` — filter by trainer; for trainer dashboard
+- `getPTSessionsForMember(gymId, memberId)` — filter by member; for member PT history
+- `getPTSessionDetail(ptSessionId)` — single session fetch; for live console
+- `getPTLiftLogsForSession(gymId, ptSessionId)` — all lifts in a session; for live console
+- `getTrainersForGym(gymId)` — trainers list for booking dropdown
+
+All read models are wrapped in `unstable_cache` with `pt-sessions`/`pt-lift-logs` tags + gym-scoped tags.
+
+#### Security rules (`firestore.rules`)
+- Gym-scoped `ptSessions` + `ptLiftLogs`: any `isStaffForGym` can read/write; members can read their own; only owner or admin can delete
+- Root mirror `ptSessions` + `ptLiftLogs`: read/write guarded by gymId match; admin bypass
+
+#### Indexes (`firestore.indexes.json`)
+4 new composite indexes:
+- `ptSessions` (COLLECTION_GROUP): gymId ASC, scheduledAt DESC
+- `ptSessions` (COLLECTION_GROUP): trainerId ASC, scheduledAt DESC
+- `ptSessions` (COLLECTION_GROUP): memberId ASC, scheduledAt DESC
+- `ptLiftLogs` (COLLECTION_GROUP): ptSessionId ASC, loggedAt ASC
+
+### Verification
+- `npm run build` and `npm run typecheck` pending (Phase 1 complete; deploy before next phase)
+
+### Pending PT phases
+
+**Phase 2** — Trainer assignment in member profiles
+- Add trainer dropdown to `MemberContextEditor` / owner member-detail page
+- Reads `getTrainersForGym`; saves to `assignedTrainer` on the member profile
+
+**Phase 3** — Owner training hub
+- `/owner/training` — schedule grid, all sessions across all trainers (uses `getAllPTSessionsForGym`)
+- Booking form (book a new session: pick member, trainer, date/time, duration)
+- `/owner/training/[trainerId]` — per-trainer schedule view
+
+**Phase 4** — Trainer dashboard + live console
+- `/trainer` — trainer's own upcoming schedule (`getPTSessionsForTrainer`)
+- `/trainer/session/[ptSessionId]` — `TrainerLiveConsole` component
+  - "Start session" button → `startPTSession`
+  - Lift logger (exercise picker + weight/sets/reps) → `logPTLiftSet`
+  - "End session" button → `completePTSession`
+  - Cancel / Reschedule buttons
+  - Real-time lift log list with running total
+
+**Phase 5** — Member PT history
+- `/member/pt-history` — member's past and upcoming PT sessions
+- Trainer badge on existing `/member/history` for PT-sourced lift sets
+
+**Phase 6** — Cloud Functions
+- `notifyUpcomingPTSessions` (every 60 min) — push reminders 24 h and 1 h before sessions
+- `autoExpireAbandonedPTSessions` (daily 2 AM) — cancel sessions stuck in `active` for > 6 h
+
+### All phases now complete — see above for full detail.
+
+### Remaining gaps / nice-to-haves
+- **Trainer-only route** — `/trainer` dedicated low-noise view showing only that trainer's sessions. Currently trainers use `/owner/training?trainerId=X`.
+- **Reschedule trainer reassignment UI** — `reschedulePTSession` action supports reassigning the trainer but the live console form only exposes date/time; extend with a trainer select if needed.
+- **Deploy Firestore rules + indexes** — `firebase deploy --only firestore:rules,firestore:indexes --project fitsplit-29215`
+- **Deploy Cloud Functions** — `firebase deploy --only functions --project fitsplit-29215`
+
+---
+
+## Latest Update - 2026-05-23: Tenant cleanup completed - member profiles and gym data moved under gyms
+
+### What changed
+- Member profiles are no longer written to a common/root profile directory. Full member records now live at `gyms/{gymId}/members/{memberId}`.
+- Staff records continue to live at `gyms/{gymId}/staff/{staffId}`.
+- Root `authProfiles/{uid}` is now the lightweight login/session index. It stores only auth/routing/access fields such as username, auth email, phone, role, default gym, active state, force-password-change state, and lockout fields.
+- Root `profiles/{uid}` is legacy fallback only. The migration cleared it and new writes should not target it.
+- Gym-specific operational data was moved under the owning gym, including `programAssignments`, `liftLogs`, `activityEvents`, `workoutSessions`, `attendanceRecords`, `bodyMetricLogs`, `dayLogs`, `contactMessages`, `exerciseRequests`, and custom `exerciseCatalog` / `workoutPrograms`.
+- Default FitSplit exercise catalog data stays outside gyms in root `exerciseCatalog`, editable only by admin. Custom exercises go to `gyms/{gymId}/exerciseCatalog`.
+
+### Code updates
+- `lib/firebase/collections.ts`: added `authProfiles` as the root auth index and clarified `profiles` as legacy fallback.
+- `lib/auth.ts`: login/session/profile lookup now reads `authProfiles` first, then legacy `profiles`, then gym-scoped `members`/`staff` collection groups as fallback.
+- `lib/firebase/read-models.ts`: member/staff reads prefer gym-scoped records and use `authProfiles` only for auth/index fallback.
+- `lib/firebase/actions.ts`: create/update/delete/reset/toggle flows now write `authProfiles` plus the gym-scoped full record instead of root `profiles`.
+- `functions/src/index.ts`: Firebase Functions account creation, lookup, toggle, reset, and archive flows now use `authProfiles` and gym-scoped records.
+- `scripts/migrate-auth-profiles-and-clean-root.mjs`: new dry-run/write migration script registered as `npm run migrate:tenant-cleanup`.
+- `firestore.rules`: switched identity lookup from root `profiles` to `authProfiles`, added gym-scoped rules for `gyms/{gymId}/members`, `staff`, and operational subcollections, and denied new writes to legacy `profiles`.
+- Deployed Firestore rules to project `fitsplit-29215` with `firebase deploy --only firestore:rules --project fitsplit-29215`.
+- `scripts/seed-firebase.mjs`, `scripts/seed-demo-firestore.mjs`, `scripts/backfill-member-access.mjs`: updated so future seed/backfill runs write `authProfiles` plus gym-scoped records instead of recreating root `profiles`.
+- `FIRESTORE_STRUCTURE.md`: updated to document the current gym-first model.
+
+### Migration run and verified Firestore state
+- Ran `npm run migrate:tenant-cleanup` dry-run.
+- Ran `npm run migrate:tenant-cleanup -- --write`.
+- Verified live Firestore after migration:
+  - `profiles`: 0 docs.
+  - `authProfiles`: 43 docs.
+  - `shg`: 7 members, 3 staff, 12 programs, 211 gym exercises.
+  - `titan-gym`: 20 members, 1 staff.
+  - `dummy-gym`: 0 members, 1 staff.
+  - `titan-v2-fitness`: 2 members, 5 staff, 1 program.
+  - Root tenant-owned collections checked as empty for tenant docs: `programAssignments`, `liftLogs`, `activityEvents`, `workoutSessions`, `attendanceRecords`, `bodyMetricLogs`, `dayLogs`, `contactMessages`, `exerciseRequests`.
+  - Root `notifications` still has 6 global/admin notifications and 0 tenant-scoped root notifications.
+  - Root `exerciseCatalog` has 64 default exercises and 0 custom root exercises.
+  - Root `workoutPrograms` currently has 0 docs; predefined plans are still code/JSON-backed and custom plans are gym-scoped.
+
+### Verification
+- `npm run functions:build` passes.
+- `npm run build` passes.
+- `npm run typecheck` passes.
+
+### Follow-ups / gaps
+- If default workout programs must exist as Firestore root docs instead of static/code-backed templates, seed root `workoutPrograms` with admin-owned predefined plans.
+- Add scheduled cleanup for `archives` using Firestore TTL on `retentionExpiresAt`.
+- Firebase Functions plan is still open: move sensitive mutations and multi-document writes to callable/server functions for stronger consistency and clearer audit boundaries.
+
 ## Latest Update - 2026-05-23: Gym-scoped Firestore architecture + username login
 
 ### Firestore migration to gym-first structure

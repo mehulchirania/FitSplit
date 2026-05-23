@@ -155,7 +155,12 @@ export type Notification = {
     | "member_created"
     | "access_suspended"
     | "access_restored"
-    | "exercise_request";
+    | "exercise_request"
+    | "pt_session_booked"
+    | "pt_session_started"
+    | "pt_session_completed"
+    | "pt_session_cancelled"
+    | "pt_session_rescheduled";
   title: string;
   body: string;
   createdAt: string;
@@ -186,6 +191,12 @@ export type LiftLog = {
   reps: string;
   sessionId: string;
   loggedAt: string;
+  /** "member" = self-logged (default); "trainer" = logged during a PT session */
+  source?: "member" | "trainer";
+  /** Present when source is "trainer" — links back to the PT session */
+  ptSessionId?: string;
+  /** UID of the trainer who logged this set */
+  loggedByTrainerId?: string;
 };
 
 export type BodyMetricLog = {
@@ -302,5 +313,69 @@ export type DayLog = {
   skipReason?: SkipReason;
   /** Free-text note — what they did instead, or extra context for the skip */
   note?: string;
+  loggedAt: string;
+};
+
+// ─── Personal Training ────────────────────────────────────────────────────────
+
+export type PTSessionStatus =
+  | "scheduled"   // booked but not yet started
+  | "active"      // trainer tapped "Start session"
+  | "completed"   // trainer tapped "End session"
+  | "cancelled";  // cancelled before or during
+
+/**
+ * A personal-training booking between a trainer (staff) and a member.
+ *
+ * Lives at both:
+ *   gyms/{gymId}/ptSessions/{sessionId}   (gym-scoped)
+ *   ptSessions/{sessionId}                (root mirror for admin queries)
+ *
+ * Any owner or trainer in the gym can read/write any session so that
+ * cover-trainer takeover is always possible.
+ */
+export type PTSession = {
+  id: string;
+  gymId: string;
+  memberId: string;
+  memberName?: string;
+  /** UID of the assigned trainer (staff record with staffType "trainer") */
+  trainerId: string;
+  trainerName?: string;
+  scheduledAt: string;       // ISO datetime of the booked slot
+  durationMinutes: number;   // expected session length, e.g. 60
+  status: PTSessionStatus;
+  /** ISO datetime when trainer tapped "Start" */
+  startedAt?: string;
+  /** ISO datetime when trainer tapped "End" */
+  endedAt?: string;
+  notes?: string;            // pre-session trainer notes / goals
+  cancelReason?: string;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+/**
+ * A single lift set logged by a trainer during an active PT session.
+ *
+ * Lives at both:
+ *   gyms/{gymId}/ptLiftLogs/{logId}
+ *   ptLiftLogs/{logId}
+ *
+ * Also dual-written to liftLogs with source: "trainer" so the member's
+ * workout history automatically includes PT-logged sets.
+ */
+export type PTLiftLog = {
+  id: string;
+  gymId: string;
+  ptSessionId: string;
+  memberId: string;
+  trainerId: string;
+  exerciseId: string;
+  exerciseName?: string;
+  weight: number;
+  sets: number;
+  reps: string;
+  notes?: string;
   loggedAt: string;
 };

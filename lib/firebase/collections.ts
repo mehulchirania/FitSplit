@@ -1,9 +1,11 @@
 export const collectionPaths = {
   gyms: "gyms",
-  // Temporary global auth/profile index. Keep this until Firebase Auth custom
-  // claims + authProfiles are the only login lookup path.
+  // Legacy root profile collection. Full profile source-of-truth is now
+  // gyms/{gymId}/members and gyms/{gymId}/staff; keep only for migration fallback.
   profiles: "profiles",
-  authProfiles: "profiles",
+  // Root auth lookup index only. Do not store member metrics, medical notes,
+  // program context, or other gym-owned profile data here.
+  authProfiles: "authProfiles",
   memberships: "memberships",
   exerciseCatalog: "exerciseCatalog",
   exerciseRequests: "exerciseRequests",
@@ -19,7 +21,9 @@ export const collectionPaths = {
   attendanceRecords: "attendanceRecords",
   bodyMetricLogs: "bodyMetricLogs",
   dayLogs: "dayLogs",
-  archives: "archives"
+  archives: "archives",
+  ptSessions: "ptSessions",
+  ptLiftLogs: "ptLiftLogs"
 } as const;
 
 export const gymScopedCollectionPaths = {
@@ -38,7 +42,9 @@ export const gymScopedCollectionPaths = {
   siteLinks: "siteLinks",
   attendanceRecords: "attendanceRecords",
   bodyMetricLogs: "bodyMetricLogs",
-  dayLogs: "dayLogs"
+  dayLogs: "dayLogs",
+  ptSessions: "ptSessions",
+  ptLiftLogs: "ptLiftLogs"
 } as const;
 
 export type GymScopedCollectionKey = keyof typeof gymScopedCollectionPaths;

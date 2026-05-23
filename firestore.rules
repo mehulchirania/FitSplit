@@ -7,7 +7,7 @@ service cloud.firestore {
     }
 
     function profile() {
-      return get(/databases/$(database)/documents/profiles/$(request.auth.uid));
+      return get(/databases/$(database)/documents/authProfiles/$(request.auth.uid));
     }
 
     function role() {
@@ -38,6 +38,22 @@ service cloud.firestore {
         && currentGymId() == gymId;
     }
 
+    function isStaffForGym(gymId) {
+      return signedIn()
+        && (role() == "owner" || role() == "trainer" || role() == "staff")
+        && currentGymId() == gymId;
+    }
+
+    function isGymMember(gymId) {
+      return signedIn()
+        && role() == "member"
+        && currentGymId() == gymId;
+    }
+
+    function isGymUser(gymId) {
+      return isAdmin() || isStaffForGym(gymId) || isGymMember(gymId);
+    }
+
     function isMemberSelf(userId) {
       return signedIn() && role() == "member" && memberId() == userId;
     }
@@ -63,12 +79,155 @@ service cloud.firestore {
     }
 
     match /gyms/{gymId} {
-      allow read: if isAdmin() || isOwnerForGym(gymId);
+      allow read: if isGymUser(gymId);
       allow create, delete: if isAdmin();
       allow update: if isAdmin() || isOwnerForGym(gymId);
+
+      match /members/{userId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || isMemberSelf(userId);
+        allow create, delete: if isAdmin() || isOwnerForGym(gymId);
+        allow update: if isAdmin()
+          || isOwnerForGym(gymId)
+          || (
+            isMemberSelf(userId)
+            && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(["age", "heightCm", "weightKg", "goal", "fitnessGoals", "phone", "updatedAt"])
+          );
+      }
+
+      match /staff/{userId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || isMemberSelf(userId);
+        allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      match /exerciseCatalog/{exerciseId} {
+        allow read: if isGymUser(gymId);
+        allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      match /workoutPrograms/{programId} {
+        allow read: if isGymUser(gymId);
+        allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      match /workoutSplitTemplates/{templateId} {
+        allow read: if isGymUser(gymId);
+        allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      match /notifications/{notificationId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || isMemberSelf(resource.data.recipientUserId)
+          || isMemberSelf(resource.data.recipientId);
+        allow create: if isAdmin() || isOwnerForGym(gymId);
+        allow update: if isAdmin()
+          || isOwnerForGym(gymId)
+          || (
+            (isMemberSelf(resource.data.recipientUserId) || isMemberSelf(resource.data.recipientId))
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["read", "readAt", "updatedAt"])
+          );
+        allow delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      match /liftLogs/{liftLogId} {
+        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+      }
+
+      match /programAssignments/{assignmentId} {
+        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data);
+      }
+
+      match /activityEvents/{eventId} {
+        allow read: if isAdmin()
+          || ownerScoped(resource.data)
+          || (
+            resource.data.memberId != null
+            && memberOwned(resource.data)
+          )
+          || (
+            resource.data.recipientId != null
+            && isMemberSelf(resource.data.recipientId)
+          );
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data);
+      }
+
+      match /workoutSessions/{sessionId} {
+        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update: if adminOrOwnerOrMemberScoped(resource.data)
+          && request.resource.data.memberId == resource.data.memberId
+          && request.resource.data.gymId == resource.data.gymId;
+        allow delete: if isAdmin() || ownerScoped(resource.data);
+      }
+
+      match /attendanceRecords/{attendanceRecordId} {
+        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data);
+      }
+
+      match /bodyMetricLogs/{bodyMetricLogId} {
+        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+      }
+
+      match /dayLogs/{dayLogId} {
+        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+      }
+
+      match /contactMessages/{messageId} {
+        allow create: if true;
+        allow read, update, delete: if isAdmin() || isStaffForGym(gymId);
+      }
+
+      match /siteLinks/{linkId} {
+        allow read: if true;
+        allow write: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      match /exerciseRequests/{requestId} {
+        allow read: if isGymUser(gymId);
+        allow create: if isGymUser(gymId);
+        allow update, delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      // Any gym staff (owner or trainer) can read and write any PT session in
+      // the gym — enabling cover when the assigned trainer is unavailable.
+      // Members can read their own sessions.
+      match /ptSessions/{ptSessionId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || (isGymMember(gymId) && resource.data.memberId == memberId());
+        allow create: if isAdmin() || isStaffForGym(gymId);
+        allow update: if isAdmin() || isStaffForGym(gymId);
+        allow delete: if isAdmin() || isOwnerForGym(gymId);
+      }
+
+      // PT lift logs follow the same gym-staff-wide access as PT sessions.
+      // Members can read logs tied to their own sessions.
+      match /ptLiftLogs/{ptLiftLogId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || (isGymMember(gymId) && resource.data.memberId == memberId());
+        allow create: if isAdmin() || isStaffForGym(gymId);
+        allow update, delete: if isAdmin() || isStaffForGym(gymId);
+      }
     }
 
-    match /profiles/{userId} {
+    match /authProfiles/{userId} {
       allow read: if isAdmin()
         || isOwnerForGym(profileGym(resource.data))
         || isMemberSelf(userId);
@@ -83,22 +242,26 @@ service cloud.firestore {
         );
     }
 
+    match /profiles/{userId} {
+      allow read: if isAdmin()
+        || isOwnerForGym(profileGym(resource.data))
+        || isMemberSelf(userId);
+      allow create, update, delete: if false;
+    }
+
     match /exerciseCatalog/{exerciseId} {
-      allow read: if isAdmin() || ownerScoped(resource.data);
-      allow create: if adminOrOwnerScoped(request.resource.data);
-      allow update, delete: if isAdmin() || ownerScoped(resource.data);
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     match /workoutPrograms/{programId} {
-      allow read: if isAdmin() || ownerScoped(resource.data);
-      allow create: if adminOrOwnerScoped(request.resource.data);
-      allow update, delete: if isAdmin() || ownerScoped(resource.data);
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     match /workoutSplitTemplates/{templateId} {
-      allow read: if isAdmin() || ownerScoped(resource.data);
-      allow create: if adminOrOwnerScoped(request.resource.data);
-      allow update, delete: if isAdmin() || ownerScoped(resource.data);
+      allow read: if signedIn();
+      allow create, update, delete: if isAdmin();
     }
 
     match /notifications/{notificationId} {
@@ -166,6 +329,25 @@ service cloud.firestore {
     match /siteLinks/{linkId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Root-level PT mirrors — admin-only; gym-scoped paths are the primary access layer.
+    match /ptSessions/{ptSessionId} {
+      allow read: if isAdmin()
+        || (signedIn() && (role() == "owner" || role() == "member")
+            && currentGymId() == resource.data.gymId);
+      allow write: if isAdmin()
+        || (signedIn() && role() == "owner"
+            && currentGymId() == resource.data.gymId);
+    }
+
+    match /ptLiftLogs/{ptLiftLogId} {
+      allow read: if isAdmin()
+        || (signedIn() && (role() == "owner" || role() == "member")
+            && currentGymId() == resource.data.gymId);
+      allow write: if isAdmin()
+        || (signedIn() && role() == "owner"
+            && currentGymId() == resource.data.gymId);
     }
   }
 }

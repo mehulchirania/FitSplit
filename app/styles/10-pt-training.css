@@ -1,0 +1,475 @@
+/* ── Personal Training styles ─────────────────────────────────────────────── */
+
+/* ── Shared PT badge ─────────────────────────────────────────────────────── */
+
+.pt-trainer-badge {
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  border-radius: 6px;
+  color: var(--brand-strong);
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 2px 7px;
+}
+
+/* ── Member detail page — PT mini-list ───────────────────────────────────── */
+
+.pt-session-mini-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pt-session-mini-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 9px 0;
+}
+
+.pt-session-mini-row:last-child { border-bottom: none; }
+
+.pt-mini-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pt-mini-trainer {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.pt-mini-date {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+/* ── PT Booking panel (owner/training) ───────────────────────────────────── */
+
+.pt-booking-panel {
+  margin-bottom: 0;
+  padding: 0;
+}
+
+.pt-booking-summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 700;
+  gap: 8px;
+  list-style: none;
+  padding: 14px 20px;
+  user-select: none;
+}
+
+.pt-booking-summary::-webkit-details-marker { display: none; }
+.pt-booking-summary::before {
+  content: "▸";
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  transition: transform 150ms;
+}
+details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
+
+.pt-booking-form {
+  border-top: 1px solid var(--border);
+  padding: 20px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.optional-label {
+  color: var(--text-faint);
+  font-size: 0.78em;
+  font-weight: 400;
+}
+
+/* ── Trainer quick-filter tabs ───────────────────────────────────────────── */
+
+.pt-trainer-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 16px auto 0;
+  max-width: var(--page-max-width, 1220px);
+  padding: 0 clamp(18px, 4vw, 56px);
+}
+
+.pt-trainer-tab {
+  background: var(--bg-subtle);
+  border-radius: 20px;
+  color: var(--text-soft);
+  font-size: 0.83rem;
+  font-weight: 600;
+  padding: 5px 14px;
+  text-decoration: none;
+  transition: background 120ms, color 120ms;
+}
+
+.pt-trainer-tab:hover { background: var(--bg-hover); color: var(--text); }
+.pt-trainer-tab.is-selected {
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+/* ── PT session cards (owner/training list) ──────────────────────────────── */
+
+.pt-session-card {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+  transition: background 120ms;
+}
+
+.pt-session-card:last-child { border-bottom: none; }
+.pt-session-card:hover { background: var(--bg-subtle); }
+
+.pt-card-header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.pt-card-identity {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pt-card-date {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pt-card-duration {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.pt-card-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.pt-card-people {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.pt-card-person {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pt-card-person-label {
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pt-card-person-name {
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.pt-card-person-name:hover { color: var(--brand); text-decoration: underline; }
+
+.pt-card-notes {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  font-style: italic;
+  margin: 0;
+  max-width: 520px;
+}
+
+.pt-cancel-note { color: var(--danger, #e05252); font-style: normal; }
+
+.pt-card-footer {
+  border-top: 1px solid var(--border);
+  margin-top: 10px;
+  padding-top: 10px;
+}
+
+/* ── PT session inline actions ───────────────────────────────────────────── */
+
+.pt-session-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pt-action-btn { font-size: 0.84rem !important; padding: 6px 14px !important; }
+
+.button-danger-ghost {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--danger, #e05252) 40%, transparent);
+  border-radius: 10px;
+  color: var(--danger, #e05252);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 6px 14px;
+  transition: background 120ms;
+}
+.button-danger-ghost:hover {
+  background: color-mix(in srgb, var(--danger, #e05252) 10%, transparent);
+}
+
+.pt-cancel-inline {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pt-cancel-reason {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-input, var(--bg-subtle));
+  color: var(--text);
+  font-size: 0.84rem;
+  padding: 6px 10px;
+  width: 200px;
+}
+
+/* ── Trainer live console ────────────────────────────────────────────────── */
+
+.pt-console { display: flex; flex-direction: column; gap: 16px; }
+
+.pt-console-header { padding: 20px; }
+
+.pt-console-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-bottom: 14px;
+}
+
+.pt-console-person {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pt-console-label {
+  color: var(--text-faint);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.pt-console-value {
+  font-size: 0.95rem;
+}
+
+.pt-console-notes {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  margin: 0 0 14px;
+}
+
+.pt-console-lifecycle {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.pt-reschedule-form,
+.pt-cancel-form {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  width: 100%;
+}
+
+.pt-done-banner {
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 12px 0 0;
+  padding: 10px 14px;
+}
+
+.pt-done-completed {
+  background: color-mix(in srgb, var(--success, #4caf50) 12%, transparent);
+  color: var(--success, #4caf50);
+}
+
+.pt-done-cancelled {
+  background: color-mix(in srgb, var(--danger, #e05252) 12%, transparent);
+  color: var(--danger, #e05252);
+}
+
+/* ── Lift logger panel ───────────────────────────────────────────────────── */
+
+.pt-lift-logger { padding: 20px; }
+
+.pt-lift-logger-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 16px;
+}
+
+.pt-lift-form {}
+
+/* ── Logged sets list ────────────────────────────────────────────────────── */
+
+.pt-logs-panel { padding: 20px; }
+
+.pt-logs-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.pt-log-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  padding: 9px 0;
+  transition: opacity 160ms;
+}
+
+.pt-log-row:last-child { border-bottom: none; }
+
+.pt-log-row--pending { opacity: 0.55; }
+
+.pt-log-exercise {
+  font-size: 0.9rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pt-log-stats {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.pt-log-notes {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.pt-log-time {
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  white-space: nowrap;
+}
+
+/* ── Member PT history page ──────────────────────────────────────────────── */
+
+.pt-history-card {
+  border-bottom: 1px solid var(--border);
+  padding: 16px 20px;
+}
+
+.pt-history-card:last-child { border-bottom: none; }
+
+.pt-history-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.pt-history-meta {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pt-history-date {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.pt-history-duration {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.pt-history-trainer {
+  display: flex;
+  align-items: center;
+}
+
+.pt-history-notes {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  font-style: italic;
+  margin: 0 0 8px;
+}
+
+.pt-history-stats {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.pt-history-lifts {
+  margin-top: 8px;
+}
+
+.pt-history-lifts summary {
+  color: var(--brand);
+  cursor: pointer;
+  font-size: 0.84rem;
+  font-weight: 600;
+  list-style: none;
+  padding: 4px 0;
+}
+
+.pt-history-lifts summary::-webkit-details-marker { display: none; }
+
+.pt-history-lifts[open] .pt-logs-list {
+  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding-top: 4px;
+}
+
+/* ── Mobile responsive adjustments ──────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .pt-card-people { gap: 14px; }
+  .pt-console-meta { gap: 12px; }
+  .pt-log-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 2px;
+  }
+  .pt-log-notes,
+  .pt-log-time { grid-column: 1 / -1; font-size: 0.74rem; }
+}

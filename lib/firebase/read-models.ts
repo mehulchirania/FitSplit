@@ -16,6 +16,8 @@ import type {
   Notification,
   ProfileMetrics,
   ProgramAssignment,
+  PTLiftLog,
+  PTSession,
   SkipReason,
   SiteLink,
   WorkoutSession,
@@ -77,7 +79,9 @@ async function getMemberProfileDocument(db: FirestoreDb, memberId: string) {
     return scopedSnapshot.docs[0];
   }
 
-  return db.collection(collectionPaths.profiles).doc(memberId).get();
+  const legacyDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+  if (legacyDoc.exists) return legacyDoc;
+  return db.collection(collectionPaths.authProfiles).doc(memberId).get();
 }
 
 function normalizeGymStatus(status: unknown): GymWorkspace["status"] {
@@ -162,7 +166,7 @@ export async function getGymWorkspaces(): Promise<{
       db.collection(collectionPaths.gyms).get(),
       db.collectionGroup(gymScopedCollectionPaths.members).get(),
       db
-        .collection(collectionPaths.profiles)
+        .collection(collectionPaths.authProfiles)
         .where("role", "==", "member")
         .get()
     ]);
@@ -235,7 +239,7 @@ export async function getGymDetail(gymId: string): Promise<{
       if (!slugDoc) return { gym: null, isPersisted: true };
       const [scopedMembers, rootMembers] = await Promise.all([
         gymCollection(db, slugDoc.id, "members").get(),
-        db.collection(collectionPaths.profiles).where("role", "==", "member").where("defaultGymId", "==", slugDoc.id).get()
+        db.collection(collectionPaths.authProfiles).where("role", "==", "member").where("defaultGymId", "==", slugDoc.id).get()
       ]);
       const memberIds = new Set([...scopedMembers.docs, ...rootMembers.docs].map((memberDoc) => memberDoc.id));
       return { gym: { ...mapWorkspace(slugDoc.id, slugDoc.data()), memberCount: memberIds.size }, isPersisted: true };
@@ -243,7 +247,7 @@ export async function getGymDetail(gymId: string): Promise<{
 
     const [scopedMembers, rootMembers] = await Promise.all([
       gymCollection(db, doc.id, "members").get(),
-      db.collection(collectionPaths.profiles).where("role", "==", "member").where("defaultGymId", "==", doc.id).get()
+      db.collection(collectionPaths.authProfiles).where("role", "==", "member").where("defaultGymId", "==", doc.id).get()
     ]);
     const memberIds = new Set([...scopedMembers.docs, ...rootMembers.docs].map((memberDoc) => memberDoc.id));
     return { gym: { ...mapWorkspace(doc.id, doc.data() ?? {}), memberCount: memberIds.size }, isPersisted: true };
@@ -308,7 +312,7 @@ export async function getOwnersForGym(gymId: string): Promise<{
       .get();
     const snapshot = scopedSnapshot.empty
       ? await db
-          .collection(collectionPaths.profiles)
+          .collection(collectionPaths.authProfiles)
           .where("defaultGymId", "==", gymId)
           .where("role", "==", "owner")
           .get()
@@ -341,8 +345,8 @@ export async function getRoleSummary(): Promise<{
   try {
     const { db } = getFirebaseAdminServices();
     const [adminSnapshot, ownerDoc, gymDoc] = await Promise.all([
-      db.collection(collectionPaths.profiles).where("role", "==", "admin").limit(1).get(),
-      db.collection(collectionPaths.profiles).doc(PRIMARY_OWNER_ID).get(),
+      db.collection(collectionPaths.authProfiles).where("role", "==", "admin").limit(1).get(),
+      db.collection(collectionPaths.authProfiles).doc(PRIMARY_OWNER_ID).get(),
       db.collection(collectionPaths.gyms).doc(PRIMARY_GYM_ID).get()
     ]);
     return {
@@ -374,7 +378,7 @@ async function getMembersUncached(gymId?: string): Promise<{
     const scopedSnapshot = await gymCollection(db, targetGymId, "members").get();
     profileSnapshot = scopedSnapshot.empty
       ? await db
-          .collection(collectionPaths.profiles)
+          .collection(collectionPaths.authProfiles)
           .where("defaultGymId", "==", targetGymId)
           .where("role", "==", "member")
           .get()
@@ -835,7 +839,7 @@ export async function getBodyMetricLogsForMember(memberId: string): Promise<{
   }
 }
 
-export async function getDayLogsForMember(memberId: string): Promise<{
+export async function getDayLogsForMember(memberId: string, gymId?: string): Promise<{
   dayLogs: DayLog[];
   isPersisted: boolean;
 }> {
@@ -844,10 +848,12 @@ export async function getDayLogsForMember(memberId: string): Promise<{
   }
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
-      .collectionGroup(gymScopedCollectionPaths.dayLogs)
-      .where("memberId", "==", memberId)
-      .get();
+    const scopedSnapshot = gymId
+      ? await gymCollection(db, gymId, "dayLogs").where("memberId", "==", memberId).get()
+      : await db
+          .collectionGroup(gymScopedCollectionPaths.dayLogs)
+          .where("memberId", "==", memberId)
+          .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.dayLogs)
@@ -880,7 +886,7 @@ export async function getDayLogsForMember(memberId: string): Promise<{
   }
 }
 
-export async function getLiftLogsForMember(memberId: string): Promise<{
+export async function getLiftLogsForMember(memberId: string, gymId?: string): Promise<{
   liftLogs: LiftLog[];
   isPersisted: boolean;
 }> {
@@ -892,10 +898,12 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
-      .collectionGroup(gymScopedCollectionPaths.liftLogs)
-      .where("memberId", "==", memberId)
-      .get();
+    const scopedSnapshot = gymId
+      ? await gymCollection(db, gymId, "liftLogs").where("memberId", "==", memberId).get()
+      : await db
+          .collectionGroup(gymScopedCollectionPaths.liftLogs)
+          .where("memberId", "==", memberId)
+          .get();
     snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.liftLogs)
@@ -929,7 +937,7 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
   return { liftLogs, isPersisted: true };
 }
 
-export async function getProgramAssignmentForMember(memberId: string): Promise<{
+export async function getProgramAssignmentForMember(memberId: string, gymId?: string): Promise<{
   assignment: ProgramAssignment | null;
   isPersisted: boolean;
 }> {
@@ -945,12 +953,18 @@ export async function getProgramAssignmentForMember(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
-      .collectionGroup(gymScopedCollectionPaths.programAssignments)
-      .where("memberId", "==", memberId)
-      .where("status", "==", "active")
-      .limit(1)
-      .get();
+    const scopedSnapshot = gymId
+      ? await gymCollection(db, gymId, "programAssignments")
+          .where("memberId", "==", memberId)
+          .where("status", "==", "active")
+          .limit(1)
+          .get()
+      : await db
+          .collectionGroup(gymScopedCollectionPaths.programAssignments)
+          .where("memberId", "==", memberId)
+          .where("status", "==", "active")
+          .limit(1)
+          .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.programAssignments)
@@ -1526,7 +1540,7 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
   if (hasFirebaseAdminConfig()) {
     try {
       const { db } = getFirebaseAdminServices();
-      const snapshot = await db.collection(collectionPaths.profiles).where("defaultGymId", "==", gymId).get();
+      const snapshot = await db.collection(collectionPaths.authProfiles).where("defaultGymId", "==", gymId).get();
       snapshot.forEach(doc => {
         const data = doc.data();
         memberSlots[doc.id] = {
@@ -1645,5 +1659,177 @@ export async function getWorkoutPrograms(gymId?: string) {
     getWorkoutProgramsUncached,
     ["read:getWorkoutPrograms", gymId ?? "default"],
     { tags: ["programs", "gym-data", gymTag(gymId)], revalidate: 120 }
+  )(gymId);
+}
+
+// ─── Personal Training read models ───────────────────────────────────────────
+
+function mapPTSession(docId: string, data: Record<string, unknown>): PTSession {
+  return {
+    id: String(data.id ?? docId),
+    gymId: String(data.gymId ?? ""),
+    memberId: String(data.memberId ?? ""),
+    memberName: data.memberName ? String(data.memberName) : undefined,
+    trainerId: String(data.trainerId ?? ""),
+    trainerName: data.trainerName ? String(data.trainerName) : undefined,
+    scheduledAt: String(data.scheduledAt ?? ""),
+    durationMinutes: Number(data.durationMinutes ?? 60),
+    status: (data.status ?? "scheduled") as PTSession["status"],
+    startedAt: data.startedAt ? String(data.startedAt) : undefined,
+    endedAt: data.endedAt ? String(data.endedAt) : undefined,
+    notes: data.notes ? String(data.notes) : undefined,
+    cancelReason: data.cancelReason ? String(data.cancelReason) : undefined,
+    createdAt: String(data.createdAt ?? ""),
+    updatedAt: data.updatedAt ? String(data.updatedAt) : undefined
+  };
+}
+
+function mapPTLiftLog(docId: string, data: Record<string, unknown>): PTLiftLog {
+  return {
+    id: String(data.id ?? docId),
+    gymId: String(data.gymId ?? ""),
+    ptSessionId: String(data.ptSessionId ?? ""),
+    memberId: String(data.memberId ?? ""),
+    trainerId: String(data.trainerId ?? ""),
+    exerciseId: String(data.exerciseId ?? ""),
+    exerciseName: data.exerciseName ? String(data.exerciseName) : undefined,
+    weight: Number(data.weight ?? 0),
+    sets: Number(data.sets ?? 1),
+    reps: String(data.reps ?? ""),
+    notes: data.notes ? String(data.notes) : undefined,
+    loggedAt: String(data.loggedAt ?? "")
+  };
+}
+
+/**
+ * All PT sessions for a gym, ordered by scheduledAt descending.
+ * Used by the owner /owner/training hub and by trainers.
+ */
+async function getAllPTSessionsForGymUncached(gymId: string): Promise<PTSession[]> {
+  const { db } = getFirebaseAdminServices();
+  const snap = await gymCollection(db, gymId, "ptSessions")
+    .orderBy("scheduledAt", "desc")
+    .get();
+  return snap.docs.map((d) => mapPTSession(d.id, d.data() as Record<string, unknown>));
+}
+
+export async function getAllPTSessionsForGym(gymId: string): Promise<PTSession[]> {
+  return unstable_cache(
+    getAllPTSessionsForGymUncached,
+    ["read:getAllPTSessionsForGym", gymId],
+    { tags: ["pt-sessions", gymTag(gymId)], revalidate: 30 }
+  )(gymId);
+}
+
+/**
+ * All PT sessions where trainerId === the given trainer UID.
+ * Trainers see their own schedule here; owners see this per trainer.
+ */
+async function getPTSessionsForTrainerUncached(gymId: string, trainerId: string): Promise<PTSession[]> {
+  const { db } = getFirebaseAdminServices();
+  const snap = await gymCollection(db, gymId, "ptSessions")
+    .where("trainerId", "==", trainerId)
+    .orderBy("scheduledAt", "desc")
+    .get();
+  return snap.docs.map((d) => mapPTSession(d.id, d.data() as Record<string, unknown>));
+}
+
+export async function getPTSessionsForTrainer(gymId: string, trainerId: string): Promise<PTSession[]> {
+  return unstable_cache(
+    getPTSessionsForTrainerUncached,
+    ["read:getPTSessionsForTrainer", gymId, trainerId],
+    { tags: ["pt-sessions", gymTag(gymId)], revalidate: 30 }
+  )(gymId, trainerId);
+}
+
+/**
+ * All PT sessions for a specific member (their history + upcoming).
+ */
+async function getPTSessionsForMemberUncached(gymId: string, memberId: string): Promise<PTSession[]> {
+  const { db } = getFirebaseAdminServices();
+  const snap = await gymCollection(db, gymId, "ptSessions")
+    .where("memberId", "==", memberId)
+    .orderBy("scheduledAt", "desc")
+    .get();
+  return snap.docs.map((d) => mapPTSession(d.id, d.data() as Record<string, unknown>));
+}
+
+export async function getPTSessionsForMember(gymId: string, memberId: string): Promise<PTSession[]> {
+  return unstable_cache(
+    getPTSessionsForMemberUncached,
+    ["read:getPTSessionsForMember", gymId, memberId],
+    { tags: ["pt-sessions", gymTag(gymId)], revalidate: 30 }
+  )(gymId, memberId);
+}
+
+/**
+ * Fetch a single PT session by ID (reads from root collection for speed).
+ */
+async function getPTSessionDetailUncached(ptSessionId: string): Promise<PTSession | null> {
+  const { db } = getFirebaseAdminServices();
+  const snap = await db.collection(collectionPaths.ptSessions).doc(ptSessionId).get();
+  if (!snap.exists) return null;
+  return mapPTSession(snap.id, snap.data() as Record<string, unknown>);
+}
+
+export async function getPTSessionDetail(ptSessionId: string): Promise<PTSession | null> {
+  return unstable_cache(
+    getPTSessionDetailUncached,
+    ["read:getPTSessionDetail", ptSessionId],
+    { tags: ["pt-sessions"], revalidate: 15 }
+  )(ptSessionId);
+}
+
+/**
+ * All PT lift logs for a session, ordered by loggedAt ascending.
+ */
+async function getPTLiftLogsForSessionUncached(gymId: string, ptSessionId: string): Promise<PTLiftLog[]> {
+  const { db } = getFirebaseAdminServices();
+  const snap = await gymCollection(db, gymId, "ptLiftLogs")
+    .where("ptSessionId", "==", ptSessionId)
+    .orderBy("loggedAt", "asc")
+    .get();
+  return snap.docs.map((d) => mapPTLiftLog(d.id, d.data() as Record<string, unknown>));
+}
+
+export async function getPTLiftLogsForSession(gymId: string, ptSessionId: string): Promise<PTLiftLog[]> {
+  return unstable_cache(
+    getPTLiftLogsForSessionUncached,
+    ["read:getPTLiftLogsForSession", gymId, ptSessionId],
+    { tags: ["pt-lift-logs", gymTag(gymId)], revalidate: 15 }
+  )(gymId, ptSessionId);
+}
+
+/**
+ * All trainers (staff with staffType "trainer") for a gym.
+ * Used to populate the trainer assignment dropdown when booking.
+ */
+async function getTrainersForGymUncached(gymId: string): Promise<Member[]> {
+  const { db } = getFirebaseAdminServices();
+  const snap = await gymCollection(db, gymId, "staff")
+    .where("staffType", "==", "trainer")
+    .get();
+  return snap.docs.map((d) => {
+    const data = d.data() as Record<string, unknown>;
+    return {
+      id: String(data.id ?? d.id),
+      fullName: String(data.fullName ?? ""),
+      email: String(data.email ?? ""),
+      phone: String(data.phone ?? ""),
+      joinedAt: String(data.joinedAt ?? data.createdAt ?? ""),
+      avatarInitials: String(data.avatarInitials ?? String(data.fullName ?? "").slice(0, 2).toUpperCase()),
+      goal: String(data.goal ?? ""),
+      isActive: Boolean(data.isActive ?? true),
+      username: data.username ? String(data.username) : undefined,
+      staffType: "trainer" as const
+    };
+  });
+}
+
+export async function getTrainersForGym(gymId: string): Promise<Member[]> {
+  return unstable_cache(
+    getTrainersForGymUncached,
+    ["read:getTrainersForGym", gymId],
+    { tags: ["staff", gymTag(gymId)], revalidate: 60 }
   )(gymId);
 }

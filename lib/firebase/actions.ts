@@ -75,7 +75,7 @@ async function assertUsernameAvailable(
   exceptProfileId?: string
 ) {
   const normalized = normalizeUsername(username);
-  const snapshot = await db.collection(collectionPaths.profiles).where("username", "==", normalized).limit(2).get();
+  const snapshot = await db.collection(collectionPaths.authProfiles).where("username", "==", normalized).limit(2).get();
   const conflict = snapshot.docs.find((doc) => doc.id !== exceptProfileId);
   if (conflict) {
     throw new Error("That username is already in use.");
@@ -279,6 +279,62 @@ async function mirrorProfileToGym(
   );
 }
 
+function authProfilePayload(profileId: string, profile: Record<string, unknown>) {
+  const gymId = String(profile.defaultGymId ?? profile.gymId ?? PRIMARY_GYM_ID);
+  const role = String(profile.role ?? "member");
+  return {
+    id: String(profile.id ?? profileId),
+    authUid: String(profile.authUid ?? profile.uid ?? profileId),
+    email: String(profile.email ?? ""),
+    authEmail: String(profile.authEmail ?? profile.email ?? ""),
+    username: profile.username ? String(profile.username) : "",
+    phone: profile.phone ? String(profile.phone) : "",
+    fullName: String(profile.fullName ?? "FitSplit user"),
+    role,
+    staffType: profile.staffType ? String(profile.staffType) : "",
+    defaultGymId: gymId,
+    gymId,
+    isActive: profile.isActive !== false,
+    mustChangePassword: profile.mustChangePassword === true,
+    authIndexOnly: true,
+    updatedAt: String(profile.updatedAt ?? new Date().toISOString())
+  };
+}
+
+async function writeAuthProfileIndex(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  profileId: string,
+  profile: Record<string, unknown>
+) {
+  await db.collection(collectionPaths.authProfiles).doc(profileId).set(authProfilePayload(profileId, profile), { merge: true });
+}
+
+async function getAuthProfileDoc(db: ReturnType<typeof getFirebaseAdminServices>["db"], profileId: string) {
+  const authDoc = await db.collection(collectionPaths.authProfiles).doc(profileId).get();
+  if (authDoc.exists) return authDoc;
+  return db.collection(collectionPaths.profiles).doc(profileId).get();
+}
+
+async function getGymScopedProfileDoc(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  profileId: string,
+  role?: string,
+  gymId?: string
+) {
+  if (gymId && role) {
+    const directDoc = await scopedGymDoc(db, gymId, gymProfileCollectionKey(role), profileId).get();
+    if (directDoc.exists) return directDoc;
+  }
+
+  const memberSnapshot = await db.collectionGroup("members").where("id", "==", profileId).limit(1).get();
+  if (!memberSnapshot.empty) return memberSnapshot.docs[0];
+
+  const staffSnapshot = await db.collectionGroup("staff").where("id", "==", profileId).limit(1).get();
+  if (!staffSnapshot.empty) return staffSnapshot.docs[0];
+
+  return getAuthProfileDoc(db, profileId);
+}
+
 async function mirrorGymScopedRecord(
   db: ReturnType<typeof getFirebaseAdminServices>["db"],
   gymId: string,
@@ -416,7 +472,7 @@ async function assertMemberBelongsToCallerGym(
   }
   if (!hasFirebaseAdminConfig()) return; // mock mode — no Firestore to check
   const db = requireFirebase();
-  const profile = await db.collection(collectionPaths.profiles).doc(memberId).get();
+  const profile = await getAuthProfileDoc(db, memberId);
   if (!profile.exists) {
     throw new Error("Member not found.");
   }
@@ -516,7 +572,6 @@ const demoTrainers = [
 export async function ensurePrimaryWorkspace() {
   const db = requireFirebase();
   const gymRef = db.collection(collectionPaths.gyms).doc(PRIMARY_GYM_ID);
-  const ownerRef = db.collection(collectionPaths.profiles).doc(PRIMARY_OWNER_ID);
   const now = new Date().toISOString();
 
   await gymRef.set(
@@ -533,67 +588,61 @@ export async function ensurePrimaryWorkspace() {
     { merge: true }
   );
 
-  await ownerRef.set(
-    {
-      id: PRIMARY_OWNER_ID,
-      fullName: "Santosh SHG",
-      email: "santosh-shg@fitsplit.app",
-      authEmail: "santosh-shg@fitsplit.app",
-      username: "santosh-shg",
-      role: "owner",
-      staffType: "owner",
-      defaultGymId: PRIMARY_GYM_ID,
-      isActive: true,
-      updatedAt: now
-    },
-    { merge: true }
-  );
+  const ownerProfile = {
+    id: PRIMARY_OWNER_ID,
+    fullName: "Santosh SHG",
+    email: "santosh-shg@fitsplit.app",
+    authEmail: "santosh-shg@fitsplit.app",
+    username: "santosh-shg",
+    role: "owner",
+    staffType: "owner",
+    defaultGymId: PRIMARY_GYM_ID,
+    isActive: true,
+    updatedAt: now
+  };
+  await writeAuthProfileIndex(db, PRIMARY_OWNER_ID, ownerProfile);
+  await mirrorProfileToGym(db, PRIMARY_OWNER_ID, ownerProfile);
 
   for (const member of demoMembers) {
-    await db.collection(collectionPaths.profiles).doc(member.id).set(
-      {
-        ...member,
-        authEmail: member.email.toLowerCase(),
-        role: "member",
-        defaultGymId: PRIMARY_GYM_ID,
-        isActive: true,
-        joinedAt: now.slice(0, 10),
-        updatedAt: now
-      },
-      { merge: true }
-    );
+    const memberProfile = {
+      ...member,
+      authEmail: member.email.toLowerCase(),
+      role: "member",
+      defaultGymId: PRIMARY_GYM_ID,
+      isActive: true,
+      joinedAt: now.slice(0, 10),
+      updatedAt: now
+    };
+    await writeAuthProfileIndex(db, member.id, memberProfile);
+    await mirrorProfileToGym(db, member.id, memberProfile);
   }
 
   for (const trainer of demoTrainers) {
-    await db.collection(collectionPaths.profiles).doc(trainer.id).set(
-      {
-        ...trainer,
-        authEmail: trainer.email.toLowerCase(),
-        role: "owner",
-        staffType: "trainer",
-        defaultGymId: PRIMARY_GYM_ID,
-        isActive: true,
-        createdAt: now,
-        updatedAt: now
-      },
-      { merge: true }
-    );
-  }
-
-  const adminRef = db.collection(collectionPaths.profiles).doc("admin-fitsplit");
-  await adminRef.set(
-    {
-      id: "admin-fitsplit",
-      fullName: "Admin",
-      email: "admin@fitsplit.app",
-      username: "admin",
-      role: "admin",
+    const trainerProfile = {
+      ...trainer,
+      authEmail: trainer.email.toLowerCase(),
+      role: "owner",
+      staffType: "trainer",
       defaultGymId: PRIMARY_GYM_ID,
       isActive: true,
+      createdAt: now,
       updatedAt: now
-    },
-    { merge: true }
-  );
+    };
+    await writeAuthProfileIndex(db, trainer.id, trainerProfile);
+    await mirrorProfileToGym(db, trainer.id, trainerProfile);
+  }
+
+  await writeAuthProfileIndex(db, "admin-fitsplit", {
+    id: "admin-fitsplit",
+    fullName: "Admin",
+    email: "admin@fitsplit.app",
+    authEmail: "admin@fitsplit.app",
+    username: "admin",
+    role: "admin",
+    defaultGymId: PRIMARY_GYM_ID,
+    isActive: true,
+    updatedAt: now
+  });
 
   // Seed Auth - Force password reset for demo users to ensure they match requirements
   const { auth } = getFirebaseAdminServices();
@@ -695,7 +744,7 @@ export async function createMemberProfile(
       updatedAt: now
     };
 
-    await db.collection(collectionPaths.profiles).doc(memberId).set(memberProfile);
+    await writeAuthProfileIndex(db, memberId, memberProfile);
     await mirrorProfileToGym(db, memberId, memberProfile);
 
     // Keep stored memberCount in sync
@@ -744,7 +793,7 @@ export async function updateMemberProfile(
     const email = requireText(formData, "email", "Email").toLowerCase();
     assertValidEmail(email);
     const now = new Date().toISOString();
-    const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", user.gymId);
     const existingProfile = profileDoc.data() ?? {};
     const gymId = String(existingProfile.defaultGymId ?? user.gymId ?? PRIMARY_GYM_ID);
     const authEmail = String(existingProfile.authEmail ?? memberAuthEmail(memberId));
@@ -764,8 +813,7 @@ export async function updateMemberProfile(
       notes: String(formData.get("macroNotes") ?? "").trim()
     };
 
-    await db.collection(collectionPaths.profiles).doc(memberId).set(
-      {
+    const memberUpdate = {
         id: memberId,
         fullName,
         email,
@@ -783,28 +831,11 @@ export async function updateMemberProfile(
           .slice(0, 2)
           .toUpperCase(),
         updatedAt: now
-      },
-      { merge: true }
-    );
+      };
+    await writeAuthProfileIndex(db, memberId, memberUpdate);
     await mirrorProfileToGym(db, memberId, {
       ...existingProfile,
-      id: memberId,
-      fullName,
-      email,
-      authEmail,
-      username,
-      phone: String(formData.get("phone") ?? "").trim(),
-      role: "member",
-      defaultGymId: gymId,
-      goal: String(formData.get("goal") ?? "General fitness").trim(),
-      macroNutritionTarget,
-      avatarInitials: fullName
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-      updatedAt: now
+      ...memberUpdate
     });
 
     await upsertAuthUser(auth, { 
@@ -845,8 +876,7 @@ export async function updateOwnerMemberContext(
       assertValidPhone(phone, "Phone");
     }
 
-    const profileRef = db.collection(collectionPaths.profiles).doc(memberId);
-    const profileDoc = await profileRef.get();
+    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", user.gymId);
     if (!profileDoc.exists) {
       throw new Error("Member profile was not found.");
     }
@@ -870,8 +900,7 @@ export async function updateOwnerMemberContext(
     await assertUsernameAvailable(db, username, memberId);
     const authEmail = String(existingProfile.authEmail ?? memberAuthEmail(memberId));
 
-    await profileRef.set(
-      {
+    const memberContextUpdate = {
         id: memberId,
         fullName,
         email,
@@ -899,38 +928,11 @@ export async function updateOwnerMemberContext(
           .slice(0, 2)
           .toUpperCase(),
         updatedAt: now
-      },
-      { merge: true }
-    );
+      };
+    await writeAuthProfileIndex(db, memberId, memberContextUpdate);
     await mirrorProfileToGym(db, memberId, {
       ...existingProfile,
-      id: memberId,
-      fullName,
-      email,
-      phone,
-      username,
-      authEmail,
-      role: "member",
-      defaultGymId: gymId,
-      goal: String(formData.get("goal") ?? "General fitness").trim() || "General fitness",
-      age: numericOrDelete("age"),
-      gender: String(formData.get("gender") ?? "").trim(),
-      dob: String(formData.get("dob") ?? "").trim(),
-      heightCm: numericOrDelete("heightCm"),
-      weightKg: numericOrDelete("weightKg"),
-      fitnessGoals: String(formData.get("fitnessGoals") ?? "").trim(),
-      medicalNotes: String(formData.get("medicalNotes") ?? "").trim(),
-      injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
-      primarySlot: String(formData.get("primarySlot") ?? "").trim() || "A",
-      secondarySlot: String(formData.get("secondarySlot") ?? "").trim() || "D",
-      assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
-      avatarInitials: fullName
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase(),
-      updatedAt: now
+      ...memberContextUpdate
     });
 
     await upsertAuthUser(
@@ -1186,14 +1188,13 @@ export async function updateProfileMetrics(
     }
     const now = new Date().toISOString();
 
-    const profileRef = db.collection(collectionPaths.profiles).doc(memberId);
-    const existingProfile = (await profileRef.get()).data() || {};
+    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", currentUser.gymId);
+    const existingProfile = profileDoc.data() || {};
     const assignedTrainer = currentUser.role === "member"
       ? (existingProfile.assignedTrainer || "")
       : String(formData.get("assignedTrainer") ?? "").trim();
 
-    await profileRef.set(
-      {
+    const profileUpdate = {
         fullName,
         email,
         phone,
@@ -1209,29 +1210,23 @@ export async function updateProfileMetrics(
         injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
         assignedTrainer,
         updatedAt: now
-      },
-      { merge: true }
-    );
-    await mirrorProfileToGym(db, memberId, {
+      };
+    await writeAuthProfileIndex(db, memberId, {
       ...existingProfile,
       id: memberId,
+      role: "member",
+      defaultGymId: String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID),
       fullName,
       email,
       phone,
+      updatedAt: now
+    });
+    await mirrorProfileToGym(db, memberId, {
+      ...existingProfile,
+      id: memberId,
       role: "member",
       defaultGymId: String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID),
-      age: Number(formData.get("age") ?? 0),
-      gender: String(formData.get("gender") ?? "").trim(),
-      dob: String(formData.get("dob") ?? "").trim(),
-      heightCm: Number(formData.get("heightCm") ?? 0),
-      weightKg: Number(formData.get("weightKg") ?? 0),
-      fitnessGoals: String(formData.get("fitnessGoals") ?? "").trim(),
-      medicalNotes: String(formData.get("medicalNotes") ?? "").trim(),
-      primarySlot: String(formData.get("primarySlot") ?? "A"),
-      secondarySlot: String(formData.get("secondarySlot") ?? "D"),
-      injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
-      assignedTrainer,
-      updatedAt: now
+      ...profileUpdate
     });
 
     revalidatePath("/profile");
@@ -1258,15 +1253,6 @@ export async function saveMemberAiTrainerNote(
     const injuryNotes = String(formData.get("injuryNotes") ?? "").trim();
     const now = new Date().toISOString();
 
-    await db.collection(collectionPaths.profiles).doc(memberId).set(
-      {
-        injuryNotes,
-        aiTrainerNote: injuryNotes,
-        aiTrainerUpdatedAt: now,
-        updatedAt: now
-      },
-      { merge: true }
-    );
     await mirrorProfileToGym(db, memberId, {
       id: memberId,
       role: "member",
@@ -1453,7 +1439,7 @@ export async function resetPassword(
       newPassword = `pin-${rawNewPassword}`;
     }
 
-    const profileRef = db.collection(collectionPaths.profiles).doc(userId);
+    const profileRef = db.collection(collectionPaths.authProfiles).doc(userId);
     const profileDoc = await profileRef.get();
     const profile = profileDoc.data() ?? {};
     const gymId = String(profile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
@@ -1504,13 +1490,13 @@ export async function resetPassword(
     }
 
     if (role === "member") {
-      await profileRef.set(
+      await writeAuthProfileIndex(db, userId,
         {
+          ...profile,
           authEmail,
           username,
           updatedAt: new Date().toISOString()
         },
-        { merge: true }
       );
     }
 
@@ -1571,7 +1557,7 @@ export async function changeStaffPassword(
     // if the doc happens to be missing — the auth update is the source of truth.
     try {
       const { db } = requireFirebaseServices();
-      await db.collection(collectionPaths.profiles).doc(currentUser.uid).set(
+      await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
         { mustChangePassword: false, updatedAt: new Date().toISOString() },
         { merge: true }
       );
@@ -1639,14 +1625,14 @@ export async function toggleMemberAccess(
     const isActive = formData.get("isActive") === "true";
     const now = new Date().toISOString();
 
-    const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const profileDoc = await getAuthProfileDoc(db, memberId);
     const memberName = String(profileDoc.data()?.fullName ?? "Member");
     const gymId = String(profileDoc.data()?.defaultGymId ?? user.gymId ?? PRIMARY_GYM_ID);
 
-    await db.collection(collectionPaths.profiles).doc(memberId).update({
+    await db.collection(collectionPaths.authProfiles).doc(memberId).set({
       isActive,
       updatedAt: now
-    });
+    }, { merge: true });
     await mirrorProfileToGym(db, memberId, {
       id: memberId,
       role: "member",
@@ -1696,7 +1682,7 @@ export async function deleteMemberProfile(
     const { auth, db } = requireFirebaseServices();
     const memberId = requireText(formData, "memberId", "Member ID");
     await assertMemberBelongsToCallerGym(user, memberId);
-    const profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", user.gymId);
     const data = profileDoc.data();
 
     if (!profileDoc.exists || data?.role !== "member") {
@@ -1755,7 +1741,8 @@ export async function deleteMemberProfile(
     }
     await cleanupBatch.commit();
 
-    await db.collection(collectionPaths.profiles).doc(memberId).delete();
+    await db.collection(collectionPaths.authProfiles).doc(memberId).delete();
+    await db.collection(collectionPaths.profiles).doc(memberId).delete().catch(() => undefined);
     await scopedGymDoc(db, gymId, "members", memberId).delete();
 
     // Decrement stored memberCount
@@ -1852,7 +1839,7 @@ export async function createOwnerProfile(
       updatedAt: now
     };
 
-    await db.collection(collectionPaths.profiles).doc(ownerId).set(staffProfile);
+    await writeAuthProfileIndex(db, ownerId, staffProfile);
     await mirrorProfileToGym(db, ownerId, staffProfile);
 
     // Audit log: admin created a new staff account. Tracks who provisioned
@@ -1950,7 +1937,7 @@ export async function deleteGymWorkspace(
     }
 
     const assignedProfiles = await db
-      .collection(collectionPaths.profiles)
+      .collection(collectionPaths.authProfiles)
       .where("defaultGymId", "==", gymId)
       .limit(1)
       .get();
@@ -1989,7 +1976,7 @@ export async function deleteGymWithMembers(
 
     // Fetch all profiles assigned to this gym
     const profilesSnap = await db
-      .collection(collectionPaths.profiles)
+      .collection(collectionPaths.authProfiles)
       .where("defaultGymId", "==", gymId)
       .get();
     const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
@@ -2080,14 +2067,15 @@ export async function deleteGymStaffProfile(
     const userId = requireText(formData, "userId", "User ID");
     const gymId = requireText(formData, "gymId", "Gym ID");
 
-    const profileDoc = await db.collection(collectionPaths.profiles).doc(userId).get();
+    const profileDoc = await getAuthProfileDoc(db, userId);
     const scopedStaffDoc = await scopedGymDoc(db, gymId, "staff", userId).get();
     await Promise.all([
       archiveDocumentSnapshot(db, profileDoc, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" }),
       archiveDocumentSnapshot(db, scopedStaffDoc, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" })
     ]);
 
-    await db.collection(collectionPaths.profiles).doc(userId).delete();
+    await db.collection(collectionPaths.authProfiles).doc(userId).delete();
+    await db.collection(collectionPaths.profiles).doc(userId).delete().catch(() => undefined);
     await scopedGymDoc(db, gymId, "staff", userId).delete();
 
     try {
@@ -2206,7 +2194,7 @@ export async function setGymStatus(
     });
 
     const profileSnapshot = await db
-      .collection(collectionPaths.profiles)
+      .collection(collectionPaths.authProfiles)
       .where("defaultGymId", "==", gymId)
       .where("role", "in", ["owner", "member"])
       .get();
@@ -2218,6 +2206,15 @@ export async function setGymStatus(
         isActive,
         updatedAt: now
       });
+    }
+
+    const [memberSnapshot, staffSnapshot] = await Promise.all([
+      scopedGymDoc(db, gymId, "members", "_placeholder").parent.get(),
+      scopedGymDoc(db, gymId, "staff", "_placeholder").parent.get()
+    ]);
+
+    for (const scopedDoc of [...memberSnapshot.docs, ...staffSnapshot.docs]) {
+      batch.set(scopedDoc.ref, { isActive, updatedAt: now }, { merge: true });
     }
 
     await batch.commit();
@@ -3104,7 +3101,7 @@ export async function changeAdminEmail(
     }
     const now = new Date().toISOString();
     await auth.updateUser(currentUser.uid, { email: newEmail });
-    await db.collection(collectionPaths.profiles).doc(currentUser.uid).set(
+    await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
       { email: newEmail, updatedAt: now },
       { merge: true }
     );
@@ -3134,7 +3131,7 @@ export async function updateAdminDisplayName(
       .slice(0, 2)
       .toUpperCase();
     await auth.updateUser(currentUser.uid, { displayName });
-    await db.collection(collectionPaths.profiles).doc(currentUser.uid).set(
+    await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
       { fullName: displayName, avatarInitials: initials, updatedAt: now },
       { merge: true }
     );
@@ -3456,10 +3453,6 @@ export async function logBodyWeight(
 
     // Mirror onto profile so dashboards see the current value without a join.
     try {
-      await db.collection(collectionPaths.profiles).doc(memberId).set(
-        { weightKg, updatedAt: now },
-        { merge: true }
-      );
       await mirrorProfileToGym(db, memberId, {
         id: memberId,
         role: "member",
@@ -3511,10 +3504,6 @@ export async function updateCoachNote(
         coachNoteUpdatedByName: rawNote ? currentUser.fullName : null,
         updatedAt: now
       };
-    await db.collection(collectionPaths.profiles).doc(memberId).set(
-      noteUpdate,
-      { merge: true }
-    );
     await mirrorProfileToGym(db, memberId, {
       id: memberId,
       role: "member",
@@ -3626,5 +3615,449 @@ export async function clearDayLog(
   } catch (error) {
     console.error("Unable to clear day log", error);
     return failure(error, "Could not clear. Please try again.");
+  }
+}
+
+// ─── Personal Training ────────────────────────────────────────────────────────
+//
+// Access model:
+//   - Admins can always manage any PT session.
+//   - Any gym staff (role "owner", any staffType) can manage any session in
+//     their gym — this enables trainer-NA cover.
+//   - Members can only read their own sessions.
+//
+// Dual-write: every ptSession and ptLiftLog is written to both the gym-scoped
+// subcollection (gyms/{gymId}/ptSessions) AND the root ptSessions collection
+// so admin-level cross-gym queries work.
+
+/**
+ * Guards PT-mutation actions.
+ * Accepts admin or any gym staff regardless of staffType so that any trainer
+ * (or the owner) can cover a session when the assigned trainer is unavailable.
+ */
+async function requireGymStaff() {
+  // requireRole(["admin", "owner"]) already allows every role=="owner" user —
+  // which includes staffType owner/trainer/staff — without the extra staffType
+  // check that requireOwner() adds.
+  return requireRole(["admin", "owner"]);
+}
+
+/**
+ * Book a new PT session for a member.
+ *
+ * FormData keys:
+ *   memberId, memberName?, trainerId, trainerName?, scheduledAt (ISO),
+ *   durationMinutes?, notes?
+ */
+export async function bookPTSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireGymStaff();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const memberId = requireText(formData, "memberId", "Member");
+    const memberName = String(formData.get("memberName") ?? "").trim() || undefined;
+    const trainerId = requireText(formData, "trainerId", "Trainer");
+    const trainerName = String(formData.get("trainerName") ?? "").trim() || undefined;
+    const scheduledAt = requireText(formData, "scheduledAt", "Scheduled date/time");
+    const durationMinutes = Number(formData.get("durationMinutes") ?? 60);
+    const notes = String(formData.get("notes") ?? "").trim() || undefined;
+
+    if (isNaN(new Date(scheduledAt).getTime())) {
+      throw new Error("Scheduled date/time is invalid.");
+    }
+    if (durationMinutes < 15 || durationMinutes > 240) {
+      throw new Error("Duration must be between 15 and 240 minutes.");
+    }
+
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const sessionId = randomUUID();
+    const now = new Date().toISOString();
+
+    const sessionRecord = {
+      id: sessionId,
+      gymId,
+      memberId,
+      memberName,
+      trainerId,
+      trainerName,
+      scheduledAt,
+      durationMinutes,
+      status: "scheduled",
+      notes,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const db = requireFirebase();
+    await db.collection(collectionPaths.ptSessions).doc(sessionId).set(sessionRecord);
+    await mirrorGymScopedRecord(db, gymId, "ptSessions", sessionId, sessionRecord);
+
+    // Notify the member
+    const notifId = randomUUID();
+    const notifRecord = {
+      id: notifId,
+      gymId,
+      recipientId: memberId,
+      recipientRole: "member",
+      type: "pt_session_booked",
+      title: "PT Session Booked",
+      body: `Your personal training session has been scheduled for ${new Date(scheduledAt).toLocaleString()}.`,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
+
+    revalidatePath("/owner/training");
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/trainer");
+
+    return success(`PT session booked. Session ID: ${sessionId}`, gymId);
+  } catch (error) {
+    console.error("Unable to book PT session", error);
+    return failure(error, "Could not book session. Please try again.");
+  }
+}
+
+/**
+ * Start an active PT session (trainer taps "Start session").
+ * Any gym staff can start any session for trainer-NA cover.
+ *
+ * FormData keys: ptSessionId
+ */
+export async function startPTSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireGymStaff();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
+    const snap = await rootRef.get();
+    if (!snap.exists) throw new Error("PT session not found.");
+
+    const session = snap.data()!;
+    if (session.status !== "scheduled") {
+      throw new Error(`Cannot start a session with status "${session.status}".`);
+    }
+
+    const patch = { status: "active", startedAt: now, updatedAt: now };
+    await rootRef.update(patch);
+    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+
+    revalidatePath("/owner/training");
+    revalidatePath("/trainer");
+    revalidatePath(`/trainer/session/${ptSessionId}`);
+
+    return success("Session started.", gymId);
+  } catch (error) {
+    console.error("Unable to start PT session", error);
+    return failure(error, "Could not start session. Please try again.");
+  }
+}
+
+/**
+ * Log a single lift set during an active PT session.
+ * Dual-writes to ptLiftLogs AND liftLogs (with source: "trainer") so the
+ * member's history automatically includes PT-logged sets.
+ *
+ * FormData keys: ptSessionId, memberId, exerciseId, exerciseName?,
+ *                weight, sets, reps, notes?
+ */
+export async function logPTLiftSet(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireGymStaff();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
+    const memberId = requireText(formData, "memberId", "Member");
+    const exerciseId = requireText(formData, "exerciseId", "Exercise");
+    const exerciseName = String(formData.get("exerciseName") ?? "").trim() || undefined;
+    const weight = Number(formData.get("weight") ?? 0);
+    const sets = Number(formData.get("sets") ?? 1);
+    const reps = requireText(formData, "reps", "Reps");
+    const notes = String(formData.get("notes") ?? "").trim() || undefined;
+
+    if (weight < 0 || sets < 1) throw new Error("Invalid lift values.");
+
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+    const logId = randomUUID();
+
+    const db = requireFirebase();
+
+    // Verify session is active
+    const sessionSnap = await db.collection(collectionPaths.ptSessions).doc(ptSessionId).get();
+    if (!sessionSnap.exists) throw new Error("PT session not found.");
+    if (sessionSnap.data()!.status !== "active") {
+      throw new Error("Lift can only be logged on an active session.");
+    }
+
+    // Write ptLiftLog
+    const ptLiftLogRecord = {
+      id: logId,
+      gymId,
+      ptSessionId,
+      memberId,
+      trainerId: currentUser.uid,
+      exerciseId,
+      exerciseName,
+      weight,
+      sets,
+      reps,
+      notes,
+      loggedAt: now,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection(collectionPaths.ptLiftLogs).doc(logId).set(ptLiftLogRecord);
+    await mirrorGymScopedRecord(db, gymId, "ptLiftLogs", logId, ptLiftLogRecord);
+
+    // Dual-write to liftLogs so member workout history inherits PT sets
+    const liftLogRecord = {
+      id: logId,
+      gymId,
+      memberId,
+      exerciseId,
+      weight,
+      sets,
+      reps,
+      sessionId: ptSessionId,
+      source: "trainer",
+      ptSessionId,
+      loggedByTrainerId: currentUser.uid,
+      loggedAt: now,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection(collectionPaths.liftLogs).doc(logId).set(liftLogRecord);
+    await mirrorGymScopedRecord(db, gymId, "liftLogs", logId, liftLogRecord);
+
+    revalidatePath(`/trainer/session/${ptSessionId}`);
+    revalidatePath(`/owner/members/${memberId}`);
+    revalidatePath("/member/history");
+
+    return success("Lift logged.", gymId);
+  } catch (error) {
+    console.error("Unable to log PT lift set", error);
+    return failure(error, "Could not log lift. Please try again.");
+  }
+}
+
+/**
+ * Complete a PT session (trainer taps "End session").
+ *
+ * FormData keys: ptSessionId
+ */
+export async function completePTSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireGymStaff();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
+    const snap = await rootRef.get();
+    if (!snap.exists) throw new Error("PT session not found.");
+
+    const session = snap.data()!;
+    if (session.status !== "active") {
+      throw new Error(`Cannot complete a session with status "${session.status}".`);
+    }
+
+    const patch = { status: "completed", endedAt: now, updatedAt: now };
+    await rootRef.update(patch);
+    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+
+    // Notify the member
+    const notifId = randomUUID();
+    const notifRecord = {
+      id: notifId,
+      gymId,
+      recipientId: session.memberId,
+      recipientRole: "member",
+      type: "pt_session_completed",
+      title: "PT Session Completed",
+      body: "Your personal training session has been completed. Great work!",
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
+
+    revalidatePath("/owner/training");
+    revalidatePath("/trainer");
+    revalidatePath(`/trainer/session/${ptSessionId}`);
+    revalidatePath(`/owner/members/${session.memberId}`);
+
+    return success("Session completed.", gymId);
+  } catch (error) {
+    console.error("Unable to complete PT session", error);
+    return failure(error, "Could not complete session. Please try again.");
+  }
+}
+
+/**
+ * Cancel a PT session.
+ *
+ * FormData keys: ptSessionId, cancelReason?
+ */
+export async function cancelPTSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireGymStaff();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
+    const cancelReason = String(formData.get("cancelReason") ?? "").trim() || undefined;
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
+    const snap = await rootRef.get();
+    if (!snap.exists) throw new Error("PT session not found.");
+
+    const session = snap.data()!;
+    if (session.status === "completed" || session.status === "cancelled") {
+      throw new Error(`Session is already ${session.status}.`);
+    }
+
+    const patch = { status: "cancelled", cancelReason, updatedAt: now };
+    await rootRef.update(patch);
+    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+
+    // Notify the member
+    const notifId = randomUUID();
+    const notifRecord = {
+      id: notifId,
+      gymId,
+      recipientId: session.memberId,
+      recipientRole: "member",
+      type: "pt_session_cancelled",
+      title: "PT Session Cancelled",
+      body: cancelReason
+        ? `Your PT session has been cancelled. Reason: ${cancelReason}`
+        : "Your PT session has been cancelled.",
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
+
+    revalidatePath("/owner/training");
+    revalidatePath("/trainer");
+    revalidatePath(`/owner/members/${session.memberId}`);
+
+    return success("Session cancelled.", gymId);
+  } catch (error) {
+    console.error("Unable to cancel PT session", error);
+    return failure(error, "Could not cancel session. Please try again.");
+  }
+}
+
+/**
+ * Reschedule an existing PT session to a new time.
+ * Can also reassign to a different trainer for cover.
+ *
+ * FormData keys: ptSessionId, scheduledAt (ISO), trainerId?, trainerName?,
+ *                durationMinutes?, notes?
+ */
+export async function reschedulePTSession(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireGymStaff();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
+    const scheduledAt = requireText(formData, "scheduledAt", "New date/time");
+
+    if (isNaN(new Date(scheduledAt).getTime())) {
+      throw new Error("Scheduled date/time is invalid.");
+    }
+
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
+    const snap = await rootRef.get();
+    if (!snap.exists) throw new Error("PT session not found.");
+
+    const session = snap.data()!;
+    if (session.status === "completed" || session.status === "cancelled") {
+      throw new Error(`Cannot reschedule a ${session.status} session.`);
+    }
+
+    const patch: Record<string, unknown> = {
+      scheduledAt,
+      status: "scheduled",  // reset to scheduled if it was somehow active
+      updatedAt: now
+    };
+
+    const newTrainerId = String(formData.get("trainerId") ?? "").trim();
+    if (newTrainerId) patch.trainerId = newTrainerId;
+
+    const newTrainerName = String(formData.get("trainerName") ?? "").trim();
+    if (newTrainerName) patch.trainerName = newTrainerName;
+
+    const durationRaw = formData.get("durationMinutes");
+    if (durationRaw) {
+      const dur = Number(durationRaw);
+      if (dur >= 15 && dur <= 240) patch.durationMinutes = dur;
+    }
+
+    const notes = String(formData.get("notes") ?? "").trim();
+    if (notes) patch.notes = notes;
+
+    await rootRef.update(patch);
+    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+
+    // Notify the member
+    const notifId = randomUUID();
+    const notifRecord = {
+      id: notifId,
+      gymId,
+      recipientId: session.memberId,
+      recipientRole: "member",
+      type: "pt_session_rescheduled",
+      title: "PT Session Rescheduled",
+      body: `Your PT session has been rescheduled to ${new Date(scheduledAt).toLocaleString()}.`,
+      createdAt: now,
+      updatedAt: now
+    };
+    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
+
+    revalidatePath("/owner/training");
+    revalidatePath("/trainer");
+    revalidatePath(`/owner/members/${session.memberId}`);
+
+    return success("Session rescheduled.", gymId);
+  } catch (error) {
+    console.error("Unable to reschedule PT session", error);
+    return failure(error, "Could not reschedule session. Please try again.");
   }
 }

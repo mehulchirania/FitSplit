@@ -22,6 +22,7 @@ import "./styles/08-admin-catalog-media.css";
 import "./styles/09-profile-history-notices-loader.css";
 import "./styles/forms.css";
 import "./styles/member.css";
+import "./styles/10-pt-training.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });

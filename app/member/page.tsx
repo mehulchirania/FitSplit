@@ -38,13 +38,13 @@ export default async function MemberDashboard() {
     { dayLogs }
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
-    getProgramAssignmentForMember(currentMemberId),
+    getProgramAssignmentForMember(currentMemberId, currentUser.gymId),
     getWorkoutPrograms(currentUser.gymId),
-    getLiftLogsForMember(currentMemberId),
+    getLiftLogsForMember(currentMemberId, currentUser.gymId),
     getExerciseCatalog(currentUser.gymId),
     getActiveWorkoutSessions(currentUser.gymId),
     getGymDetail(currentUser.gymId),
-    getDayLogsForMember(currentMemberId)
+    getDayLogsForMember(currentMemberId, currentUser.gymId)
   ]);
 
   if (!member) return null;

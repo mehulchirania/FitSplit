@@ -243,8 +243,8 @@ export default async function ProfilePage({
   const memberId = currentUser.memberId ?? currentUser.uid;
   const [{ profile }, { liftLogs }, { exercises }, { owners }, { logs: bodyMetricLogs }] = await Promise.all([
     getProfileMetrics(memberId),
-    getLiftLogsForMember(memberId),
-    getExerciseCatalog(),
+    getLiftLogsForMember(memberId, currentUser.gymId),
+    getExerciseCatalog(currentUser.gymId),
     getOwnersForGym(currentUser.gymId),
     getBodyMetricLogsForMember(memberId)
   ]);

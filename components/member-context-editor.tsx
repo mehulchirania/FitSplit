@@ -8,11 +8,13 @@ import type { Member, ProfileMetrics } from "@/types/domain";
 export function MemberContextEditor({
   bmi,
   member,
-  profile
+  profile,
+  trainers = []
 }: {
   bmi: string | null;
   member: Member;
   profile: ProfileMetrics;
+  trainers?: Pick<Member, "id" | "fullName">[];
 }) {
   const [isEditing, setIsEditing] = useState(false);
   const [formKey, setFormKey] = useState(0);
@@ -125,7 +127,16 @@ export function MemberContextEditor({
             </label>
             <label>
               Assigned trainer
-              <input defaultValue={profile.assignedTrainer ?? ""} name="assignedTrainer" />
+              {trainers.length > 0 ? (
+                <select defaultValue={profile.assignedTrainer ?? ""} name="assignedTrainer">
+                  <option value="">— Unassigned —</option>
+                  {trainers.map((t) => (
+                    <option key={t.id} value={t.fullName}>{t.fullName}</option>
+                  ))}
+                </select>
+              ) : (
+                <input defaultValue={profile.assignedTrainer ?? ""} name="assignedTrainer" placeholder="No trainers added yet" />
+              )}
             </label>
             <label>
               Primary slot

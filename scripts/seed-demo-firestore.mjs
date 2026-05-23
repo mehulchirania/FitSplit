@@ -482,6 +482,41 @@ if (!setDoc) {
   process.exit(1);
 }
 
+function authProfilePayload(id, data) {
+  return {
+    id,
+    authUid: data.authUid ?? id,
+    fullName: data.fullName ?? "",
+    email: data.email ?? "",
+    authEmail: data.authEmail ?? data.email ?? "",
+    username: data.username ?? "",
+    phone: data.phone ?? "",
+    role: data.role,
+    staffType: data.staffType ?? null,
+    defaultGymId: data.defaultGymId ?? data.gymId ?? gymId,
+    gymId: data.gymId ?? data.defaultGymId ?? gymId,
+    isActive: data.isActive !== false,
+    mustChangePassword: data.mustChangePassword ?? false,
+    authIndexOnly: true,
+    createdAt: data.createdAt ?? now,
+    updatedAt: data.updatedAt ?? now
+  };
+}
+
+async function setProfileDoc(id, data) {
+  const profile = { id, ...data };
+  const tenantId = profile.defaultGymId ?? profile.gymId ?? gymId;
+  const scopedCollection = profile.role === "member" ? "members" : "staff";
+
+  await setDoc("authProfiles", id, authProfilePayload(id, profile));
+  await setDoc(`gyms/${tenantId}/${scopedCollection}`, id, profile);
+}
+
+async function setGymScopedDoc(collection, id, data, fallbackGymId = gymId) {
+  const tenantId = data.gymId ?? fallbackGymId;
+  await setDoc(`gyms/${tenantId}/${collection}`, id, data);
+}
+
 await setDoc("gyms", gymId, {
   id: gymId,
   name: "Sri Shakthi Hanuman Gym",
@@ -494,7 +529,7 @@ await setDoc("gyms", gymId, {
   updatedAt: now
 });
 
-await setDoc("profiles", adminId, {
+await setProfileDoc(adminId, {
   id: adminId,
   fullName: "FitSplit Admin",
   email: "admin@fitsplit.local",
@@ -507,7 +542,7 @@ await setDoc("profiles", adminId, {
   updatedAt: now
 });
 
-await setDoc("profiles", ownerId, {
+await setProfileDoc(ownerId, {
   id: ownerId,
   fullName: "Santosh SHG",
   email: "santosh-shg@fitsplit.app",
@@ -522,7 +557,7 @@ await setDoc("profiles", ownerId, {
 });
 
 for (const trainer of trainers) {
-  await setDoc("profiles", trainer.id, {
+  await setProfileDoc(trainer.id, {
     ...trainer,
     authEmail: trainer.email.toLowerCase(),
     role: "owner",
@@ -545,7 +580,7 @@ await setDoc("gyms", dummyGymId, {
   updatedAt: now
 });
 
-await setDoc("profiles", dummyOwnerId, {
+await setProfileDoc(dummyOwnerId, {
   id: dummyOwnerId,
   fullName: "Dummy Gym Owner",
   email: "owner@dummygym.local",
@@ -559,7 +594,7 @@ await setDoc("profiles", dummyOwnerId, {
 });
 
 for (const member of members) {
-  await setDoc("profiles", member.id, {
+  await setProfileDoc(member.id, {
     ...member,
     authEmail: member.email.toLowerCase(),
     username: member.id === "member-mehul" ? "mehulchirania" : member.email.toLowerCase(),
@@ -572,7 +607,7 @@ for (const member of members) {
 }
 
 for (const membership of memberships) {
-  await setDoc("memberships", membership.id, {
+  await setGymScopedDoc("memberships", membership.id, {
     ...membership,
     gymId,
     createdBy: ownerId,
@@ -585,7 +620,7 @@ for (const [muscleGroup, catalogExercises] of Object.entries(
   workoutsData.exercise_catalog
 )) {
   for (const exercise of catalogExercises) {
-    await setDoc("exerciseCatalog", exercise.id, {
+    await setGymScopedDoc("exerciseCatalog", exercise.id, {
       id: exercise.id,
       gymId,
       name: exercise.name,
@@ -608,8 +643,8 @@ for (const [muscleGroup, catalogExercises] of Object.entries(
 
 for (const split of workoutsData.training_splits) {
   const program = workoutProgramFromSplit(split);
-  await setDoc("workoutPrograms", program.id, program);
-  await setDoc("workoutSplitTemplates", split.split_id, {
+  await setGymScopedDoc("workoutPrograms", program.id, program);
+  await setGymScopedDoc("workoutSplitTemplates", split.split_id, {
     id: split.split_id,
     gymId,
     name: split.name,
@@ -625,11 +660,11 @@ for (const split of workoutsData.training_splits) {
 }
 
 for (const notification of notifications) {
-  await setDoc("notifications", notification.id, notification);
+  await setGymScopedDoc("notifications", notification.id, { ...notification, gymId });
 }
 
 for (const liftLog of liftLogs) {
-  await setDoc("liftLogs", liftLog.id, {
+  await setGymScopedDoc("liftLogs", liftLog.id, {
     ...liftLog,
     gymId,
     createdAt: liftLog.loggedAt,
@@ -638,7 +673,7 @@ for (const liftLog of liftLogs) {
 }
 
 for (const assignment of programAssignments) {
-  await setDoc("programAssignments", assignment.id, {
+  await setGymScopedDoc("programAssignments", assignment.id, {
     ...assignment,
     gymId,
     createdBy: ownerId,
@@ -648,7 +683,7 @@ for (const assignment of programAssignments) {
 }
 
 for (const event of activityEvents) {
-  await setDoc("activityEvents", event.id, {
+  await setGymScopedDoc("activityEvents", event.id, {
     ...event,
     gymId,
     createdBy: ownerId,
@@ -657,7 +692,7 @@ for (const event of activityEvents) {
 }
 
 for (const link of siteLinks) {
-  await setDoc("siteLinks", link.id, {
+  await setGymScopedDoc("siteLinks", link.id, {
     ...link,
     updatedAt: now
   });
@@ -679,7 +714,7 @@ await setDoc("gyms", titanGymId, {
   updatedAt: now
 });
 
-await setDoc("profiles", titanOwnerId, {
+await setProfileDoc(titanOwnerId, {
   id: titanOwnerId,
   fullName: "Titan Owner",
   email: "titan-owner-1@fitsplit.app",
@@ -695,7 +730,7 @@ await setDoc("profiles", titanOwnerId, {
 });
 
 for (const member of titanMembers) {
-  await setDoc("profiles", member.id, {
+  await setProfileDoc(member.id, {
     ...member,
     authEmail: member.email.toLowerCase(),
     username: member.email.toLowerCase(),
@@ -708,7 +743,7 @@ for (const member of titanMembers) {
 }
 
 for (const assignment of titanProgramAssignments) {
-  await setDoc("programAssignments", assignment.id, {
+  await setGymScopedDoc("programAssignments", assignment.id, {
     ...assignment,
     gymId: titanGymId,
     createdBy: titanOwnerId,
@@ -718,4 +753,3 @@ for (const assignment of titanProgramAssignments) {
 }
 
 console.log("Seeded FitSplit demo Firestore records.");
-

@@ -228,13 +228,22 @@ gyms/{gymId}
 Keep these at root:
 
 ```text
-profiles/{uid}
+authProfiles/{uid}
 exerciseCatalog/{exerciseId}
 workoutPrograms/{programId}
 archives/{archiveId}
 ```
 
-Temporary auth/profile index used by login and session lookup. This keeps auth fast while the app migrates. Each profile should also be mirrored to `gyms/{gymId}/members/{uid}` or `gyms/{gymId}/staff/{uid}`.
+`authProfiles/{uid}` is the lightweight auth/session index used by login and session lookup. It should contain only fields needed to authenticate, route, and enforce access quickly: `id`, `authUid`, `username`, `authEmail`, `email`, `phone`, `fullName`, `role`, `staffType`, `defaultGymId`, `gymId`, `isActive`, `mustChangePassword`, login lockout fields, timestamps, and `authIndexOnly: true`.
+
+Full member and staff records are gym-scoped source-of-truth documents:
+
+```text
+gyms/{gymId}/members/{memberId}
+gyms/{gymId}/staff/{staffId}
+```
+
+`profiles/{uid}` is now a legacy fallback only. It should remain empty after migration and should not receive new writes.
 
 Root `exerciseCatalog` and `workoutPrograms` are the FitSplit-owned default libraries. They are editable only by admins. Gym owners should not mutate these defaults; owner-created exercises and workout plans belong under `gyms/{gymId}/exerciseCatalog` and `gyms/{gymId}/workoutPrograms`.
 
@@ -248,15 +257,34 @@ platformSettings/{docId}
 
 ## Migration Rules
 
-1. Root `profiles` remains as the auth index for now.
-2. Member profiles mirror to `gyms/{gymId}/members`.
-3. Owner/trainer/staff profiles mirror to `gyms/{gymId}/staff`.
-4. Gym-owned operational collections live under `gyms/{gymId}/{collection}`.
-5. Reads should prefer gym-scoped custom data plus root defaults, then fall back to root legacy records during migration.
-6. New custom exercises and programs should write only to the gym directory.
-7. Default exercises and programs should write only to root collections and require admin access.
-8. Deletes should archive the record first with a 60-day `retentionExpiresAt`.
-9. Once migration is verified, root operational legacy records can be archived/deleted, leaving only `profiles`, default catalogs/programs, archives, and platform settings at root.
+1. Root `authProfiles` is the auth/session index.
+2. Root `profiles` is legacy fallback only and should remain empty.
+3. Member profiles write to `gyms/{gymId}/members`.
+4. Owner/trainer/staff profiles write to `gyms/{gymId}/staff`.
+5. Gym-owned operational collections live under `gyms/{gymId}/{collection}`.
+6. Reads prefer gym-scoped data plus root defaults, then fall back to root legacy records only where needed for old data.
+7. New custom exercises and programs write only to the gym directory.
+8. Default exercises and programs write only to root collections and require admin access.
+9. Deletes archive the record first with a 60-day `retentionExpiresAt`.
+10. Root tenant-owned operational collections should stay empty. Remaining root `notifications` may be global/admin notifications only.
+
+## Migration Script
+
+Use the tenant cleanup script when old root-level tenant data appears:
+
+```bash
+npm run migrate:tenant-cleanup
+npm run migrate:tenant-cleanup -- --write
+```
+
+The script:
+
+1. Builds `authProfiles` from legacy root profiles and gym-scoped member/staff records.
+2. Mirrors full member/staff data into `gyms/{gymId}/members` and `gyms/{gymId}/staff`.
+3. Moves tenant-owned operational docs into `gyms/{gymId}/{collection}`.
+4. Keeps default exercises in root `exerciseCatalog` with global/default scope.
+5. Moves custom exercises and custom programs into the owning gym directory.
+6. Deletes migrated legacy root tenant documents.
 
 ## Migration Command
 
