@@ -2594,3 +2594,51 @@ Migration approach:
 - Phase 3: Move event-based side effects into Firestore triggers, e.g. when `programAssignments` is created, automatically create notification/activity records.
 - Phase 4: Harden Firestore rules so clients and Next pages cannot bypass Functions for privileged writes.
 - Phase 5: Split dev/prod Firebase projects and deploy Functions independently per environment.
+
+## Latest Update - 2026-05-23: Firebase Functions scaffold
+
+Added a dedicated Firebase Functions TypeScript workspace under `functions/`.
+
+### Files added/updated
+
+- `functions/package.json`
+- `functions/package-lock.json`
+- `functions/tsconfig.json`
+- `functions/src/index.ts`
+- `firebase.json` now includes a `functions` deploy target using Node.js 20 and a predeploy build.
+- Root `package.json` now includes:
+
+```bash
+npm run functions:build
+npm run functions:deploy
+```
+
+### Exported callable/scheduled functions
+
+Callable functions:
+
+- `createMemberAccount`
+- `createStaffAccount`
+- `toggleMemberAccess`
+- `resetMemberPin`
+- `resetStaffPassword`
+- `assignProgramToMember`
+- `archiveMemberAccount`
+- `archiveCustomProgram`
+- `archiveGymWorkspace`
+
+Scheduled function:
+
+- `purgeExpiredArchives` — runs every 24 hours and deletes expired `archives` records where `retentionExpiresAt <= now`.
+
+### Current integration status
+
+- Functions are scaffolded and build successfully.
+- Existing Next.js server actions still run the app today.
+- Next step is to migrate server actions into thin wrappers that call these Firebase Functions one by one, starting with member creation, member archive/delete, program assignment, and password/PIN resets.
+
+### Verification
+
+```bash
+npm run functions:build
+```

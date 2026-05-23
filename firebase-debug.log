@@ -1,0 +1,149 @@
+[debug] [2026-05-23T11:31:45.590Z] ----------------------------------------------------------------------
+[debug] [2026-05-23T11:31:45.592Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\mehul\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js deploy --only functions
+[debug] [2026-05-23T11:31:45.592Z] CLI Version:   15.16.0
+[debug] [2026-05-23T11:31:45.592Z] Platform:      win32
+[debug] [2026-05-23T11:31:45.593Z] Node Version:  v24.15.0
+[debug] [2026-05-23T11:31:45.593Z] Time:          Sat May 23 2026 17:01:45 GMT+0530 (India Standard Time)
+[debug] [2026-05-23T11:31:45.593Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-05-23T11:31:47.965Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-23T11:31:47.965Z] > authorizing via signed-in user (mehulchirania@gmail.com)
+[debug] [2026-05-23T11:31:47.965Z] [iam] checking project fitsplit-29215 for permissions ["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]
+[debug] [2026-05-23T11:31:47.966Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:47.966Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:47.966Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions [none]
+[debug] [2026-05-23T11:31:47.966Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:31:47.967Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-05-23T11:31:49.301Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions 200
+[debug] [2026-05-23T11:31:49.301Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions {"permissions":["cloudfunctions.functions.create","cloudfunctions.functions.delete","cloudfunctions.functions.get","cloudfunctions.functions.list","cloudfunctions.functions.update","cloudfunctions.operations.get","firebase.projects.get"]}
+[debug] [2026-05-23T11:31:49.302Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:49.302Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:49.302Z] >>> [apiv2][query] POST https://iam.googleapis.com/v1/projects/fitsplit-29215/serviceAccounts/fitsplit-29215@appspot.gserviceaccount.com:testIamPermissions [none]
+[debug] [2026-05-23T11:31:49.302Z] >>> [apiv2][body] POST https://iam.googleapis.com/v1/projects/fitsplit-29215/serviceAccounts/fitsplit-29215@appspot.gserviceaccount.com:testIamPermissions {"permissions":["iam.serviceAccounts.actAs"]}
+[debug] [2026-05-23T11:31:51.006Z] <<< [apiv2][status] POST https://iam.googleapis.com/v1/projects/fitsplit-29215/serviceAccounts/fitsplit-29215@appspot.gserviceaccount.com:testIamPermissions 404
+[debug] [2026-05-23T11:31:51.006Z] <<< [apiv2][body] POST https://iam.googleapis.com/v1/projects/fitsplit-29215/serviceAccounts/fitsplit-29215@appspot.gserviceaccount.com:testIamPermissions {"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}}
+[debug] [2026-05-23T11:31:51.007Z] [functions] service account IAM check errored, deploy may fail: Request to https://iam.googleapis.com/v1/projects/fitsplit-29215/serviceAccounts/fitsplit-29215@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account {"name":"FirebaseError","children":[],"context":{"body":{"error":{"code":404,"message":"Unknown service account","status":"NOT_FOUND"}},"response":{"statusCode":404}},"exit":1,"message":"Request to https://iam.googleapis.com/v1/projects/fitsplit-29215/serviceAccounts/fitsplit-29215@appspot.gserviceaccount.com:testIamPermissions had HTTP Error: 404, Unknown service account","status":404}
+[info] 
+[info] === Deploying to 'fitsplit-29215'...
+[info] 
+[info] i  deploying functions 
+[info] Running command: npm --prefix functions run build
+[info] +  functions: Finished running predeploy script. 
+[debug] [2026-05-23T11:31:53.981Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:53.981Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:53.981Z] >>> [apiv2][query] GET https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215 [none]
+[debug] [2026-05-23T11:31:54.370Z] <<< [apiv2][status] GET https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215 200
+[debug] [2026-05-23T11:31:54.370Z] <<< [apiv2][body] GET https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215 {"projectNumber":"766523780087","projectId":"fitsplit-29215","lifecycleState":"ACTIVE","name":"FitSplit","labels":{"firebase":"enabled","firebase-core":"disabled"},"createTime":"2026-05-03T18:42:03.720Z"}
+[info] i  functions: preparing codebase default for deployment 
+[info] i  functions: ensuring required API cloudfunctions.googleapis.com is enabled... 
+[debug] [2026-05-23T11:31:54.371Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:54.371Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:54.372Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:54.372Z] Checked if tokens are valid: true, expires at: 1779539494239
+[info] i  functions: ensuring required API cloudbuild.googleapis.com is enabled... 
+[info] i  artifactregistry: ensuring required API artifactregistry.googleapis.com is enabled... 
+[debug] [2026-05-23T11:31:54.372Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com [none]
+[debug] [2026-05-23T11:31:54.372Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:31:54.374Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/runtimeconfig.googleapis.com [none]
+[debug] [2026-05-23T11:31:54.374Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/runtimeconfig.googleapis.com  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:31:56.228Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/runtimeconfig.googleapis.com 200
+[debug] [2026-05-23T11:31:56.228Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/runtimeconfig.googleapis.com [omitted]
+[debug] [2026-05-23T11:31:56.239Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com 200
+[debug] [2026-05-23T11:31:56.239Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com [omitted]
+[warn] !  functions: missing required API cloudfunctions.googleapis.com. Enabling now... 
+[debug] [2026-05-23T11:31:56.240Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:56.240Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:31:56.240Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com:enable [none]
+[debug] [2026-05-23T11:31:56.240Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com:enable  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:31:56.846Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com:enable 200
+[debug] [2026-05-23T11:31:56.847Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/cloudfunctions.googleapis.com:enable [omitted]
+[debug] [2026-05-23T11:32:06.864Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:06.864Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:06.864Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/fitsplit-29215/adminSdkConfig [none]
+[debug] [2026-05-23T11:32:08.207Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/fitsplit-29215/adminSdkConfig 200
+[debug] [2026-05-23T11:32:08.207Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/fitsplit-29215/adminSdkConfig {"projectId":"fitsplit-29215","storageBucket":"fitsplit-29215.firebasestorage.app"}
+[debug] [2026-05-23T11:32:08.208Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:08.208Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:08.208Z] >>> [apiv2][query] GET https://runtimeconfig.googleapis.com/v1beta1/projects/fitsplit-29215/configs [none]
+[debug] [2026-05-23T11:32:08.756Z] <<< [apiv2][status] GET https://runtimeconfig.googleapis.com/v1beta1/projects/fitsplit-29215/configs 200
+[debug] [2026-05-23T11:32:08.756Z] <<< [apiv2][body] GET https://runtimeconfig.googleapis.com/v1beta1/projects/fitsplit-29215/configs {}
+[debug] [2026-05-23T11:32:08.757Z] Validating nodejs source
+[warn] !  functions: Runtime Node.js 20 was deprecated on 2026-04-30 and will be decommissioned on 2026-10-30, after which you will not be able to deploy without upgrading. Consider upgrading now to avoid disruption. See https://cloud.google.com/functions/docs/runtime-support for full details on the lifecycle policy 
+[warn] !  functions: package.json indicates an outdated version of firebase-functions. Please upgrade using npm install --save firebase-functions@latest in your functions directory. 
+[warn] !  functions: Please note that there will be breaking changes when you upgrade. 
+[debug] [2026-05-23T11:32:09.449Z] > [functions] package.json contents: {
+  "name": "fitsplit-functions",
+  "version": "0.1.0",
+  "private": true,
+  "main": "lib/index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "serve": "npm run build && firebase emulators:start --only functions",
+    "deploy": "firebase deploy --only functions",
+    "logs": "firebase functions:log"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.8.0",
+    "firebase-functions": "^6.4.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
+[debug] [2026-05-23T11:32:09.450Z] Building nodejs source
+[info] i  functions: Loading and analyzing source code for codebase default to determine what to deploy 
+[debug] [2026-05-23T11:32:09.451Z] Could not find functions.yaml. Must use http discovery
+[debug] [2026-05-23T11:32:09.461Z] Found firebase-functions binary at 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\functions\node_modules\.bin\firebase-functions'
+[info] Serving at port 8226
+
+[debug] [2026-05-23T11:32:10.180Z] Got response from /__/functions.yaml {"endpoints":{"createMemberAccount":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"createMemberAccount"},"createStaffAccount":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"createStaffAccount"},"toggleMemberAccess":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"toggleMemberAccess"},"resetMemberPin":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"resetMemberPin"},"resetStaffPassword":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"resetStaffPassword"},"assignProgramToMember":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"assignProgramToMember"},"archiveMemberAccount":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"archiveMemberAccount"},"archiveCustomProgram":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"archiveCustomProgram"},"archiveGymWorkspace":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"callableTrigger":{},"entryPoint":"archiveGymWorkspace"},"purgeExpiredArchives":{"availableMemoryMb":null,"timeoutSeconds":null,"minInstances":null,"maxInstances":null,"ingressSettings":null,"concurrency":null,"serviceAccountEmail":null,"vpc":null,"platform":"gcfv2","region":["asia-south1"],"labels":{},"scheduleTrigger":{"schedule":"every 24 hours","retryConfig":{}},"entryPoint":"purgeExpiredArchives"}},"specVersion":"v1alpha1","requiredAPIs":[{"api":"cloudscheduler.googleapis.com","reason":"Needed for scheduled functions."}],"extensions":{}}
+[info] i  extensions: ensuring required API firebaseextensions.googleapis.com is enabled... 
+[debug] [2026-05-23T11:32:14.223Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:14.223Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:14.223Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com [none]
+[debug] [2026-05-23T11:32:14.223Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:32:16.094Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com 200
+[debug] [2026-05-23T11:32:16.094Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com [omitted]
+[warn] !  extensions: missing required API firebaseextensions.googleapis.com. Enabling now... 
+[debug] [2026-05-23T11:32:16.094Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:16.094Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:16.095Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com:enable [none]
+[debug] [2026-05-23T11:32:16.095Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com:enable  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:32:17.860Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com:enable 200
+[debug] [2026-05-23T11:32:17.860Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/fitsplit-29215/services/firebaseextensions.googleapis.com:enable [omitted]
+[debug] [2026-05-23T11:32:27.885Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-23T11:32:27.885Z] > authorizing via signed-in user (mehulchirania@gmail.com)
+[debug] [2026-05-23T11:32:27.885Z] [iam] checking project fitsplit-29215 for permissions ["firebase.projects.get","firebaseextensions.instances.list"]
+[debug] [2026-05-23T11:32:27.885Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:27.886Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:27.886Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions [none]
+[debug] [2026-05-23T11:32:27.886Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions  x-goog-user-project=fitsplit-29215
+[debug] [2026-05-23T11:32:27.886Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-05-23T11:32:29.199Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions 200
+[debug] [2026-05-23T11:32:29.199Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/fitsplit-29215:testIamPermissions {"permissions":["firebase.projects.get","firebaseextensions.instances.list"]}
+[debug] [2026-05-23T11:32:29.199Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:29.200Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:29.200Z] >>> [apiv2][query] GET https://firebaseextensions.googleapis.com/v1beta/projects/fitsplit-29215/instances pageSize=100&pageToken=
+[debug] [2026-05-23T11:32:32.150Z] <<< [apiv2][status] GET https://firebaseextensions.googleapis.com/v1beta/projects/fitsplit-29215/instances 200
+[debug] [2026-05-23T11:32:32.150Z] <<< [apiv2][body] GET https://firebaseextensions.googleapis.com/v1beta/projects/fitsplit-29215/instances {}
+[info] i  functions: preparing functions directory for uploading... 
+[info] i  functions: packaged C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\functions (47.34 KB) for uploading 
+[debug] [2026-05-23T11:32:32.183Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:32.183Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:32.183Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v1/projects/fitsplit-29215/locations/-/functions [none]
+[debug] [2026-05-23T11:32:32.989Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v1/projects/fitsplit-29215/locations/-/functions 200
+[debug] [2026-05-23T11:32:32.989Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v1/projects/fitsplit-29215/locations/-/functions {}
+[debug] [2026-05-23T11:32:32.989Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:32.989Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:32.989Z] >>> [apiv2][query] GET https://cloudfunctions.googleapis.com/v2/projects/fitsplit-29215/locations/-/functions filter=environment%3D%22GEN_2%22
+[debug] [2026-05-23T11:32:34.626Z] <<< [apiv2][status] GET https://cloudfunctions.googleapis.com/v2/projects/fitsplit-29215/locations/-/functions 200
+[debug] [2026-05-23T11:32:34.626Z] <<< [apiv2][body] GET https://cloudfunctions.googleapis.com/v2/projects/fitsplit-29215/locations/-/functions {}
+[info] i  functions: ensuring required API cloudscheduler.googleapis.com is enabled... 
+[debug] [2026-05-23T11:32:34.629Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:34.629Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:34.630Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/cloudscheduler.googleapis.com [none]
+[debug] [2026-05-23T11:32:34.630Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/cloudscheduler.googleapis.com  x-goog-user-project=766523780087

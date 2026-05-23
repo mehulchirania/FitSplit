@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "deploy:firebase": "npm run build && firebase deploy",
+    "functions:build": "npm --prefix functions run build",
+    "functions:deploy": "npm --prefix functions run build && firebase deploy --only functions",
     "seed:auth": "node scripts/seed-firebase-auth.mjs",
     "seed:firebase": "node scripts/seed-firebase.mjs",
     "seed:demo": "node scripts/seed-demo-firestore.mjs",
