@@ -10,7 +10,6 @@ import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
-import { RestTimer } from "@/components/rest-timer";
 import dynamic from "next/dynamic";
 
 const ProgressChart = dynamic(() => import("@/components/progress-chart").then(mod => mod.ProgressChart), {
@@ -1066,11 +1065,6 @@ export function MemberWorkoutConsole({
               Log Set
             </button>
           </form>
-
-          {/* Rest timer — fires an audible beep when the rest interval is up. */}
-          <div style={{ marginTop: 14 }}>
-            <RestTimer />
-          </div>
 
           <details className="member-details-panel">
             <summary className="member-details-summary">

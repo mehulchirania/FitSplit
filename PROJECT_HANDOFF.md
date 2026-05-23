@@ -1,5 +1,53 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-24: B2C Evolved Platform Architecture & Implementation Roadmap
+
+Introduced the strategic architecture and technical roadmap to expand the FitSplit B2B platform with B2C (direct-to-consumer) capabilities.
+
+### Hybrid B2B2C / B2C Architecture Strategy
+
+The goal is to allow direct consumer registration and usage while maintaining 100% compatibility with the existing gym-scoped multi-tenant architecture and security rules.
+
+#### 1. Data Model & "Virtual Tenant" (B2C Isolation)
+* **Virtual Tenant Concept**: Rather than refactoring every Firestore rule and read-model query to support optional `gymId` fields, B2C users are scoped under a virtual gym tenant named `personal` or `personal_{uid}`.
+* **Firestore Schema**:
+  * Root `profiles/{uid}` and `authProfiles/{uid}` record:
+    ```json
+    {
+      "id": "uid",
+      "role": "personal",
+      "defaultGymId": "personal",
+      "isActive": true,
+      "createdAt": "2026-05-24T00:00:00Z"
+    }
+    ```
+  * User-scoped operational subcollections are mirrored under `gyms/personal/...` (e.g., `gyms/personal/workoutPrograms`, `gyms/personal/liftLogs`).
+
+#### 2. User Roles & Custom Claims
+* Introduce the **`personal`** user role.
+* Custom Claims payload for B2C users:
+  ```json
+  {
+    "role": "personal",
+    "gymId": "personal",
+    "memberId": "uid"
+  }
+  ```
+* **Sign-up Pipeline**: Create a public `/signup` page. The server action or a callable Cloud Function (`createPersonalAccount`) registers the Firebase Auth user, sets the B2C claims, and provisions the initial virtual gym collections.
+
+#### 3. UX & Route Adaptive Controller
+* **Console Convergence**: Reuse the existing `/member` layout.
+* **Feature Swapping**: 
+  * If a user's role is `personal`, render a custom sidebar that unlocks training-building capabilities.
+  * Unlike B2B members (who are passive consumers of assigned plans), `personal` users get full access to build custom workout programs, manage their personal exercise catalog, and leverage Gemini AI to prompt and auto-generate custom training programs.
+  * Hide physical check-ins and gym noticed-board events.
+
+#### 4. Direct B2C Billing Strategy
+* **Integration**: Stripe Checkout and recurring billing via Stripe Customer Portal or standard Firebase Stripe Extension.
+* **Verification Checks**: Check `subscriptionStatus: "active"` inside the root `authProfiles/{uid}` document in the Next.js layout guards and Firestore security rules.
+
+---
+
 ## Latest Update - 2026-05-23: Member dashboard layout polish after gym-scoped migration
 
 - Restarted localhost cleanly after `.next` references went stale; landing client bundle was returning 404, which broke landing hydration and the login modal. Local server is running on `http://localhost:3000`.
