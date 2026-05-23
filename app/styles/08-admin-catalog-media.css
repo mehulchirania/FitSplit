@@ -277,15 +277,32 @@
   border-radius: 999px;
   color: var(--brand-strong);
   display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
   height: 30px;
   justify-content: center;
+  letter-spacing: 0.01em;
+  padding: 0 10px 0 8px;
   text-decoration: none;
-  width: 30px;
+  white-space: nowrap;
+}
+.video-indicator--demo {
+  background: color-mix(in srgb, var(--brand) 10%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--brand) 30%, var(--border));
+  color: color-mix(in srgb, var(--brand) 80%, var(--text));
+}
+.video-indicator:hover {
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
+.video-indicator-label {
+  line-height: 1;
 }
 .video-indicator svg,
 .exercise-video-button svg {
   height: 14px;
   width: 14px;
+  flex-shrink: 0;
 }
 .catalog-edit-toggle {
   min-width: 86px;

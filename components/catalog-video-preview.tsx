@@ -63,25 +63,24 @@ export function CatalogVideoPreview({
       <div style={{ display: "inline-flex", gap: "6px", alignItems: "center" }}>
         {hasTutorial && (
           <button
-            aria-label={`Preview ${exerciseName} tutorial`}
-            className="video-indicator"
+            aria-label={`Preview ${exerciseName} DeltaBolic tutorial`}
+            className="video-indicator video-indicator--tutorial"
             onClick={() => setActiveVideo("tutorial")}
-            title="Tutorial video"
+            title="DeltaBolic tutorial"
             type="button"
           >
-            <Video />
+            <Video /><span className="video-indicator-label">DeltaBolic</span>
           </button>
         )}
         {hasDemo && (
           <button
-            aria-label={`Preview ${exerciseName} gym demo`}
-            className="video-indicator"
+            aria-label={`Preview ${exerciseName} SHG Gym demo`}
+            className="video-indicator video-indicator--demo"
             onClick={() => setActiveVideo("demo")}
-            style={{ opacity: 0.7 }}
-            title="Gym demo video"
+            title="SHG Gym demo"
             type="button"
           >
-            <Video />
+            <Video /><span className="video-indicator-label">SHG Gym</span>
           </button>
         )}
       </div>
@@ -101,7 +100,7 @@ export function CatalogVideoPreview({
                 <p className="eyebrow">
                   {muscleGroup}
                   {" · "}
-                  {activeVideo === "demo" ? "Gym Demo" : "Tutorial"}
+                  {activeVideo === "demo" ? "SHG Gym Demo" : "DeltaBolic Tutorial"}
                 </p>
                 <h3 style={{ margin: 0, fontSize: "1rem" }}>{exerciseName}</h3>
               </div>

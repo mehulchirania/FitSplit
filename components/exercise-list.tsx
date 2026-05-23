@@ -136,20 +136,20 @@ export function ExerciseList({
                   <button
                     className="exercise-video-button"
                     onClick={() => setActiveVideo({ exercise, type: "tutorial" })}
-                    title="Form tutorial video"
+                    title="DeltaBolic tutorial"
                     type="button"
                   >
-                    <Video /> Tutorial
+                    <Video /> DeltaBolic
                   </button>
                 )}
                 {hasDemo && (
                   <button
                     className="exercise-video-button exercise-video-button--demo"
                     onClick={() => setActiveVideo({ exercise, type: "demo" })}
-                    title="Gym demo video"
+                    title="SHG Gym demo"
                     type="button"
                   >
-                    <Video /> Gym Demo
+                    <Video /> SHG Gym
                   </button>
                 )}
               </div>
@@ -174,7 +174,7 @@ export function ExerciseList({
                 <p className="eyebrow">
                   {activeVideo.exercise.muscleGroup}
                   {" · "}
-                  {activeVideo.type === "demo" ? "Gym Demo" : "Tutorial"}
+                  {activeVideo.type === "demo" ? "SHG Gym Demo" : "DeltaBolic Tutorial"}
                 </p>
                 <h3 style={{ margin: 0, fontSize: "1rem" }}>{activeVideo.exercise.name}</h3>
               </div>
