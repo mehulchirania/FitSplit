@@ -10,7 +10,8 @@ const emptyForm = {
   email: "",
   fullName: "",
   goal: "",
-  phone: ""
+  phone: "",
+  username: ""
 };
 
 export function AddMemberForm() {
@@ -63,6 +64,19 @@ export function AddMemberForm() {
               placeholder="Member name"
               required
               value={formValues.fullName}
+            />
+          </label>
+          <label>
+            Login username
+            <input
+              autoComplete="username"
+              name="username"
+              onChange={(event) => updateValue("username", event.target.value)}
+              pattern="[A-Za-z0-9._-]{3,32}"
+              placeholder="e.g. rahul-sharma"
+              required
+              title="Use 3-32 letters, numbers, dots, underscores, or hyphens."
+              value={formValues.username}
             />
           </label>
           <label>

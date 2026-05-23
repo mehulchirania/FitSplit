@@ -3,7 +3,7 @@
 import { randomUUID } from "crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
-import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
+import { collectionPaths, gymCollectionPath, gymProfileCollectionKey, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
 import type { GymWorkspace, Role, WorkoutProgram } from "@/types/domain";
@@ -56,6 +56,29 @@ function assertValidPhone(phone: string, label = "Mobile number") {
 function assertValidPin(pin: string) {
   if (!/^\d{4}$/.test(pin)) {
     throw new Error("PIN must be exactly 4 numeric digits.");
+  }
+}
+
+function normalizeUsername(username: string) {
+  return username.trim().toLowerCase();
+}
+
+function assertValidUsername(username: string) {
+  if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
+    throw new Error("Username must be 3-32 characters using letters, numbers, dots, underscores, or hyphens.");
+  }
+}
+
+async function assertUsernameAvailable(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  username: string,
+  exceptProfileId?: string
+) {
+  const normalized = normalizeUsername(username);
+  const snapshot = await db.collection(collectionPaths.profiles).where("username", "==", normalized).limit(2).get();
+  const conflict = snapshot.docs.find((doc) => doc.id !== exceptProfileId);
+  if (conflict) {
+    throw new Error("That username is already in use.");
   }
 }
 
@@ -146,6 +169,132 @@ function success(message: string, gymId?: string): FormActionState {
     // revalidateTag is a noop outside a request context; ignore
   }
   return { status: "success", message };
+}
+
+function scopedGymDoc(db: ReturnType<typeof getFirebaseAdminServices>["db"], gymId: string, collection: Parameters<typeof gymCollectionPath>[1], docId: string) {
+  return db.collection(gymCollectionPath(gymId, collection)).doc(docId);
+}
+
+function archiveRetentionDate() {
+  return new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
+}
+
+async function archiveDocumentSnapshot(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  snapshot: FirebaseFirestore.DocumentSnapshot,
+  options: {
+    entityType: string;
+    deletedBy: string;
+    gymId?: string;
+    reason?: string;
+  }
+) {
+  if (!snapshot.exists) return;
+  const now = new Date().toISOString();
+  const archiveId = `${options.entityType}_${snapshot.id}_${Date.now()}_${randomUUID().slice(0, 8)}`;
+  await db.collection(collectionPaths.archives).doc(archiveId).set({
+    id: archiveId,
+    entityType: options.entityType,
+    originalId: snapshot.id,
+    originalPath: snapshot.ref.path,
+    gymId: options.gymId ?? snapshot.get("gymId") ?? snapshot.get("defaultGymId") ?? null,
+    reason: options.reason ?? "deleted",
+    deletedBy: options.deletedBy,
+    archivedAt: now,
+    retentionDays: 60,
+    retentionExpiresAt: archiveRetentionDate(),
+    data: snapshot.data()
+  });
+}
+
+async function archiveQuerySnapshot(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  snapshot: FirebaseFirestore.QuerySnapshot,
+  options: {
+    entityType: string;
+    deletedBy: string;
+    gymId?: string;
+    reason?: string;
+  }
+) {
+  await Promise.all(
+    snapshot.docs.map((doc) =>
+      archiveDocumentSnapshot(db, doc, {
+        ...options,
+        entityType: options.entityType
+      })
+    )
+  );
+}
+
+async function deleteSnapshotsInBatches(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  snapshots: FirebaseFirestore.QueryDocumentSnapshot[]
+) {
+  for (let i = 0; i < snapshots.length; i += 450) {
+    const batch = db.batch();
+    snapshots.slice(i, i + 450).forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+  }
+}
+
+async function archiveAndDeleteGymSubcollections(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  gymId: string,
+  deletedBy: string,
+  reason: string
+) {
+  const gymRef = db.collection(collectionPaths.gyms).doc(gymId);
+  const subcollections = await gymRef.listCollections();
+
+  for (const subcollection of subcollections) {
+    const snapshot = await subcollection.get();
+    await archiveQuerySnapshot(db, snapshot, {
+      entityType: `gymScoped:${subcollection.id}`,
+      deletedBy,
+      gymId,
+      reason
+    });
+    await deleteSnapshotsInBatches(db, snapshot.docs);
+  }
+}
+
+async function mirrorProfileToGym(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  profileId: string,
+  profile: Record<string, unknown>
+) {
+  const gymId = String(profile.defaultGymId ?? profile.gymId ?? PRIMARY_GYM_ID);
+  const collectionKey = gymProfileCollectionKey(String(profile.role ?? ""));
+  await scopedGymDoc(db, gymId, collectionKey, profileId).set(
+    {
+      ...profile,
+      id: String(profile.id ?? profileId),
+      authUid: String(profile.authUid ?? profileId),
+      defaultGymId: gymId,
+      gymId,
+      mirroredFromRootProfile: true
+    },
+    { merge: true }
+  );
+}
+
+async function mirrorGymScopedRecord(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  gymId: string,
+  collection: Exclude<Parameters<typeof gymCollectionPath>[1], "members" | "staff">,
+  docId: string,
+  data: Record<string, unknown>
+) {
+  await scopedGymDoc(db, gymId, collection, docId).set(
+    {
+      ...data,
+      id: String(data.id ?? docId),
+      gymId,
+      mirroredFromRootCollection: true
+    },
+    { merge: true }
+  );
 }
 
 function failure(error: unknown, fallback: string): FormActionState {
@@ -271,7 +420,8 @@ async function assertMemberBelongsToCallerGym(
   if (!profile.exists) {
     throw new Error("Member not found.");
   }
-  const profileGymId = profile.data()?.gymId;
+  const profileData = profile.data() ?? {};
+  const profileGymId = profileData.defaultGymId ?? profileData.gymId;
   if (profileGymId !== user.gymId) {
     throw new Error("This member is not part of your gym.");
   }
@@ -504,12 +654,15 @@ export async function createMemberProfile(
     const email = requireText(formData, "email", "Email").toLowerCase();
     assertValidEmail(email);
     const phone = String(formData.get("phone") ?? "").trim();
+    const username = normalizeUsername(requireText(formData, "username", "Username"));
+    assertValidUsername(username);
     const goal = String(formData.get("goal") ?? "General fitness").trim() || "General fitness";
     const gymId = String(formData.get("gymId") ?? user.gymId ?? PRIMARY_GYM_ID).trim() || PRIMARY_GYM_ID;
     const now = new Date().toISOString();
     const authEmail = memberAuthEmail(memberId);
 
     assertCanManageGym(user, gymId);
+    await assertUsernameAvailable(db, username);
 
     await upsertAuthUser(auth, {
       email: authEmail,
@@ -520,12 +673,12 @@ export async function createMemberProfile(
       isActive: true
     }, "pin-1234");
 
-    await db.collection(collectionPaths.profiles).doc(memberId).set({
+    const memberProfile = {
       id: memberId,
       fullName,
       email,
       authEmail,
-      username: phone || email,
+      username,
       phone,
       role: "member",
       defaultGymId: gymId,
@@ -540,7 +693,10 @@ export async function createMemberProfile(
       joinedAt: now.slice(0, 10),
       createdAt: now,
       updatedAt: now
-    });
+    };
+
+    await db.collection(collectionPaths.profiles).doc(memberId).set(memberProfile);
+    await mirrorProfileToGym(db, memberId, memberProfile);
 
     // Keep stored memberCount in sync
     await db.collection(collectionPaths.gyms).doc(gymId).set(
@@ -549,7 +705,7 @@ export async function createMemberProfile(
     );
 
     const createEventId = randomUUID();
-    await db.collection(collectionPaths.activityEvents).doc(createEventId).set({
+    const createEvent = {
       id: createEventId,
       gymId,
       audience: "owner",
@@ -558,7 +714,9 @@ export async function createMemberProfile(
       detail: `${fullName} was added by ${user.fullName ?? user.uid}.`,
       icon: "users",
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.activityEvents).doc(createEventId).set(createEvent);
+    await mirrorGymScopedRecord(db, gymId, "activityEvents", createEventId, createEvent);
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -590,8 +748,12 @@ export async function updateMemberProfile(
     const existingProfile = profileDoc.data() ?? {};
     const gymId = String(existingProfile.defaultGymId ?? user.gymId ?? PRIMARY_GYM_ID);
     const authEmail = String(existingProfile.authEmail ?? memberAuthEmail(memberId));
+    const usernameInput = String(formData.get("username") ?? existingProfile.username ?? "").trim();
+    const username = normalizeUsername(usernameInput || String(existingProfile.username ?? memberId));
+    assertValidUsername(username);
 
     assertCanManageGym(user, gymId);
+    await assertUsernameAvailable(db, username, memberId);
 
     const macroNutritionTarget = {
       calories: formData.get("macroCalories") ? Number(formData.get("macroCalories")) : 0,
@@ -608,7 +770,7 @@ export async function updateMemberProfile(
         fullName,
         email,
         authEmail,
-        username: String(formData.get("phone") ?? "").trim() || email,
+        username,
         phone: String(formData.get("phone") ?? "").trim(),
         role: "member",
         defaultGymId: gymId,
@@ -624,6 +786,26 @@ export async function updateMemberProfile(
       },
       { merge: true }
     );
+    await mirrorProfileToGym(db, memberId, {
+      ...existingProfile,
+      id: memberId,
+      fullName,
+      email,
+      authEmail,
+      username,
+      phone: String(formData.get("phone") ?? "").trim(),
+      role: "member",
+      defaultGymId: gymId,
+      goal: String(formData.get("goal") ?? "General fitness").trim(),
+      macroNutritionTarget,
+      avatarInitials: fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      updatedAt: now
+    });
 
     await upsertAuthUser(auth, { 
       email: authEmail,
@@ -682,7 +864,10 @@ export async function updateOwnerMemberContext(
       const value = String(formData.get(key) ?? "").trim();
       return value ? Number(value) : null;
     };
-    const username = String(existingProfile.username ?? "").trim() || phone || email;
+    const usernameInput = String(formData.get("username") ?? existingProfile.username ?? "").trim();
+    const username = normalizeUsername(usernameInput || String(existingProfile.username ?? memberId));
+    assertValidUsername(username);
+    await assertUsernameAvailable(db, username, memberId);
     const authEmail = String(existingProfile.authEmail ?? memberAuthEmail(memberId));
 
     await profileRef.set(
@@ -717,6 +902,36 @@ export async function updateOwnerMemberContext(
       },
       { merge: true }
     );
+    await mirrorProfileToGym(db, memberId, {
+      ...existingProfile,
+      id: memberId,
+      fullName,
+      email,
+      phone,
+      username,
+      authEmail,
+      role: "member",
+      defaultGymId: gymId,
+      goal: String(formData.get("goal") ?? "General fitness").trim() || "General fitness",
+      age: numericOrDelete("age"),
+      gender: String(formData.get("gender") ?? "").trim(),
+      dob: String(formData.get("dob") ?? "").trim(),
+      heightCm: numericOrDelete("heightCm"),
+      weightKg: numericOrDelete("weightKg"),
+      fitnessGoals: String(formData.get("fitnessGoals") ?? "").trim(),
+      medicalNotes: String(formData.get("medicalNotes") ?? "").trim(),
+      injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
+      primarySlot: String(formData.get("primarySlot") ?? "").trim() || "A",
+      secondarySlot: String(formData.get("secondarySlot") ?? "").trim() || "D",
+      assignedTrainer: String(formData.get("assignedTrainer") ?? "").trim(),
+      avatarInitials: fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      updatedAt: now
+    });
 
     await upsertAuthUser(
       auth,
@@ -778,14 +993,19 @@ export async function assignProgramToMember(
       .where("memberId", "==", memberId)
       .where("status", "==", "active")
       .get();
+    const existingScopedAssignments = await scopedGymDoc(db, assignGymId, "programAssignments", "_placeholder")
+      .parent
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .get();
 
     await Promise.all(
-      existingAssignments.docs.map((doc) =>
+      [...existingAssignments.docs, ...existingScopedAssignments.docs].map((doc) =>
         doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true })
       )
     );
 
-    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set({
+    const assignmentRecord = {
       id: assignmentId,
       gymId: assignGymId,
       memberId,
@@ -795,9 +1015,11 @@ export async function assignProgramToMember(
       createdBy: currentUser.uid,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set(assignmentRecord);
+    await mirrorGymScopedRecord(db, assignGymId, "programAssignments", assignmentId, assignmentRecord);
 
-    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+    const notificationRecord = {
       id: notificationId,
       recipientRole: "member",
       recipientId: memberId,
@@ -806,9 +1028,11 @@ export async function assignProgramToMember(
       title: "Workout program assigned",
       body: `${programTitle} is now available in your weekly schedule.`,
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
+    await mirrorGymScopedRecord(db, assignGymId, "notifications", notificationId, notificationRecord);
 
-    await db.collection(collectionPaths.activityEvents).doc(activityId).set({
+    const activityRecord = {
       id: activityId,
       gymId: assignGymId,
       audience: "owner",
@@ -816,7 +1040,9 @@ export async function assignProgramToMember(
       detail: `${memberName} now has ${programTitle} as the active weekly schedule.`,
       icon: "dumbbell",
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
+    await mirrorGymScopedRecord(db, assignGymId, "activityEvents", activityId, activityRecord);
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -986,6 +1212,27 @@ export async function updateProfileMetrics(
       },
       { merge: true }
     );
+    await mirrorProfileToGym(db, memberId, {
+      ...existingProfile,
+      id: memberId,
+      fullName,
+      email,
+      phone,
+      role: "member",
+      defaultGymId: String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID),
+      age: Number(formData.get("age") ?? 0),
+      gender: String(formData.get("gender") ?? "").trim(),
+      dob: String(formData.get("dob") ?? "").trim(),
+      heightCm: Number(formData.get("heightCm") ?? 0),
+      weightKg: Number(formData.get("weightKg") ?? 0),
+      fitnessGoals: String(formData.get("fitnessGoals") ?? "").trim(),
+      medicalNotes: String(formData.get("medicalNotes") ?? "").trim(),
+      primarySlot: String(formData.get("primarySlot") ?? "A"),
+      secondarySlot: String(formData.get("secondarySlot") ?? "D"),
+      injuryNotes: String(formData.get("injuryNotes") ?? "").trim(),
+      assignedTrainer,
+      updatedAt: now
+    });
 
     revalidatePath("/profile");
     revalidatePath("/member");
@@ -1020,6 +1267,15 @@ export async function saveMemberAiTrainerNote(
       },
       { merge: true }
     );
+    await mirrorProfileToGym(db, memberId, {
+      id: memberId,
+      role: "member",
+      defaultGymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      injuryNotes,
+      aiTrainerNote: injuryNotes,
+      aiTrainerUpdatedAt: now,
+      updatedAt: now
+    });
 
     revalidatePath("/member");
     revalidatePath("/profile");
@@ -1107,9 +1363,10 @@ export async function logLiftSet(
       throw new Error("Lift log values are invalid.");
     }
 
-    await db.collection(collectionPaths.liftLogs).doc(liftLogId).set({
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const liftLogRecord = {
       id: liftLogId,
-      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      gymId,
       memberId,
       exerciseId,
       weight,
@@ -1119,7 +1376,9 @@ export async function logLiftSet(
       loggedAt: now,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await db.collection(collectionPaths.liftLogs).doc(liftLogId).set(liftLogRecord);
+    await mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord);
 
     revalidatePath("/member");
     revalidatePath(`/owner/members/${memberId}`);
@@ -1388,6 +1647,13 @@ export async function toggleMemberAccess(
       isActive,
       updatedAt: now
     });
+    await mirrorProfileToGym(db, memberId, {
+      id: memberId,
+      role: "member",
+      defaultGymId: gymId,
+      isActive,
+      updatedAt: now
+    });
 
     try {
       await auth.updateUser(memberId, { disabled: !isActive });
@@ -1396,7 +1662,7 @@ export async function toggleMemberAccess(
     }
 
     const toggleEventId = randomUUID();
-    await db.collection(collectionPaths.activityEvents).doc(toggleEventId).set({
+    const toggleEvent = {
       id: toggleEventId,
       gymId,
       audience: "owner",
@@ -1405,7 +1671,9 @@ export async function toggleMemberAccess(
       detail: `${memberName}'s gym access was ${isActive ? "restored" : "suspended"} by ${user.fullName ?? user.uid}.`,
       icon: "bell",
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.activityEvents).doc(toggleEventId).set(toggleEvent);
+    await mirrorGymScopedRecord(db, gymId, "activityEvents", toggleEventId, toggleEvent);
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -1446,6 +1714,29 @@ export async function deleteMemberProfile(
       db.collection(collectionPaths.workoutSessions).where("memberId", "==", memberId).get(),
       db.collection(collectionPaths.attendanceRecords).where("memberId", "==", memberId).get()
     ]);
+    const scopedMemberDoc = await scopedGymDoc(db, gymId, "members", memberId).get();
+    const [scopedAssignmentsSnap, scopedLiftLogsSnap, scopedNotificationsSnap, scopedSessionsSnap, scopedAttendanceSnap] = await Promise.all([
+      db.collectionGroup("programAssignments").where("memberId", "==", memberId).get(),
+      db.collectionGroup("liftLogs").where("memberId", "==", memberId).get(),
+      db.collectionGroup("notifications").where("recipientId", "==", memberId).get(),
+      db.collectionGroup("workoutSessions").where("memberId", "==", memberId).get(),
+      db.collectionGroup("attendanceRecords").where("memberId", "==", memberId).get()
+    ]);
+
+    await Promise.all([
+      archiveDocumentSnapshot(db, profileDoc, { entityType: "member", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveDocumentSnapshot(db, scopedMemberDoc, { entityType: "member", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, assignmentsSnap, { entityType: "programAssignment", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, liftLogsSnap, { entityType: "liftLog", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, notificationsSnap, { entityType: "notification", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, sessionsSnap, { entityType: "workoutSession", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, attendanceSnap, { entityType: "attendanceRecord", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, scopedAssignmentsSnap, { entityType: "programAssignment", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, scopedLiftLogsSnap, { entityType: "liftLog", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, scopedNotificationsSnap, { entityType: "notification", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, scopedSessionsSnap, { entityType: "workoutSession", deletedBy: user.uid, gymId, reason: "member_deleted" }),
+      archiveQuerySnapshot(db, scopedAttendanceSnap, { entityType: "attendanceRecord", deletedBy: user.uid, gymId, reason: "member_deleted" })
+    ]);
 
     const cleanupBatch = db.batch();
     for (const doc of [
@@ -1453,13 +1744,19 @@ export async function deleteMemberProfile(
       ...liftLogsSnap.docs,
       ...notificationsSnap.docs,
       ...sessionsSnap.docs,
-      ...attendanceSnap.docs
+      ...attendanceSnap.docs,
+      ...scopedAssignmentsSnap.docs,
+      ...scopedLiftLogsSnap.docs,
+      ...scopedNotificationsSnap.docs,
+      ...scopedSessionsSnap.docs,
+      ...scopedAttendanceSnap.docs
     ]) {
       cleanupBatch.delete(doc.ref);
     }
     await cleanupBatch.commit();
 
     await db.collection(collectionPaths.profiles).doc(memberId).delete();
+    await scopedGymDoc(db, gymId, "members", memberId).delete();
 
     // Decrement stored memberCount
     try {
@@ -1481,7 +1778,7 @@ export async function deleteMemberProfile(
 
     const deleteEventId = randomUUID();
     const deletedName = String(data.fullName ?? "Member");
-    await db.collection(collectionPaths.activityEvents).doc(deleteEventId).set({
+    const deleteEvent = {
       id: deleteEventId,
       gymId,
       audience: "owner",
@@ -1489,7 +1786,9 @@ export async function deleteMemberProfile(
       detail: `${deletedName}'s profile and all associated data were deleted by ${user.fullName ?? user.uid}.`,
       icon: "users",
       createdAt: new Date().toISOString()
-    });
+    };
+    await db.collection(collectionPaths.activityEvents).doc(deleteEventId).set(deleteEvent);
+    await mirrorGymScopedRecord(db, gymId, "activityEvents", deleteEventId, deleteEvent);
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -1529,7 +1828,7 @@ export async function createOwnerProfile(
       isActive: true
     });
 
-    await db.collection(collectionPaths.profiles).doc(ownerId).set({
+    const staffProfile = {
       id: ownerId,
       fullName,
       email,
@@ -1551,13 +1850,16 @@ export async function createOwnerProfile(
       mustChangePassword: true,
       createdAt: now,
       updatedAt: now
-    });
+    };
+
+    await db.collection(collectionPaths.profiles).doc(ownerId).set(staffProfile);
+    await mirrorProfileToGym(db, ownerId, staffProfile);
 
     // Audit log: admin created a new staff account. Tracks who provisioned
     // gym access — useful for compliance and onboarding visibility.
     try {
       const auditId = randomUUID();
-      await db.collection(collectionPaths.activityEvents).doc(auditId).set({
+      const auditRecord = {
         id: auditId,
         gymId,
         audience: "owner",
@@ -1566,7 +1868,9 @@ export async function createOwnerProfile(
         icon: "users",
         createdAt: now,
         targetId: ownerId
-      });
+      };
+      await db.collection(collectionPaths.activityEvents).doc(auditId).set(auditRecord);
+      await mirrorGymScopedRecord(db, gymId, "activityEvents", auditId, auditRecord);
     } catch (e) {
       console.warn("Failed to write audit event for createOwnerProfile:", e);
     }
@@ -1636,7 +1940,7 @@ export async function deleteGymWorkspace(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin"]);
+    const user = await requireRole(["admin"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { db } = requireFirebaseServices();
     const gymId = requireText(formData, "gymId", "Gym ID");
@@ -1655,6 +1959,9 @@ export async function deleteGymWorkspace(
       throw new Error("Remove or reassign gym staff and members before deleting this gym.");
     }
 
+    const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
+    await archiveDocumentSnapshot(db, gymDoc, { entityType: "gym", deletedBy: user.uid, gymId, reason: "gym_deleted" });
+    await archiveAndDeleteGymSubcollections(db, gymId, user.uid, "gym_deleted");
     await db.collection(collectionPaths.gyms).doc(gymId).delete();
 
     revalidatePath("/admin");
@@ -1671,7 +1978,7 @@ export async function deleteGymWithMembers(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin"]);
+    const user = await requireRole(["admin"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const gymId = requireText(formData, "gymId", "Gym ID");
@@ -1685,6 +1992,7 @@ export async function deleteGymWithMembers(
       .collection(collectionPaths.profiles)
       .where("defaultGymId", "==", gymId)
       .get();
+    const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
 
     const memberIds = profilesSnap.docs
       .filter((doc) => doc.data().role === "member")
@@ -1698,6 +2006,13 @@ export async function deleteGymWithMembers(
         db.collection(collectionPaths.notifications).where("recipientId", "==", memberId).get(),
         db.collection(collectionPaths.workoutSessions).where("memberId", "==", memberId).get(),
         db.collection(collectionPaths.attendanceRecords).where("memberId", "==", memberId).get()
+      ]);
+      await Promise.all([
+        archiveQuerySnapshot(db, assignmentsSnap, { entityType: "programAssignment", deletedBy: user.uid, gymId, reason: "gym_deleted" }),
+        archiveQuerySnapshot(db, liftLogsSnap, { entityType: "liftLog", deletedBy: user.uid, gymId, reason: "gym_deleted" }),
+        archiveQuerySnapshot(db, notificationsSnap, { entityType: "notification", deletedBy: user.uid, gymId, reason: "gym_deleted" }),
+        archiveQuerySnapshot(db, sessionsSnap, { entityType: "workoutSession", deletedBy: user.uid, gymId, reason: "gym_deleted" }),
+        archiveQuerySnapshot(db, attendanceSnap, { entityType: "attendanceRecord", deletedBy: user.uid, gymId, reason: "gym_deleted" })
       ]);
       const memberBatch = db.batch();
       for (const doc of [
@@ -1717,6 +2032,13 @@ export async function deleteGymWithMembers(
       .collection(collectionPaths.activityEvents)
       .where("gymId", "==", gymId)
       .get();
+
+    await Promise.all([
+      archiveDocumentSnapshot(db, gymDoc, { entityType: "gym", deletedBy: user.uid, gymId, reason: "gym_deleted" }),
+      archiveQuerySnapshot(db, profilesSnap, { entityType: "profile", deletedBy: user.uid, gymId, reason: "gym_deleted" }),
+      archiveQuerySnapshot(db, activitySnap, { entityType: "activityEvent", deletedBy: user.uid, gymId, reason: "gym_deleted" })
+    ]);
+    await archiveAndDeleteGymSubcollections(db, gymId, user.uid, "gym_deleted");
 
     // Batch-delete all profiles + activity events + gym doc
     const finalBatch = db.batch();
@@ -1752,13 +2074,21 @@ export async function deleteGymStaffProfile(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin"]);
+    const user = await requireRole(["admin"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const { auth, db } = requireFirebaseServices();
     const userId = requireText(formData, "userId", "User ID");
     const gymId = requireText(formData, "gymId", "Gym ID");
 
+    const profileDoc = await db.collection(collectionPaths.profiles).doc(userId).get();
+    const scopedStaffDoc = await scopedGymDoc(db, gymId, "staff", userId).get();
+    await Promise.all([
+      archiveDocumentSnapshot(db, profileDoc, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" }),
+      archiveDocumentSnapshot(db, scopedStaffDoc, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" })
+    ]);
+
     await db.collection(collectionPaths.profiles).doc(userId).delete();
+    await scopedGymDoc(db, gymId, "staff", userId).delete();
 
     try {
       await auth.deleteUser(userId);
@@ -1939,8 +2269,7 @@ export async function startWorkoutSession(
     const geofence = validateGymGeofence(latitude, longitude, gymConfig);
     const now = new Date().toISOString();
 
-    await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
-      {
+    const sessionRecord = {
         id: sessionId,
         gymId,
         memberId,
@@ -1954,12 +2283,14 @@ export async function startWorkoutSession(
         startedAt: now,
         status: "active",
         updatedAt: now
-      },
+      };
+    await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
+      sessionRecord,
       { merge: true }
     );
+    await mirrorGymScopedRecord(db, gymId, "workoutSessions", sessionId, sessionRecord);
 
-    await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set(
-      {
+    const attendanceRecord = {
         id: sessionId,
         memberId,
         gymId,
@@ -1971,9 +2302,12 @@ export async function startWorkoutSession(
         ...geofence,
         createdAt: now,
         updatedAt: now
-      },
+      };
+    await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set(
+      attendanceRecord,
       { merge: true }
     );
+    await mirrorGymScopedRecord(db, gymId, "attendanceRecords", sessionId, attendanceRecord);
 
     revalidatePath("/member");
     revalidatePath("/owner");
@@ -2011,10 +2345,26 @@ export async function endWorkoutSession(
       },
       { merge: true }
     );
+    await scopedGymDoc(db, gymId, "workoutSessions", sessionId).set(
+      {
+        endedAt: now,
+        status: "completed",
+        updatedAt: now
+      },
+      { merge: true }
+    );
 
     // Record attendance for the day
     try {
       await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set({
+        id: sessionId,
+        memberId,
+        gymId,
+        sessionId,
+        checkOutAt: now,
+        updatedAt: now
+      }, { merge: true });
+      await scopedGymDoc(db, gymId, "attendanceRecords", sessionId).set({
         id: sessionId,
         memberId,
         gymId,
@@ -2064,9 +2414,10 @@ export async function submitContactMessage(
       throw new Error("Message must be at least 10 characters.");
     }
 
-    await db.collection(collectionPaths.contactMessages).doc(messageId).set({
+    const gymId = PRIMARY_GYM_ID;
+    const contactRecord = {
       id: messageId,
-      gymId: PRIMARY_GYM_ID,
+      gymId,
       name,
       mobile,
       email,
@@ -2074,9 +2425,11 @@ export async function submitContactMessage(
       status: "unread",
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await db.collection(collectionPaths.contactMessages).doc(messageId).set(contactRecord);
+    await mirrorGymScopedRecord(db, gymId, "contactMessages", messageId, contactRecord);
 
-    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+    const notificationRecord = {
       id: notificationId,
       recipientRole: "admin",
       recipientId: "admin-fitsplit",
@@ -2085,7 +2438,9 @@ export async function submitContactMessage(
       body: `${name} sent a contact request.`,
       contactMessageId: messageId,
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
     revalidatePath("/");
     revalidatePath("/admin");
@@ -2135,6 +2490,15 @@ export async function markContactMessageRead(
       },
       { merge: true }
     );
+    const scopedMessages = await db
+      .collectionGroup("contactMessages")
+      .where("id", "==", messageId)
+      .get();
+    await Promise.all(
+      scopedMessages.docs.map((doc) =>
+        doc.ref.set({ status: "read", updatedAt: now }, { merge: true })
+      )
+    );
 
     revalidatePath("/admin/inbox");
 
@@ -2167,9 +2531,10 @@ export async function requestCatalogExercise(
     const gymDoc = await db.collection(collectionPaths.gyms).doc(currentUser.gymId ?? PRIMARY_GYM_ID).get();
     const gymName = String(gymDoc.data()?.name ?? currentUser.gymId ?? "A gym");
 
-    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set({
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const requestRecord = {
       id: requestId,
-      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      gymId,
       gymName,
       requestedBy: currentUser.uid,
       name,
@@ -2179,9 +2544,11 @@ export async function requestCatalogExercise(
       status: "pending",
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(requestRecord);
+    await mirrorGymScopedRecord(db, gymId, "exerciseRequests", requestId, requestRecord);
 
-    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+    const notificationRecord = {
       id: notificationId,
       recipientRole: "admin",
       recipientId: "admin-fitsplit",
@@ -2190,7 +2557,9 @@ export async function requestCatalogExercise(
       body: `${gymName} wants to add "${name}" (${muscleGroup}) to the catalog.`,
       exerciseRequestId: requestId,
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
     revalidatePath("/admin/exercises");
 
@@ -2211,7 +2580,15 @@ export async function approveCatalogExerciseRequest(
     const requestId = requireText(formData, "requestId", "Request ID");
     const now = new Date().toISOString();
 
-    const requestDoc = await db.collection(collectionPaths.exerciseRequests).doc(requestId).get();
+    let requestDoc = await db.collection(collectionPaths.exerciseRequests).doc(requestId).get();
+    if (!requestDoc.exists) {
+      const scopedRequest = await db
+        .collectionGroup("exerciseRequests")
+        .where("id", "==", requestId)
+        .limit(1)
+        .get();
+      requestDoc = scopedRequest.docs[0] ?? requestDoc;
+    }
     if (!requestDoc.exists) throw new Error("Exercise request not found.");
 
     const data = requestDoc.data()!;
@@ -2222,7 +2599,7 @@ export async function approveCatalogExerciseRequest(
     if (!name || !muscleGroup) throw new Error("Name and muscle group are required.");
 
     const exerciseId = randomUUID();
-    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
+    const exerciseRecord = {
       id: exerciseId,
       gymId,
       name,
@@ -2240,9 +2617,19 @@ export async function approveCatalogExerciseRequest(
       approvedFromRequestId: requestId,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(exerciseRecord);
+    await mirrorGymScopedRecord(db, gymId, "exerciseCatalog", exerciseId, exerciseRecord);
 
     await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(
+      { status: "approved", approvedAt: now, updatedAt: now },
+      { merge: true }
+    );
+    await requestDoc.ref.set(
+      { status: "approved", approvedAt: now, updatedAt: now },
+      { merge: true }
+    );
+    await scopedGymDoc(db, gymId, "exerciseRequests", requestId).set(
       { status: "approved", approvedAt: now, updatedAt: now },
       { merge: true }
     );
@@ -2272,6 +2659,15 @@ export async function rejectCatalogExerciseRequest(
       { status: "rejected", rejectedAt: now, updatedAt: now },
       { merge: true }
     );
+    const scopedRequests = await db
+      .collectionGroup("exerciseRequests")
+      .where("id", "==", requestId)
+      .get();
+    await Promise.all(
+      scopedRequests.docs.map((doc) =>
+        doc.ref.set({ status: "rejected", rejectedAt: now, updatedAt: now }, { merge: true })
+      )
+    );
 
     revalidatePath("/admin/exercises");
     return success("Exercise request dismissed.");
@@ -2285,13 +2681,28 @@ export async function deleteCustomWorkoutProgram(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireOwner();
+    const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const db = requireFirebase();
     const programId = requireText(formData, "programId", "Program ID");
     const programTitle = String(formData.get("programTitle") ?? "Program").trim();
 
-    await db.collection(collectionPaths.workoutPrograms).doc(programId).delete();
+    const programDoc = await db.collection(collectionPaths.workoutPrograms).doc(programId).get();
+    const gymId = String(programDoc.data()?.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    assertCanManageGym(currentUser, gymId);
+    const scopedProgramDoc = await scopedGymDoc(db, gymId, "workoutPrograms", programId).get();
+
+    await Promise.all([
+      archiveDocumentSnapshot(db, programDoc, { entityType: "workoutProgram", deletedBy: currentUser.uid, gymId, reason: "program_deleted" }),
+      archiveDocumentSnapshot(db, scopedProgramDoc, { entityType: "workoutProgram", deletedBy: currentUser.uid, gymId, reason: "program_deleted" })
+    ]);
+
+    if (programDoc.exists) {
+      await db.collection(collectionPaths.workoutPrograms).doc(programId).delete();
+    }
+    if (scopedProgramDoc.exists) {
+      await scopedGymDoc(db, gymId, "workoutPrograms", programId).delete();
+    }
 
     revalidatePath("/owner/programs");
     revalidatePath("/owner/members");
@@ -2347,8 +2758,8 @@ export async function updateCustomWorkoutProgram(
       })
     );
 
-    await db.collection(collectionPaths.workoutPrograms).doc(programId).set(
-      {
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const programUpdate = {
         title,
         description: String(formData.get("description") ?? "").trim(),
         goal: String(formData.get("goal") ?? "Custom member plan").trim(),
@@ -2357,6 +2768,14 @@ export async function updateCustomWorkoutProgram(
         days,
         updatedBy: currentUser.uid,
         updatedAt: now
+      };
+
+    await scopedGymDoc(db, gymId, "workoutPrograms", programId).set(
+      {
+        ...programUpdate,
+        id: programId,
+        gymId,
+        scope: "custom"
       },
       { merge: true }
     );
@@ -2381,25 +2800,35 @@ export async function createCatalogExercise(
     const exerciseId = randomUUID();
     const now = new Date().toISOString();
     const name = requireText(formData, "name", "Exercise name");
-    const canManageDefaultVideos = currentUser.role === "admin";
+    const isAdmin = currentUser.role === "admin";
 
-    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set({
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const exerciseRecord = {
       id: exerciseId,
-      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      gymId: isAdmin ? "global" : gymId,
+      scope: isAdmin ? "default" : "custom",
       name,
       muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
       equipment: String(formData.get("equipment") ?? "").trim(),
       instructions: String(formData.get("instructions") ?? "").trim(),
-      videoSource: canManageDefaultVideos ? String(formData.get("videoSource") ?? "none") : "none",
-      videoUrl: canManageDefaultVideos ? String(formData.get("videoUrl") ?? "").trim() : "",
+      videoSource: isAdmin && String(formData.get("videoUrl") ?? "").trim() ? String(formData.get("videoSource") ?? "youtube") : "none",
+      videoUrl: isAdmin ? String(formData.get("videoUrl") ?? "").trim() : "",
+      gymVideoUrl: isAdmin ? "" : String(formData.get("gymVideoUrl") ?? "").trim(),
+      gymVideoSource: !isAdmin && String(formData.get("gymVideoUrl") ?? "").trim() ? String(formData.get("gymVideoSource") ?? "youtube") : "none",
       ownerOnly: true,
       isActive: true,
       createdBy: currentUser.uid,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    if (isAdmin) {
+      await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(exerciseRecord);
+    } else {
+      await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(exerciseRecord);
+    }
 
     revalidatePath("/owner/exercises");
+    revalidatePath("/admin/exercises");
 
     return success(`${name} was added to the exercise catalog.`);
   } catch (error) {
@@ -2421,26 +2850,39 @@ export async function updateCatalogExercise(
     const now = new Date().toISOString();
     const videoUrl = String(formData.get("videoUrl") ?? "").trim();
     const gymVideoUrl = String(formData.get("gymVideoUrl") ?? "").trim();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const rootDoc = await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).get();
+    const scopedDoc = await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).get();
+    const isAdmin = currentUser.role === "admin";
+
+    if (!isAdmin && rootDoc.exists && !scopedDoc.exists) {
+      throw new Error("Default exercises can only be edited by an admin. Add a custom exercise for this gym instead.");
+    }
 
     const updatePayload: Record<string, unknown> = {
         id: exerciseId,
-        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+        gymId: isAdmin && rootDoc.exists ? "global" : gymId,
+        scope: isAdmin && rootDoc.exists ? "default" : "custom",
         name,
         muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
         equipment: String(formData.get("equipment") ?? "").trim(),
         instructions: String(formData.get("instructions") ?? "").trim(),
         thumbnailUrl: String(formData.get("thumbnailUrl") ?? "").trim(),
-        videoSource: videoUrl ? String(formData.get("videoSource") ?? "youtube") : "none",
-        videoUrl,
-        gymVideoUrl,
-        gymVideoSource: gymVideoUrl ? String(formData.get("gymVideoSource") ?? "youtube") : "none",
+        videoSource: isAdmin && videoUrl ? String(formData.get("videoSource") ?? "youtube") : "none",
+        videoUrl: isAdmin ? videoUrl : "",
+        gymVideoUrl: isAdmin && rootDoc.exists ? "" : gymVideoUrl,
+        gymVideoSource: !isAdmin && gymVideoUrl ? String(formData.get("gymVideoSource") ?? "youtube") : "none",
         ownerOnly: true,
         isActive: true,
         updatedBy: currentUser.uid,
         updatedAt: now
       };
 
-    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(updatePayload, { merge: true });
+    if (isAdmin && rootDoc.exists) {
+      await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(updatePayload, { merge: true });
+    } else {
+      await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(updatePayload, { merge: true });
+    }
 
     revalidatePath("/admin/exercises");
     revalidatePath("/owner/exercises");
@@ -2457,7 +2899,7 @@ export async function resetExerciseVideos(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireOwner();
+    const currentUser = await requireOwner();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const db = requireFirebase();
     const exerciseId = requireText(formData, "exerciseId", "Exercise ID");
@@ -2480,13 +2922,25 @@ export async function resetExerciseVideos(
     }
 
     const now = new Date().toISOString();
-    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).update({
-      videoUrl: defaultVideoUrl,
-      videoSource: defaultVideoUrl ? "youtube" : "none",
-      gymVideoUrl: defaultGymVideoUrl,
-      gymVideoSource: defaultGymVideoUrl ? "youtube" : "none",
-      updatedAt: now,
-    });
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const rootDoc = await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).get();
+    if (currentUser.role === "admin" && rootDoc.exists) {
+      await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).update({
+        videoUrl: defaultVideoUrl,
+        videoSource: defaultVideoUrl ? "youtube" : "none",
+        gymVideoUrl: "",
+        gymVideoSource: "none",
+        scope: "default",
+        gymId: "global",
+        updatedAt: now,
+      });
+    } else {
+      await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set({
+        gymVideoUrl: defaultGymVideoUrl,
+        gymVideoSource: defaultGymVideoUrl ? "youtube" : "none",
+        updatedAt: now,
+      }, { merge: true });
+    }
 
     revalidatePath("/admin/exercises");
     revalidatePath("/owner/exercises");
@@ -2695,9 +3149,10 @@ export async function createCustomWorkoutProgram(
       })
     );
 
-    await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const programRecord = {
       id: programId,
-      gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      gymId,
       title,
       description: String(formData.get("description") ?? "").trim(),
       goal: String(formData.get("goal") ?? "Custom member plan").trim(),
@@ -2709,7 +3164,14 @@ export async function createCustomWorkoutProgram(
       days,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await scopedGymDoc(db, gymId, "workoutPrograms", programId).set(
+      {
+        ...programRecord,
+        scope: "custom"
+      },
+      { merge: true }
+    );
 
     revalidatePath("/owner/programs");
 
@@ -2776,7 +3238,7 @@ export async function createAndAssignCustomProgram(
     );
 
     // 1. Save the program to the gym's library so it appears on /owner/programs too
-    await db.collection(collectionPaths.workoutPrograms).doc(programId).set({
+    const programRecord = {
       id: programId,
       gymId,
       title,
@@ -2790,7 +3252,14 @@ export async function createAndAssignCustomProgram(
       days,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await scopedGymDoc(db, gymId, "workoutPrograms", programId).set(
+      {
+        ...programRecord,
+        scope: "custom"
+      },
+      { merge: true }
+    );
 
     // 2. Cancel any existing active assignments for this member
     const existing = await db
@@ -2799,12 +3268,17 @@ export async function createAndAssignCustomProgram(
       .where("memberId", "==", memberId)
       .where("status", "==", "active")
       .get();
+    const existingScoped = await scopedGymDoc(db, gymId, "programAssignments", "_placeholder")
+      .parent
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .get();
     await Promise.all(
-      existing.docs.map((doc) => doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true }))
+      [...existing.docs, ...existingScoped.docs].map((doc) => doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true }))
     );
 
     // 3. Create the assignment
-    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set({
+    const assignmentRecord = {
       id: assignmentId,
       gymId,
       memberId,
@@ -2814,10 +3288,12 @@ export async function createAndAssignCustomProgram(
       createdBy: currentUser.uid,
       createdAt: now,
       updatedAt: now
-    });
+    };
+    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set(assignmentRecord);
+    await mirrorGymScopedRecord(db, gymId, "programAssignments", assignmentId, assignmentRecord);
 
     // 4. Notify the member
-    await db.collection(collectionPaths.notifications).doc(notificationId).set({
+    const notificationRecord = {
       id: notificationId,
       recipientRole: "member",
       recipientId: memberId,
@@ -2826,10 +3302,12 @@ export async function createAndAssignCustomProgram(
       title: "Workout program assigned",
       body: `${title} is now available in your weekly schedule.`,
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
+    await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
     // 5. Activity log
-    await db.collection(collectionPaths.activityEvents).doc(activityId).set({
+    const activityRecord = {
       id: activityId,
       gymId,
       audience: "owner",
@@ -2837,7 +3315,9 @@ export async function createAndAssignCustomProgram(
       detail: `${memberName} was assigned a custom ${days.length}-day plan.`,
       icon: "dumbbell",
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
+    await mirrorGymScopedRecord(db, gymId, "activityEvents", activityId, activityRecord);
 
     revalidatePath("/owner");
     revalidatePath("/owner/members");
@@ -2889,7 +3369,7 @@ export async function logBodyWeight(
 
     const db = requireFirebase();
     const id = randomUUID();
-    await db.collection(collectionPaths.bodyMetricLogs).doc(id).set({
+    const bodyMetricRecord = {
       id,
       memberId,
       gymId,
@@ -2898,7 +3378,9 @@ export async function logBodyWeight(
       ...(notes ? { notes } : {}),
       loggedAt: now,
       createdAt: now
-    });
+    };
+    await db.collection(collectionPaths.bodyMetricLogs).doc(id).set(bodyMetricRecord);
+    await mirrorGymScopedRecord(db, gymId, "bodyMetricLogs", id, bodyMetricRecord);
 
     // Mirror onto profile so dashboards see the current value without a join.
     try {
@@ -2906,6 +3388,13 @@ export async function logBodyWeight(
         { weightKg, updatedAt: now },
         { merge: true }
       );
+      await mirrorProfileToGym(db, memberId, {
+        id: memberId,
+        role: "member",
+        defaultGymId: gymId,
+        weightKg,
+        updatedAt: now
+      });
     } catch {
       // best-effort; chart still works from the dedicated collection
     }
@@ -2943,16 +3432,23 @@ export async function updateCoachNote(
     }
     const db = requireFirebase();
     const now = new Date().toISOString();
-    await db.collection(collectionPaths.profiles).doc(memberId).set(
-      {
+    const noteUpdate = {
         coachNote: rawNote,
         coachNoteUpdatedAt: rawNote ? now : null,
         coachNoteUpdatedBy: rawNote ? currentUser.uid : null,
         coachNoteUpdatedByName: rawNote ? currentUser.fullName : null,
         updatedAt: now
-      },
+      };
+    await db.collection(collectionPaths.profiles).doc(memberId).set(
+      noteUpdate,
       { merge: true }
     );
+    await mirrorProfileToGym(db, memberId, {
+      id: memberId,
+      role: "member",
+      defaultGymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+      ...noteUpdate
+    });
 
     revalidatePath(`/owner/members/${memberId}`);
     revalidatePath("/member");
@@ -2999,22 +3495,25 @@ export async function logDayStatus(
 
     // Deterministic ID → upsert semantics: same member+day+week = one record
     const docId = `${memberId}_${dayId}_${weekStart}`;
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const dayLogRecord = {
+      memberId,
+      gymId,
+      programId,
+      dayId,
+      weekStart,
+      status,
+      skipReason: skipReason ?? null,
+      note: rawNote || null,
+      loggedAt: now,
+      updatedAt: now
+    };
 
     await db.collection(collectionPaths.dayLogs).doc(docId).set(
-      {
-        memberId,
-        gymId: currentUser.gymId ?? null,
-        programId,
-        dayId,
-        weekStart,
-        status,
-        skipReason: skipReason ?? null,
-        note: rawNote || null,
-        loggedAt: now,
-        updatedAt: now
-      },
+      dayLogRecord,
       { merge: true }
     );
+    await mirrorGymScopedRecord(db, gymId, "dayLogs", docId, dayLogRecord);
 
     revalidatePath("/member");
     revalidatePath("/member/history");
@@ -3046,6 +3545,7 @@ export async function clearDayLog(
     const db = requireFirebase();
     const docId = `${memberId}_${dayId}_${weekStart}`;
     await db.collection(collectionPaths.dayLogs).doc(docId).delete();
+    await scopedGymDoc(db, currentUser.gymId ?? PRIMARY_GYM_ID, "dayLogs", docId).delete();
 
     revalidatePath("/member");
     revalidatePath("/member/history");
@@ -3056,4 +3556,3 @@ export async function clearDayLog(
     return failure(error, "Could not clear. Please try again.");
   }
 }
-

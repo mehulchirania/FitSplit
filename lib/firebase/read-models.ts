@@ -35,8 +35,50 @@ import {
   workoutSessions as mockWorkoutSessions
 } from "@/lib/mock-data";
 import { getExerciseThumbnail, isGenericExerciseThumbnail } from "@/lib/exercise-thumbnails";
-import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
+import { collectionPaths, gymCollectionPath, gymScopedCollectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
+
+type FirestoreDb = ReturnType<typeof getFirebaseAdminServices>["db"];
+
+function gymCollection(db: FirestoreDb, gymId: string, collection: Parameters<typeof gymCollectionPath>[1]) {
+  return db.collection(gymCollectionPath(gymId, collection));
+}
+
+function mapProfileToMember(docId: string, data: Record<string, unknown>): Member {
+  const name = String(data.fullName ?? "");
+  const username =
+    String(data.username ?? "").trim() ||
+    String(data.phone ?? "").trim() ||
+    String(data.email ?? "").trim() ||
+    undefined;
+
+  return {
+    id: docId,
+    fullName: name,
+    email: String(data.email ?? ""),
+    phone: String(data.phone ?? ""),
+    joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
+    avatarInitials: String(data.avatarInitials ?? (name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
+    goal: String(data.goal ?? "General fitness"),
+    staffType: data.staffType ? String(data.staffType) as Member["staffType"] : undefined,
+    isActive: data.isActive !== false,
+    username
+  };
+}
+
+async function getMemberProfileDocument(db: FirestoreDb, memberId: string) {
+  const scopedSnapshot = await db
+    .collectionGroup(gymScopedCollectionPaths.members)
+    .where("id", "==", memberId)
+    .limit(1)
+    .get();
+
+  if (!scopedSnapshot.empty) {
+    return scopedSnapshot.docs[0];
+  }
+
+  return db.collection(collectionPaths.profiles).doc(memberId).get();
+}
 
 function normalizeGymStatus(status: unknown): GymWorkspace["status"] {
   const value = String(status ?? "active");
@@ -116,12 +158,12 @@ export async function getGymWorkspaces(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const [gymSnapshot, memberSnapshot] = await Promise.all([
+    const [gymSnapshot, scopedMembersSnapshot, memberSnapshot] = await Promise.all([
       db.collection(collectionPaths.gyms).get(),
+      db.collectionGroup(gymScopedCollectionPaths.members).get(),
       db
         .collection(collectionPaths.profiles)
         .where("role", "==", "member")
-        .where("isActive", "==", true)
         .get()
     ]);
 
@@ -132,11 +174,22 @@ export async function getGymWorkspaces(): Promise<{
     const gyms = gymSnapshot.docs
       .map((doc) => {
         const workspace = mapWorkspace(doc.id, doc.data());
+        const memberIds = new Set<string>();
+
+        scopedMembersSnapshot.docs
+          .filter((memberDoc) => memberDoc.ref.parent.parent?.id === workspace.id)
+          .forEach((memberDoc) => memberIds.add(memberDoc.id));
+
+        memberSnapshot.docs
+          .filter((memberDoc) => {
+            const data = memberDoc.data();
+            return (data.defaultGymId === workspace.id || data.gymId === workspace.id) && data.role === "member";
+          })
+          .forEach((memberDoc) => memberIds.add(memberDoc.id));
+
         return {
           ...workspace,
-          memberCount: memberSnapshot.docs.filter(
-            (memberDoc) => memberDoc.data().defaultGymId === workspace.id
-          ).length
+          memberCount: memberIds.size
         };
       });
 
@@ -180,10 +233,20 @@ export async function getGymDetail(gymId: string): Promise<{
       if (slugQuery.empty) return { gym: null, isPersisted: true };
       const slugDoc = slugQuery.docs[0];
       if (!slugDoc) return { gym: null, isPersisted: true };
-      return { gym: mapWorkspace(slugDoc.id, slugDoc.data()), isPersisted: true };
+      const [scopedMembers, rootMembers] = await Promise.all([
+        gymCollection(db, slugDoc.id, "members").get(),
+        db.collection(collectionPaths.profiles).where("role", "==", "member").where("defaultGymId", "==", slugDoc.id).get()
+      ]);
+      const memberIds = new Set([...scopedMembers.docs, ...rootMembers.docs].map((memberDoc) => memberDoc.id));
+      return { gym: { ...mapWorkspace(slugDoc.id, slugDoc.data()), memberCount: memberIds.size }, isPersisted: true };
     }
 
-    return { gym: mapWorkspace(doc.id, doc.data() ?? {}), isPersisted: true };
+    const [scopedMembers, rootMembers] = await Promise.all([
+      gymCollection(db, doc.id, "members").get(),
+      db.collection(collectionPaths.profiles).where("role", "==", "member").where("defaultGymId", "==", doc.id).get()
+    ]);
+    const memberIds = new Set([...scopedMembers.docs, ...rootMembers.docs].map((memberDoc) => memberDoc.id));
+    return { gym: { ...mapWorkspace(doc.id, doc.data() ?? {}), memberCount: memberIds.size }, isPersisted: true };
   } catch {
     return { gym: null, isPersisted: false };
   }
@@ -240,26 +303,18 @@ export async function getOwnersForGym(gymId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.profiles)
-      .where("defaultGymId", "==", gymId)
+    const scopedSnapshot = await gymCollection(db, gymId, "staff")
       .where("role", "==", "owner")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.profiles)
+          .where("defaultGymId", "==", gymId)
+          .where("role", "==", "owner")
+          .get()
+      : scopedSnapshot;
     
-    const owners: Member[] = snapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        fullName: String(data.fullName),
-        email: String(data.email),
-        phone: String(data.phone ?? ""),
-        joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
-        avatarInitials: String(data.avatarInitials ?? "OW"),
-        goal: String(data.staffType ?? "owner"),
-        staffType: String(data.staffType ?? "owner") as Member["staffType"],
-        isActive: data.isActive !== false
-      };
-    });
+    const owners: Member[] = snapshot.docs.map(doc => mapProfileToMember(doc.id, doc.data()));
 
     return { owners, isPersisted: true };
   } catch {
@@ -316,11 +371,14 @@ async function getMembersUncached(gymId?: string): Promise<{
 
   try {
     db = getFirebaseAdminServices().db;
-    profileSnapshot = await db
-      .collection(collectionPaths.profiles)
-      .where("defaultGymId", "==", targetGymId)
-      .where("role", "==", "member")
-      .get();
+    const scopedSnapshot = await gymCollection(db, targetGymId, "members").get();
+    profileSnapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.profiles)
+          .where("defaultGymId", "==", targetGymId)
+          .where("role", "==", "member")
+          .get()
+      : scopedSnapshot;
   } catch {
     return { members: mockMembers, isPersisted: false };
   }
@@ -329,26 +387,7 @@ async function getMembersUncached(gymId?: string): Promise<{
     return { members: [], isPersisted: true };
   }
 
-  const members: Member[] = profileSnapshot.docs.map((doc) => {
-    const data = doc.data();
-    const name = String(data.fullName ?? "");
-    const username =
-      String(data.username ?? "").trim() ||
-      String(data.phone ?? "").trim() ||
-      String(data.email ?? "").trim() ||
-      undefined;
-    return {
-      id: doc.id,
-      fullName: name,
-      email: String(data.email),
-      phone: String(data.phone ?? ""),
-      joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
-      avatarInitials: String(data.avatarInitials ?? (name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
-      goal: String(data.goal ?? "General fitness"),
-      isActive: data.isActive !== false,
-      username
-    };
-  });
+  const members: Member[] = profileSnapshot.docs.map((doc) => mapProfileToMember(doc.id, doc.data()));
 
   return { members, isPersisted: true };
 }
@@ -370,7 +409,7 @@ export async function getMemberDetail(memberId: string): Promise<{
 
   try {
     db = getFirebaseAdminServices().db;
-    profileDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    profileDoc = await getMemberProfileDocument(db, memberId);
   } catch {
     const member = mockMembers.find((item) => item.id === memberId) ?? null;
     return {
@@ -433,11 +472,16 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    snapshot = await db
-      .collection(collectionPaths.exerciseCatalog)
-      .where("gymId", "==", targetGymId)
+    const scopedSnapshot = await gymCollection(db, targetGymId, "exerciseCatalog")
       .where("isActive", "==", true)
       .get();
+    snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.exerciseCatalog)
+          .where("gymId", "==", targetGymId)
+          .where("isActive", "==", true)
+          .get()
+      : scopedSnapshot;
   } catch {
     return {
       exercises: mockExercises,
@@ -447,11 +491,15 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
   }
 
   const defaultExercisesById = new Map<string, Exercise>();
+  const defaultExercisesByName = new Map<string, Exercise>();
   mockExercises.forEach((exercise) => defaultExercisesById.set(exercise.id, exercise));
+  mockExercises.forEach((exercise) => defaultExercisesByName.set(exercise.name.toLowerCase().trim(), exercise));
 
-  const persistedExercises: Exercise[] = snapshot.docs.map((doc) => {
+  const persistedExercises: Array<Exercise & { skipDefaultOverride?: boolean }> = snapshot.docs.map((doc) => {
     const data = doc.data();
     const defaultExercise = defaultExercisesById.get(doc.id);
+    const hasDefaultExercise = Boolean(defaultExercise) || defaultExercisesByName.has(String(data.name ?? "").toLowerCase().trim());
+    const isMirroredDefault = data.mirroredFromRootCollection === true && data.scope !== "custom";
     const persistedVideoUrl = String(data.videoUrl ?? "").trim();
     const videoUrl = persistedVideoUrl || defaultExercise?.videoUrl || "";
     const persistedVideoSource = String(data.videoSource ?? "").trim() as Exercise["videoSource"];
@@ -472,7 +520,8 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
       thumbnailUrl: isGenericExerciseThumbnail(storedThumbnailUrl)
         ? getExerciseThumbnail(String(data.name), muscleGroup)
         : storedThumbnailUrl,
-      ownerOnly: true
+      ownerOnly: true,
+      skipDefaultOverride: isMirroredDefault && hasDefaultExercise
     };
   });
 
@@ -484,7 +533,13 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
   // gym's demo footage is never visible to another gym's users.
   const exercisesByName = new Map<string, Exercise>();
   mockExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), { ...ex, gymVideoUrl: "", gymVideoSource: "none" }));
-  persistedExercises.forEach((ex) => exercisesByName.set(ex.name.toLowerCase().trim(), ex));
+  persistedExercises.forEach((ex) => {
+    if (ex.skipDefaultOverride && exercisesByName.has(ex.name.toLowerCase().trim())) {
+      return;
+    }
+    const { skipDefaultOverride: _skipDefaultOverride, ...cleanExercise } = ex;
+    exercisesByName.set(ex.name.toLowerCase().trim(), cleanExercise);
+  });
   const allExercises = Array.from(exercisesByName.values()).sort((left, right) =>
     left.name.localeCompare(right.name)
   );
@@ -519,13 +574,21 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    let query = db
-      .collection(collectionPaths.notifications)
-      .where("recipientRole", "==", "owner") as FirebaseFirestore.Query;
-    if (gymId) {
-      query = query.where("gymId", "==", gymId);
+    const targetGymId = gymId ?? PRIMARY_GYM_ID;
+    const scopedSnapshot = await gymCollection(db, targetGymId, "notifications")
+      .where("recipientRole", "==", "owner")
+      .get();
+    if (!scopedSnapshot.empty) {
+      snapshot = scopedSnapshot;
+    } else {
+      let query = db
+        .collection(collectionPaths.notifications)
+        .where("recipientRole", "==", "owner") as FirebaseFirestore.Query;
+      if (gymId) {
+        query = query.where("gymId", "==", gymId);
+      }
+      snapshot = await query.get();
     }
-    snapshot = await query.get();
   } catch {
     return {
       notifications: mockNotifications.filter(
@@ -573,10 +636,16 @@ export async function getAdminNotifications(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.notifications)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.notifications)
       .where("recipientRole", "==", "admin")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.notifications)
+          .where("recipientRole", "==", "admin")
+          .get()
+      : scopedSnapshot;
 
     const notifications: Notification[] = snapshot.docs
       .map((doc) => {
@@ -614,10 +683,16 @@ export async function getMemberNotifications(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.notifications)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.notifications)
       .where("recipientId", "==", memberId)
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.notifications)
+          .where("recipientId", "==", memberId)
+          .get()
+      : scopedSnapshot;
     const notifications: Notification[] = snapshot.docs
       .map((doc) => {
         const data = doc.data();
@@ -665,16 +740,26 @@ async function getWorkoutProgramsUncached(gymId?: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    snapshot = await db
-      .collection(collectionPaths.workoutPrograms)
-      .where("gymId", "==", targetGymId)
+    const scopedSnapshot = await gymCollection(db, targetGymId, "workoutPrograms")
       .where("isActive", "==", true)
       .get();
+    snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.workoutPrograms)
+          .where("gymId", "==", targetGymId)
+          .where("isActive", "==", true)
+          .get()
+      : scopedSnapshot;
   } catch {
     return { programs: predefinedPrograms, isPersisted: false };
   }
 
+  const predefinedProgramIds = new Set(predefinedPrograms.map((program) => program.id));
   const gymPrograms: WorkoutProgram[] = snapshot.docs
+    .filter((doc) => {
+      const data = doc.data();
+      return !(data.mirroredFromRootCollection === true && data.scope !== "custom" && predefinedProgramIds.has(doc.id));
+    })
     .map((doc) => {
       const data = doc.data();
       return {
@@ -715,10 +800,16 @@ export async function getBodyMetricLogsForMember(memberId: string): Promise<{
   }
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.bodyMetricLogs)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.bodyMetricLogs)
       .where("memberId", "==", memberId)
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.bodyMetricLogs)
+          .where("memberId", "==", memberId)
+          .get()
+      : scopedSnapshot;
     const logs: BodyMetricLog[] = snapshot.docs
       .map((doc) => {
         const data = doc.data();
@@ -749,10 +840,16 @@ export async function getDayLogsForMember(memberId: string): Promise<{
   }
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.dayLogs)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.dayLogs)
       .where("memberId", "==", memberId)
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.dayLogs)
+          .where("memberId", "==", memberId)
+          .get()
+      : scopedSnapshot;
     const validSkipReasons = new Set<string>(["rest", "no_time", "equipment", "sick", "other"]);
     const dayLogs: DayLog[] = snapshot.docs
       .map((doc) => {
@@ -791,10 +888,16 @@ export async function getLiftLogsForMember(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    snapshot = await db
-      .collection(collectionPaths.liftLogs)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.liftLogs)
       .where("memberId", "==", memberId)
       .get();
+    snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.liftLogs)
+          .where("memberId", "==", memberId)
+          .get()
+      : scopedSnapshot;
   } catch {
     return { liftLogs: [], isPersisted: false };
   }
@@ -838,12 +941,20 @@ export async function getProgramAssignmentForMember(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.programAssignments)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.programAssignments)
       .where("memberId", "==", memberId)
       .where("status", "==", "active")
       .limit(1)
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.programAssignments)
+          .where("memberId", "==", memberId)
+          .where("status", "==", "active")
+          .limit(1)
+          .get()
+      : scopedSnapshot;
 
     if (snapshot.empty) {
       return { assignment: null, isPersisted: true };
@@ -885,11 +996,16 @@ export async function getActiveProgramAssignments(gymId?: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.programAssignments)
-      .where("gymId", "==", targetGymId)
+    const scopedSnapshot = await gymCollection(db, targetGymId, "programAssignments")
       .where("status", "==", "active")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.programAssignments)
+          .where("gymId", "==", targetGymId)
+          .where("status", "==", "active")
+          .get()
+      : scopedSnapshot;
 
     const assignments: ProgramAssignment[] = snapshot.docs.map((doc) => {
       const data = doc.data();
@@ -960,11 +1076,16 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
   try {
     const { db } = getFirebaseAdminServices();
     const targetGymId = gymId ?? PRIMARY_GYM_ID;
-    const snapshot = await db
-      .collection(collectionPaths.activityEvents)
-      .where("gymId", "==", targetGymId)
+    const scopedSnapshot = await gymCollection(db, targetGymId, "activityEvents")
       .where("audience", "==", audience)
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.activityEvents)
+          .where("gymId", "==", targetGymId)
+          .where("audience", "==", audience)
+          .get()
+      : scopedSnapshot;
     const events = snapshot.docs
       .map((doc) => {
         const data = doc.data();
@@ -1015,7 +1136,7 @@ export async function getProfileMetrics(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const doc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    const doc = await getMemberProfileDocument(db, memberId);
 
     if (!doc.exists) {
       return { profile: fallback, isPersisted: !hasFirebaseAdminConfig() };
@@ -1083,7 +1204,7 @@ export async function getMemberWithProfile(memberId: string): Promise<{
   let doc;
   try {
     const { db } = getFirebaseAdminServices();
-    doc = await db.collection(collectionPaths.profiles).doc(memberId).get();
+    doc = await getMemberProfileDocument(db, memberId);
   } catch {
     return { member: fallbackMember, profile: fallbackProfile, isPersisted: false };
   }
@@ -1179,11 +1300,16 @@ export async function getActiveWorkoutSessions(gymId?: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.workoutSessions)
-      .where("gymId", "==", targetGymId)
+    const scopedSnapshot = await gymCollection(db, targetGymId, "workoutSessions")
       .where("status", "==", "active")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.workoutSessions)
+          .where("gymId", "==", targetGymId)
+          .where("status", "==", "active")
+          .get()
+      : scopedSnapshot;
     const sessions: WorkoutSession[] = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
@@ -1215,10 +1341,16 @@ export async function getAttendanceRecords(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.attendanceRecords)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.attendanceRecords)
       .where("memberId", "==", memberId)
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.attendanceRecords)
+          .where("memberId", "==", memberId)
+          .get()
+      : scopedSnapshot;
     
     const records: AttendanceRecord[] = snapshot.docs.map(doc => {
       const data = doc.data();
@@ -1259,10 +1391,16 @@ export async function getContactMessages(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.contactMessages)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.contactMessages)
       .orderBy("createdAt", "desc")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.contactMessages)
+          .orderBy("createdAt", "desc")
+          .get()
+      : scopedSnapshot;
     
     const messages: ContactMessage[] = snapshot.docs.map(doc => {
       const data = doc.data();
@@ -1294,10 +1432,16 @@ export async function getPendingExerciseRequests(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.exerciseRequests)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.exerciseRequests)
       .where("status", "==", "pending")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.exerciseRequests)
+          .where("status", "==", "pending")
+          .get()
+      : scopedSnapshot;
 
     const requests: ExerciseRequest[] = snapshot.docs
       .map((doc) => {
@@ -1331,10 +1475,16 @@ export async function getUnreadContactMessageCount(): Promise<number> {
 
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(collectionPaths.contactMessages)
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.contactMessages)
       .where("status", "==", "unread")
       .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.contactMessages)
+          .where("status", "==", "unread")
+          .get()
+      : scopedSnapshot;
 
     return snapshot.size;
   } catch {

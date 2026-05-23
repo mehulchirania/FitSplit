@@ -57,7 +57,7 @@ export function LoginForm() {
     setMessage("");
 
     if (!cleanUsername) {
-      setError(isMember ? "Enter your registered mobile number or email." : "Enter your staff email or username.");
+      setError(isMember ? "Enter your username, registered mobile number, or email." : "Enter your staff email or username.");
       return;
     }
 
@@ -109,7 +109,7 @@ export function LoginForm() {
     setMessage("");
 
     if (!cleanUsername) {
-      setError(isMember ? "Enter your mobile number or email first." : "Enter your username first.");
+      setError(isMember ? "Enter your username, mobile number, or email first." : "Enter your username first.");
       return;
     }
 
@@ -148,7 +148,7 @@ export function LoginForm() {
         </p>
         <div className="login-demo-strip">
           <span>Local demo</span>
-          <strong>{isMember ? "registered mobile/email / 1234" : "admin / password"}</strong>
+          <strong>{isMember ? "username/mobile/email / 1234" : "admin / password"}</strong>
         </div>
       </div>
 
@@ -158,7 +158,7 @@ export function LoginForm() {
           <h2>{isMember ? "Member Login" : "Staff Login"}</h2>
           <p>
             {isMember
-              ? "Use your registered mobile number and PIN."
+              ? "Use your member username, mobile number, or email with your PIN."
               : "Admin and gym owner accounts sign in here."}
           </p>
         </div>
@@ -196,13 +196,13 @@ export function LoginForm() {
           ref={formRef}
         >
           <label>
-            <span>{isMember ? "Mobile number or email" : "Email or username"}</span>
+            <span>{isMember ? "Username, mobile number, or email" : "Email or username"}</span>
             <input
               autoComplete="username"
               inputMode={isMember ? "tel" : undefined}
               name="username"
               onChange={(event) => setUsername(event.target.value)}
-              placeholder={isMember ? "Mobile number or email" : "admin"}
+              placeholder={isMember ? "Member username" : "admin"}
               required
               type="text"
               value={username}

@@ -1,5 +1,34 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-23: Gym-scoped Firestore architecture + username login
+
+### Firestore migration to gym-first structure
+- `FIRESTORE_STRUCTURE.md` (new) — full schema documenting the target layout where every gym-owned collection lives under `gyms/{gymId}/{collection}`. Covers members, staff, exerciseCatalog, workoutPrograms, programAssignments, liftLogs, bodyMetricLogs, dayLogs, notifications, activityEvents, workoutSessions, attendanceRecords, contactMessages, siteLinks. Global root collections stay for auth index (`profiles`), default library (`exerciseCatalog`, `workoutPrograms`), and `archives`.
+- `lib/firebase/collections.ts` — added `gymScopedCollectionPaths` constant (all gym-owned collections), `GymScopedCollectionKey` type, and path helpers: `gymPath(gymId)`, `gymCollectionPath(gymId, collection)`, `gymDocPath(gymId, collection, docId)`, `gymProfileCollectionKey(role)`. Also added `archives` and `authProfiles` (profiles alias) to root paths.
+- `lib/firebase/actions.ts` — added archive infrastructure: `archiveRetentionDate()`, `archiveDocumentSnapshot()`, `archiveQuerySnapshot()`, `deleteSnapshotsInBatches()`, `archiveAndDeleteGymSubcollections()`. Added `mirrorProfileToGym()` and `mirrorGymScopedRecord()` so writes to root collections also write to the gym-scoped path during migration. Added `scopedGymDoc()` helper.
+- `lib/firebase/read-models.ts` — added `gymCollection()` helper, `mapProfileToMember()` shared mapper, `getMemberProfileDocument()` for cross-path profile lookups.
+
+### Username login for members
+- `normalizeUsername()` (lowercases + trims), `assertValidUsername()` (regex: 3–32 chars, letters/numbers/dots/underscores/hyphens), `assertUsernameAvailable(db, username, excludeId?)` (uniqueness check via `profiles` index).
+- `createMemberProfile` — username is now a required field; normalized + uniqueness-checked before write.
+- `updateMemberProfile` and `updateOwnerMemberContext` — username included in updates; existing members get their current value defaulted in if not supplied.
+- `components/add-member-form.tsx` — Login username field (pattern validated, required) added to the create-member form.
+- `components/member-context-editor.tsx` — Login username field added to the owner-side member edit form.
+- `components/login-form.tsx` and `components/landing-page-client.tsx` — login hint copy updated to "Username, mobile number, or email" everywhere for members, matching the actual supported lookup paths.
+
+### Admin gym page — members list
+- `app/admin/gyms/[gymId]/page.tsx` — fetches `getMembers(gymId)` in parallel. Renders a new panel below the staff section showing all members with avatar initials, username/email, active/disabled status pill, and a "View" link to `/owner/members/{id}`.
+
+### Maintenance scripts
+- `scripts/migrate-gym-scoped-firestore.mjs` (new) — dry-runs by default; `--write` to execute. Mirrors all `profiles` docs to `gyms/{gymId}/members` or `gyms/{gymId}/staff` depending on role, and all operational collection docs to their gym-scoped paths. Creates skeleton gym metadata. `npm run migrate:gym-scoped`.
+- `scripts/sync-exercise-videos-from-workouts.mjs` (new) — syncs `videoUrl`/`gymVideoUrl` from `lib/workouts.json` back to root `exerciseCatalog` and `gyms/{gymId}/exerciseCatalog` in Firestore. `npm run sync:exercise-videos` (dry-run) or `-- --write`. `--gym=shg` to target a specific gym.
+- `package.json` — both scripts registered.
+
+### Verification
+- `npx tsc --noEmit` passes.
+
+---
+
 ## Latest Update - 2026-05-20: Day-skip & did-something-else feature
 
 Members don't always follow their program exactly. This adds full week-aware deviation tracking so the app reflects reality instead of silently pretending every day was completed.
@@ -2333,4 +2362,140 @@ GitHub push passed to:
 
 ```text
 https://github.com/mehulchirania/FitSplit
+```
+
+## Latest Update - 2026-05-23: Gym-first Firestore skeleton migration
+
+FitSplit now has a documented gym-first Firestore structure and migration path.
+
+### What changed
+
+- Added `FIRESTORE_STRUCTURE.md` as the canonical database structure reference.
+- Added shared gym-scoped collection helpers in `lib/firebase/collections.ts`:
+  - `gymPath(gymId)`
+  - `gymCollectionPath(gymId, collection)`
+  - `gymDocPath(gymId, collection, docId)`
+  - `gymProfileCollectionKey(role)`
+- Added `scripts/migrate-gym-scoped-firestore.mjs` and package script:
+
+```bash
+npm run migrate:gym-scoped
+npm run migrate:gym-scoped -- --write
+```
+
+- Read models now prefer nested gym collections and fall back to legacy root collections during transition.
+- Major write actions now dual-write/mirror active records into gym-scoped paths while preserving the existing root collections for compatibility.
+
+### New target structure
+
+```text
+gyms/{gymId}
+  members/{memberId}
+  staff/{staffId}
+  exerciseCatalog/{exerciseId}
+  workoutPrograms/{programId}
+  programAssignments/{assignmentId}
+  liftLogs/{logId}
+  bodyMetricLogs/{logId}
+  dayLogs/{logId}
+  notifications/{notificationId}
+  activityEvents/{eventId}
+  workoutSessions/{sessionId}
+  attendanceRecords/{recordId}
+  contactMessages/{messageId}
+  _meta/firestoreSkeleton
+```
+
+Root `profiles` remains temporarily as the global auth/profile index. Root operational collections remain as compatibility mirrors until the app is fully proven on gym-scoped reads/writes.
+
+### Migration status
+
+Migration was executed against Firebase project `fitsplit-29215`.
+
+Dry run and write both completed successfully:
+
+```bash
+npm run migrate:gym-scoped
+npm run migrate:gym-scoped -- --write
+```
+
+Verified nested counts after migration:
+
+```text
+dummy-gym: members 0, staff 1, _meta 1
+shg: members 7, staff 3, exerciseCatalog 211, workoutPrograms 12, programAssignments 8, activityEvents 14, notifications 10, liftLogs 4, dayLogs 1, _meta 1
+titan-gym: members 20, staff 1, programAssignments 10, activityEvents 2, notifications 2, _meta 1
+titan-v2-fitness: members 2, staff 5, workoutPrograms 1, programAssignments 1, activityEvents 1, liftLogs 1, _meta 1
+```
+
+No root collections were deleted.
+
+### Verification
+
+```bash
+npm run typecheck
+npm run build
+```
+
+Both passed after the gym-first Firestore migration work.
+
+### Known follow-ups
+
+- Update Firestore security rules to enforce gym-scoped access paths.
+- Add composite indexes if Firestore prompts for collection-group queries such as `programAssignments`, `contactMessages`, `attendanceRecords`, or `liftLogs`.
+- After a confidence period, archive/delete root operational collections and keep only root `profiles` plus global templates.
+- Continue moving any missed write paths to gym-scoped dual-writes before root cleanup.
+
+## Latest Update - 2026-05-23: Archive retention, default-vs-gym catalog split, and member login usernames
+
+### What changed
+
+- Added root `archives` collection support for destructive actions. Deletes now archive snapshots with `retentionDays: 60` and `retentionExpiresAt` before removal.
+- Gym/member/staff/program deletes now archive the affected records first. Firestore TTL still needs to be configured on `archives.retentionExpiresAt`.
+- Default exercises and workout programs are treated as global/root resources editable only by admin.
+- Owner-created custom exercises and workout plans now write to `gyms/{gymId}/exerciseCatalog` and `gyms/{gymId}/workoutPrograms`.
+- Fixed the owner assignment guard that incorrectly rejected members because it checked `gymId` but many member profiles store the tenant as `defaultGymId`.
+- Add-member flow now asks for a custom login username. The server validates uniqueness and no longer derives usernames from email/phone.
+- Member edit/context forms can preserve/edit the login username.
+- Exercise video data was re-synced from `lib/workouts.json` into Firestore with:
+
+```bash
+npm run sync:exercise-videos -- --write
+```
+
+The local catalog check confirmed default tutorial URLs resolve to `Andrew Kwong (DeltaBolic)`. SHG demo URLs also resolve, but gym-scoped migrated default rows no longer override the Deltabolic defaults during catalog reads.
+
+### New script
+
+```bash
+npm run sync:exercise-videos          # dry run
+npm run sync:exercise-videos -- --write
+```
+
+This normalizes root `exerciseCatalog` default videos and `gyms/{gymId}/exerciseCatalog` gym demo videos from `lib/workouts.json`.
+
+### Follow-ups
+
+- Configure Firestore TTL for `archives.retentionExpiresAt`.
+- Add an admin archive viewer/restore flow before relying on archive data operationally.
+- Sweep old root custom exercises/programs after confirming gym-scoped reads are stable.
+
+## Latest Update - 2026-05-23: Admin gym members visibility fix
+
+- Admin gym detail pages now load and render members for the selected gym, not only staff.
+- `getGymWorkspaces()` now computes member counts from gym-scoped `gyms/{gymId}/members` plus legacy root `profiles`, deduped by member ID.
+- `getGymDetail()` now returns a live member count from gym-scoped members with root-profile fallback instead of relying on stale stored `memberCount`.
+- Verified live Firestore counts:
+
+```text
+shg: scoped=7, root=7
+titan-gym: scoped=20, root=20
+dummy-gym: scoped=0, root=0
+```
+
+Verification:
+
+```bash
+npm run typecheck
+npm run build
 ```

@@ -7,7 +7,7 @@ import { GymLogoManager } from "@/components/gym-logo-manager";
 import { UsersRound, Settings } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { deleteGymStaffProfile, deleteGymWithMembers, setGymStatus, updateGymDetails, updateGymLogo, resetPassword } from "@/lib/firebase/actions";
-import { getGymDetail, getOwnersForGym } from "@/lib/firebase/read-models";
+import { getGymDetail, getMembers, getOwnersForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
@@ -19,9 +19,10 @@ export default async function GymManagementPage({
   await requireRole(["admin"]);
 
   const { gymId } = await params;
-  const [{ gym }, { owners: staff }] = await Promise.all([
+  const [{ gym }, { owners: staff }, { members }] = await Promise.all([
     getGymDetail(gymId),
-    getOwnersForGym(gymId)
+    getOwnersForGym(gymId),
+    getMembers(gymId)
   ]);
 
   if (!gym) {
@@ -205,6 +206,43 @@ export default async function GymManagementPage({
           )}
         </div>
       </section>
+
+      <section className="list-panel" style={{ marginTop: 16 }}>
+        <div className="panel-title">
+          <h2><UsersRound /> Gym Members</h2>
+          <span className="status-pill status-neutral">{members.length} total</span>
+        </div>
+        <div className="activity-feed">
+          {members.map((member) => (
+            <article className="member-row" key={member.id}>
+              <span className="avatar">{member.avatarInitials}</span>
+              <div style={{ flex: 1 }}>
+                <span className="member-name">{member.fullName}</span>
+                <span className="member-meta">
+                  {member.username ? `@${member.username}` : member.email}
+                  {member.phone ? ` • ${member.phone}` : ""}
+                </span>
+              </div>
+              <span className={`status-pill ${member.isActive ? "status-active" : "status-danger"}`}>
+                {member.isActive ? "active" : "disabled"}
+              </span>
+              <Link
+                className="button button-secondary"
+                href={`/owner/members/${member.id}`}
+                style={{ fontSize: "0.8rem", padding: "6px 14px" }}
+              >
+                View
+              </Link>
+            </article>
+          ))}
+          {members.length === 0 && (
+            <p style={{ padding: "24px", textAlign: "center", color: "var(--text-soft)" }}>
+              No members assigned to this gym yet.
+            </p>
+          )}
+        </div>
+      </section>
+
       {gym.id !== "shg" && (
         <section className="list-panel" style={{ marginTop: 16, borderColor: "var(--error, #f87171)" }}>
           <div className="panel-title">

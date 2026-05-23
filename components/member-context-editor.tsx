@@ -81,6 +81,17 @@ export function MemberContextEditor({
               <input defaultValue={member.fullName} name="fullName" required />
             </label>
             <label>
+              Login username
+              <input
+                autoComplete="username"
+                defaultValue={member.username ?? ""}
+                name="username"
+                pattern="[A-Za-z0-9._-]{3,32}"
+                required
+                title="Use 3-32 letters, numbers, dots, underscores, or hyphens."
+              />
+            </label>
+            <label>
               Email
               <input defaultValue={member.email} name="email" required type="email" />
             </label>
