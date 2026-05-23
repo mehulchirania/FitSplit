@@ -561,6 +561,74 @@ export const archiveGymWorkspace = onCall({ region }, async (request) => {
   return { status: "success", message: "Gym was archived and deleted." };
 });
 
+/**
+ * Resolve a member username or email to the Firebase Auth email so the client
+ * can call signInWithEmailAndPassword.  Members authenticate with a synthetic
+ * email (<memberId>@members.fitsplit.app) — this function returns it given the
+ * human-readable username or personal email they entered on the login screen.
+ * Staff sign in with their real email, so this returns it unchanged after
+ * verifying the role is "owner".
+ */
+export const lookupLoginEmail = onCall({ region }, async (request) => {
+  const identifier = optionalString(request.data?.identifier).toLowerCase();
+  const mode = optionalString(request.data?.mode) || "member"; // "member" | "staff"
+
+  if (!identifier) {
+    throw new HttpsError("invalid-argument", "An identifier (username or email) is required.");
+  }
+
+  if (mode === "staff") {
+    // Staff log in with their real email — just verify the profile exists and
+    // has an owner/admin role.
+    assertEmail(identifier, "Email");
+    const snap = await db
+      .collection("profiles")
+      .where("email", "==", identifier)
+      .where("role", "in", ["admin", "owner"])
+      .limit(1)
+      .get();
+    if (snap.empty) {
+      throw new HttpsError("not-found", "No staff account found for that email.");
+    }
+    return { email: identifier };
+  }
+
+  // Member mode: look up by username first, then by personal email.
+  const byUsername = await db
+    .collection("profiles")
+    .where("username", "==", normalizeUsername(identifier))
+    .where("role", "==", "member")
+    .limit(1)
+    .get();
+
+  if (!byUsername.empty) {
+    const data = byUsername.docs[0].data();
+    if (data.isActive === false) {
+      throw new HttpsError("permission-denied", "Your account has been suspended.");
+    }
+    return { email: String(data.authEmail ?? memberAuthEmail(byUsername.docs[0].id)) };
+  }
+
+  // Fall back to personal email lookup (some older accounts may have used email
+  // as username).
+  const byEmail = await db
+    .collection("profiles")
+    .where("email", "==", identifier)
+    .where("role", "==", "member")
+    .limit(1)
+    .get();
+
+  if (!byEmail.empty) {
+    const data = byEmail.docs[0].data();
+    if (data.isActive === false) {
+      throw new HttpsError("permission-denied", "Your account has been suspended.");
+    }
+    return { email: String(data.authEmail ?? memberAuthEmail(byEmail.docs[0].id)) };
+  }
+
+  throw new HttpsError("not-found", "No account found for that username.");
+});
+
 export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hours" }, async () => {
   const expired = await db.collection("archives").where("retentionExpiresAt", "<=", new Date()).limit(450).get();
   await deleteDocs(expired.docs);

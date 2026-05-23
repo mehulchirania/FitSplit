@@ -1,6 +1,7 @@
 import { getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import { getFunctions } from "firebase/functions";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -11,6 +12,9 @@ const firebaseConfig = {
   messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
+
+/** Region where Cloud Functions are deployed. Must match functions/src/index.ts. */
+export const FUNCTIONS_REGION = "asia-south1";
 
 export function createFirebaseApp() {
   if (!getApps().length) {
@@ -27,6 +31,7 @@ export function getFirebaseClientServices() {
     app,
     auth: getAuth(app),
     db: getFirestore(app),
-    storage: getStorage(app)
+    storage: getStorage(app),
+    functions: getFunctions(app, FUNCTIONS_REGION),
   };
 }
