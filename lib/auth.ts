@@ -134,34 +134,6 @@ const demoLogins: Record<string, DemoLogin> = {
     gymId: "shg",
     role: "member"
   },
-  mehulchirania: {
-    uid: "member-mehul",
-    authEmail: "mehul@example.com",
-    fullName: "Mehul Chirania",
-    gymId: "shg",
-    role: "member"
-  },
-  "mehul@example.com": {
-    uid: "member-mehul",
-    authEmail: "mehul@example.com",
-    fullName: "Mehul Chirania",
-    gymId: "shg",
-    role: "member"
-  },
-  "+919688227039": {
-    uid: "member-mehul",
-    authEmail: "mehul@example.com",
-    fullName: "Mehul Chirania",
-    gymId: "shg",
-    role: "member"
-  },
-  "+91 9688227039": {
-    uid: "member-mehul",
-    authEmail: "mehul@example.com",
-    fullName: "Mehul Chirania",
-    gymId: "shg",
-    role: "member"
-  }
 };
 
 function normalizeIdentifier(identifier: string) {
