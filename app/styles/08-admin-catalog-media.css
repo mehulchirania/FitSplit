@@ -754,3 +754,261 @@
   gap: 10px;
   min-width: 0;
 }
+
+/* ── Exercise catalog: predefined / custom sections ───────────────────────── */
+.catalog-section {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.catalog-section-header {
+  align-items: center;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 10px;
+  padding: 14px 20px;
+}
+.catalog-section-title {
+  color: var(--text);
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* ── Muscle-group collapsible panels inside catalog ───────────────────────── */
+.catalog-grid {
+  display: flex;
+  flex-direction: column;
+}
+.catalog-group-panel {
+  border-bottom: 1px solid var(--border);
+}
+.catalog-group-panel:last-child {
+  border-bottom: none;
+}
+.catalog-group-panel summary::-webkit-details-marker { display: none; }
+.catalog-group-summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 0;
+}
+.catalog-group-summary-inner {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  padding: 12px 20px;
+  transition: background 120ms ease;
+}
+.catalog-group-summary:hover .catalog-group-summary-inner {
+  background: var(--bg-subtle);
+}
+.catalog-group-name {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.panel-icon {
+  color: var(--brand);
+  flex-shrink: 0;
+  height: 16px;
+  width: 16px;
+}
+.catalog-group-chevron {
+  color: var(--text-faint);
+  flex-shrink: 0;
+  height: 16px;
+  margin-left: 4px;
+  transition: transform 180ms ease;
+  width: 16px;
+}
+.catalog-group-panel[open] .catalog-group-chevron {
+  transform: rotate(180deg);
+}
+.catalog-list {
+  border-top: 1px solid var(--border);
+  padding: 0 20px;
+}
+
+/* ── catalog add section ──────────────────────────────────────────────────── */
+.catalog-add-section .notification-list {
+  padding: 0;
+}
+
+/* ── Exercise edit form sections ──────────────────────────────────────────── */
+.exercise-form-section {
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 14px;
+  padding: 16px 0;
+}
+.exercise-form-section:first-of-type {
+  padding-top: 0;
+}
+.exercise-form-section:last-of-type {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.exercise-form-section-title {
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  margin: 0;
+  text-transform: uppercase;
+}
+.exercise-form-section-hint {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: -6px 0 0;
+}
+.exercise-form-label {
+  color: var(--text-soft);
+  display: block;
+  font-size: 0.82rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+.exercise-form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 4px;
+}
+
+/* form-grid: two-column responsive layout inside form sections */
+.form-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 1fr;
+}
+@media (max-width: 520px) {
+  .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Equipment chip multi-select ──────────────────────────────────────────── */
+.exercise-form-equipment {
+  display: grid;
+  gap: 8px;
+}
+.equipment-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.equipment-chip {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.equipment-chip:hover {
+  border-color: var(--brand);
+  color: var(--text);
+}
+.equipment-chip.is-selected {
+  background: color-mix(in srgb, var(--brand) 18%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
+  color: var(--brand-strong);
+}
+.equipment-custom-input {
+  font-size: 0.84rem;
+  margin-top: 2px;
+}
+.equipment-selected-preview {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  margin: 0;
+}
+.equipment-selected-preview strong {
+  color: var(--text);
+}
+
+/* ── Video entries (dynamic add/remove) ───────────────────────────────────── */
+.video-entries {
+  display: grid;
+  gap: 10px;
+}
+.video-entry-card {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.video-entry-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+}
+.video-channel-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  flex: 1;
+  font-size: 0.84rem;
+  padding: 5px 8px;
+}
+.video-entry-remove {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  height: 30px;
+  justify-content: center;
+  padding: 0 8px;
+  transition: background 120ms, border-color 120ms, color 120ms;
+}
+.video-entry-remove:hover {
+  background: color-mix(in srgb, red 12%, transparent);
+  border-color: color-mix(in srgb, red 40%, var(--border));
+  color: #e55;
+}
+.video-entry-url {
+  font-size: 0.84rem;
+  width: 100%;
+}
+.video-add-btn {
+  align-self: flex-start;
+  background: transparent;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  transition: border-color 120ms, color 120ms;
+}
+.video-add-btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
+}
+
+/* ── Restore defaults section inside edit panel ───────────────────────────── */
+.exercise-restore-section {
+  border-top: 1px solid var(--border);
+  display: grid;
+  gap: 8px;
+  margin-top: 4px;
+  padding-top: 14px;
+}
+.exercise-restore-hint {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  margin: 0;
+}

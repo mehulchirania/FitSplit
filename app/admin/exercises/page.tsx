@@ -1,27 +1,34 @@
 import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { CloseDetailsButton } from "@/components/close-details-button";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
-import { Dumbbell } from "@/components/icons";
+import { ExerciseEditForm } from "@/components/exercise-edit-form";
+import { ChevronDown, Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { approveCatalogExerciseRequest, createCatalogExercise, rejectCatalogExerciseRequest, resetExerciseVideos, updateCatalogExercise } from "@/lib/firebase/actions";
-import { getExerciseCatalog, getGymWorkspaces, getPendingExerciseRequests } from "@/lib/firebase/read-models";
+import {
+  approveCatalogExerciseRequest,
+  createCatalogExercise,
+  rejectCatalogExerciseRequest,
+  resetExerciseVideos,
+  updateCatalogExercise,
+} from "@/lib/firebase/actions";
+import {
+  getExerciseCatalog,
+  getGymWorkspaces,
+  getPendingExerciseRequests,
+} from "@/lib/firebase/read-models";
+import type { Exercise } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
 
 const ALL_MUSCLE_GROUPS = [
-  "Back", "Biceps", "Cardio", "Chest", "Core", "Legs", "Shoulders", "Triceps"
-];
-
-const VIDEO_SOURCES = [
-  { value: "none", label: "None" },
-  { value: "youtube", label: "YouTube" },
-  { value: "vimeo", label: "Vimeo" },
+  "Back", "Biceps", "Cardio", "Chest", "Core", "Legs", "Shoulders", "Triceps",
 ];
 
 export default async function AdminExercisesPage({
-  searchParams
+  searchParams,
 }: {
   searchParams: Promise<{ gym?: string }>;
 }) {
@@ -32,16 +39,24 @@ export default async function AdminExercisesPage({
   const selectedGymId = gymParam ?? gyms[0]?.id ?? "shg";
   const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
 
-  const [{ exercises, catalog: exerciseCatalogByMuscle }, { requests: pendingRequests }] = await Promise.all([
+  const [
+    { exercises, catalog: exerciseCatalogByMuscle },
+    { requests: pendingRequests },
+  ] = await Promise.all([
     getExerciseCatalog(selectedGymId),
-    getPendingExerciseRequests()
+    getPendingExerciseRequests(),
   ]);
+
+  const predefined = exercises.filter((e) => e.source !== "custom");
+  const custom = exercises.filter((e) => e.source === "custom");
 
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Exercise Catalog" }]} />
+          <Breadcrumb
+            crumbs={[{ label: "Admin", href: "/admin" }, { label: "Exercise Catalog" }]}
+          />
           <h1>Exercise catalog</h1>
           <p>
             Review and edit exercise definitions, video links, and coaching notes across all gyms.
@@ -72,8 +87,12 @@ export default async function AdminExercisesPage({
           </div>
           <div className="detail-window">
             <span>
-              Muscle groups
-              <strong>{exerciseCatalogByMuscle.length}</strong>
+              FitSplit defaults
+              <strong>{predefined.length}</strong>
+            </span>
+            <span>
+              Custom
+              <strong>{custom.length}</strong>
             </span>
             <span>
               With tutorial
@@ -91,29 +110,67 @@ export default async function AdminExercisesPage({
       {pendingRequests.length > 0 && (
         <section className="list-panel" style={{ marginBottom: 20 }}>
           <div className="panel-title">
-            <h2><Dumbbell /> Exercise requests from gyms</h2>
-            <span className="status-pill status-expiring">{pendingRequests.length} pending</span>
+            <h2>
+              <Dumbbell /> Exercise requests from gyms
+            </h2>
+            <span className="status-pill status-expiring">
+              {pendingRequests.length} pending
+            </span>
           </div>
           <div className="notification-list">
             {pendingRequests.map((req) => (
-              <article key={req.id} style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+              <article
+                key={req.id}
+                style={{ padding: "14px 20px", borderBottom: "1px solid var(--border)" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    flexWrap: "wrap",
+                  }}
+                >
                   <div>
                     <strong style={{ fontSize: "0.95rem" }}>{req.name}</strong>
-                    <p style={{ color: "var(--text-soft)", fontSize: "0.82rem", margin: "2px 0 0" }}>
-                      {req.muscleGroup}{req.equipment ? ` · ${req.equipment}` : ""} · Requested by {req.gymName ?? req.gymId}
+                    <p
+                      style={{
+                        color: "var(--text-soft)",
+                        fontSize: "0.82rem",
+                        margin: "2px 0 0",
+                      }}
+                    >
+                      {req.muscleGroup}
+                      {req.equipment ? ` · ${req.equipment}` : ""} · Requested by{" "}
+                      {req.gymName ?? req.gymId}
                     </p>
                     {req.instructions && (
-                      <p style={{ color: "var(--text-soft)", fontSize: "0.82rem", marginTop: 4, fontStyle: "italic" }}>{req.instructions}</p>
+                      <p
+                        style={{
+                          color: "var(--text-soft)",
+                          fontSize: "0.82rem",
+                          marginTop: 4,
+                          fontStyle: "italic",
+                        }}
+                      >
+                        {req.instructions}
+                      </p>
                     )}
                   </div>
                   {/* One-click dismiss */}
-                  <form action={async (fd: FormData) => {
-                    "use server";
-                    await rejectCatalogExerciseRequest(fd);
-                  }}>
+                  <form
+                    action={async (fd: FormData) => {
+                      "use server";
+                      await rejectCatalogExerciseRequest(fd);
+                    }}
+                  >
                     <input name="requestId" type="hidden" value={req.id} />
-                    <button className="button button-secondary" style={{ fontSize: "0.78rem", padding: "4px 10px", minHeight: 28 }} type="submit">
+                    <button
+                      className="button button-secondary"
+                      style={{ fontSize: "0.78rem", padding: "4px 10px", minHeight: 28 }}
+                      type="submit"
+                    >
                       Dismiss
                     </button>
                   </form>
@@ -121,7 +178,18 @@ export default async function AdminExercisesPage({
 
                 {/* Editable approve form */}
                 <details style={{ marginTop: 10 }}>
-                  <summary className="button button-primary" style={{ cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, fontSize: "0.82rem", padding: "6px 14px", listStyle: "none" }}>
+                  <summary
+                    className="button button-primary"
+                    style={{
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: "0.82rem",
+                      padding: "6px 14px",
+                      listStyle: "none",
+                    }}
+                  >
                     Review &amp; Add to catalog
                   </summary>
                   <form
@@ -141,20 +209,35 @@ export default async function AdminExercisesPage({
                         Muscle group
                         <select defaultValue={req.muscleGroup} name="muscleGroup" required>
                           {ALL_MUSCLE_GROUPS.map((mg) => (
-                            <option key={mg} value={mg}>{mg}</option>
+                            <option key={mg} value={mg}>
+                              {mg}
+                            </option>
                           ))}
                         </select>
                       </label>
                       <label>
                         Equipment
-                        <input defaultValue={req.equipment ?? ""} name="equipment" placeholder="e.g. Cable, Barbell" />
+                        <input
+                          defaultValue={req.equipment ?? ""}
+                          name="equipment"
+                          placeholder="e.g. Cable, Barbell"
+                        />
                       </label>
                     </div>
                     <label>
                       Coaching instructions
-                      <textarea defaultValue={req.instructions ?? ""} name="instructions" placeholder="Setup, cues, range of motion" rows={2} />
+                      <textarea
+                        defaultValue={req.instructions ?? ""}
+                        name="instructions"
+                        placeholder="Setup, cues, range of motion"
+                        rows={2}
+                      />
                     </label>
-                    <button className="button button-primary" style={{ width: "fit-content" }} type="submit">
+                    <button
+                      className="button button-primary"
+                      style={{ width: "fit-content" }}
+                      type="submit"
+                    >
                       Add to catalog
                     </button>
                   </form>
@@ -165,18 +248,94 @@ export default async function AdminExercisesPage({
         </section>
       )}
 
-      <section className="catalog-grid">
+      {/* ── FitSplit Catalog (predefined) ─────────────────────────── */}
+      <AdminCatalogSection
+        exercises={predefined}
+        exerciseCatalogByMuscle={exerciseCatalogByMuscle
+          .map((g) => ({
+            ...g,
+            exercises: g.exercises.filter((e) => e.source !== "custom"),
+          }))
+          .filter((g) => g.exercises.length > 0)}
+        isDefaultSection
+        sectionCount={predefined.length}
+        sectionLabel="FitSplit catalog"
+      />
+
+      {/* ── Custom exercises ───────────────────────────────────────── */}
+      {custom.length > 0 && (
+        <AdminCatalogSection
+          exercises={custom}
+          exerciseCatalogByMuscle={exerciseCatalogByMuscle
+            .map((g) => ({
+              ...g,
+              exercises: g.exercises.filter((e) => e.source === "custom"),
+            }))
+            .filter((g) => g.exercises.length > 0)}
+          sectionCount={custom.length}
+          sectionLabel="Custom exercises"
+        />
+      )}
+
+      {exerciseCatalogByMuscle.length === 0 && (
+        <div className="md-empty" style={{ marginTop: 16 }}>
+          <h2>No exercises yet</h2>
+          <p>Add the first exercise using the form below.</p>
+        </div>
+      )}
+
+      {/* ── Add new exercise ───────────────────────────────────────── */}
+      <section className="list-panel catalog-add-section" id="add-exercise" style={{ marginTop: 20 }}>
+        <div className="panel-title">
+          <h2>Add new exercise</h2>
+          <span className="status-pill status-neutral">Admin</span>
+        </div>
+        <div className="notification-list">
+          <ExerciseEditForm action={createCatalogExercise} isCreate />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ── AdminCatalogSection ─────────────────────────────────────────────────────
+
+function AdminCatalogSection({
+  exercises: _exercises,
+  exerciseCatalogByMuscle,
+  isDefaultSection = false,
+  sectionCount,
+  sectionLabel,
+}: {
+  exercises: Exercise[];
+  exerciseCatalogByMuscle: Array<{ muscleGroup: string; exercises: Exercise[] }>;
+  isDefaultSection?: boolean;
+  sectionCount: number;
+  sectionLabel: string;
+}) {
+  if (exerciseCatalogByMuscle.length === 0) return null;
+
+  return (
+    <section className="catalog-section">
+      <div className="catalog-section-header">
+        <h2 className="catalog-section-title">{sectionLabel}</h2>
+        <span className="status-pill status-neutral">{sectionCount} exercises</span>
+      </div>
+
+      <div className="catalog-grid">
         {exerciseCatalogByMuscle.map((group) => (
-          <article className="list-panel" key={group.muscleGroup}>
-            <div className="panel-title">
-              <h2>
+          <details className="catalog-group-panel" key={group.muscleGroup} open>
+            <summary className="catalog-group-summary">
+              <div className="catalog-group-summary-inner">
                 <Dumbbell className="panel-icon" />
-                {group.muscleGroup}
-              </h2>
-              <span className="status-pill status-neutral">
-                {group.exercises.length} exercise{group.exercises.length !== 1 ? "s" : ""}
-              </span>
-            </div>
+                <span className="catalog-group-name">{group.muscleGroup}</span>
+                <span className="status-pill status-neutral" style={{ marginLeft: "auto" }}>
+                  {group.exercises.length}
+                </span>
+                <ChevronDown className="catalog-group-chevron" />
+              </div>
+            </summary>
+
             <div className="catalog-list">
               {group.exercises.map((exercise) => (
                 <div className="catalog-exercise-entry" key={exercise.id}>
@@ -189,10 +348,13 @@ export default async function AdminExercisesPage({
                       />
                       <div className="catalog-exercise-copy">
                         <strong>{exercise.name}</strong>
-                        <p>{[exercise.equipment].filter(Boolean).join(" / ")}</p>
+                        <p>
+                          {exercise.equipment || (
+                            <em style={{ opacity: 0.5 }}>No equipment set</em>
+                          )}
+                        </p>
                       </div>
                       <div className="catalog-exercise-actions">
-                        {/* In-app video preview — no new tab */}
                         <CatalogVideoPreview
                           exerciseName={exercise.name}
                           gymVideoUrl={exercise.gymVideoUrl}
@@ -201,178 +363,46 @@ export default async function AdminExercisesPage({
                         />
                         <span className="button button-secondary catalog-edit-toggle">
                           <span className="catalog-edit-open">Edit</span>
-                          <span className="catalog-edit-close">Close edit</span>
+                          <span className="catalog-edit-close">Close</span>
                         </span>
                       </div>
                     </summary>
 
                     <div className="exercise-edit-panel">
                       {/* ── Main edit form ── */}
-                      <ConfirmActionForm
-                        action={updateCatalogExercise}
-                        confirmMessage={`Save changes to "${exercise.name}"?`}
-                        confirmTitle="Update exercise?"
-                        pendingLabel="Saving..."
-                        submitLabel="Save changes"
-                      >
-                        <input name="exerciseId" type="hidden" value={exercise.id} />
-                        <div className="form-grid">
-                          <label>
-                            Exercise name
-                            <input defaultValue={exercise.name} name="name" required />
-                          </label>
-                          <label>
-                            Muscle group
-                            <select defaultValue={exercise.muscleGroup} name="muscleGroup" required>
-                              {ALL_MUSCLE_GROUPS.map((mg) => (
-                                <option key={mg} value={mg}>{mg}</option>
-                              ))}
-                            </select>
-                          </label>
-                          <label>
-                            Equipment
-                            <input defaultValue={exercise.equipment} name="equipment" placeholder="e.g. Barbell, dumbbell" />
-                          </label>
-                          <label>
-                            Thumbnail URL
-                            <input defaultValue={exercise.thumbnailUrl} name="thumbnailUrl" placeholder="https://..." type="url" />
-                          </label>
+                      <ExerciseEditForm action={updateCatalogExercise} exercise={exercise} />
 
-                          {/* Tutorial video */}
-                          <label>
-                            Tutorial video URL
-                            <input defaultValue={exercise.videoUrl} name="videoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
-                          </label>
-                          <label>
-                            Tutorial video source
-                            <select defaultValue={exercise.videoSource} name="videoSource">
-                              {VIDEO_SOURCES.map((s) => (
-                                <option key={s.value} value={s.value}>{s.label}</option>
-                              ))}
-                            </select>
-                          </label>
-
-                          {/* Gym demo video */}
-                          <label>
-                            Gym demo video URL
-                            <input defaultValue={exercise.gymVideoUrl} name="gymVideoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
-                          </label>
-                          <label>
-                            Gym demo video source
-                            <select defaultValue={exercise.gymVideoSource} name="gymVideoSource">
-                              {VIDEO_SOURCES.map((s) => (
-                                <option key={s.value} value={s.value}>{s.label}</option>
-                              ))}
-                            </select>
-                          </label>
+                      {/* ── Restore default videos ── */}
+                      {isDefaultSection && (
+                        <div className="exercise-restore-section">
+                          <p className="exercise-restore-hint">
+                            Restore both video URLs to the original seeded defaults from{" "}
+                            <code>workouts.json</code>.
+                          </p>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <ConfirmActionForm
+                              action={resetExerciseVideos}
+                              confirmMessage={`Reset "${exercise.name}" videos to the original seeded defaults? This will overwrite any custom video links.`}
+                              confirmTitle="Restore default videos?"
+                              pendingLabel="Restoring..."
+                              submitClassName="button button-secondary"
+                              submitLabel="Restore defaults"
+                            >
+                              <input name="exerciseId" type="hidden" value={exercise.id} />
+                              <input name="exerciseName" type="hidden" value={exercise.name} />
+                            </ConfirmActionForm>
+                            <CloseDetailsButton label="Cancel" />
+                          </div>
                         </div>
-                        <label style={{ marginTop: 8 }}>
-                          Coaching instructions
-                          <textarea defaultValue={exercise.instructions} name="instructions" placeholder="Setup, cues, range of motion" rows={3} />
-                        </label>
-                      </ConfirmActionForm>
-
-                      {/* ── Restore to default ── */}
-                      <div style={{ borderTop: "1px solid var(--border)", marginTop: 16, paddingTop: 14 }}>
-                        <p style={{ color: "var(--text-soft)", fontSize: "0.82rem", margin: "0 0 10px" }}>
-                          Restore both video URLs to the original seeded defaults from{" "}
-                          <code style={{ fontSize: "0.78rem" }}>workouts.json</code>.
-                        </p>
-                        <ConfirmActionForm
-                          action={resetExerciseVideos}
-                          confirmMessage={`Reset "${exercise.name}" videos to the original seeded defaults? This will overwrite any custom video links.`}
-                          confirmTitle="Restore default videos?"
-                          pendingLabel="Restoring..."
-                          submitClassName="button button-secondary"
-                          submitLabel="Restore to default"
-                        >
-                          <input name="exerciseId" type="hidden" value={exercise.id} />
-                          <input name="exerciseName" type="hidden" value={exercise.name} />
-                        </ConfirmActionForm>
-                      </div>
+                      )}
                     </div>
                   </details>
                 </div>
               ))}
             </div>
-          </article>
+          </details>
         ))}
-      </section>
-
-      {exerciseCatalogByMuscle.length === 0 && (
-        <div className="md-empty" style={{ marginTop: 16 }}>
-          <h2>No exercises yet</h2>
-          <p>Add the first exercise using the form below.</p>
-        </div>
-      )}
-
-      <section className="list-panel" id="add-exercise" style={{ marginTop: 20 }}>
-        <div className="panel-title">
-          <h2>Add new exercise</h2>
-          <span className="status-pill status-neutral">Admin</span>
-        </div>
-        <div className="notification-list">
-          <ConfirmActionForm
-            action={createCatalogExercise}
-            className="form-panel"
-            confirmMessage="Add this exercise to the catalog?"
-            confirmTitle="Save exercise?"
-            pendingLabel="Saving..."
-            submitLabel="Add exercise"
-          >
-            <div className="form-grid">
-              <label>
-                Exercise name
-                <input name="name" placeholder="e.g. Incline dumbbell press" required />
-              </label>
-              <label>
-                Muscle group
-                <select defaultValue="Chest" name="muscleGroup" required>
-                  {ALL_MUSCLE_GROUPS.map((mg) => (
-                    <option key={mg} value={mg}>{mg}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Equipment
-                <input name="equipment" placeholder="Dumbbells, cable, machine" />
-              </label>
-              <label>
-                Thumbnail URL
-                <input name="thumbnailUrl" placeholder="https://..." type="url" />
-              </label>
-              <label>
-                Tutorial video URL
-                <input name="videoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
-              </label>
-              <label>
-                Tutorial video source
-                <select defaultValue="none" name="videoSource">
-                  {VIDEO_SOURCES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Gym demo video URL
-                <input name="gymVideoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
-              </label>
-              <label>
-                Gym demo video source
-                <select defaultValue="none" name="gymVideoSource">
-                  {VIDEO_SOURCES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label style={{ marginTop: 8 }}>
-              Coaching instructions
-              <textarea name="instructions" placeholder="Setup, tempo, range of motion, cues" rows={3} />
-            </label>
-          </ConfirmActionForm>
-        </div>
-      </section>
-    </main>
+      </div>
+    </section>
   );
 }

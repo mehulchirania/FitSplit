@@ -89,6 +89,8 @@ export type Exercise = {
   gymVideoSource: VideoSource;
   thumbnailUrl: string;
   ownerOnly: boolean;
+  /** "predefined" = FitSplit default catalog; "custom" = gym-created or gym-overridden */
+  source?: "predefined" | "custom";
 };
 
 export type WorkoutExercise = {

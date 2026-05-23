@@ -1,43 +1,41 @@
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { CloseDetailsButton } from "@/components/close-details-button";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
-import { Dumbbell } from "@/components/icons";
+import { ExerciseEditForm } from "@/components/exercise-edit-form";
+import { ChevronDown, Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { createCatalogExercise, resetExerciseVideos, updateCatalogExercise } from "@/lib/firebase/actions";
+import {
+  createCatalogExercise,
+  resetExerciseVideos,
+  updateCatalogExercise,
+} from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
+import type { Exercise } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
 
-const ALL_MUSCLE_GROUPS = [
-  "Back",
-  "Biceps",
-  "Cardio",
-  "Chest",
-  "Core",
-  "Legs",
-  "Shoulders",
-  "Triceps"
-];
-
-const VIDEO_SOURCES = [
-  { value: "none", label: "None" },
-  { value: "youtube", label: "YouTube" },
-  { value: "vimeo", label: "Vimeo" },
-];
-
 export default async function ExerciseCatalogPage() {
   const currentUser = await requireRole(["admin", "owner"]);
-  const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(currentUser.gymId);
+  const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(
+    currentUser.gymId
+  );
+
+  const predefined = exercises.filter((e) => e.source !== "custom");
+  const custom = exercises.filter((e) => e.source === "custom");
 
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Exercise Catalog" }]} />
+          <Breadcrumb
+            crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Exercise Catalog" }]}
+          />
           <h1>Exercise library</h1>
           <p>
-            Owner-managed catalog used to build all workout programs. Members only see exercises that appear in their assigned plan.
+            Owner-managed catalog used to build all workout programs. Members only see exercises
+            that appear in their assigned plan.
           </p>
         </div>
         <aside className="summary-panel">
@@ -47,8 +45,12 @@ export default async function ExerciseCatalogPage() {
           </div>
           <div className="detail-window">
             <span>
-              Muscle groups
-              <strong>{exerciseCatalogByMuscle.length}</strong>
+              FitSplit defaults
+              <strong>{predefined.length}</strong>
+            </span>
+            <span>
+              Custom
+              <strong>{custom.length}</strong>
             </span>
             <span>
               With tutorial
@@ -62,18 +64,83 @@ export default async function ExerciseCatalogPage() {
         </aside>
       </section>
 
-      <section className="catalog-grid">
+      {/* ── FitSplit Catalog (predefined) ─────────────────────────── */}
+      <CatalogSection
+        exercises={predefined}
+        exerciseCatalogByMuscle={exerciseCatalogByMuscle.map((g) => ({
+          ...g,
+          exercises: g.exercises.filter((e) => e.source !== "custom"),
+        })).filter((g) => g.exercises.length > 0)}
+        sectionLabel="FitSplit catalog"
+        sectionCount={predefined.length}
+        isDefaultSection
+      />
+
+      {/* ── Custom exercises ───────────────────────────────────────── */}
+      {custom.length > 0 && (
+        <CatalogSection
+          exercises={custom}
+          exerciseCatalogByMuscle={exerciseCatalogByMuscle.map((g) => ({
+            ...g,
+            exercises: g.exercises.filter((e) => e.source === "custom"),
+          })).filter((g) => g.exercises.length > 0)}
+          sectionLabel="Custom exercises"
+          sectionCount={custom.length}
+        />
+      )}
+
+      {/* ── Add new exercise ───────────────────────────────────────── */}
+      <section className="list-panel catalog-add-section" id="add-exercise">
+        <div className="panel-title">
+          <h2>Add new exercise</h2>
+          <span className="status-pill status-neutral">Owner only</span>
+        </div>
+        <div className="notification-list">
+          <ExerciseEditForm action={createCatalogExercise} isCreate />
+        </div>
+      </section>
+    </main>
+  );
+}
+
+// ── CatalogSection ──────────────────────────────────────────────────────────
+
+function CatalogSection({
+  exercises: _exercises,
+  exerciseCatalogByMuscle,
+  isDefaultSection = false,
+  sectionCount,
+  sectionLabel,
+}: {
+  exercises: Exercise[];
+  exerciseCatalogByMuscle: Array<{ muscleGroup: string; exercises: Exercise[] }>;
+  isDefaultSection?: boolean;
+  sectionCount: number;
+  sectionLabel: string;
+}) {
+  if (exerciseCatalogByMuscle.length === 0) return null;
+
+  return (
+    <section className="catalog-section">
+      <div className="catalog-section-header">
+        <h2 className="catalog-section-title">{sectionLabel}</h2>
+        <span className="status-pill status-neutral">{sectionCount} exercises</span>
+      </div>
+
+      <div className="catalog-grid">
         {exerciseCatalogByMuscle.map((group) => (
-          <article className="list-panel" key={group.muscleGroup}>
-            <div className="panel-title">
-              <h2>
+          <details className="catalog-group-panel" key={group.muscleGroup} open>
+            <summary className="catalog-group-summary">
+              <div className="catalog-group-summary-inner">
                 <Dumbbell className="panel-icon" />
-                {group.muscleGroup}
-              </h2>
-              <span className="status-pill status-neutral">
-                {group.exercises.length} exercise{group.exercises.length !== 1 ? "s" : ""}
-              </span>
-            </div>
+                <span className="catalog-group-name">{group.muscleGroup}</span>
+                <span className="status-pill status-neutral" style={{ marginLeft: "auto" }}>
+                  {group.exercises.length}
+                </span>
+                <ChevronDown className="catalog-group-chevron" />
+              </div>
+            </summary>
+
             <div className="catalog-list">
               {group.exercises.map((exercise) => (
                 <div className="catalog-exercise-entry" key={exercise.id}>
@@ -86,10 +153,11 @@ export default async function ExerciseCatalogPage() {
                       />
                       <div className="catalog-exercise-copy">
                         <strong>{exercise.name}</strong>
-                        <p>{[exercise.equipment].filter(Boolean).join(" / ")}</p>
+                        <p>
+                          {exercise.equipment || <em style={{ opacity: 0.5 }}>No equipment set</em>}
+                        </p>
                       </div>
                       <div className="catalog-exercise-actions">
-                        {/* In-app video preview — no new tab */}
                         <CatalogVideoPreview
                           exerciseName={exercise.name}
                           gymVideoUrl={exercise.gymVideoUrl}
@@ -98,184 +166,46 @@ export default async function ExerciseCatalogPage() {
                         />
                         <span className="button button-secondary catalog-edit-toggle">
                           <span className="catalog-edit-open">Edit</span>
-                          <span className="catalog-edit-close">Close edit</span>
+                          <span className="catalog-edit-close">Close</span>
                         </span>
                       </div>
                     </summary>
 
                     <div className="exercise-edit-panel">
                       {/* ── Main edit form ── */}
-                      <ConfirmActionForm
-                        action={updateCatalogExercise}
-                        confirmMessage={`Save changes to "${exercise.name}"?`}
-                        confirmTitle="Update exercise?"
-                        pendingLabel="Saving..."
-                        submitLabel="Save changes"
-                      >
-                        <input name="exerciseId" type="hidden" value={exercise.id} />
-                        <div className="form-grid">
-                          <label>
-                            Exercise name
-                            <input defaultValue={exercise.name} name="name" required />
-                          </label>
-                          <label>
-                            Muscle group
-                            <select defaultValue={exercise.muscleGroup} name="muscleGroup" required>
-                              {ALL_MUSCLE_GROUPS.map((muscleGroup) => (
-                                <option key={muscleGroup} value={muscleGroup}>
-                                  {muscleGroup}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
-                          <label>
-                            Equipment
-                            <input defaultValue={exercise.equipment} name="equipment" placeholder="e.g. Barbell, dumbbell" />
-                          </label>
-                          <label>
-                            Thumbnail URL
-                            <input defaultValue={exercise.thumbnailUrl} name="thumbnailUrl" placeholder="https://..." type="url" />
-                          </label>
+                      <ExerciseEditForm action={updateCatalogExercise} exercise={exercise} />
 
-                          {/* Tutorial video */}
-                          <label>
-                            Tutorial video URL
-                            <input defaultValue={exercise.videoUrl} name="videoUrl" placeholder="https://youtube.com/watch?v=..." type="url" />
-                          </label>
-                          <label>
-                            Tutorial video source
-                            <select defaultValue={exercise.videoSource} name="videoSource">
-                              {VIDEO_SOURCES.map((s) => (
-                                <option key={s.value} value={s.value}>{s.label}</option>
-                              ))}
-                            </select>
-                          </label>
-
-                          {/* Gym demo video */}
-                          <label>
-                            Gym demo video URL
-                            <input defaultValue={exercise.gymVideoUrl} name="gymVideoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
-                          </label>
-                          <label>
-                            Gym demo video source
-                            <select defaultValue={exercise.gymVideoSource} name="gymVideoSource">
-                              {VIDEO_SOURCES.map((s) => (
-                                <option key={s.value} value={s.value}>{s.label}</option>
-                              ))}
-                            </select>
-                          </label>
+                      {/* ── Restore default videos ── */}
+                      {isDefaultSection && (
+                        <div className="exercise-restore-section">
+                          <p className="exercise-restore-hint">
+                            Restore both video URLs to the original seeded defaults from{" "}
+                            <code>workouts.json</code>.
+                          </p>
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <ConfirmActionForm
+                              action={resetExerciseVideos}
+                              confirmMessage={`Reset "${exercise.name}" videos to the original seeded defaults? This will overwrite any custom video links.`}
+                              confirmTitle="Restore default videos?"
+                              pendingLabel="Restoring..."
+                              submitClassName="button button-secondary"
+                              submitLabel="Restore defaults"
+                            >
+                              <input name="exerciseId" type="hidden" value={exercise.id} />
+                              <input name="exerciseName" type="hidden" value={exercise.name} />
+                            </ConfirmActionForm>
+                            <CloseDetailsButton label="Cancel" />
+                          </div>
                         </div>
-                        <label style={{ marginTop: 8 }}>
-                          Coaching instructions
-                          <textarea defaultValue={exercise.instructions} name="instructions" placeholder="Setup, cues, range of motion" rows={3} />
-                        </label>
-                      </ConfirmActionForm>
-
-                      {/* ── Restore to default ── */}
-                      <div style={{ borderTop: "1px solid var(--border)", marginTop: 16, paddingTop: 14 }}>
-                        <p style={{ color: "var(--text-soft)", fontSize: "0.82rem", margin: "0 0 10px" }}>
-                          Restore both video URLs to the original seeded defaults from{" "}
-                          <code style={{ fontSize: "0.78rem" }}>workouts.json</code>.
-                        </p>
-                        <ConfirmActionForm
-                          action={resetExerciseVideos}
-                          confirmMessage={`Reset "${exercise.name}" videos to the original seeded defaults? This will overwrite any custom video links.`}
-                          confirmTitle="Restore default videos?"
-                          pendingLabel="Restoring..."
-                          submitClassName="button button-secondary"
-                          submitLabel="Restore to default"
-                        >
-                          <input name="exerciseId" type="hidden" value={exercise.id} />
-                          <input name="exerciseName" type="hidden" value={exercise.name} />
-                        </ConfirmActionForm>
-                      </div>
+                      )}
                     </div>
                   </details>
                 </div>
               ))}
             </div>
-          </article>
+          </details>
         ))}
-      </section>
-
-      {exerciseCatalogByMuscle.length === 0 ? (
-        <div className="md-empty" style={{ marginTop: 16 }}>
-          <h2>No exercises yet</h2>
-          <p>Add the first exercise using the form below.</p>
-        </div>
-      ) : null}
-
-      <section className="list-panel" id="add-exercise" style={{ marginTop: 20 }}>
-        <div className="panel-title">
-          <h2>Add new exercise</h2>
-          <span className="status-pill status-neutral">Owner only</span>
-        </div>
-        <div className="notification-list">
-          <ConfirmActionForm
-            action={createCatalogExercise}
-            className="form-panel"
-            confirmMessage="Add this exercise to the catalog?"
-            confirmTitle="Save exercise?"
-            pendingLabel="Saving..."
-            submitLabel="Add exercise"
-          >
-            <div className="form-grid">
-              <label>
-                Exercise name
-                <input name="name" placeholder="e.g. Incline dumbbell press" required />
-              </label>
-              <label>
-                Muscle group
-                <select defaultValue="Chest" name="muscleGroup" required>
-                  {ALL_MUSCLE_GROUPS.map((muscleGroup) => (
-                    <option key={muscleGroup} value={muscleGroup}>
-                      {muscleGroup}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                Equipment
-                <input name="equipment" placeholder="Dumbbells, cable, machine" />
-              </label>
-              <label>
-                Thumbnail URL
-                <input name="thumbnailUrl" placeholder="https://..." type="url" />
-              </label>
-              {/* Tutorial video */}
-              <label>
-                Tutorial video URL
-                <input name="videoUrl" placeholder="https://youtube.com/watch?v=..." type="url" />
-              </label>
-              <label>
-                Tutorial video source
-                <select defaultValue="none" name="videoSource">
-                  {VIDEO_SOURCES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
-              </label>
-              {/* Gym demo video */}
-              <label>
-                Gym demo video URL
-                <input name="gymVideoUrl" placeholder="https://youtube.com/shorts/..." type="url" />
-              </label>
-              <label>
-                Gym demo video source
-                <select defaultValue="none" name="gymVideoSource">
-                  {VIDEO_SOURCES.map((s) => (
-                    <option key={s.value} value={s.value}>{s.label}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <label style={{ marginTop: 8 }}>
-              Coaching instructions
-              <textarea name="instructions" placeholder="Setup, tempo, range of motion, cues" rows={3} />
-            </label>
-          </ConfirmActionForm>
-        </div>
-      </section>
-    </main>
+      </div>
+    </section>
   );
 }

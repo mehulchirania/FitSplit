@@ -14,6 +14,7 @@
     "patch:videos": "node scripts/patch-exercise-videos.mjs",
     "sync:exercise-videos": "node scripts/sync-exercise-videos-from-workouts.mjs",
     "fetch:channel-videos": "node scripts/fetch-channel-videos.mjs",
+    "fix:gym-video-urls": "node scripts/fix-gym-scoped-video-urls.mjs",
     "fix:exercises": "node scripts/fix-exercise-catalog.mjs",
     "start": "next start",
     "lint": "next lint",
