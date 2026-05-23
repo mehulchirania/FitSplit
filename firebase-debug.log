@@ -147,3 +147,44 @@
 [debug] [2026-05-23T11:32:34.629Z] Checked if tokens are valid: true, expires at: 1779539494239
 [debug] [2026-05-23T11:32:34.630Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/cloudscheduler.googleapis.com [none]
 [debug] [2026-05-23T11:32:34.630Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/cloudscheduler.googleapis.com  x-goog-user-project=766523780087
+[debug] [2026-05-23T11:32:36.272Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/cloudscheduler.googleapis.com 200
+[debug] [2026-05-23T11:32:36.272Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/cloudscheduler.googleapis.com [omitted]
+[info] +  functions: required API cloudscheduler.googleapis.com is enabled 
+[info] i  functions: ensuring required API run.googleapis.com is enabled... 
+[debug] [2026-05-23T11:32:36.276Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:36.276Z] Checked if tokens are valid: true, expires at: 1779539494239
+[info] i  functions: ensuring required API eventarc.googleapis.com is enabled... 
+[debug] [2026-05-23T11:32:36.277Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:36.277Z] Checked if tokens are valid: true, expires at: 1779539494239
+[info] i  functions: ensuring required API pubsub.googleapis.com is enabled... 
+[debug] [2026-05-23T11:32:36.277Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:36.277Z] Checked if tokens are valid: true, expires at: 1779539494239
+[info] i  functions: ensuring required API storage.googleapis.com is enabled... 
+[debug] [2026-05-23T11:32:36.277Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:36.277Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:36.277Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/run.googleapis.com [none]
+[debug] [2026-05-23T11:32:36.277Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/run.googleapis.com  x-goog-user-project=766523780087
+[debug] [2026-05-23T11:32:36.278Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com [none]
+[debug] [2026-05-23T11:32:36.278Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com  x-goog-user-project=766523780087
+[debug] [2026-05-23T11:32:36.278Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/pubsub.googleapis.com [none]
+[debug] [2026-05-23T11:32:36.279Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/pubsub.googleapis.com  x-goog-user-project=766523780087
+[debug] [2026-05-23T11:32:36.279Z] >>> [apiv2][query] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/storage.googleapis.com [none]
+[debug] [2026-05-23T11:32:36.279Z] >>> [apiv2][(partial)header] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/storage.googleapis.com  x-goog-user-project=766523780087
+[debug] [2026-05-23T11:32:37.905Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/run.googleapis.com 200
+[debug] [2026-05-23T11:32:37.905Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/run.googleapis.com [omitted]
+[info] +  functions: required API run.googleapis.com is enabled 
+[debug] [2026-05-23T11:32:37.920Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/pubsub.googleapis.com 200
+[debug] [2026-05-23T11:32:37.920Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/pubsub.googleapis.com [omitted]
+[info] +  functions: required API pubsub.googleapis.com is enabled 
+[debug] [2026-05-23T11:32:38.010Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com 200
+[debug] [2026-05-23T11:32:38.010Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com [omitted]
+[warn] !  functions: missing required API eventarc.googleapis.com. Enabling now... 
+[debug] [2026-05-23T11:32:38.011Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:38.011Z] Checked if tokens are valid: true, expires at: 1779539494239
+[debug] [2026-05-23T11:32:38.011Z] >>> [apiv2][query] POST https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com:enable [none]
+[debug] [2026-05-23T11:32:38.011Z] >>> [apiv2][(partial)header] POST https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com:enable  x-goog-user-project=766523780087
+[debug] [2026-05-23T11:32:38.014Z] <<< [apiv2][status] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/storage.googleapis.com 200
+[debug] [2026-05-23T11:32:38.014Z] <<< [apiv2][body] GET https://serviceusage.googleapis.com/v1/projects/766523780087/services/storage.googleapis.com [omitted]
+[info] +  functions: required API storage.googleapis.com is enabled 
+[debug] [2026-05-23T11:32:38.519Z] <<< [apiv2][status] POST https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com:enable 200
+[debug] [2026-05-23T11:32:38.519Z] <<< [apiv2][body] POST https://serviceusage.googleapis.com/v1/projects/766523780087/services/eventarc.googleapis.com:enable [omitted]
