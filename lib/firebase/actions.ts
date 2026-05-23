@@ -2,6 +2,7 @@
 
 import { randomUUID } from "crypto";
 import { revalidatePath, revalidateTag } from "next/cache";
+import { redirect } from "next/navigation";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, gymCollectionPath, gymProfileCollectionKey, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
@@ -1953,11 +1954,10 @@ export async function deleteGymWorkspace(
 
     revalidatePath("/admin");
     revalidatePath("/admin/gyms");
-
-    return success("Gym was removed.");
   } catch (error) {
     return failure(error, "Unable to remove gym.");
   }
+  redirect("/admin/gyms");
 }
 
 export async function deleteGymWithMembers(
@@ -2044,16 +2044,12 @@ export async function deleteGymWithMembers(
       }
     }
 
-    const profileCount = profilesSnap.docs.length;
     revalidatePath("/admin");
     revalidatePath("/admin/gyms");
-
-    return success(
-      `Gym deleted along with ${profileCount} profile${profileCount !== 1 ? "s" : ""}.`
-    );
   } catch (error) {
     return failure(error, "Unable to delete gym.");
   }
+  redirect("/admin/gyms");
 }
 
 export async function deleteGymStaffProfile(
