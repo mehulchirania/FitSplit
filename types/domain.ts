@@ -54,7 +54,7 @@ export type GymWorkspace = {
 export type Member = {
   id: string;
   fullName: string;
-  email: string;
+  email?: string;
   phone: string;
   joinedAt: string;
   avatarInitials: string;
@@ -236,7 +236,7 @@ export type MacroNutritionTarget = {
 
 export type ProfileMetrics = {
   fullName: string;
-  email: string;
+  email?: string;
   phone: string;
   age?: number;
   gender?: string;

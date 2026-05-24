@@ -137,6 +137,22 @@ async function assertUsernameAvailable(username: string, exceptProfileId?: strin
   }
 }
 
+function normalizePhone(phone: string) {
+  const compact = phone.trim().replace(/[\s-]/g, "");
+  if (/^\d{10}$/.test(compact)) return `+91 ${compact}`;
+  if (/^\+91\d{10}$/.test(compact)) return `+91 ${compact.slice(3)}`;
+  return phone.trim();
+}
+
+async function assertPhoneAvailable(phone: string, exceptProfileId?: string) {
+  const normalized = normalizePhone(phone);
+  const snapshot = await db.collection("authProfiles").where("phone", "==", normalized).limit(2).get();
+  const conflict = snapshot.docs.find((doc) => doc.id !== exceptProfileId);
+  if (conflict) {
+    throw new HttpsError("already-exists", "That phone number is already registered.");
+  }
+}
+
 function gymDoc(gymId: string, collection: string, docId: string) {
   return db.collection(`gyms/${gymId}/${collection}`).doc(docId);
 }
@@ -240,13 +256,14 @@ export const createMemberAccount = onCall({ region }, async (request) => {
   assertCanManageGym(user, gymId);
 
   const fullName = asString(request.data?.fullName, "Full name");
-  const email = asString(request.data?.email, "Email").toLowerCase();
-  const phone = optionalString(request.data?.phone);
+  const phone = asString(request.data?.phone, "Phone number");
+  const email = optionalString(request.data?.email).toLowerCase();
   const username = normalizeUsername(asString(request.data?.username, "Username"));
   const goal = optionalString(request.data?.goal) || "General fitness";
-  assertEmail(email);
+  if (email) assertEmail(email);
   assertUsername(username);
   await assertUsernameAvailable(username);
+  await assertPhoneAvailable(phone);
 
   const memberId = randomUUID();
   const authEmail = memberAuthEmail(memberId);
@@ -324,17 +341,20 @@ export const createStaffAccount = onCall({ region }, async (request) => {
 
   const gymId = asString(request.data?.gymId, "Gym ID");
   const fullName = asString(request.data?.fullName, "Full name");
-  const email = asString(request.data?.email, "Email").toLowerCase();
+  const phone = asString(request.data?.phone, "Phone number");
+  const email = optionalString(request.data?.email).toLowerCase();
   const staffType = optionalString(request.data?.staffType) as StaffType || "owner";
   const normalizedStaffType: StaffType = ["owner", "trainer", "staff"].includes(staffType) ? staffType : "owner";
-  assertEmail(email);
+  if (email) assertEmail(email);
+  await assertPhoneAvailable(phone);
 
   const staffId = randomUUID();
   const now = new Date().toISOString();
+  const authEmail = `${staffId}@staff.fitsplit.app`;
 
   await createAuthUser({
     uid: staffId,
-    email,
+    email: authEmail,
     fullName,
     password: "password",
     role: "owner",
@@ -346,8 +366,9 @@ export const createStaffAccount = onCall({ region }, async (request) => {
     id: staffId,
     fullName,
     email,
-    authEmail: email,
-    username: email,
+    phone,
+    authEmail,
+    username: phone,
     role: "owner",
     staffType: normalizedStaffType,
     defaultGymId: gymId,
@@ -600,22 +621,33 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
   }
 
   if (mode === "staff") {
-    // Staff log in with their real email — just verify the profile exists and
-    // has an owner/admin role.
-    assertEmail(identifier, "Email");
     const snap = await db
       .collection("authProfiles")
-      .where("email", "==", identifier)
+      .where("phone", "==", normalizePhone(identifier))
       .where("role", "in", ["admin", "owner"])
       .limit(1)
       .get();
     if (snap.empty) {
-      throw new HttpsError("not-found", "No staff account found for that email.");
+      // Fallback for legacy staff who only have emails.
+      const legacySnap = await db
+        .collection("authProfiles")
+        .where("email", "==", identifier.toLowerCase())
+        .where("role", "in", ["admin", "owner"])
+        .limit(1)
+        .get();
+      if (legacySnap.empty) {
+        throw new HttpsError("not-found", "No staff account found for that phone number.");
+      }
+      return { email: String(legacySnap.docs[0].data().authEmail ?? legacySnap.docs[0].data().email) };
     }
-    return { email: identifier };
+    const data = snap.docs[0].data();
+    if (data.isActive === false) {
+      throw new HttpsError("permission-denied", "Your account has been suspended.");
+    }
+    return { email: String(data.authEmail ?? data.email) };
   }
 
-  // Member mode: look up by username first, then by personal email.
+  // Member mode: look up by username first, then phone.
   const byUsername = await db
     .collection("authProfiles")
     .where("username", "==", normalizeUsername(identifier))
@@ -631,24 +663,22 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
     return { email: String(data.authEmail ?? memberAuthEmail(byUsername.docs[0].id)) };
   }
 
-  // Fall back to personal email lookup (some older accounts may have used email
-  // as username).
-  const byEmail = await db
+  const byPhone = await db
     .collection("authProfiles")
-    .where("email", "==", identifier)
+    .where("phone", "==", normalizePhone(identifier))
     .where("role", "==", "member")
     .limit(1)
     .get();
 
-  if (!byEmail.empty) {
-    const data = byEmail.docs[0].data();
+  if (!byPhone.empty) {
+    const data = byPhone.docs[0].data();
     if (data.isActive === false) {
       throw new HttpsError("permission-denied", "Your account has been suspended.");
     }
-    return { email: String(data.authEmail ?? memberAuthEmail(byEmail.docs[0].id)) };
+    return { email: String(data.authEmail ?? memberAuthEmail(byPhone.docs[0].id)) };
   }
 
-  throw new HttpsError("not-found", "No account found for that username.");
+  throw new HttpsError("not-found", "No account found for that username or phone number.");
 });
 
 export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hours" }, async () => {

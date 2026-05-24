@@ -86,14 +86,12 @@ export function OwnerCatalogSection({
                             exerciseId={exercise.id}
                             showTutorial={exercise.showTutorial !== false}
                           />
-                          {exercise.gymVideoUrl && (
-                            <CatalogVideoPreview
-                              exerciseName={exercise.name}
-                              gymVideoUrl={exercise.gymVideoUrl}
-                              muscleGroup={exercise.muscleGroup}
-                              videoUrl=""
-                            />
-                          )}
+                          <CatalogVideoPreview
+                            exerciseName={exercise.name}
+                            gymVideoUrl={exercise.gymVideoUrl}
+                            muscleGroup={exercise.muscleGroup}
+                            videoUrl={exercise.videoUrl}
+                          />
                           <span className="button button-secondary catalog-edit-toggle">
                             <span className="catalog-edit-open">Edit</span>
                             <span className="catalog-edit-close">Close</span>

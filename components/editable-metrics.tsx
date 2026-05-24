@@ -30,7 +30,7 @@ export function EditableMetrics({ member }: { member: Member }) {
     const formData = new FormData();
     formData.set("memberId", member.id);
     formData.set("fullName", member.fullName);
-    formData.set("email", member.email);
+    if (member.email) formData.set("email", member.email);
     formData.set("phone", member.phone ?? "");
     if (age) formData.set("age", age);
     if (weight) formData.set("weightKg", weight);

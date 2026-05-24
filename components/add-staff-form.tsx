@@ -6,7 +6,7 @@ import { createOwnerProfile } from "@/lib/firebase/actions";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 
-const emptyForm = { fullName: "", email: "", staffType: "owner" };
+const emptyForm = { fullName: "", email: "", phone: "", staffType: "owner" };
 
 export function AddStaffForm({ gymId }: { gymId: string }) {
   const [formValues, setFormValues] = useState(emptyForm);
@@ -47,14 +47,25 @@ export function AddStaffForm({ gymId }: { gymId: string }) {
             />
           </label>
           <label>
-            Email
+            <span className="flex items-center gap-2">Email <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>(optional)</span></span>
             <input
               name="email"
               onChange={(e) => setFormValues((v) => ({ ...v, email: e.target.value }))}
               placeholder="staff@gym.com"
-              required
               type="email"
               value={formValues.email}
+            />
+          </label>
+          <label>
+            Phone
+            <input
+              autoComplete="tel"
+              inputMode="tel"
+              name="phone"
+              onChange={(e) => setFormValues((v) => ({ ...v, phone: e.target.value }))}
+              placeholder="9876543210"
+              required
+              value={formValues.phone}
             />
           </label>
           <label>

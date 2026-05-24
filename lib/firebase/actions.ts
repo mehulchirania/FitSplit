@@ -1976,15 +1976,16 @@ export async function createOwnerProfile(
     const { auth, db } = requireFirebaseServices();
     const ownerId = randomUUID();
     const fullName = requireText(formData, "fullName", "Full name");
-    const email = requireText(formData, "email", "Email");
-    assertValidEmail(email);
+    const phone = requireText(formData, "phone", "Phone number");
+    const email = String(formData.get("email") ?? "").trim().toLowerCase();
     const gymId = requireText(formData, "gymId", "Gym ID");
     const staffType = String(formData.get("staffType") ?? "owner").trim();
     const normalizedStaffType = ["owner", "trainer", "staff"].includes(staffType) ? staffType : "owner";
     const now = new Date().toISOString();
+    const authEmail = `${ownerId}@staff.fitsplit.app`;
 
     await upsertAuthUser(auth, {
-      email,
+      email: authEmail,
       fullName,
       uid: ownerId,
       role: "owner",
@@ -1996,8 +1997,9 @@ export async function createOwnerProfile(
       id: ownerId,
       fullName,
       email,
-      authEmail: email.toLowerCase(),
-      username: email.toLowerCase(),
+      phone,
+      authEmail,
+      username: phone,
       role: "owner",
       staffType: normalizedStaffType,
       defaultGymId: gymId,
@@ -2028,7 +2030,7 @@ export async function createOwnerProfile(
         gymId,
         audience: "owner",
         title: `Staff account created — ${normalizedStaffType}`,
-        detail: `${fullName} (${email}) was added to the gym with the default password. They will be forced to change it on first login.`,
+        detail: `${fullName} (${phone}) was added to the gym with the default password. They will be forced to change it on first login.`,
         icon: "users",
         createdAt: now,
         targetId: ownerId

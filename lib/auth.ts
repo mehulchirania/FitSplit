@@ -21,7 +21,8 @@ const sessionExpiresIn = 1000 * 60 * 60 * 2;
 type ProfileRecord = {
   id: string;
   uid: string;
-  email: string;
+  email?: string;
+  phone: string;
   authEmail: string;
   fullName: string;
   role: Role;
@@ -33,7 +34,8 @@ type ProfileRecord = {
 
 export type AuthenticatedUser = {
   uid: string;
-  email: string;
+  email?: string;
+  phone: string;
   fullName: string;
   role: Role;
   staffType?: string;
@@ -48,6 +50,7 @@ export type AuthenticatedUser = {
 type DemoLogin = {
   uid: string;
   authEmail: string;
+  phone: string;
   fullName: string;
   gymId: string;
   role: Role;
@@ -58,6 +61,7 @@ const demoLogins: Record<string, DemoLogin> = {
   admin: {
     uid: "admin-fitsplit",
     authEmail: "admin@fitsplit.app",
+    phone: "+91 9999999999",
     fullName: "FitSplit Admin",
     gymId: "shg",
     role: "admin"
@@ -65,6 +69,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "santosh-shg": {
     uid: "santosh-shg",
     authEmail: "santosh-shg@fitsplit.app",
+    phone: "+91 8888888888",
     fullName: "Santosh SHG",
     gymId: "shg",
     role: "owner"
@@ -72,6 +77,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "shg-trainer-1": {
     uid: "shg-trainer-1",
     authEmail: "shg-trainer-1@fitsplit.app",
+    phone: "+91 7777777777",
     fullName: "Ravi Kumar",
     gymId: "shg",
     role: "owner",
@@ -80,6 +86,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "shg-trainer-2": {
     uid: "shg-trainer-2",
     authEmail: "shg-trainer-2@fitsplit.app",
+    phone: "+91 6666666666",
     fullName: "Priya Nair",
     gymId: "shg",
     role: "owner",
@@ -88,6 +95,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "dummy-gym-owner-1": {
     uid: "dummy-gym-owner-1",
     authEmail: "dummy-gym-owner-1@fitsplit.app",
+    phone: "+91 5555555555",
     fullName: "Dummy Gym Owner",
     gymId: "dummy-gym",
     role: "owner"
@@ -95,6 +103,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "titan-owner-1": {
     uid: "titan-owner-1",
     authEmail: "titan-owner-1@fitsplit.app",
+    phone: "+91 4444444444",
     fullName: "Titan Owner",
     gymId: "titan-gym",
     role: "owner"
@@ -102,6 +111,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "aarav@example.com": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
+    phone: "+91 9876543210",
     fullName: "Aarav Sharma",
     gymId: "shg",
     role: "member"
@@ -109,6 +119,7 @@ const demoLogins: Record<string, DemoLogin> = {
   aarav: {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
+    phone: "+91 9876543210",
     fullName: "Aarav Sharma",
     gymId: "shg",
     role: "member"
@@ -116,6 +127,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "9876543210": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
+    phone: "+91 9876543210",
     fullName: "Aarav Sharma",
     gymId: "shg",
     role: "member"
@@ -123,6 +135,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "+919876543210": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
+    phone: "+91 9876543210",
     fullName: "Aarav Sharma",
     gymId: "shg",
     role: "member"
@@ -130,6 +143,7 @@ const demoLogins: Record<string, DemoLogin> = {
   "+91 9876543210": {
     uid: "member-aarav",
     authEmail: "aarav@example.com",
+    phone: "+91 9876543210",
     fullName: "Aarav Sharma",
     gymId: "shg",
     role: "member"
@@ -203,7 +217,8 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
   return {
     id,
     uid: String(data.uid ?? data.authUid ?? id),
-    email: String(data.email ?? ""),
+    email: data.email ? String(data.email) : undefined,
+    phone: String(data.phone ?? ""),
     authEmail: String(data.authEmail ?? data.email ?? ""),
     fullName: String(data.fullName ?? "FitSplit user"),
     role,
@@ -306,7 +321,7 @@ async function setSessionCompatibilityCookies(user: AuthenticatedUser) {
   const options = cookieOptions(Math.floor(sessionExpiresIn / 1000));
 
   cookieStore.set("fitsplit-role", user.role, options);
-  cookieStore.set("fitsplit-username", user.email, options);
+  cookieStore.set("fitsplit-username", user.phone || user.email || user.uid, options);
   cookieStore.set("fitsplit-gym-id", user.gymId, options);
 
   if (user.memberId) {
@@ -328,7 +343,8 @@ async function clearAuthCookies() {
 function authUserFromProfile(profile: ProfileRecord): AuthenticatedUser {
   return {
     uid: profile.uid,
-    email: profile.authEmail || profile.email,
+    email: profile.email,
+    phone: profile.phone,
     fullName: profile.fullName,
     role: profile.role,
     staffType: profile.staffType,
@@ -342,6 +358,7 @@ function authUserFromDemo(demoLogin: DemoLogin): AuthenticatedUser {
   return {
     uid: demoLogin.uid,
     email: demoLogin.authEmail,
+    phone: demoLogin.phone,
     fullName: demoLogin.fullName,
     role: demoLogin.role,
     staffType: demoLogin.staffType,
@@ -454,6 +471,7 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
       return {
         status: "success" as const,
         email: demoLogin.authEmail,
+        phone: demoLogin.phone,
         role: demoLogin.role
       };
     }
@@ -461,6 +479,7 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     return {
       status: "success" as const,
       email: demoLogin.authEmail,
+      phone: demoLogin.phone,
       localOnly: true,
       role: demoLogin.role
     };
@@ -483,7 +502,8 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
 
   return {
     status: "success" as const,
-    email: profile.authEmail ?? profile.email,
+    email: profile.authEmail ?? profile.email ?? "",
+    phone: profile.phone,
     role: profile.role
   };
 }
@@ -718,6 +738,7 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
     return {
       uid: demoLogin?.uid ?? memberId ?? email,
       email,
+      phone: demoLogin?.phone ?? "",
       fullName: demoLogin?.fullName ?? "FitSplit user",
       role,
       gymId,

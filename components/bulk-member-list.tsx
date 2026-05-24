@@ -155,77 +155,94 @@ export function BulkMemberList({
         </div>
       )}
 
-      {/* ── Column header ── */}
-      <div className="bml-header-row">
-        <label className="bml-check-cell" aria-label="Select all">
-          <input
-            checked={allSelected}
-            onChange={toggleAll}
-            type="checkbox"
-          />
-        </label>
-        <span className="bml-col-name">Member</span>
-        <span className="bml-col-plan">Plan</span>
-        <span className="bml-col-status">Status</span>
-      </div>
+      {/* ── Modern Member Table ── */}
+      <div className="bml-table-container">
+        <table className="bml-table">
+          <thead>
+            <tr>
+              <th className="bml-th-check">
+                <label className="bml-check-cell" aria-label="Select all">
+                  <input checked={allSelected} onChange={toggleAll} type="checkbox" />
+                </label>
+              </th>
+              <th className="bml-th-member">Member</th>
+              <th className="bml-th-status">Access</th>
+              <th className="bml-th-plan">Workout Plan</th>
+              <th className="bml-th-joined">Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {members.map((member) => {
+              const isSelected = selected.has(member.id);
+              const hasPlan = assignedIds.has(member.id);
+              return (
+                <tr
+                  className={`bml-tr ${isSelected ? "bml-tr--selected" : ""}`}
+                  key={member.id}
+                  onClick={(e) => {
+                    // if they didn't click a link or checkbox, toggle selection
+                    if (
+                      (e.target as HTMLElement).tagName !== "A" &&
+                      (e.target as HTMLElement).tagName !== "INPUT"
+                    ) {
+                      toggleOne(member.id);
+                    }
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  <td className="bml-td-check" onClick={(e) => e.stopPropagation()}>
+                    <label className="bml-check-cell" aria-label={`Select ${member.fullName}`}>
+                      <input
+                        checked={isSelected}
+                        onChange={() => toggleOne(member.id)}
+                        type="checkbox"
+                      />
+                    </label>
+                  </td>
+                  
+                  <td className="bml-td-member">
+                    <div className="bml-member-profile">
+                      <span className="mcard-avatar" aria-hidden="true">{member.avatarInitials}</span>
+                      <div className="bml-member-info">
+                        <Link className="bml-member-name" href={`/owner/members/${member.id}`} onClick={(e) => e.stopPropagation()}>
+                          {member.fullName}
+                        </Link>
+                        {member.username && (
+                          <span className="bml-member-username">
+                            {member.username.includes("@") ? member.username : `@${member.username}`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
 
-      {/* ── Member rows ── */}
-      {members.map((member) => {
-        const isSelected = selected.has(member.id);
-        const hasPlan = assignedIds.has(member.id);
-        return (
-          <div
-            className={`member-card-row bml-row ${isSelected ? "bml-row--selected" : ""}`}
-            key={member.id}
-          >
-            <label className="bml-check-cell" aria-label={`Select ${member.fullName}`}>
-              <input
-                checked={isSelected}
-                onChange={() => toggleOne(member.id)}
-                type="checkbox"
-              />
-            </label>
+                  <td className="bml-td-status">
+                    <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`} style={{ fontSize: "0.72rem" }}>
+                      {member.isActive ? "Active" : "Suspended"}
+                    </span>
+                  </td>
 
-            <span className="mcard-avatar" aria-hidden="true">{member.avatarInitials}</span>
+                  <td className="bml-td-plan">
+                    <span className={`mcard-plan-badge ${hasPlan ? "badge-has-plan" : "badge-no-plan"}`}>
+                      {hasPlan ? "Assigned" : "No plan"}
+                    </span>
+                  </td>
 
-            <div className="mcard-identity">
-              <div className="mcard-name-row">
-                <Link className="mcard-name mcard-name-link" href={`/owner/members/${member.id}`}>
-                  {member.fullName}
-                </Link>
-                {!member.isActive && (
-                  <span className="mcard-plan-badge" style={{ background: "color-mix(in srgb, var(--danger) 14%, transparent)", color: "var(--danger)" }}>
-                    Suspended
-                  </span>
-                )}
-              </div>
-              <div className="mcard-meta">
-                {member.username && (
-                  <span className="mcard-username">
-                    {member.username.includes("@") ? member.username : `@${member.username}`}
-                  </span>
-                )}
-                {member.goal && <span className="mcard-goal">{member.goal}</span>}
-                <span className="mcard-joined">Joined {member.joinedAt}</span>
-              </div>
-            </div>
+                  <td className="bml-td-joined">
+                    <span className="bml-joined-date">{member.joinedAt}</span>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
 
-            <span className={`mcard-plan-badge ${hasPlan ? "badge-has-plan" : "badge-no-plan"}`}>
-              {hasPlan ? "Plan set" : "No plan"}
-            </span>
-
-            <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`} style={{ fontSize: "0.72rem" }}>
-              {member.isActive ? "Active" : "Suspended"}
-            </span>
+        {members.length === 0 && (
+          <div className="bml-empty-state">
+            <p>No members found in this category.</p>
           </div>
-        );
-      })}
-
-      {members.length === 0 && (
-        <p style={{ color: "var(--text-soft)", fontSize: "0.88rem", padding: "24px 20px", textAlign: "center" }}>
-          No members found.
-        </p>
-      )}
+        )}
+      </div>
     </div>
   );
 }

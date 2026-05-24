@@ -80,25 +80,25 @@ export function AddMemberForm() {
             />
           </label>
           <label>
-            Email
+            <span className="flex items-center gap-2">Email <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>(optional)</span></span>
             <input
               autoComplete="email"
               name="email"
               onChange={(event) => updateValue("email", event.target.value)}
               placeholder="member@example.com"
-              required
               type="email"
               value={formValues.email}
             />
           </label>
           <label>
-            Phone <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>(optional, 10-digit Indian mobile)</span>
+            Phone
             <input
               autoComplete="tel"
               inputMode="tel"
               name="phone"
               onChange={(event) => updateValue("phone", event.target.value)}
               placeholder="9876543210"
+              required
               value={formValues.phone}
             />
           </label>

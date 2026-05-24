@@ -1058,46 +1058,100 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
   color: var(--danger, #e05252);
 }
 
-.bml-header-row {
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  color: var(--text-faint);
-  display: flex;
+.bml-table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.bml-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.bml-table th {
+  padding: 14px 20px;
   font-size: 0.72rem;
   font-weight: 700;
-  gap: 12px;
-  letter-spacing: 0.05em;
-  padding: 6px 20px;
   text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-subtle) 40%, transparent);
 }
 
-.bml-check-cell {
-  align-items: center;
-  cursor: pointer;
-  display: flex;
-  flex: 0 0 20px;
-  justify-content: center;
+.bml-tr {
+  transition: background 120ms ease, transform 120ms ease;
+  border-bottom: 1px solid var(--border);
 }
 
-.bml-check-cell input[type="checkbox"] {
-  accent-color: var(--brand);
-  cursor: pointer;
-  height: 16px;
-  width: 16px;
+.bml-tr:last-child {
+  border-bottom: none;
 }
 
-.bml-col-name  { flex: 1; }
-.bml-col-plan  { flex: 0 0 80px; }
-.bml-col-status { flex: 0 0 80px; }
-.bml-col-actions { flex: 0 0 60px; }
-
-.bml-row {
-  transition: background 100ms;
+.bml-tr:hover {
+  background: var(--bg-subtle);
 }
 
-.bml-row--selected {
+.bml-tr--selected {
   background: color-mix(in srgb, var(--brand) 5%, var(--bg-subtle)) !important;
-  border-left: 2px solid var(--brand);
+}
+
+.bml-table td {
+  padding: 16px 20px;
+  vertical-align: middle;
+}
+
+.bml-th-check, .bml-td-check {
+  width: 40px;
+  text-align: center;
+  padding-right: 0 !important;
+}
+
+.bml-member-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.bml-member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.bml-member-name {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 120ms;
+}
+
+.bml-member-name:hover {
+  color: var(--brand);
+}
+
+.bml-member-username {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+}
+
+.bml-joined-date {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+}
+
+.bml-empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.9rem;
 }
 
 /* ── Mobile responsive adjustments ──────────────────────────────────────── */
