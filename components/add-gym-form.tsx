@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createGymWorkspace } from "@/lib/firebase/actions";
+import { callCreateGymWorkspace } from "@/lib/firebase/functions";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 
@@ -17,6 +19,7 @@ function slugify(name: string) {
 const emptyForm = { name: "", slug: "", location: "", status: "active", phone: "", email: "" };
 
 export function AddGymForm() {
+  const router = useRouter();
   const [formValues, setFormValues] = useState(emptyForm);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   const [status, setStatus] = useState<FormActionState | null>(null);
@@ -35,9 +38,26 @@ export function AddGymForm() {
     const form = pendingForm;
     setPendingForm(null);
     startTransition(async () => {
-      const result = await createGymWorkspace(initialFormActionState, form);
-      setStatus(result);
-      if (result.status === "success") setFormValues(emptyForm);
+      try {
+        const result = await callCreateGymWorkspace({
+          name: String(form.get("name") ?? ""),
+          slug: String(form.get("slug") ?? ""),
+          location: String(form.get("location") ?? ""),
+          status: String(form.get("status") ?? "active") as "active" | "paused" | "inactive",
+          phone: String(form.get("phone") ?? ""),
+          email: String(form.get("email") ?? "")
+        });
+        setStatus({ status: "success", message: result.data.message });
+        setFormValues(emptyForm);
+        router.refresh();
+      } catch {
+        const result = await createGymWorkspace(initialFormActionState, form);
+        setStatus(result);
+        if (result.status === "success") {
+          setFormValues(emptyForm);
+          router.refresh();
+        }
+      }
     });
   }
 

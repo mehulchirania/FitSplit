@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { useRouter } from "next/navigation";
+import { callUpdateGymLogo } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { FormActionState } from "@/types/action-state";
 
@@ -22,6 +24,7 @@ export function GymLogoManager({
   gymId: string;
   gymName: string;
 }) {
+  const router = useRouter();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   const [image, setImage] = useState<ImageState | null>(null);
@@ -111,8 +114,15 @@ export function GymLogoManager({
 
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
-      const result = await action(initialFormActionState, formData);
-      setStatus(result);
+      try {
+        const result = await callUpdateGymLogo({ gymId, logoDataUrl });
+        setStatus({ status: "success", message: result.data.message });
+        router.refresh();
+      } catch {
+        const result = await action(initialFormActionState, formData);
+        setStatus(result);
+        if (result.status === "success") router.refresh();
+      }
     });
   }
 

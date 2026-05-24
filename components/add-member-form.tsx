@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createMemberProfile } from "@/lib/firebase/actions";
+import { callCreateMemberAccount } from "@/lib/firebase/functions";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 
@@ -15,6 +17,7 @@ const emptyForm = {
 };
 
 export function AddMemberForm() {
+  const router = useRouter();
   const [formValues, setFormValues] = useState(emptyForm);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   const [status, setStatus] = useState<FormActionState | null>(null);
@@ -42,10 +45,24 @@ export function AddMemberForm() {
     const submittedForm = pendingForm;
     setPendingForm(null);
     startTransition(async () => {
-      const result = await createMemberProfile(initialFormActionState, submittedForm);
-      setStatus(result);
-      if (result.status === "success") {
+      try {
+        const result = await callCreateMemberAccount({
+          fullName: String(submittedForm.get("fullName") ?? ""),
+          username: String(submittedForm.get("username") ?? ""),
+          email: String(submittedForm.get("email") ?? ""),
+          phone: String(submittedForm.get("phone") ?? ""),
+          goal: String(submittedForm.get("goal") ?? "")
+        });
+        setStatus({ status: "success", message: result.data.message });
         setFormValues(emptyForm);
+        router.refresh();
+      } catch {
+        const result = await createMemberProfile(initialFormActionState, submittedForm);
+        setStatus(result);
+        if (result.status === "success") {
+          setFormValues(emptyForm);
+          router.refresh();
+        }
       }
     });
   }

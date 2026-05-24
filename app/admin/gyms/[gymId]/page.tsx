@@ -2,11 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddStaffForm } from "@/components/add-staff-form";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { GymAccessStatusAction } from "@/components/gym-access-status-action";
+import { GymArchiveAction } from "@/components/gym-archive-action";
+import { GymDetailsForm } from "@/components/gym-details-form";
 import { GymLogoManager } from "@/components/gym-logo-manager";
 import { UsersRound, Settings } from "@/components/icons";
+import { StaffAccessActions } from "@/components/staff-access-actions";
 import { requireRole } from "@/lib/auth";
-import { deleteGymStaffProfile, deleteGymWithMembers, setGymStatus, updateGymDetails, updateGymLogo, resetPassword } from "@/lib/firebase/actions";
+import { updateGymLogo } from "@/lib/firebase/actions";
 import { getGymDetail, getMembers, getOwnersForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -67,50 +70,7 @@ export default async function GymManagementPage({
       </section>
 
       <section className="content-grid">
-        <ConfirmActionForm
-          action={updateGymDetails}
-          className="form-panel"
-          confirmMessage="Save changes to gym contact and social information?"
-          confirmTitle="Update Gym Details?"
-          pendingLabel="Saving..."
-          submitLabel="Save Details"
-        >
-          <h2>Gym Details</h2>
-          <input name="gymId" type="hidden" value={gym.id} />
-          <div className="form-grid">
-            <label>
-              Gym Name
-              <input name="name" defaultValue={gym.name} required />
-            </label>
-            <label>
-              Location
-              <input name="location" defaultValue={gym.location} placeholder="City, State" />
-            </label>
-            <label>
-              Contact Phone
-              <input name="phone" defaultValue={gym.phone} />
-            </label>
-            <label>
-              Contact Email
-              <input name="email" defaultValue={gym.email} type="email" />
-            </label>
-          </div>
-          <h3 style={{ marginTop: '24px', marginBottom: '12px', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-soft)' }}>Social Profiles</h3>
-          <div className="form-grid">
-            <label>
-              Instagram
-              <input name="instagram" defaultValue={gym.instagram} placeholder="@username" />
-            </label>
-            <label>
-              LinkedIn
-              <input name="linkedin" defaultValue={gym.linkedin} placeholder="company URL" />
-            </label>
-            <label>
-              YouTube
-              <input name="youtube" defaultValue={gym.youtube} placeholder="channel URL" />
-            </label>
-          </div>
-        </ConfirmActionForm>
+        <GymDetailsForm gym={gym} />
 
         <GymLogoManager action={updateGymLogo} currentLogoUrl={gym.logoUrl} gymId={gym.id} gymName={gym.name} />
 
@@ -122,23 +82,7 @@ export default async function GymManagementPage({
                 Toggle workspace access for all gym staff and members.
               </p>
             </div>
-            <ConfirmActionForm
-              action={setGymStatus}
-              confirmMessage={`This will ${isGymAccessEnabled ? 'disable' : 'enable'} access for this gym's staff and members.`}
-              confirmTitle={isGymAccessEnabled ? "Disable Gym Access?" : "Enable Gym Access?"}
-              pendingLabel="Updating..."
-              submitLabel={isGymAccessEnabled ? "Enabled" : "Disabled"}
-              submitClassName={`access-toggle ${isGymAccessEnabled ? 'is-on' : 'is-off'}`}
-              style={{
-                padding: 0,
-                background: "none",
-                border: "none",
-                width: "auto"
-              }}
-            >
-              <input name="gymId" type="hidden" value={gym.id} />
-              <input name="status" type="hidden" value={isGymAccessEnabled ? 'inactive' : 'active'} />
-            </ConfirmActionForm>
+            <GymAccessStatusAction gymId={gym.id} isEnabled={isGymAccessEnabled} />
           </div>
           <p style={{ marginTop: 12, color: "var(--text-soft)" }}>
             Disabled gyms block owner, trainer, staff, and member logins by deactivating their profiles and Firebase Auth access.
@@ -177,28 +121,7 @@ export default async function GymManagementPage({
               <span className={`status-pill ${staffMember.isActive ? "status-active" : "status-danger"}`}>
                 {staffMember.isActive ? "active" : "disabled"}
               </span>
-              <ConfirmActionForm
-                action={resetPassword}
-                confirmMessage={`Reset password for ${staffMember.fullName}? Default is 'password'.`}
-                confirmTitle="Reset Staff Password"
-                pendingLabel="Resetting..."
-                submitLabel="Reset Password"
-                style={{ padding: 0, background: 'none', border: 'none' }}
-              >
-                <input name="userId" type="hidden" value={staffMember.id} />
-                <input name="newPassword" type="hidden" value="password" />
-              </ConfirmActionForm>
-              <ConfirmActionForm
-                action={deleteGymStaffProfile}
-                confirmMessage={`Delete ${staffMember.fullName}? This removes their Firebase Auth login and staff profile.`}
-                confirmTitle="Delete Gym Staff?"
-                pendingLabel="Deleting..."
-                submitLabel="Delete"
-                style={{ padding: 0, background: 'none', border: 'none' }}
-              >
-                <input name="userId" type="hidden" value={staffMember.id} />
-                <input name="gymId" type="hidden" value={gym.id} />
-              </ConfirmActionForm>
+              <StaffAccessActions fullName={staffMember.fullName} gymId={gym.id} userId={staffMember.id} />
             </article>
           ))}
           {staff.length === 0 && (
@@ -253,19 +176,12 @@ export default async function GymManagementPage({
               Permanently deletes this gym and <strong>all associated members and staff</strong> — including their
               Firebase Auth accounts, workout logs, assignments, sessions, and attendance records. This cannot be undone.
             </p>
-            <ConfirmActionForm
-              action={deleteGymWithMembers}
-              confirmMessage={`Delete "${gym.name}" and all its members and staff permanently? This cannot be undone.`}
-              confirmTitle="Delete gym and all members?"
-              confirmLabel="Yes, delete everything"
-              pendingLabel="Deleting..."
-              submitClassName="button button-danger"
-              submitLabel="Delete gym and all members"
-              successRedirect="/admin/gyms"
-              style={{ background: "none", border: "none", padding: 0 }}
-            >
-              <input name="gymId" type="hidden" value={gym.id} />
-            </ConfirmActionForm>
+            <GymArchiveAction
+              destructive
+              gymId={gym.id}
+              gymName={gym.name}
+              label="Delete gym and all members"
+            />
           </div>
         </section>
       )}

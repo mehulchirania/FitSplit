@@ -5,6 +5,7 @@ import { Dumbbell, X } from "@/components/icons";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { deleteCustomWorkoutProgram } from "@/lib/firebase/actions";
+import { callArchiveCustomProgram } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Exercise, Member, MuscleGroup, ProgramAssignment, WorkoutDay, WorkoutProgram } from "@/types/domain";
 
@@ -163,12 +164,18 @@ export function WorkoutProgramGallery({
 
   function handleDelete(programId: string, programTitle: string) {
     startDelete(async () => {
-      const fd = new FormData();
-      fd.set("programId", programId);
-      fd.set("programTitle", programTitle);
-      const result = await deleteCustomWorkoutProgram(initialFormActionState, fd);
-      setDeleteStatus(result.message);
-      setConfirmDeleteId(null);
+      try {
+        const result = await callArchiveCustomProgram({ programId });
+        setDeleteStatus(result.data.message);
+        setConfirmDeleteId(null);
+      } catch {
+        const fd = new FormData();
+        fd.set("programId", programId);
+        fd.set("programTitle", programTitle);
+        const result = await deleteCustomWorkoutProgram(initialFormActionState, fd);
+        setDeleteStatus(result.message);
+        setConfirmDeleteId(null);
+      }
     });
   }
 

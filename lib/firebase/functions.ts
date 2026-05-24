@@ -61,6 +61,91 @@ export function callCreateStaffAccount(input: CreateStaffInput) {
   )(input);
 }
 
+// ── gym admin ──────────────────────────────────────────────────────────────
+
+export type CreateGymWorkspaceInput = {
+  name: string;
+  slug?: string;
+  location?: string;
+  status?: "active" | "paused" | "inactive";
+  phone?: string;
+  email?: string;
+};
+
+export type CreateGymWorkspaceResult = FnResult<{ gymId: string }>;
+
+export function callCreateGymWorkspace(input: CreateGymWorkspaceInput) {
+  return httpsCallable<CreateGymWorkspaceInput, CreateGymWorkspaceResult>(
+    fns(),
+    "createGymWorkspace"
+  )(input);
+}
+
+export type UpdateGymDetailsInput = {
+  gymId: string;
+  name: string;
+  location?: string;
+  phone?: string;
+  email?: string;
+  instagram?: string;
+  linkedin?: string;
+  youtube?: string;
+};
+
+export type UpdateGymDetailsResult = FnResult;
+
+export function callUpdateGymDetails(input: UpdateGymDetailsInput) {
+  return httpsCallable<UpdateGymDetailsInput, UpdateGymDetailsResult>(
+    fns(),
+    "updateGymDetails"
+  )(input);
+}
+
+export type UpdateGymLogoInput = {
+  gymId: string;
+  logoDataUrl: string;
+};
+
+export type UpdateGymLogoResult = FnResult<{
+  logoPath: string;
+  logoUrl: string;
+}>;
+
+export function callUpdateGymLogo(input: UpdateGymLogoInput) {
+  return httpsCallable<UpdateGymLogoInput, UpdateGymLogoResult>(
+    fns(),
+    "updateGymLogo"
+  )(input);
+}
+
+export type SetGymAccessStatusInput = {
+  gymId: string;
+  status: "active" | "paused" | "inactive";
+};
+
+export type SetGymAccessStatusResult = FnResult;
+
+export function callSetGymAccessStatus(input: SetGymAccessStatusInput) {
+  return httpsCallable<SetGymAccessStatusInput, SetGymAccessStatusResult>(
+    fns(),
+    "setGymAccessStatus"
+  )(input);
+}
+
+export type ArchiveStaffInput = {
+  gymId: string;
+  userId: string;
+};
+
+export type ArchiveStaffResult = FnResult;
+
+export function callArchiveStaffAccount(input: ArchiveStaffInput) {
+  return httpsCallable<ArchiveStaffInput, ArchiveStaffResult>(
+    fns(),
+    "archiveStaffAccount"
+  )(input);
+}
+
 // ── toggleMemberAccess ───────────────────────────────────────────────────────
 
 export type ToggleAccessInput = { memberId: string; isActive: boolean };

@@ -2,13 +2,16 @@
 
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { createOwnerProfile } from "@/lib/firebase/actions";
+import { callCreateStaffAccount } from "@/lib/firebase/functions";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 
 const emptyForm = { fullName: "", email: "", phone: "", staffType: "owner" };
 
 export function AddStaffForm({ gymId }: { gymId: string }) {
+  const router = useRouter();
   const [formValues, setFormValues] = useState(emptyForm);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   const [status, setStatus] = useState<FormActionState | null>(null);
@@ -25,9 +28,25 @@ export function AddStaffForm({ gymId }: { gymId: string }) {
     const form = pendingForm;
     setPendingForm(null);
     startTransition(async () => {
-      const result = await createOwnerProfile(initialFormActionState, form);
-      setStatus(result);
-      if (result.status === "success") setFormValues(emptyForm);
+      try {
+        const result = await callCreateStaffAccount({
+          gymId,
+          fullName: String(form.get("fullName") ?? ""),
+          email: String(form.get("email") ?? ""),
+          phone: String(form.get("phone") ?? ""),
+          staffType: String(form.get("staffType") ?? "owner") as "owner" | "trainer" | "staff"
+        });
+        setStatus({ status: "success", message: result.data.message });
+        setFormValues(emptyForm);
+        router.refresh();
+      } catch {
+        const result = await createOwnerProfile(initialFormActionState, form);
+        setStatus(result);
+        if (result.status === "success") {
+          setFormValues(emptyForm);
+          router.refresh();
+        }
+      }
     });
   }
 

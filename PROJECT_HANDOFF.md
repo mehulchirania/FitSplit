@@ -1,5 +1,40 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-24: Functions migration pass 2
+
+- Added more callable Function contracts in `functions/src/index.ts`:
+  - `createGymWorkspace`
+  - `updateGymDetails`
+  - `updateGymLogo`
+  - `setGymAccessStatus`
+  - `archiveStaffAccount`
+- Extended `lib/firebase/functions.ts` typed wrappers for the new gym/staff callable Functions.
+- Migrated additional UI flows to callable-first with server-action fallback:
+  - Add member form.
+  - Add staff form.
+  - Add gym form.
+  - Admin gym details form.
+  - Admin gym logo crop/upload form.
+  - Admin gym access toggle.
+  - Admin staff reset/delete actions.
+  - Admin gym archive/delete actions.
+  - Owner member delete/archive action.
+  - Custom workout program delete/archive action.
+- Hardened Firestore rules for privileged direct writes:
+  - Gym-scoped member/staff create/delete now require Functions/Admin SDK.
+  - Program assignment writes now require Functions/Admin SDK.
+  - Activity event writes now require Functions/Admin SDK.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run functions:build` passed.
+  - `npm run build` passed.
+
+### Follow-up TODO
+- Deploy Functions and Firestore rules/indexes to the dev Firebase project before relying on callable-first paths in hosted environments.
+- Continue extracting `lib/firebase/actions/legacy.ts` internals into true feature-owned implementations.
+- Move remaining exercise/program create/update flows behind callable Functions.
+- Re-check Firestore rules in Firebase Emulator after deployment because direct privileged writes are now intentionally blocked.
+
 ## Latest Update - 2026-05-24: Action split scaffold + callable Function fast paths
 
 - Split the public server-action entrypoint:

@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { AddGymForm } from "@/components/add-gym-form";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { GymArchiveAction } from "@/components/gym-archive-action";
 import { requireRole } from "@/lib/auth";
-import { deleteGymWorkspace } from "@/lib/firebase/actions";
 import { getGymWorkspaces } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -107,18 +106,7 @@ export default async function ManageGymsPage() {
                 >
                   Open details
                 </Link>
-                <ConfirmActionForm
-                  action={deleteGymWorkspace}
-                  confirmMessage={`Remove "${gym.name}"? Only allowed when no staff or members are assigned.`}
-                  confirmTitle="Remove gym?"
-                  pendingLabel="Removing..."
-                  submitClassName="button button-secondary"
-                  submitLabel="Remove"
-                  successRedirect="/admin/gyms"
-                  style={{ background: "none", border: "none", padding: 0 }}
-                >
-                  <input name="gymId" type="hidden" value={gym.id} />
-                </ConfirmActionForm>
+                <GymArchiveAction gymId={gym.id} gymName={gym.name} />
               </div>
             </article>
           ))}

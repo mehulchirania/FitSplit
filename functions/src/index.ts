@@ -4,6 +4,7 @@ import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
+import { getStorage } from "firebase-admin/storage";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
@@ -13,6 +14,7 @@ initializeApp();
 const db = getFirestore();
 const auth = getAuth();
 const messaging = getMessaging();
+const storage = getStorage();
 const region = "asia-south1";
 const primaryGymId = "shg";
 
@@ -56,6 +58,32 @@ function assertUsername(username: string) {
   if (!/^[a-z0-9._-]{3,32}$/.test(username)) {
     throw new HttpsError("invalid-argument", "Username must be 3-32 characters using letters, numbers, dots, underscores, or hyphens.");
   }
+}
+
+function slugifyGymName(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+}
+
+function normalizeGymStatus(value: unknown) {
+  const status = String(value ?? "active");
+  return status === "paused" || status === "inactive" ? status : "active";
+}
+
+function parsePngDataUrl(dataUrl: string) {
+  const match = dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
+  if (!match?.[1]) {
+    throw new HttpsError("invalid-argument", "Logo must be saved as a PNG preview before uploading.");
+  }
+  const buffer = Buffer.from(match[1], "base64");
+  if (buffer.byteLength > 900_000) {
+    throw new HttpsError("invalid-argument", "Logo is too large. Use the cropper preview before saving.");
+  }
+  return buffer;
 }
 
 function assertPin(pin: string) {
@@ -444,6 +472,194 @@ export const createStaffAccount = onCall({ region }, async (request) => {
   await mirrorProfileToGym(staffId, staffProfile);
 
   return { status: "success", staffId, message: `${fullName} was added as gym ${normalizedStaffType}.` };
+});
+
+export const createGymWorkspace = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  if (user.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can create gyms.");
+  }
+
+  const name = asString(request.data?.name, "Gym name");
+  const slug = slugifyGymName(optionalString(request.data?.slug) || name);
+  if (!slug) {
+    throw new HttpsError("invalid-argument", "Gym slug is invalid.");
+  }
+
+  const gymRef = db.collection("gyms").doc(slug);
+  const existing = await gymRef.get();
+  if (existing.exists) {
+    throw new HttpsError("already-exists", "A gym with this slug already exists.");
+  }
+
+  const now = new Date().toISOString();
+  const gym = {
+    id: slug,
+    name,
+    slug,
+    ownerName: "",
+    ownerUserId: "",
+    expiryWarningDays: 7,
+    status: normalizeGymStatus(request.data?.status),
+    location: optionalString(request.data?.location),
+    phone: optionalString(request.data?.phone),
+    email: optionalString(request.data?.email).toLowerCase(),
+    instagram: "",
+    linkedin: "",
+    youtube: "",
+    createdAt: now,
+    updatedAt: now
+  };
+
+  if (gym.email) assertEmail(gym.email, "Contact email");
+  await gymRef.set(gym);
+  return {
+    status: "success",
+    message: `${name} was added.`,
+    data: { gymId: slug }
+  } satisfies FunctionResult<{ gymId: string }>;
+});
+
+export const updateGymDetails = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  if (user.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can update gyms.");
+  }
+
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  const name = asString(request.data?.name, "Gym name");
+  const email = optionalString(request.data?.email).toLowerCase();
+  if (email) assertEmail(email, "Contact email");
+
+  await db.collection("gyms").doc(gymId).set(
+    {
+      name,
+      location: optionalString(request.data?.location),
+      phone: optionalString(request.data?.phone),
+      email,
+      instagram: optionalString(request.data?.instagram),
+      linkedin: optionalString(request.data?.linkedin),
+      youtube: optionalString(request.data?.youtube),
+      updatedAt: new Date().toISOString()
+    },
+    { merge: true }
+  );
+
+  return { status: "success", message: "Gym details updated successfully." } satisfies FunctionResult;
+});
+
+export const updateGymLogo = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  if (user.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can update gym logos.");
+  }
+
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  const logoDataUrl = asString(request.data?.logoDataUrl, "Logo preview");
+  const buffer = parsePngDataUrl(logoDataUrl);
+  const now = new Date().toISOString();
+  const token = randomUUID();
+  const logoPath = `gym-logos/${gymId}/logo-512.png`;
+  const bucket = storage.bucket();
+
+  await bucket.file(logoPath).save(buffer, {
+    contentType: "image/png",
+    metadata: {
+      cacheControl: "public, max-age=31536000",
+      metadata: {
+        firebaseStorageDownloadTokens: token
+      }
+    }
+  });
+
+  const logoUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(logoPath)}?alt=media&token=${token}`;
+  await db.collection("gyms").doc(gymId).set({ logoPath, logoUrl, updatedAt: now }, { merge: true });
+
+  return {
+    status: "success",
+    message: "Gym logo updated.",
+    data: { logoPath, logoUrl }
+  } satisfies FunctionResult<{ logoPath: string; logoUrl: string }>;
+});
+
+export const setGymAccessStatus = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  if (user.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can update gym access.");
+  }
+
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  const status = normalizeGymStatus(request.data?.status);
+  const isActive = status === "active";
+  const now = new Date().toISOString();
+
+  await db.collection("gyms").doc(gymId).set({ status, updatedAt: now }, { merge: true });
+
+  const profileSnapshot = await db
+    .collection("authProfiles")
+    .where("defaultGymId", "==", gymId)
+    .where("role", "in", ["owner", "member"])
+    .get();
+
+  const [memberSnapshot, staffSnapshot] = await Promise.all([
+    db.collection(`gyms/${gymId}/members`).get(),
+    db.collection(`gyms/${gymId}/staff`).get()
+  ]);
+
+  const batch = db.batch();
+  for (const profileDoc of profileSnapshot.docs) {
+    batch.set(profileDoc.ref, { isActive, updatedAt: now }, { merge: true });
+  }
+  for (const scopedDoc of [...memberSnapshot.docs, ...staffSnapshot.docs]) {
+    batch.set(scopedDoc.ref, { isActive, updatedAt: now }, { merge: true });
+  }
+  await batch.commit();
+
+  await Promise.all(
+    profileSnapshot.docs.map(async (profileDoc) => {
+      try {
+        await auth.updateUser(profileDoc.id, { disabled: !isActive });
+      } catch (error: any) {
+        if (error?.code !== "auth/user-not-found") throw error;
+      }
+    })
+  );
+
+  return {
+    status: "success",
+    message: `Gym ${isActive ? "activated" : "deactivated"}. Staff and member access ${isActive ? "enabled" : "disabled"}.`
+  } satisfies FunctionResult;
+});
+
+export const archiveStaffAccount = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  if (user.role !== "admin") {
+    throw new HttpsError("permission-denied", "Only admins can delete staff.");
+  }
+
+  const userId = asString(request.data?.userId, "User ID");
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  const rootProfile = await db.collection("authProfiles").doc(userId).get();
+  const scopedProfile = await gymDoc(gymId, "staff", userId).get();
+
+  await Promise.all([
+    archiveSnapshot(rootProfile, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" }),
+    archiveSnapshot(scopedProfile, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" })
+  ]);
+
+  await Promise.all([
+    db.collection("authProfiles").doc(userId).delete(),
+    db.collection("profiles").doc(userId).delete().catch(() => undefined),
+    gymDoc(gymId, "staff", userId).delete()
+  ]);
+
+  try {
+    await auth.deleteUser(userId);
+  } catch (error: any) {
+    if (error?.code !== "auth/user-not-found") throw error;
+  }
+
+  return { status: "success", message: "Gym staff access was deleted." } satisfies FunctionResult;
 });
 
 export const toggleMemberAccess = onCall({ region }, async (request) => {

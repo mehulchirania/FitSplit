@@ -6,11 +6,11 @@ import Link from "next/link";
 import { Calendar, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
 import { MemberAccessActions } from "@/components/member-access-actions";
 import { MemberContextEditor } from "@/components/member-context-editor";
+import { MemberDeleteAction } from "@/components/member-delete-action";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
 import {
-  deleteMemberProfile,
   updateCoachNote
 } from "@/lib/firebase/actions";
 import {
@@ -300,21 +300,7 @@ export default async function MemberDetailPage({
                 <X /> Danger zone
               </span>
             </summary>
-            <ConfirmActionForm
-              action={deleteMemberProfile}
-              className="mpd-account-section"
-              confirmMessage="This permanently deletes the member and all their data. This cannot be undone."
-              confirmTitle="Delete member?"
-              pendingLabel="Deleting..."
-              submitClassName="button button-danger"
-              submitLabel="Delete member"
-              successRedirect="/owner/members"
-            >
-              <input name="memberId" type="hidden" value={member.id} />
-              <p className="mpd-section-hint">
-                Permanently removes this profile, assignments, lift logs, notifications, and sessions.
-              </p>
-            </ConfirmActionForm>
+            <MemberDeleteAction memberId={member.id} />
           </details>
         </aside>
       </div>
