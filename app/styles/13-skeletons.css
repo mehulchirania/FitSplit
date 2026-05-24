@@ -1,0 +1,50 @@
+/* ─── Skeleton shimmer loading states ─────────────────────────────────────── */
+
+@keyframes sk-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+.sk-pulse {
+  background: linear-gradient(
+    90deg,
+    var(--bg-subtle, #f1f3f5) 25%,
+    var(--bg-elevated, #fff)   50%,
+    var(--bg-subtle, #f1f3f5) 75%
+  );
+  background-size: 800px 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+
+/* Dark-mode override — uses the dark CSS custom properties that the
+   .dark class / [data-theme="dark"] block sets in 05-theme-polish.css. */
+.dark .sk-pulse,
+[data-theme="dark"] .sk-pulse {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.06) 25%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 75%
+  );
+  background-size: 800px 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+/* Loading page wrapper — full-width, vertically spaced, no scrollbar flash */
+.sk-page {
+  padding: 24px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  min-height: 80vh;
+}
+
+/* Constrain header-width skeleton to feel like an actual heading */
+.sk-heading {
+  height: 28px;
+  border-radius: 8px;
+  width: 220px;
+}

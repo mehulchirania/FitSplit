@@ -244,6 +244,23 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
   padding: 0 clamp(18px, 4vw, 56px);
 }
 
+.pt-calendar-loading,
+.pt-calendar-wrapper {
+  background: var(--bg-layer-1);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  margin-top: 24px;
+  padding: 16px;
+}
+
+.pt-calendar-loading {
+  align-items: center;
+  color: var(--text-soft);
+  display: flex;
+  justify-content: center;
+  min-height: 400px;
+}
+
 .form-actions {
   display: flex;
   gap: 10px;

@@ -959,7 +959,10 @@ export const onProgramAssignmentCreated = onDocumentCreated(
 
     if (!memberId) return;
 
-    const notificationId = randomUUID();
+    const assignmentId = event.params.assignmentId;
+    const notificationId = `program_assignment_${assignmentId}`;
+    const existingNotification = await db.collection("notifications").doc(notificationId).get();
+    if (existingNotification.exists) return;
     const notification = {
       id: notificationId,
       recipientRole: "member",
@@ -972,7 +975,7 @@ export const onProgramAssignmentCreated = onDocumentCreated(
       updatedAt: now
     };
 
-    const activityId = randomUUID();
+    const activityId = `program_assignment_${assignmentId}`;
     const activity = {
       id: activityId,
       gymId,
@@ -985,9 +988,9 @@ export const onProgramAssignmentCreated = onDocumentCreated(
     };
 
     await Promise.all([
-      db.collection("notifications").doc(notificationId).set(notification),
+      db.collection("notifications").doc(notificationId).set(notification, { merge: true }),
       mirrorGymRecord(gymId, "notifications", notificationId, notification),
-      db.collection("activityEvents").doc(activityId).set(activity),
+      db.collection("activityEvents").doc(activityId).set(activity, { merge: true }),
       mirrorGymRecord(gymId, "activityEvents", activityId, activity),
       sendPushToMember(
         memberId,
@@ -1015,7 +1018,10 @@ export const onPTPlanCreated = onDocumentCreated(
 
     if (!memberId) return;
 
-    const notificationId = randomUUID();
+    const ptSessionId = event.params.ptSessionId;
+    const notificationId = `pt_plan_${ptSessionId}`;
+    const existingNotification = await db.collection("notifications").doc(notificationId).get();
+    if (existingNotification.exists) return;
     const notification = {
       id: notificationId,
       gymId,
@@ -1028,7 +1034,7 @@ export const onPTPlanCreated = onDocumentCreated(
       updatedAt: now
     };
 
-    const activityId = randomUUID();
+    const activityId = `pt_plan_${ptSessionId}`;
     const activity = {
       id: activityId,
       gymId,
@@ -1041,9 +1047,9 @@ export const onPTPlanCreated = onDocumentCreated(
     };
 
     await Promise.all([
-      db.collection("notifications").doc(notificationId).set(notification),
+      db.collection("notifications").doc(notificationId).set(notification, { merge: true }),
       mirrorGymRecord(gymId, "notifications", notificationId, notification),
-      db.collection("activityEvents").doc(activityId).set(activity),
+      db.collection("activityEvents").doc(activityId).set(activity, { merge: true }),
       mirrorGymRecord(gymId, "activityEvents", activityId, activity),
       sendPushToMember(
         memberId,

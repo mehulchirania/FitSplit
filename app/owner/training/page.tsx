@@ -2,8 +2,8 @@ import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { Calendar, Dumbbell, UsersRound } from "@/components/icons";
 import { PTBookingForm } from "@/components/pt-booking-form";
+import { PTCalendarDynamic } from "@/components/pt-calendar-dynamic";
 import { PTSessionActions } from "@/components/pt-session-actions";
-import { PTCalendar } from "@/components/pt-calendar";
 import { requireRole } from "@/lib/auth";
 import {
   getAllPTSessionsForGym,
@@ -303,7 +303,7 @@ export default async function OwnerTrainingPage({
       )}
 
       {view === "calendar" && filtered.length > 0 && (
-        <PTCalendar sessions={filtered} />
+            <PTCalendarDynamic sessions={filtered} />
       )}
     </main>
   );

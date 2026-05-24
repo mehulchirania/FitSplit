@@ -70,6 +70,8 @@ export function MemberWorkoutConsole({
     selectedExerciseIdForForm, setSelectedExerciseIdForForm
   } = useWorkoutStore();
 
+  const [offlineSyncStatus, setOfflineSyncStatus] = useState<FormActionState | null>(null);
+  const [isOfflineSyncing, setIsOfflineSyncing] = useState(false);
   const liftFormRef = useRef<HTMLFormElement>(null);
 
   // Initialize store state on mount if not already done
@@ -154,28 +156,45 @@ export function MemberWorkoutConsole({
     return () => clearInterval(interval);
   }, [isSessionActive]);
 
-  useEffect(() => {
-    async function handleOnline() {
-      try {
-        const offlineLogs = await offlineDB.liftLogs.toArray();
-        if (offlineLogs.length > 0) {
-          const res = await syncOfflineLifts(offlineLogs);
-          if (res.status === "success") {
-            await offlineDB.liftLogs.clear();
-            setOfflineLogsCount(0);
-          }
+  async function syncOfflineQueue(showStatus = false) {
+    if (isOfflineSyncing) return;
+    setIsOfflineSyncing(true);
+    if (showStatus) setOfflineSyncStatus(null);
+    try {
+      const offlineLogs = await offlineDB.liftLogs.toArray();
+      if (offlineLogs.length === 0) {
+        setOfflineLogsCount(0);
+        if (showStatus) {
+          setOfflineSyncStatus({ status: "success", message: "All offline logs are already synced." });
         }
-      } catch (err) {
-        console.error("Failed to sync offline logs:", err);
+        return;
       }
-    }
 
+      const result = await syncOfflineLifts(offlineLogs);
+      if (result.status === "success") {
+        await offlineDB.liftLogs.clear();
+        setOfflineLogsCount(0);
+      } else {
+        setOfflineLogsCount(offlineLogs.length);
+      }
+      setOfflineSyncStatus(result);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Offline sync failed. Try again when you have a stable connection.";
+      setOfflineSyncStatus({ status: "error", message });
+      console.error("Failed to sync offline logs:", err);
+    } finally {
+      setIsOfflineSyncing(false);
+    }
+  }
+
+  useEffect(() => {
     offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
 
     if (typeof navigator !== "undefined" && navigator.onLine) {
-       handleOnline();
+       void syncOfflineQueue(false);
     }
 
+    const handleOnline = () => void syncOfflineQueue(false);
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
   }, []);
@@ -750,6 +769,8 @@ export function MemberWorkoutConsole({
           logSuccess={logSuccess}
           isNewPR={isNewPR}
           offlineLogsCount={offlineLogsCount}
+          offlineSyncStatus={offlineSyncStatus}
+          isOfflineSyncing={isOfflineSyncing}
           lastLogByExercise={lastLogByExercise}
           prMap={prMap}
           liftLogs={liftLogs}
@@ -762,6 +783,7 @@ export function MemberWorkoutConsole({
           isEventPending={isEventPending}
           onConfirm={confirmPendingEvent}
           onCancelEvent={() => setPendingEvent(null)}
+          onRetryOfflineSync={() => syncOfflineQueue(true)}
         />
 
         <div className="injury-card">

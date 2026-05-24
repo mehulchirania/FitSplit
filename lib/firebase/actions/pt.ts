@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import type { FormActionState } from "@/types/action-state";
 import {
@@ -25,7 +24,12 @@ const BookPTSchema = z.object({
   trainerId: ZodHelpers.textRequired("Trainer"),
   trainerName: z.string().optional(),
   planStartDate: ZodHelpers.textRequired("PT start date"),
-  planDurationDays: z.coerce.number().optional(),
+  planDurationDays: z.coerce
+    .number()
+    .int("PT plan duration must be a whole number of days.")
+    .min(1, "PT plan duration must be at least 1 day.")
+    .max(365, "PT plan duration must be 365 days or less.")
+    .default(30),
   gymId: z.string().optional(),
   plannedExercises: z.string().optional(),
   notes: z.string().optional()
@@ -62,10 +66,6 @@ export async function bookPTSession(
     if (isNaN(new Date(scheduledAt).getTime())) {
       throw new Error("PT start date is invalid.");
     }
-    if (!Number.isFinite(planDurationDays) || planDurationDays < 1 || planDurationDays > 365) {
-      throw new Error("PT plan duration must be between 1 and 365 days.");
-    }
-
     const gymId = currentUser.role === "admin"
       ? (requestedGymId.trim() || currentUser.gymId || PRIMARY_GYM_ID)
       : (currentUser.gymId ?? PRIMARY_GYM_ID);
@@ -128,10 +128,6 @@ export async function bookPTSession(
       "/member/pt-history"
     );
 
-    revalidatePath("/owner/training");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/trainer");
-
     return success(`PT plan assigned. Plan ID: ${sessionId}`, gymId);
   } catch (error) {
     console.error("Unable to book PT plan", error);
@@ -179,10 +175,6 @@ export async function startPTSession(
     const patch = { status: "active", startedAt: now, updatedAt: now };
     await rootRef.update(patch);
     await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
-
-    revalidatePath("/owner/training");
-    revalidatePath("/trainer");
-    revalidatePath(`/trainer/session/${ptSessionId}`);
 
     return success("Session started.", gymId);
   } catch (error) {
@@ -287,10 +279,6 @@ export async function logPTLiftSet(
     await db.collection(collectionPaths.liftLogs).doc(logId).set(liftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "liftLogs", logId, liftLogRecord);
 
-    revalidatePath(`/trainer/session/${ptSessionId}`);
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/member/history");
-
     return success("Lift logged.", gymId);
   } catch (error) {
     console.error("Unable to log PT lift set", error);
@@ -359,11 +347,6 @@ export async function completePTSession(
       "/member/pt-history"
     );
 
-    revalidatePath("/owner/training");
-    revalidatePath("/trainer");
-    revalidatePath(`/trainer/session/${ptSessionId}`);
-    revalidatePath(`/owner/members/${session.memberId}`);
-
     return success("Session completed.", gymId);
   } catch (error) {
     console.error("Unable to complete PT session", error);
@@ -430,10 +413,6 @@ export async function cancelPTSession(
     };
     await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
-
-    revalidatePath("/owner/training");
-    revalidatePath("/trainer");
-    revalidatePath(`/owner/members/${session.memberId}`);
 
     return success("Session cancelled.", gymId);
   } catch (error) {
@@ -529,10 +508,6 @@ export async function reschedulePTSession(
     };
     await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
-
-    revalidatePath("/owner/training");
-    revalidatePath("/trainer");
-    revalidatePath(`/owner/members/${session.memberId}`);
 
     return success("Session rescheduled.", gymId);
   } catch (error) {

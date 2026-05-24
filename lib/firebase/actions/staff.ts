@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import type { FormActionState } from "@/types/action-state";
@@ -158,9 +157,6 @@ export async function createOwnerProfile(
       console.warn("Failed to write audit event for createOwnerProfile:", e);
     }
 
-    revalidatePath("/admin");
-    revalidatePath(`/admin/gyms/${gymId}`);
-
     return success(`${fullName} was added as gym ${normalizedStaffType}.`, gymId);
   } catch (error) {
     return failure(error, "Unable to create gym staff profile.");
@@ -203,9 +199,6 @@ export async function deleteGymStaffProfile(
         throw error;
       }
     }
-
-    revalidatePath("/admin");
-    revalidatePath(`/admin/gyms/${gymId}`);
 
     return success("Gym staff access was deleted.");
   } catch (error) {
@@ -279,7 +272,6 @@ export async function updateAdminDisplayName(
       { fullName: displayName, avatarInitials: initials, updatedAt: now },
       { merge: true }
     );
-    revalidatePath("/profile");
     return success("Display name updated.");
   } catch (error) {
     return failure(error, "Unable to update display name.");
@@ -395,9 +387,6 @@ export async function resetPassword(
     } catch (e) {
       console.warn("Failed to write audit event for resetPassword:", e);
     }
-
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${userId}`);
 
     return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.", gymId);
   } catch (error) {

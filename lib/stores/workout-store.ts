@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import type { DayLog, LiftLog, SkipReason, WorkoutExercise } from '@/types/domain';
 import type { FormActionState } from '@/types/action-state';
 
@@ -88,7 +89,9 @@ type WorkoutState = {
   setDayLogStatus: (status: FormActionState | null) => void;
 };
 
-export const useWorkoutStore = create<WorkoutState>((set) => ({
+export const useWorkoutStore = create<WorkoutState>()(
+  persist(
+    (set) => ({
   isSessionActive: false,
   sessionId: "",
   elapsedSeconds: 0,
@@ -154,4 +157,33 @@ export const useWorkoutStore = create<WorkoutState>((set) => ({
   setSkipNote: (note) => set({ skipNote: note }),
   setIsDayLogging: (isLogging) => set({ isDayLogging: isLogging }),
   setDayLogStatus: (status) => set({ dayLogStatus: status }),
-}));
+    }),
+    {
+      name: "fitsplit-workout",
+      // sessionStorage: cleared when the tab closes, so there is no stale
+      // mid-workout state left over the next morning when the member reopens
+      // the app. But navigating away and back within the same session
+      // (e.g., accidentally tapping a link) restores the full workout state.
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined" ? sessionStorage : localStorage
+      ),
+      // Only persist the fields that are meaningful to restore mid-workout.
+      // Ephemeral UI flags (isPending, isLogging, eventStatus…) are excluded
+      // so they always start fresh.
+      partialize: (state) => ({
+        isSessionActive: state.isSessionActive,
+        sessionId: state.sessionId,
+        elapsedSeconds: state.elapsedSeconds,
+        injury: state.injury,
+        modification: state.modification,
+        workoutMode: state.workoutMode,
+        liftLogs: state.liftLogs,
+        selectedDayIndex: state.selectedDayIndex,
+        dayLogs: state.dayLogs,
+        skipMode: state.skipMode,
+        skipReason: state.skipReason,
+        skipNote: state.skipNote,
+      }),
+    }
+  )
+);

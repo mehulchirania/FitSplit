@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { Difficulty, ProgramAssignment, WorkoutProgram } from "@/types/domain";
 
@@ -82,13 +83,22 @@ export async function getWorkoutProgramsUncached(gymId?: string): Promise<{
 
 export async function getWorkoutPrograms(gymId?: string) {
   return unstable_cache(
-    getWorkoutProgramsUncached,
+    getWorkoutProgramsRequestCached,
     ["read:getWorkoutPrograms", gymId ?? "default"],
     { tags: ["programs", "gym-data", gymTag(gymId)], revalidate: 120 }
   )(gymId);
 }
 
-export async function getProgramAssignmentForMember(memberId: string, gymId?: string): Promise<{
+const getWorkoutProgramsRequestCached = cache(getWorkoutProgramsUncached);
+
+export const getProgramAssignmentForMember = cache(async function getProgramAssignmentForMember(memberId: string, gymId?: string): Promise<{
+  assignment: ProgramAssignment | null;
+  isPersisted: boolean;
+}> {
+  return getProgramAssignmentForMemberUncached(memberId, gymId);
+});
+
+async function getProgramAssignmentForMemberUncached(memberId: string, gymId?: string): Promise<{
   assignment: ProgramAssignment | null;
   isPersisted: boolean;
 }> {
@@ -152,7 +162,14 @@ export async function getProgramAssignmentForMember(memberId: string, gymId?: st
   }
 }
 
-export async function getActiveProgramAssignments(gymId?: string): Promise<{
+export const getActiveProgramAssignments = cache(async function getActiveProgramAssignments(gymId?: string): Promise<{
+  assignments: ProgramAssignment[];
+  isPersisted: boolean;
+}> {
+  return getActiveProgramAssignmentsUncached(gymId);
+});
+
+async function getActiveProgramAssignmentsUncached(gymId?: string): Promise<{
   assignments: ProgramAssignment[];
   isPersisted: boolean;
 }> {
@@ -167,12 +184,14 @@ export async function getActiveProgramAssignments(gymId?: string): Promise<{
     const { db } = getFirebaseAdminServices();
     const scopedSnapshot = await gymCollection(db, targetGymId, "programAssignments")
       .where("status", "==", "active")
+      .limit(500)
       .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.programAssignments)
           .where("gymId", "==", targetGymId)
           .where("status", "==", "active")
+          .limit(500)
           .get()
       : scopedSnapshot;
 

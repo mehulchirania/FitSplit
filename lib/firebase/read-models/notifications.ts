@@ -25,6 +25,8 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
     const targetGymId = gymId ?? PRIMARY_GYM_ID;
     const scopedSnapshot = await gymCollection(db, targetGymId, "notifications")
       .where("recipientRole", "==", "owner")
+      .orderBy("createdAt", "desc")
+      .limit(50)
       .get();
     if (!scopedSnapshot.empty) {
       snapshot = scopedSnapshot;
@@ -35,7 +37,7 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
       if (gymId) {
         query = query.where("gymId", "==", gymId);
       }
-      snapshot = await query.get();
+      snapshot = await query.orderBy("createdAt", "desc").limit(50).get();
     }
   } catch {
     return {
@@ -87,11 +89,15 @@ export async function getAdminNotifications(): Promise<{
     const scopedSnapshot = await db
       .collectionGroup(gymScopedCollectionPaths.notifications)
       .where("recipientRole", "==", "admin")
+      .orderBy("createdAt", "desc")
+      .limit(50)
       .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.notifications)
           .where("recipientRole", "==", "admin")
+          .orderBy("createdAt", "desc")
+          .limit(50)
           .get()
       : scopedSnapshot;
 
@@ -134,11 +140,15 @@ export async function getMemberNotifications(memberId: string): Promise<{
     const scopedSnapshot = await db
       .collectionGroup(gymScopedCollectionPaths.notifications)
       .where("recipientId", "==", memberId)
+      .orderBy("createdAt", "desc")
+      .limit(50)
       .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.notifications)
           .where("recipientId", "==", memberId)
+          .orderBy("createdAt", "desc")
+          .limit(50)
           .get()
       : scopedSnapshot;
     const notifications: Notification[] = snapshot.docs
@@ -175,18 +185,21 @@ export async function getUnreadContactMessageCount(): Promise<number> {
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
+    // Use count() aggregation — reads zero documents, just returns a number.
+    const scopedCount = await db
       .collectionGroup(gymScopedCollectionPaths.contactMessages)
       .where("status", "==", "unread")
+      .count()
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.contactMessages)
-          .where("status", "==", "unread")
-          .get()
-      : scopedSnapshot;
-
-    return snapshot.size;
+    if (scopedCount.data().count > 0) {
+      return scopedCount.data().count;
+    }
+    const rootCount = await db
+      .collection(collectionPaths.contactMessages)
+      .where("status", "==", "unread")
+      .count()
+      .get();
+    return rootCount.data().count;
   } catch {
     return 0;
   }
@@ -205,11 +218,13 @@ export async function getContactMessages(): Promise<{
     const scopedSnapshot = await db
       .collectionGroup(gymScopedCollectionPaths.contactMessages)
       .orderBy("createdAt", "desc")
+      .limit(100)
       .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.contactMessages)
           .orderBy("createdAt", "desc")
+          .limit(100)
           .get()
       : scopedSnapshot;
 

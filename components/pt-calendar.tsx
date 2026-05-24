@@ -3,8 +3,8 @@
 import { useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg } from "@fullcalendar/core";
+// interactionPlugin removed — it added ~40 KB and was unused (no drag/drop/click-to-create).
 import { useRouter } from "next/navigation";
 import type { PTSession } from "@/types/domain";
 
@@ -48,16 +48,10 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
   };
 
   return (
-    <div className="pt-calendar-wrapper" style={{ 
-      padding: "16px", 
-      background: "var(--bg-layer-1)", 
-      borderRadius: "12px",
-      border: "1px solid var(--border)",
-      marginTop: "24px" 
-    }}>
+    <div className="pt-calendar-wrapper">
       <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin, interactionPlugin]}
+        plugins={[dayGridPlugin]}
         initialView="dayGridMonth"
         headerToolbar={{
           left: "prev,next today",

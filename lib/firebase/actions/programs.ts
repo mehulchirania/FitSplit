@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath, revalidateTag } from "next/cache";
+import { revalidateTag } from "next/cache";
 import { requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
@@ -150,8 +150,6 @@ export async function assignProgramToMember(
     const programTitle = parsed.data.programTitle || "Workout program";
 
     if (!hasFirebaseAdminConfig()) {
-      revalidatePath("/owner");
-      revalidatePath("/member");
       return success(`${programTitle} was assigned to ${memberName} (local mode).`);
     }
 
@@ -230,13 +228,7 @@ export async function assignProgramToMember(
       "/member"
     );
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/member");
-    revalidatePath("/activity");
-
-    return success(`${programTitle} was assigned to ${memberName}.`);
+    return success(`${programTitle} was assigned to ${memberName}.`, assignGymId);
   } catch (error) {
     console.error("Unable to assign program to member", error);
     return failure(error, "Unable to assign workout program. Please try again.");
@@ -334,10 +326,8 @@ export async function bulkAssignProgram(
       })
     );
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
     revalidateTag(`gym:${assignGymId}`);
-    return success(`"${programTitle}" assigned to ${memberIds.length} member${memberIds.length === 1 ? "" : "s"}.`);
+    return success(`"${programTitle}" assigned to ${memberIds.length} member${memberIds.length === 1 ? "" : "s"}.`, assignGymId);
   } catch (error) {
     return failure(error, "Bulk program assignment failed.");
   }
@@ -374,10 +364,7 @@ export async function deleteCustomWorkoutProgram(
       await scopedGymDoc(db, gymId, "workoutPrograms", programId).delete();
     }
 
-    revalidatePath("/owner/programs");
-    revalidatePath("/owner/members");
-
-    return success(`${programTitle} was deleted.`);
+    return success(`${programTitle} was deleted.`, gymId);
   } catch (error) {
     return failure(error, "Unable to delete program.");
   }
@@ -465,9 +452,7 @@ export async function updateCustomWorkoutProgram(
       { merge: true }
     );
 
-    revalidatePath("/owner/programs");
-
-    return success(`${title} was updated.`);
+    return success(`${title} was updated.`, gymId);
   } catch (error) {
     return failure(error, "Unable to update custom plan.");
   }
@@ -586,9 +571,7 @@ export async function createCustomWorkoutProgram(
       { merge: true }
     );
 
-    revalidatePath("/owner/programs");
-
-    return success(`${title} was saved to workout programs.`);
+    return success(`${title} was saved to workout programs.`, gymId);
   } catch (error) {
     console.error("Unable to create custom workout program", error);
     return failure(error, "Unable to save custom plan. Please try again.");
@@ -749,14 +732,7 @@ export async function createAndAssignCustomProgram(
     await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", activityId, activityRecord);
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/owner/programs");
-    revalidatePath("/member");
-    revalidatePath("/activity");
-
-    return success(`${title} was created and assigned to ${memberName}.`);
+    return success(`${title} was created and assigned to ${memberName}.`, gymId);
   } catch (error) {
     console.error("Unable to create and assign custom program", error);
     return failure(error, "Unable to create custom workout. Please try again.");

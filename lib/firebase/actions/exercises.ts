@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
 import { requireOwner, requireRole } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
@@ -82,9 +81,7 @@ export async function requestCatalogExercise(
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
-    revalidatePath("/admin/exercises");
-
-    return success(`Request to add "${name}" sent to admin for review.`);
+    return success(`Request to add "${name}" sent to admin for review.`, gymId);
   } catch (error) {
     return failure(error, "Unable to send exercise request.");
   }
@@ -168,11 +165,7 @@ export async function approveCatalogExerciseRequest(
       { merge: true }
     );
 
-    revalidatePath("/admin/exercises");
-    revalidatePath("/owner/exercises");
-    revalidatePath("/owner/programs");
-
-    return success(`"${name}" added to the exercise catalog.`);
+    return success(`"${name}" added to the exercise catalog.`, gymId);
   } catch (error) {
     return failure(error, "Unable to approve exercise request.");
   }
@@ -210,7 +203,6 @@ export async function rejectCatalogExerciseRequest(
       )
     );
 
-    revalidatePath("/admin/exercises");
     return success("Exercise request dismissed.");
   } catch (error) {
     return failure(error, "Unable to dismiss request.");
@@ -280,10 +272,7 @@ export async function createCatalogExercise(
       await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(exerciseRecord);
     }
 
-    revalidatePath("/owner/exercises");
-    revalidatePath("/admin/exercises");
-
-    return success(`${name} was added to the exercise catalog.`);
+    return success(`${name} was added to the exercise catalog.`, gymId);
   } catch (error) {
     console.error("Unable to create catalog exercise", error);
     return failure(error, "Unable to save exercise. Please try again.");
@@ -357,11 +346,7 @@ export async function updateCatalogExercise(
       await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(updatePayload, { merge: true });
     }
 
-    revalidatePath("/admin/exercises");
-    revalidatePath("/owner/exercises");
-    revalidatePath("/owner/programs");
-    revalidatePath("/member");
-    return success(`${name} updated.`);
+    return success(`${name} updated.`, gymId);
   } catch (error) {
     return failure(error, "Unable to update exercise.");
   }
@@ -423,10 +408,7 @@ export async function resetExerciseVideos(
       }, { merge: true });
     }
 
-    revalidatePath("/admin/exercises");
-    revalidatePath("/owner/exercises");
-    revalidatePath("/member");
-    return success("Videos reset to default.");
+    return success("Videos reset to default.", gymId);
   } catch (error) {
     return failure(error, "Unable to reset videos.");
   }
@@ -461,10 +443,7 @@ export async function setExerciseTutorialVisibility(
       { merge: true }
     );
 
-    revalidatePath("/owner/exercises");
-    revalidatePath("/member");
-    revalidatePath("/member/exercises");
-    return success(showTutorial ? "Tutorial enabled for members." : "Tutorial hidden from members.");
+    return success(showTutorial ? "Tutorial enabled for members." : "Tutorial hidden from members.", gymId);
   } catch (error) {
     return failure(error, "Unable to update tutorial visibility.");
   }
@@ -508,13 +487,11 @@ export async function setMuscleGroupTutorialVisibility(
     }
     await batch.commit();
 
-    revalidatePath("/owner/exercises");
-    revalidatePath("/member");
-    revalidatePath("/member/exercises");
     return success(
       showTutorial
         ? "Tutorials enabled for this group."
-        : "Tutorials hidden for this group."
+        : "Tutorials hidden for this group.",
+      gymId
     );
   } catch (error) {
     return failure(error, "Unable to update tutorial visibility.");

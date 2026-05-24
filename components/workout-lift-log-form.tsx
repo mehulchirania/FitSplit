@@ -20,6 +20,8 @@ type WorkoutLiftLogFormProps = {
   logSuccess: boolean;
   isNewPR: boolean;
   offlineLogsCount: number;
+  offlineSyncStatus: FormActionState | null;
+  isOfflineSyncing: boolean;
   lastLogByExercise: Map<string, LiftLog>;
   prMap: Map<string, number>;
   liftLogs: LiftLog[];
@@ -32,6 +34,7 @@ type WorkoutLiftLogFormProps = {
   isEventPending: boolean;
   onConfirm: () => void;
   onCancelEvent: () => void;
+  onRetryOfflineSync: () => void;
 };
 
 export function WorkoutLiftLogForm({
@@ -42,6 +45,8 @@ export function WorkoutLiftLogForm({
   logSuccess,
   isNewPR,
   offlineLogsCount,
+  offlineSyncStatus,
+  isOfflineSyncing,
   lastLogByExercise,
   prMap,
   liftLogs,
@@ -54,6 +59,7 @@ export function WorkoutLiftLogForm({
   isEventPending,
   onConfirm,
   onCancelEvent,
+  onRetryOfflineSync,
 }: WorkoutLiftLogFormProps) {
   return (
     <div className="lift-log-panel">
@@ -62,7 +68,7 @@ export function WorkoutLiftLogForm({
           <h2>Log your sets</h2>
           {offlineLogsCount > 0 && (
             <span className="status-pill status-expired">
-              {offlineLogsCount} unsynced (Offline)
+              {offlineLogsCount} unsynced
             </span>
           )}
         </div>
@@ -73,6 +79,29 @@ export function WorkoutLiftLogForm({
           </span>
         )}
       </div>
+
+      {offlineLogsCount > 0 && (
+        <div className="offline-sync-banner">
+          <div>
+            <strong>Offline sets waiting</strong>
+            <p>{offlineLogsCount} set{offlineLogsCount === 1 ? "" : "s"} will sync when your connection is stable.</p>
+          </div>
+          <button
+            className="button button-secondary"
+            disabled={isOfflineSyncing}
+            onClick={onRetryOfflineSync}
+            type="button"
+          >
+            {isOfflineSyncing ? "Syncing..." : "Retry sync"}
+          </button>
+        </div>
+      )}
+
+      {offlineSyncStatus && (
+        <p className={`form-message form-message-${offlineSyncStatus.status}`}>
+          {offlineSyncStatus.message}
+        </p>
+      )}
 
       <form ref={liftFormRef} className="lift-log-form" onSubmit={onSubmit}>
         <input name="memberId" type="hidden" value={memberId} />

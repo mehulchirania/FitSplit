@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "../collections";
@@ -302,10 +301,7 @@ export async function createGymWorkspace(
       updatedAt: now
     });
 
-    revalidatePath("/admin");
-    revalidatePath("/admin/gyms");
-
-    return success(`${name} was added.`);
+    return success(`${name} was added.`, slug);
   } catch (error) {
     return failure(error, "Unable to create gym.");
   }
@@ -343,8 +339,6 @@ export async function deleteGymWorkspace(
     await archiveAndDeleteGymSubcollections(db, gymId, user.uid, "gym_deleted");
     await db.collection(collectionPaths.gyms).doc(gymId).delete();
 
-    revalidatePath("/admin");
-    revalidatePath("/admin/gyms");
   } catch (error) {
     return failure(error, "Unable to remove gym.");
   }
@@ -438,8 +432,6 @@ export async function deleteGymWithMembers(
       }
     }
 
-    revalidatePath("/admin");
-    revalidatePath("/admin/gyms");
   } catch (error) {
     return failure(error, "Unable to delete gym.");
   }
@@ -472,10 +464,7 @@ export async function updateGymDetails(
 
     await db.collection(collectionPaths.gyms).doc(gymId).update(updateData);
 
-    revalidatePath("/admin");
-    revalidatePath(`/admin/gyms/${gymId}`);
-
-    return success("Gym details updated successfully.");
+    return success("Gym details updated successfully.", gymId);
   } catch (error) {
     return failure(error, "Unable to update gym details.");
   }
@@ -520,12 +509,7 @@ export async function updateGymLogo(
       { merge: true }
     );
 
-    revalidatePath("/admin");
-    revalidatePath("/admin/gyms");
-    revalidatePath(`/admin/gyms/${gymId}`);
-    revalidatePath("/member");
-
-    return success("Gym logo updated.");
+    return success("Gym logo updated.", gymId);
   } catch (error) {
     return failure(error, "Unable to update gym logo.");
   }
@@ -590,10 +574,7 @@ export async function setGymStatus(
       })
     );
 
-    revalidatePath("/admin");
-    revalidatePath(`/admin/gyms/${gymId}`);
-
-    return success(`Gym ${isActive ? "activated" : "deactivated"}. Staff and member access ${isActive ? "enabled" : "disabled"}.`);
+    return success(`Gym ${isActive ? "activated" : "deactivated"}. Staff and member access ${isActive ? "enabled" : "disabled"}.`, gymId);
   } catch (error) {
     return failure(error, "Unable to update gym status.");
   }
@@ -629,9 +610,7 @@ export async function addGymNotice(
     const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
     await gymRef.set({ notices: [...existing, notice] }, { merge: true });
 
-    revalidatePath("/owner");
-    revalidatePath("/member");
-    return success("Notice added.");
+    return success("Notice added.", gymId);
   } catch (error) {
     return failure(error, "Unable to add notice.");
   }
@@ -657,9 +636,7 @@ export async function deleteGymNotice(
     const updated = existing.filter((n) => (n as { id?: string }).id !== noticeId);
     await gymRef.set({ notices: updated }, { merge: true });
 
-    revalidatePath("/owner");
-    revalidatePath("/member");
-    return success("Notice removed.");
+    return success("Notice removed.", gymId);
   } catch (error) {
     return failure(error, "Unable to delete notice.");
   }

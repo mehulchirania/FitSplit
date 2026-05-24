@@ -26,6 +26,7 @@ import "./styles/10-pt-training.css";
 import "./styles/11-member-tabs.css";
 import "./styles/11-bulk-member-list.css";
 import "./styles/12-member-dashboard-new.css";
+import "./styles/13-skeletons.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });

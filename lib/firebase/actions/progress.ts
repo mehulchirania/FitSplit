@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
@@ -96,10 +95,7 @@ export async function logLiftSet(
     await db.collection(collectionPaths.liftLogs).doc(liftLogId).set(liftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord);
 
-    revalidatePath("/member");
-    revalidatePath(`/owner/members/${memberId}`);
-
-    return success("Lift entry was logged.");
+    return success("Lift entry was logged.", gymId);
   } catch (error) {
     console.error("Unable to log lift set", error);
     return failure(error, "Unable to log lift. Please try again.");
@@ -140,9 +136,7 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
 
     await batch.commit();
 
-    revalidatePath("/member");
-
-    return success(`${logs.length} offline lift(s) synced.`);
+    return success(`${logs.length} offline lift(s) synced.`, currentUser.gymId);
   } catch (error) {
     console.error("Unable to sync offline lifts", error);
     return failure(error, "Unable to sync offline lifts.");
@@ -206,10 +200,6 @@ export async function logBodyWeight(
       // best-effort; chart still works from the dedicated collection
     }
 
-    revalidatePath("/profile");
-    revalidatePath("/member");
-    revalidatePath(`/owner/members/${memberId}`);
-
     return success(`Weight ${weightKg} kg logged.`, gymId);
   } catch (error) {
     console.error("Unable to log body weight", error);
@@ -254,9 +244,6 @@ export async function updateCoachNote(
       defaultGymId: currentUser.gymId ?? PRIMARY_GYM_ID,
       ...noteUpdate
     });
-
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/member");
 
     return success(rawNote ? "Coach note updated." : "Coach note cleared.", currentUser.gymId);
   } catch (error) {
@@ -321,10 +308,7 @@ export async function logDayStatus(
     );
     await mirrorGymScopedRecord(db, gymId, "dayLogs", docId, dayLogRecord);
 
-    revalidatePath("/member");
-    revalidatePath("/member/history");
-
-    return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.");
+    return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.", gymId);
   } catch (error) {
     console.error("Unable to log day status", error);
     return failure(error, "Could not save. Please try again.");
@@ -360,10 +344,7 @@ export async function clearDayLog(
     await db.collection(collectionPaths.dayLogs).doc(docId).delete();
     await scopedGymDoc(db, currentUser.gymId ?? PRIMARY_GYM_ID, "dayLogs", docId).delete();
 
-    revalidatePath("/member");
-    revalidatePath("/member/history");
-
-    return success("Day log cleared.");
+    return success("Day log cleared.", currentUser.gymId);
   } catch (error) {
     console.error("Unable to clear day log", error);
     return failure(error, "Could not clear. Please try again.");
@@ -448,10 +429,7 @@ export async function startWorkoutSession(
     );
     await mirrorGymScopedRecord(db, gymId, "attendanceRecords", sessionId, attendanceRecord);
 
-    revalidatePath("/member");
-    revalidatePath("/owner");
-
-    return success("Workout session was started.");
+    return success("Workout session was started.", gymId);
   } catch (error) {
     console.error("Unable to start workout session", error);
     return failure(error, "Unable to start workout. Please try again.");
@@ -522,10 +500,7 @@ export async function endWorkoutSession(
       // non-fatal — attendance tracking is supplementary
     }
 
-    revalidatePath("/member");
-    revalidatePath("/owner");
-
-    return success("Workout session was ended.");
+    return success("Workout session was ended.", gymId);
   } catch (error) {
     console.error("Unable to end workout session", error);
     return failure(error, "Unable to end workout. Please try again.");

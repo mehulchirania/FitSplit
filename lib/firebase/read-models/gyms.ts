@@ -253,7 +253,13 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
   if (hasFirebaseAdminConfig()) {
     try {
       const { db } = getFirebaseAdminServices();
-      const snapshot = await db.collection(collectionPaths.authProfiles).where("defaultGymId", "==", gymId).get();
+      // .select() limits the document payload to just the two slot fields —
+      // avoids reading the full profile for every gym member (potentially hundreds).
+      const snapshot = await db
+        .collection(collectionPaths.authProfiles)
+        .where("defaultGymId", "==", gymId)
+        .select("primarySlot", "secondarySlot")
+        .get();
       snapshot.forEach(doc => {
         const data = doc.data();
         memberSlots[doc.id] = {

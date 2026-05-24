@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
 import { requireRole } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
@@ -109,12 +108,7 @@ export async function submitContactMessage(
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
-    revalidatePath("/");
-    revalidatePath("/admin");
-    revalidatePath("/admin/inbox");
-    revalidatePath("/activity");
-
-    return success("Message sent. We will get back to you soon.");
+    return success("Message sent. We will get back to you soon.", gymId);
   } catch (error) {
     console.error("Unable to submit contact message", error);
     return failure(error, "Unable to send message. Please try again.");
@@ -169,8 +163,6 @@ export async function markContactMessageRead(
         doc.ref.set({ status: "read", updatedAt: now }, { merge: true })
       )
     );
-
-    revalidatePath("/admin/inbox");
 
     return success("Message marked as read.");
   } catch (error) {

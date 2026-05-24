@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { requireAuth } from "@/lib/auth";
 import { collectionPaths } from "../collections";
 import type { FormActionState } from "@/types/action-state";
@@ -50,11 +49,8 @@ export async function clearUserNotifications(notificationIds: string[]): Promise
     }
 
     await batch.commit();
-    revalidatePath("/member");
-    revalidatePath("/owner");
-    revalidatePath("/admin");
 
-    return success("Notifications cleared.");
+    return success("Notifications cleared.", currentUser.gymId);
   } catch (error) {
     console.error("Unable to clear notifications", error);
     return failure(error, "Unable to clear notifications.");

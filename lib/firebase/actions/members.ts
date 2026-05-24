@@ -1,7 +1,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidatePath } from "next/cache";
+import { FieldValue } from "firebase-admin/firestore";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import type { FormActionState } from "@/types/action-state";
@@ -15,6 +15,7 @@ import {
   normalizeUsername,
   assertValidUsername,
   assertUsernameAvailable,
+  authProfilePayload,
   memberAuthEmail,
   upsertAuthUser,
   getActionFormData,
@@ -99,15 +100,6 @@ export async function createMemberProfile(
       updatedAt: now
     };
 
-    await writeAuthProfileIndex(db, memberId, memberProfile);
-    await mirrorProfileToGym(db, memberId, memberProfile);
-
-    // Keep stored memberCount in sync
-    await db.collection(collectionPaths.gyms).doc(gymId).set(
-      { memberCount: (await db.collection(collectionPaths.gyms).doc(gymId).get()).data()?.memberCount + 1 || 1, updatedAt: now },
-      { merge: true }
-    );
-
     const createEventId = randomUUID();
     const createEvent = {
       id: createEventId,
@@ -119,14 +111,43 @@ export async function createMemberProfile(
       icon: "users",
       createdAt: now
     };
-    await db.collection(collectionPaths.activityEvents).doc(createEventId).set(createEvent);
-    await mirrorGymScopedRecord(db, gymId, "activityEvents", createEventId, createEvent);
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath("/activity");
+    const batch = db.batch();
+    batch.set(
+      db.collection(collectionPaths.authProfiles).doc(memberId),
+      authProfilePayload(memberId, memberProfile),
+      { merge: true }
+    );
+    batch.set(
+      scopedGymDoc(db, gymId, "members", memberId),
+      {
+        ...memberProfile,
+        authUid: memberId,
+        defaultGymId: gymId,
+        gymId,
+        mirroredFromRootProfile: true
+      },
+      { merge: true }
+    );
+    batch.set(
+      db.collection(collectionPaths.gyms).doc(gymId),
+      { memberCount: FieldValue.increment(1), updatedAt: now },
+      { merge: true }
+    );
+    batch.set(db.collection(collectionPaths.activityEvents).doc(createEventId), createEvent);
+    batch.set(
+      scopedGymDoc(db, gymId, "activityEvents", createEventId),
+      {
+        ...createEvent,
+        id: createEventId,
+        gymId,
+        mirroredFromRootCollection: true
+      },
+      { merge: true }
+    );
+    await batch.commit();
 
-    return success(`${fullName} was added as a FitSplit member.`);
+    return success(`${fullName} was added as a FitSplit member.`, gymId);
   } catch (error) {
     console.error("Unable to create member profile", error);
 
@@ -225,12 +246,7 @@ export async function updateMemberProfile(
       isActive: existingProfile.isActive !== false
     });
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/member");
-
-    return success(`${fullName}'s member details were updated.`);
+    return success(`${fullName}'s member details were updated.`, gymId);
   } catch (error) {
     console.error("Unable to update member profile", error);
     return failure(error, "Unable to update member details. Please try again.");
@@ -343,13 +359,7 @@ export async function updateOwnerMemberContext(
       "pin-1234"
     );
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/member");
-    revalidatePath("/profile");
-
-    return success(`${fullName}'s profile context was updated.`);
+    return success(`${fullName}'s profile context was updated.`, gymId);
   } catch (error) {
     console.error("Unable to update member context", error);
     return failure(error, "Unable to update member context. Please try again.");
@@ -416,11 +426,12 @@ export async function updateProfileMetrics(
         assignedTrainer,
         updatedAt: now
       };
+    const profileGymId = String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
     await writeAuthProfileIndex(db, memberId, {
       ...existingProfile,
       id: memberId,
       role: "member",
-      defaultGymId: String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID),
+      defaultGymId: profileGymId,
       fullName,
       email,
       phone,
@@ -430,14 +441,11 @@ export async function updateProfileMetrics(
       ...existingProfile,
       id: memberId,
       role: "member",
-      defaultGymId: String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID),
+      defaultGymId: profileGymId,
       ...profileUpdate
     });
 
-    revalidatePath("/profile");
-    revalidatePath("/member");
-
-    return success("Profile details were updated.");
+    return success("Profile details were updated.", profileGymId);
   } catch (error) {
     console.error("Unable to update profile metrics", error);
     return failure(error, "Unable to update profile. Please try again.");
@@ -475,10 +483,7 @@ export async function saveMemberAiTrainerNote(
       updatedAt: now
     });
 
-    revalidatePath("/member");
-    revalidatePath("/profile");
-
-    return success(injuryNotes ? "AI trainer note saved." : "AI trainer note cleared.");
+    return success(injuryNotes ? "AI trainer note saved." : "AI trainer note cleared.", currentUser.gymId);
   } catch (error) {
     console.error("Unable to save AI trainer note", error);
     return failure(error, "Unable to save this AI trainer note.");
@@ -586,12 +591,7 @@ export async function toggleMemberAccess(
     await db.collection(collectionPaths.activityEvents).doc(toggleEventId).set(toggleEvent);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", toggleEventId, toggleEvent);
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/activity");
-
-    return success(`Member access ${isActive ? "enabled" : "disabled"}.`);
+    return success(`Member access ${isActive ? "enabled" : "disabled"}.`, gymId);
   } catch (error) {
     return failure(error, "Unable to toggle member access.");
   }
@@ -625,9 +625,7 @@ export async function bulkToggleMemberAccess(
       })
     );
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    return success(`${memberIds.length} member${memberIds.length === 1 ? "" : "s"} ${isActive ? "restored" : "suspended"}.`);
+    return success(`${memberIds.length} member${memberIds.length === 1 ? "" : "s"} ${isActive ? "restored" : "suspended"}.`, user.gymId);
   } catch (error) {
     return failure(error, "Bulk access update failed.");
   }
@@ -745,12 +743,7 @@ export async function deleteMemberProfile(
     await db.collection(collectionPaths.activityEvents).doc(deleteEventId).set(deleteEvent);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", deleteEventId, deleteEvent);
 
-    revalidatePath("/owner");
-    revalidatePath("/owner/members");
-    revalidatePath(`/owner/members/${memberId}`);
-    revalidatePath("/activity");
-
-    return success(`${deletedName} was deleted.`);
+    return success(`${deletedName} was deleted.`, gymId);
   } catch (error) {
     console.error("Unable to delete member", error);
     return failure(error, "Unable to delete member.");

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { Member, ProfileMetrics } from "@/types/domain";
 
@@ -50,13 +51,22 @@ export async function getMembersUncached(gymId?: string): Promise<{
 
 export async function getMembers(gymId?: string) {
   return unstable_cache(
-    getMembersUncached,
+    getMembersRequestCached,
     ["read:getMembers", gymId ?? "default"],
     { tags: ["members", "gym-data", gymTag(gymId)], revalidate: 60 }
   )(gymId);
 }
 
-export async function getMemberDetail(memberId: string): Promise<{
+const getMembersRequestCached = cache(getMembersUncached);
+
+export const getMemberDetail = cache(async function getMemberDetail(memberId: string): Promise<{
+  member: Member | null;
+  isPersisted: boolean;
+}> {
+  return getMemberDetailUncached(memberId);
+});
+
+async function getMemberDetailUncached(memberId: string): Promise<{
   member: Member | null;
   isPersisted: boolean;
 }> {
@@ -117,7 +127,14 @@ export async function getMemberDetail(memberId: string): Promise<{
   return { member, isPersisted: true };
 }
 
-export async function getProfileMetrics(memberId: string): Promise<{
+export const getProfileMetrics = cache(async function getProfileMetrics(memberId: string): Promise<{
+  profile: ProfileMetrics;
+  isPersisted: boolean;
+}> {
+  return getProfileMetricsUncached(memberId);
+});
+
+async function getProfileMetricsUncached(memberId: string): Promise<{
   profile: ProfileMetrics;
   isPersisted: boolean;
 }> {
@@ -179,7 +196,15 @@ export async function getProfileMetrics(memberId: string): Promise<{
   }
 }
 
-export async function getMemberWithProfile(memberId: string): Promise<{
+export const getMemberWithProfile = cache(async function getMemberWithProfile(memberId: string): Promise<{
+  member: Member | null;
+  profile: ProfileMetrics;
+  isPersisted: boolean;
+}> {
+  return getMemberWithProfileUncached(memberId);
+});
+
+async function getMemberWithProfileUncached(memberId: string): Promise<{
   member: Member | null;
   profile: ProfileMetrics;
   isPersisted: boolean;

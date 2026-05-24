@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { Exercise, ExerciseRequest, MuscleGroup } from "@/types/domain";
 
@@ -120,13 +121,15 @@ export async function getExerciseCatalogUncached(gymId?: string): Promise<{
 
 export async function getExerciseCatalog(gymId?: string) {
   return unstable_cache(
-    getExerciseCatalogUncached,
+    getExerciseCatalogRequestCached,
     ["read:getExerciseCatalog", gymId ?? "default"],
     { tags: ["exercises", "gym-data", gymTag(gymId)], revalidate: 300 }
   )(gymId);
 }
 
-export async function getPendingExerciseRequests(): Promise<{
+const getExerciseCatalogRequestCached = cache(getExerciseCatalogUncached);
+
+export const getPendingExerciseRequests = cache(async function getPendingExerciseRequests(): Promise<{
   requests: ExerciseRequest[];
   isPersisted: boolean;
 }> {
@@ -170,4 +173,4 @@ export async function getPendingExerciseRequests(): Promise<{
   } catch {
     return { requests: [], isPersisted: false };
   }
-}
+});

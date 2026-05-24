@@ -684,6 +684,37 @@
   margin: 0 0 14px;
 }
 
+.offline-sync-banner {
+  align-items: center;
+  background: color-mix(in srgb, var(--warning, #f5a524) 12%, var(--bg-subtle));
+  border: 1px solid color-mix(in srgb, var(--warning, #f5a524) 34%, var(--border));
+  border-radius: 14px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin: 12px 0;
+  padding: 12px;
+}
+
+.offline-sync-banner strong {
+  color: var(--text);
+  display: block;
+  font-size: 0.86rem;
+}
+
+.offline-sync-banner p {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  margin: 2px 0 0;
+}
+
+.offline-sync-banner .button {
+  flex: 0 0 auto;
+  min-height: 34px;
+  padding: 7px 10px;
+}
+
 .member-workout-side .lift-log-form {
   display: grid;
   gap: 12px;
