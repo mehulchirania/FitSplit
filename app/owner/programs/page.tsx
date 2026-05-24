@@ -70,7 +70,6 @@ export default async function ProgramsPage() {
       <section className="list-panel" style={{ marginTop: 20 }}>
         <div className="panel-title">
           <h2>Create a custom program</h2>
-          <span className="status-pill status-neutral">Owner only</span>
         </div>
         <div style={{ padding: "0 4px 4px" }}>
           <CustomPlanBuilder catalog={catalog} />

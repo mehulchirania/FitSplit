@@ -344,11 +344,16 @@ export type PTSession = {
   trainerName?: string;
   scheduledAt: string;       // ISO datetime of the booked slot
   durationMinutes: number;   // expected session length, e.g. 60
+  planStartDate?: string;    // yyyy-mm-dd for longer PT plans
+  planEndDate?: string;      // yyyy-mm-dd, calculated from planStartDate + planDurationDays
+  planDurationDays?: number; // default 30 for monthly PT, owner-editable
   status: PTSessionStatus;
   /** ISO datetime when trainer tapped "Start" */
   startedAt?: string;
   /** ISO datetime when trainer tapped "End" */
   endedAt?: string;
+  /** Exercises planned for this PT session before the trainer starts logging sets. */
+  plannedExercises?: WorkoutExercise[];
   notes?: string;            // pre-session trainer notes / goals
   cancelReason?: string;
   createdAt: string;

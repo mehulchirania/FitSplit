@@ -164,10 +164,10 @@ export default async function MembersPage({
             {filter === "all"     ? "All members"      :
              filter === "plan"    ? "Members with plan" :
                                     "Members needing a plan"}
-            <span className="status-pill status-neutral" style={{ fontSize: "0.72rem" }}>
-              {sorted.length}
-            </span>
           </h2>
+          <span className="status-pill status-neutral" style={{ fontSize: "0.72rem" }}>
+            {sorted.length}
+          </span>
         </div>
 
         {sorted.length === 0 ? (

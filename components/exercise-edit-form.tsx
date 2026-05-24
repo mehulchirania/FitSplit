@@ -25,7 +25,7 @@ export const EQUIPMENT_OPTIONS = [
 export const VIDEO_CHANNELS = [
   { value: "deltabolic",  label: "DeltaBolic" },
   { value: "tylerpath",   label: "TylerPath" },
-  { value: "shg",         label: "SHG Gym Demo" },
+  { value: "shg",         label: "Gym Demo" },
   { value: "custom",      label: "Other / Custom" },
 ] as const;
 
@@ -43,8 +43,7 @@ type VideoEntry = { channel: string; url: string };
 /** Infer likely channel from a YouTube video ID by comparing to known channel IDs baked in at build */
 function guessChannel(url: string): string {
   if (!url) return "deltabolic";
-  // SHG Gym Demo = gym videos
-  if (url.includes("gymVideoUrl")) return "shg"; // can't tell from URL alone
+  if (url.includes("gymVideoUrl")) return "shg"; // gymVideoUrl field → gym demo channel
   return "deltabolic";
 }
 
@@ -66,12 +65,15 @@ export function ExerciseEditForm({
   exercise,
   isCreate = false,
   isOwner = false,
+  targetGymId,
 }: {
   action: FormAction;
   exercise?: Exercise;
   isCreate?: boolean;
   /** When true the form shows only gym-video + basic fields; tutorial URLs are read-only. */
   isOwner?: boolean;
+  /** Admin-only override for creating a gym-scoped custom exercise. */
+  targetGymId?: string;
 }) {
   // ── equipment multi-select ────────────────────────────────────────────────
   const initialEquipment = splitEquipment(exercise?.equipment ?? "");
@@ -120,6 +122,7 @@ export function ExerciseEditForm({
     >
       {/* Hidden field for the exercise ID */}
       {exercise?.id && <input name="exerciseId" type="hidden" value={exercise.id} />}
+      {targetGymId && <input name="targetGymId" type="hidden" value={targetGymId} />}
 
       {/* Derived video URL hidden fields — read by the server action */}
       <input name="videoUrl"       type="hidden" value={deltabolicEntry?.url ?? ""} />

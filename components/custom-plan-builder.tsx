@@ -45,10 +45,12 @@ const ALL_MUSCLE_GROUPS = [
 export function CustomPlanBuilder({
   catalog,
   initialProgram,
+  targetGymId,
   onSuccess
 }: {
   catalog: CatalogGroup[];
   initialProgram?: WorkoutProgram;
+  targetGymId?: string;
   onSuccess?: () => void;
 }) {
   const isEditMode = Boolean(initialProgram);
@@ -188,6 +190,9 @@ export function CustomPlanBuilder({
     formData.set("days", daysJson);
     formData.set("difficulty", "beginner");
     formData.set("restSeconds", "75");
+    if (targetGymId) {
+      formData.set("targetGymId", targetGymId);
+    }
 
     const action = isEditMode ? updateCustomWorkoutProgram : createCustomWorkoutProgram;
     if (isEditMode && initialProgram) {

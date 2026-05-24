@@ -10,18 +10,18 @@ function linksForRole(role: Role) {
     return [
       { href: "/admin", label: "Admin", icon: Settings },
       { href: "/admin/gyms", label: "Gyms", icon: UsersRound },
+      { href: "/admin/exercises", label: "Exercises", icon: Dumbbell },
       { href: "/admin/inbox", label: "Inbox", icon: Mail },
-      { href: "/activity", label: "Activity", icon: Activity },
       { href: "/profile", label: "Profile", icon: UserRound }
     ];
   }
 
   if (role === "owner") {
     return [
-      { href: "/owner", label: "Home", icon: Dumbbell },
+      { href: "/owner", label: "Dashboard", icon: Dumbbell },
       { href: "/owner/members", label: "Members", icon: UsersRound },
       { href: "/owner/training", label: "Training", icon: Calendar },
-      { href: "/owner/programs", label: "Plans", icon: Dumbbell },
+      { href: "/owner/programs", label: "Programs", icon: Dumbbell },
       { href: "/profile", label: "Profile", icon: UserRound }
     ];
   }

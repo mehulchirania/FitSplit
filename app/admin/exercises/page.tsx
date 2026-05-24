@@ -40,15 +40,38 @@ export default async function AdminExercisesPage({
   const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
 
   const [
-    { exercises, catalog: exerciseCatalogByMuscle },
+    selectedCatalog,
+    allGymCatalogs,
     { requests: pendingRequests },
   ] = await Promise.all([
     getExerciseCatalog(selectedGymId),
+    Promise.all(
+      gyms.map(async (gym) => ({
+        gym,
+        catalog: await getExerciseCatalog(gym.id),
+      }))
+    ),
     getPendingExerciseRequests(),
   ]);
 
+  const { exercises, catalog: exerciseCatalogByMuscle } = selectedCatalog;
   const predefined = exercises.filter((e) => e.source !== "custom");
-  const custom = exercises.filter((e) => e.source === "custom");
+  const customByGym = allGymCatalogs
+    .map(({ gym, catalog }) => {
+      const customExercises = catalog.exercises.filter((e) => e.source === "custom");
+      return {
+        gym,
+        exercises: customExercises,
+        grouped: catalog.catalog
+          .map((g) => ({
+            ...g,
+            exercises: g.exercises.filter((e) => e.source === "custom"),
+          }))
+          .filter((g) => g.exercises.length > 0),
+      };
+    })
+    .filter((entry) => entry.exercises.length > 0);
+  const customCount = customByGym.reduce((sum, entry) => sum + entry.exercises.length, 0);
 
   return (
     <main className="page">
@@ -92,7 +115,7 @@ export default async function AdminExercisesPage({
             </span>
             <span>
               Custom
-              <strong>{custom.length}</strong>
+              <strong>{customCount}</strong>
             </span>
             <span>
               With tutorial
@@ -263,18 +286,28 @@ export default async function AdminExercisesPage({
       />
 
       {/* ── Custom exercises ───────────────────────────────────────── */}
-      {custom.length > 0 && (
-        <AdminCatalogSection
-          exercises={custom}
-          exerciseCatalogByMuscle={exerciseCatalogByMuscle
-            .map((g) => ({
-              ...g,
-              exercises: g.exercises.filter((e) => e.source === "custom"),
-            }))
-            .filter((g) => g.exercises.length > 0)}
-          sectionCount={custom.length}
-          sectionLabel="Custom exercises"
-        />
+      {customByGym.length > 0 && (
+        <section className="catalog-section">
+          <div className="catalog-section-header">
+            <div>
+              <h2 className="catalog-section-title">Custom exercises by gym</h2>
+              <p style={{ color: "var(--text-soft)", margin: "4px 0 0" }}>
+                Gym-scoped movements stay isolated from the global FitSplit catalog.
+              </p>
+            </div>
+            <span className="status-pill status-neutral">{customCount} custom</span>
+          </div>
+
+          {customByGym.map((entry) => (
+            <AdminCatalogSection
+              exercises={entry.exercises}
+              exerciseCatalogByMuscle={entry.grouped}
+              key={entry.gym.id}
+              sectionCount={entry.exercises.length}
+              sectionLabel={entry.gym.name}
+            />
+          ))}
+        </section>
       )}
 
       {exerciseCatalogByMuscle.length === 0 && (

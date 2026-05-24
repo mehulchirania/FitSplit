@@ -1,18 +1,23 @@
 import Link from "next/link";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Activity, Mail, Dumbbell } from "@/components/icons";
+import { requireAuth } from "@/lib/auth";
 import { submitContactMessage } from "@/lib/firebase/actions";
-
-const socialLinks = [
-  { label: "Instagram", mark: "IG", href: "https://www.instagram.com" },
-  { label: "LinkedIn", mark: "IN", href: "https://www.linkedin.com" },
-  { label: "YouTube", mark: "YT", href: "https://www.youtube.com" },
-  { label: "Email", mark: "@", href: "mailto:mehul@example.com" }
-];
+import { getGymDetail } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
 export default async function AboutPage() {
+  const currentUser = await requireAuth();
+  const { gym } = await getGymDetail(currentUser.gymId);
+
+  const socialLinks = [
+    gym?.instagram ? { label: "Instagram", mark: "IG", href: gym.instagram.startsWith("http") ? gym.instagram : `https://instagram.com/${gym.instagram.replace(/^@/, "")}` } : null,
+    gym?.linkedin ? { label: "LinkedIn", mark: "IN", href: gym.linkedin.startsWith("http") ? gym.linkedin : `https://linkedin.com/company/${gym.linkedin}` } : null,
+    gym?.youtube ? { label: "YouTube", mark: "YT", href: gym.youtube.startsWith("http") ? gym.youtube : `https://youtube.com/${gym.youtube}` } : null,
+    gym?.email ? { label: "Email", mark: "@", href: `mailto:${gym.email}` } : null
+  ].filter(Boolean) as { label: string; mark: string; href: string }[];
+
   return (
     <main className="page">
       <section className="dashboard-header compact-header">
@@ -30,7 +35,7 @@ export default async function AboutPage() {
             <h2>
               <Activity /> Gym workspace
             </h2>
-            <span className="status-pill status-active">Sri Shakthi Hanuman Gym</span>
+            <span className="status-pill status-active">{gym?.name ?? "Your Gym"}</span>
           </div>
           <p>
             Built to support active gym workspaces where AI acts like a

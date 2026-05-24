@@ -10,7 +10,7 @@ import {
 import { initialFormActionState } from "@/types/action-state";
 import type { PTSession } from "@/types/domain";
 
-/** Inline action buttons for a PT session card. */
+/** Inline action buttons for a PT plan card. */
 export function PTSessionActions({
   session,
   showLiveLink = false
@@ -27,13 +27,8 @@ export function PTSessionActions({
 
   const anyPending = startPending || completePending || cancelPending;
 
-  // Refresh after any successful action
-  const prevStart = startState.status;
-  const prevComplete = completeState.status;
-  const prevCancel = cancelState.status;
-
   if (
-    (prevStart === "success" || prevComplete === "success" || prevCancel === "success") &&
+    (startState.status === "success" || completeState.status === "success" || cancelState.status === "success") &&
     !anyPending
   ) {
     router.refresh();
@@ -48,35 +43,24 @@ export function PTSessionActions({
     <div className="pt-session-actions">
       {session.status === "scheduled" && (
         <form action={startAction}>
-          <input type="hidden" name="ptSessionId" value={session.id} />
-          <button
-            className="button button-primary pt-action-btn"
-            disabled={anyPending}
-            type="submit"
-          >
-            {startPending ? "Starting…" : "▶ Start"}
+          <input name="ptSessionId" type="hidden" value={session.id} />
+          <button className="button button-primary pt-action-btn" disabled={anyPending} type="submit">
+            {startPending ? "Activating..." : "Activate plan"}
           </button>
         </form>
       )}
 
       {session.status === "active" && showLiveLink && (
-        <a
-          className="button button-primary pt-action-btn"
-          href={`/owner/training/session/${session.id}`}
-        >
-          Open console →
+        <a className="button button-primary pt-action-btn" href={`/owner/training/session/${session.id}`}>
+          Open PT console
         </a>
       )}
 
       {session.status === "active" && !showLiveLink && (
         <form action={completeAction}>
-          <input type="hidden" name="ptSessionId" value={session.id} />
-          <button
-            className="button button-secondary pt-action-btn"
-            disabled={anyPending}
-            type="submit"
-          >
-            {completePending ? "Completing…" : "✓ Complete"}
+          <input name="ptSessionId" type="hidden" value={session.id} />
+          <button className="button button-secondary pt-action-btn" disabled={anyPending} type="submit">
+            {completePending ? "Completing..." : "Complete plan"}
           </button>
         </form>
       )}
@@ -88,33 +72,25 @@ export function PTSessionActions({
           onClick={() => setShowCancel(true)}
           type="button"
         >
-          Cancel
+          Cancel plan
         </button>
       )}
 
       {showCancel && (
         <form action={cancelAction} className="pt-cancel-inline">
-          <input type="hidden" name="ptSessionId" value={session.id} />
+          <input name="ptSessionId" type="hidden" value={session.id} />
           <input
             className="pt-cancel-reason"
             maxLength={200}
             name="cancelReason"
+            onChange={(event) => setCancelReason(event.target.value)}
             placeholder="Reason (optional)"
             value={cancelReason}
-            onChange={(e) => setCancelReason(e.target.value)}
           />
-          <button
-            className="button button-danger pt-action-btn"
-            disabled={anyPending}
-            type="submit"
-          >
-            {cancelPending ? "Cancelling…" : "Confirm cancel"}
+          <button className="button button-danger pt-action-btn" disabled={anyPending} type="submit">
+            {cancelPending ? "Cancelling..." : "Confirm cancel"}
           </button>
-          <button
-            className="button button-secondary pt-action-btn"
-            onClick={() => setShowCancel(false)}
-            type="button"
-          >
+          <button className="button button-secondary pt-action-btn" onClick={() => setShowCancel(false)} type="button">
             Back
           </button>
         </form>

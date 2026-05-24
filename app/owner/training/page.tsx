@@ -6,6 +6,8 @@ import { PTSessionActions } from "@/components/pt-session-actions";
 import { requireRole } from "@/lib/auth";
 import {
   getAllPTSessionsForGym,
+  getExerciseCatalog,
+  getGymWorkspaces,
   getMembers,
   getTrainersForGym
 } from "@/lib/firebase/read-models";
@@ -29,33 +31,48 @@ const STATUS_PILL: Record<PTSession["status"], string> = {
   cancelled: "status-inactive"
 };
 
-function formatDateTime(iso: string) {
+function formatPlanRange(session: PTSession) {
+  if (session.planStartDate) {
+    return session.planEndDate
+      ? `${session.planStartDate} to ${session.planEndDate}`
+      : session.planStartDate;
+  }
   try {
     return new Intl.DateTimeFormat("en-IN", {
       day: "numeric",
       month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(new Date(iso));
+      year: "numeric"
+    }).format(new Date(session.scheduledAt));
   } catch {
-    return iso;
+    return session.scheduledAt;
   }
+}
+
+function formatPlanDuration(session: PTSession) {
+  if (session.planDurationDays) {
+    return `${session.planDurationDays} day${session.planDurationDays === 1 ? "" : "s"}`;
+  }
+  return `${session.durationMinutes} min`;
 }
 
 export default async function OwnerTrainingPage({
   searchParams
 }: {
-  searchParams: Promise<{ status?: string; trainerId?: string; memberId?: string; book?: string }>;
+  searchParams: Promise<{ status?: string; trainerId?: string; memberId?: string; book?: string; gym?: string }>;
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
-  const gymId = currentUser.gymId;
-  const { status, trainerId, memberId, book } = await searchParams;
+  const { status, trainerId, memberId, book, gym: gymParam } = await searchParams;
+  const { gyms } = currentUser.role === "admin" ? await getGymWorkspaces() : { gyms: [] };
+  const gymId = currentUser.role === "admin"
+    ? (gymParam ?? currentUser.gymId ?? gyms[0]?.id ?? "shg")
+    : (currentUser.gymId ?? "shg");
+  const selectedGym = gyms.find((gym) => gym.id === gymId);
 
-  const [sessions, { members }, trainers] = await Promise.all([
+  const [sessions, { members }, trainers, { exercises }] = await Promise.all([
     getAllPTSessionsForGym(gymId),
     getMembers(gymId),
-    getTrainersForGym(gymId)
+    getTrainersForGym(gymId),
+    getExerciseCatalog(gymId)
   ]);
 
   // Derive counts per status for the filter tabs
@@ -81,25 +98,41 @@ export default async function OwnerTrainingPage({
 
   return (
     <main className="page">
-      <section className="dashboard-header compact-header">
+      <section className="dashboard-header compact-header pt-page-hero">
         <div className="header-copy">
           <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Training" }]} />
-          <h1>PT Schedule</h1>
-          <p>Book, manage, and monitor all personal training sessions. Any trainer can cover any session.</p>
+          <h1>PT plans</h1>
+          <p>Assign monthly personal-training plans without touching the member&apos;s normal workout assignment.</p>
+          {currentUser.role === "admin" && gyms.length > 0 && (
+            <div className="quick-actions" style={{ marginTop: 16 }}>
+              {gyms.map((gym) => (
+                <Link
+                  className={`button ${gym.id === gymId ? "button-primary" : "button-secondary"}`}
+                  href={`/owner/training?gym=${gym.id}`}
+                  key={gym.id}
+                >
+                  {gym.name}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
-        <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 14 }}>
-          <article className="ui-card blue">
-            <p className="tip" style={{ fontSize: "1.2em" }}><Calendar /> {counts.scheduled ?? 0}</p>
-            <p className="second-text">Scheduled</p>
+        <aside className="pt-hero-stats">
+          <article className="pt-stat-card">
+            <Calendar />
+            <strong>{(counts.scheduled ?? 0) + (counts.active ?? 0)}</strong>
+            <span>Current PT plans</span>
           </article>
-          <article className="ui-card green">
-            <p className="tip" style={{ fontSize: "1.2em" }}><Dumbbell /> {counts.active ?? 0}</p>
-            <p className="second-text">Active now</p>
+          <article className="pt-stat-card">
+            <Dumbbell />
+            <strong>{sessions.filter((session) => session.plannedExercises?.length).length}</strong>
+            <span>Exercise plans</span>
           </article>
-          <article className="ui-card purple">
-            <p className="tip" style={{ fontSize: "1.2em" }}><UsersRound /> {trainers.length}</p>
-            <p className="second-text">Trainers</p>
+          <article className="pt-stat-card">
+            <UsersRound />
+            <strong>{trainers.length}</strong>
+            <span>PT staff</span>
           </article>
         </aside>
       </section>
@@ -108,9 +141,11 @@ export default async function OwnerTrainingPage({
       <section className="list-panel pt-booking-panel">
         <details open={book === "1"}>
           <summary className="pt-booking-summary">
-            <Calendar /> Book a new PT session
+            <Calendar /> Assign a PT plan
           </summary>
           <PTBookingForm
+            gymId={gymId}
+            exercises={exercises}
             members={members}
             trainers={trainers}
             preselectedMemberId={memberId}
@@ -118,6 +153,12 @@ export default async function OwnerTrainingPage({
           />
         </details>
       </section>
+
+      {currentUser.role === "admin" && selectedGym && (
+        <p className="pt-admin-context">
+          Managing PT plans for {selectedGym.name}.
+        </p>
+      )}
 
       {/* Trainer quick-links */}
       {trainers.length > 0 && (
@@ -171,9 +212,9 @@ export default async function OwnerTrainingPage({
       {filtered.length === 0 ? (
         <div className="list-panel" style={{ textAlign: "center", padding: "48px 24px" }}>
           <Calendar />
-          <h2 style={{ marginTop: 8 }}>No sessions found</h2>
+          <h2 style={{ marginTop: 8 }}>No PT plans found</h2>
           <p style={{ color: "var(--text-soft)" }}>
-            {activeFilter === "all" ? "No PT sessions have been booked yet." : `No ${activeFilter} sessions.`}
+            {activeFilter === "all" ? "No PT plans have been assigned yet." : `No ${activeFilter} PT plans.`}
           </p>
         </div>
       ) : (
@@ -185,8 +226,8 @@ export default async function OwnerTrainingPage({
                   <span className={`status-pill ${STATUS_PILL[session.status]}`}>
                     {STATUS_LABELS[session.status]}
                   </span>
-                  <span className="pt-card-date">{formatDateTime(session.scheduledAt)}</span>
-                  <span className="pt-card-duration">{session.durationMinutes} min</span>
+                  <span className="pt-card-date">{formatPlanRange(session)}</span>
+                  <span className="pt-card-duration">{formatPlanDuration(session)}</span>
                 </div>
                 {session.status === "active" && (
                   <Link

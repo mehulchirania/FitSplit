@@ -1,3 +1,4 @@
+import { Breadcrumb } from "@/components/breadcrumb";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
@@ -15,8 +16,8 @@ export default async function MemberExerciseLibraryPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "Exercise Library" }]} />
-          <h1>Exercise Library</h1>
+          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "Exercise Catalog" }]} />
+          <h1>Exercise Catalog</h1>
           <p>
             Browse the full library of exercises and watch demonstration videos carefully curated by your gym.
           </p>
@@ -79,22 +80,3 @@ export default async function MemberExerciseLibraryPage() {
   );
 }
 
-// Simple Breadcrumb component inline for members since the main Breadcrumb might be admin-styled or we can import it
-function Breadcrumb({ crumbs }: { crumbs: { label: string, href?: string }[] }) {
-    return (
-        <nav aria-label="Breadcrumb" className="breadcrumb">
-            <ol>
-                {crumbs.map((crumb, i) => (
-                    <li key={i}>
-                        {crumb.href ? (
-                            <a href={crumb.href}>{crumb.label}</a>
-                        ) : (
-                            <span aria-current="page">{crumb.label}</span>
-                        )}
-                        {i < crumbs.length - 1 && <span className="separator">/</span>}
-                    </li>
-                ))}
-            </ol>
-        </nav>
-    );
-}

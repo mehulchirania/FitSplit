@@ -34,7 +34,7 @@ export function MemberRow({
           )}
         </div>
         <div className="mcard-meta">
-          {member.username && <span className="mcard-username">@{member.username}</span>}
+          {member.username && <span className="mcard-username">{member.username.includes("@") ? member.username : `@${member.username}`}</span>}
           {member.goal && <span className="mcard-goal">{member.goal}</span>}
           {member.phone && (
             <a

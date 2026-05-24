@@ -35,7 +35,7 @@ export default async function ExerciseCatalogPage() {
           <Breadcrumb
             crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Exercise Catalog" }]}
           />
-          <h1>Exercise library</h1>
+          <h1>Exercise Catalog</h1>
           <p>
             Manage your gym&apos;s video demos and control which tutorial videos your members see.
             Tutorial videos are provided by FitSplit — use the toggles to show or hide them per exercise.
@@ -100,7 +100,6 @@ export default async function ExerciseCatalogPage() {
       <section className="list-panel catalog-add-section" id="add-exercise">
         <div className="panel-title">
           <h2>Add new exercise</h2>
-          <span className="status-pill status-neutral">Owner only</span>
         </div>
         <div className="notification-list">
           <ExerciseEditForm action={createCatalogExercise} isCreate isOwner />

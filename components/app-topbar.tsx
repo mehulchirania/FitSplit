@@ -152,7 +152,7 @@ export function AppTopbar({
             )}
           </button>
           <Link className="brand" href={role === "admin" ? "/admin" : role === "owner" ? "/owner" : role === "member" ? "/member" : "/"}>
-            {gymLogoUrl ? (
+            {gymLogoUrl && role !== "admin" ? (
               <span className="gym-brand-lockup" aria-label={`FitSplit x ${gymName ?? "gym"}`}>
                 <span className="theme-logo brand-icon-wrap" aria-hidden="true">
                   <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
@@ -167,7 +167,7 @@ export function AppTopbar({
                 <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
               </span>
             )}
-            <strong className={gymLogoUrl ? "brand-wordmark brand-wordmark--with-gym" : "brand-wordmark"}>
+            <strong className={gymLogoUrl && role !== "admin" ? "brand-wordmark brand-wordmark--with-gym" : "brand-wordmark"}>
               FitSplit
             </strong>
           </Link>
@@ -295,6 +295,12 @@ export function AppTopbar({
                   <Link href="/admin/gyms" onClick={() => setIsDrawerOpen(false)}>
                     Gyms
                   </Link>
+                  <Link href="/admin/exercises" onClick={() => setIsDrawerOpen(false)}>
+                    Exercises
+                  </Link>
+                  <Link href="/admin/programs" onClick={() => setIsDrawerOpen(false)}>
+                    Programs
+                  </Link>
                   <Link
                     href="/admin/inbox"
                     onClick={() => setIsDrawerOpen(false)}
@@ -342,10 +348,10 @@ export function AppTopbar({
                     Workout history
                   </Link>
                   <Link href="/member/pt-history" onClick={() => setIsDrawerOpen(false)}>
-                    PT Sessions
+                    PT Plans
                   </Link>
                   <Link href="/member/exercises" onClick={() => setIsDrawerOpen(false)}>
-                    Exercise Library
+                    Exercise Catalog
                   </Link>
                   <Link href="/profile" onClick={() => setIsDrawerOpen(false)}>
                     My Profile

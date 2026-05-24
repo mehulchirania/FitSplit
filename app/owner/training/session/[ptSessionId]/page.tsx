@@ -26,13 +26,14 @@ export default async function PTSessionConsolePage({
   const currentUser = await requireRole(["admin", "owner"]);
   const { ptSessionId } = await params;
 
-  const [session, liftLogs, { exercises }] = await Promise.all([
-    getPTSessionDetail(ptSessionId),
-    getPTLiftLogsForSession(currentUser.gymId, ptSessionId),
-    getExerciseCatalog(currentUser.gymId)
-  ]);
-
+  const session = await getPTSessionDetail(ptSessionId);
   if (!session) notFound();
+  if (currentUser.role !== "admin" && currentUser.gymId !== session.gymId) notFound();
+
+  const [liftLogs, { exercises }] = await Promise.all([
+    getPTLiftLogsForSession(session.gymId, ptSessionId),
+    getExerciseCatalog(session.gymId)
+  ]);
 
   return (
     <main className="page">

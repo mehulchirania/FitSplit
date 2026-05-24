@@ -1,136 +1,338 @@
 "use client";
 
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useMemo, useRef, useState } from "react";
+import { Plus, X } from "@/components/icons";
 import { bookPTSession } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
-import type { Member } from "@/types/domain";
+import type { Exercise, Member, WorkoutExercise } from "@/types/domain";
 
-const DURATIONS = [30, 45, 60, 90, 120] as const;
+type PersonOption = Pick<Member, "id" | "fullName" | "username" | "staffType">;
+type PlannedExercise = WorkoutExercise & { localId: string };
 
-/** Formats a Date to the value required by <input type="datetime-local"> */
-function toDatetimeLocal(d: Date) {
+function toDateInput(d: Date) {
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-/** Default slot = tomorrow at 6 AM */
-function defaultScheduledAt() {
+function defaultPlanStartDate() {
   const d = new Date();
-  d.setDate(d.getDate() + 1);
-  d.setHours(6, 0, 0, 0);
-  return toDatetimeLocal(d);
+  return toDateInput(d);
+}
+
+function personLabel(person: PersonOption) {
+  const username = person.username ? ` · ${person.username}` : "";
+  const staffType = person.staffType ? ` · ${person.staffType}` : "";
+  return `${person.fullName}${username}${staffType}`;
+}
+
+function resolvePerson(input: string, people: PersonOption[]) {
+  const query = input.trim().toLowerCase();
+  return people.find((person) =>
+    person.id.toLowerCase() === query ||
+    person.fullName.toLowerCase() === query ||
+    person.username?.toLowerCase() === query ||
+    personLabel(person).toLowerCase() === query
+  );
+}
+
+function nextLocalId() {
+  return Math.random().toString(36).slice(2, 9);
 }
 
 export function PTBookingForm({
+  gymId,
   members,
   trainers,
+  exercises,
   preselectedMemberId,
   preselectedTrainerId,
   onSuccess
 }: {
-  members: Pick<Member, "id" | "fullName">[];
-  trainers: Pick<Member, "id" | "fullName">[];
+  gymId: string;
+  members: PersonOption[];
+  trainers: PersonOption[];
+  exercises: Exercise[];
   preselectedMemberId?: string;
   preselectedTrainerId?: string;
   onSuccess?: () => void;
 }) {
   const [state, formAction, isPending] = useActionState(bookPTSession, initialFormActionState);
   const formRef = useRef<HTMLFormElement>(null);
-  const [selectedMemberId, setSelectedMemberId] = useState(preselectedMemberId ?? "");
-  const [selectedTrainerId, setSelectedTrainerId] = useState(preselectedTrainerId ?? "");
 
-  // Reset form on success
+  const initialMember = members.find((m) => m.id === preselectedMemberId);
+  const initialTrainer = trainers.find((t) => t.id === preselectedTrainerId);
+  const [memberSearch, setMemberSearch] = useState(initialMember ? personLabel(initialMember) : "");
+  const [trainerSearch, setTrainerSearch] = useState(initialTrainer ? personLabel(initialTrainer) : "");
+  const [exerciseSearch, setExerciseSearch] = useState("");
+  const [selectedExerciseId, setSelectedExerciseId] = useState(exercises[0]?.id ?? "");
+  const [sets, setSets] = useState("3");
+  const [reps, setReps] = useState("8-12");
+  const [exerciseNotes, setExerciseNotes] = useState("");
+  const [plannedExercises, setPlannedExercises] = useState<PlannedExercise[]>([]);
+
+  const selectedMember = resolvePerson(memberSearch, members);
+  const selectedTrainer = resolvePerson(trainerSearch, trainers);
+  const exerciseById = useMemo(
+    () => new Map(exercises.map((exercise) => [exercise.id, exercise] as const)),
+    [exercises]
+  );
+
+  const filteredExercises = useMemo(() => {
+    const query = exerciseSearch.trim().toLowerCase();
+    const filtered = query
+      ? exercises.filter((exercise) =>
+          exercise.name.toLowerCase().includes(query) ||
+          exercise.muscleGroup.toLowerCase().includes(query) ||
+          exercise.equipment.toLowerCase().includes(query)
+        )
+      : exercises;
+    return filtered.slice(0, 80);
+  }, [exerciseSearch, exercises]);
+
+  const plannedExercisesPayload = JSON.stringify(
+    plannedExercises.map(({ localId: _localId, ...entry }) => entry)
+  );
+
   const prevStatus = useRef(state.status);
   if (prevStatus.current !== state.status) {
     prevStatus.current = state.status;
     if (state.status === "success") {
       formRef.current?.reset();
-      setSelectedMemberId(preselectedMemberId ?? "");
-      setSelectedTrainerId(preselectedTrainerId ?? "");
+      setMemberSearch(initialMember ? personLabel(initialMember) : "");
+      setTrainerSearch(initialTrainer ? personLabel(initialTrainer) : "");
+      setExerciseSearch("");
+      setSelectedExerciseId(exercises[0]?.id ?? "");
+      setSets("3");
+      setReps("8-12");
+      setExerciseNotes("");
+      setPlannedExercises([]);
       onSuccess?.();
     }
   }
 
-  const selectedMember = members.find((m) => m.id === selectedMemberId);
-  const selectedTrainer = trainers.find((t) => t.id === selectedTrainerId);
+  function addExercise() {
+    if (!selectedExerciseId) return;
+    setPlannedExercises((current) => [
+      ...current,
+      {
+        localId: nextLocalId(),
+        exerciseId: selectedExerciseId,
+        sets: Math.max(1, Number(sets) || 3),
+        reps: reps.trim() || "8-12",
+        notes: exerciseNotes.trim() || undefined
+      }
+    ]);
+    setExerciseNotes("");
+  }
+
+  function updatePlannedExercise(localId: string, patch: Partial<WorkoutExercise>) {
+    setPlannedExercises((current) =>
+      current.map((entry) => (entry.localId === localId ? { ...entry, ...patch } : entry))
+    );
+  }
 
   return (
     <form action={formAction} className="pt-booking-form" ref={formRef}>
-      {/* Hidden resolved names for display on session cards */}
-      <input type="hidden" name="memberName" value={selectedMember?.fullName ?? ""} />
-      <input type="hidden" name="trainerName" value={selectedTrainer?.fullName ?? ""} />
+      <input name="gymId" type="hidden" value={gymId} />
+      <input name="memberId" type="hidden" value={selectedMember?.id ?? ""} />
+      <input name="memberName" type="hidden" value={selectedMember?.fullName ?? ""} />
+      <input name="trainerId" type="hidden" value={selectedTrainer?.id ?? ""} />
+      <input name="trainerName" type="hidden" value={selectedTrainer?.fullName ?? ""} />
+      <input name="plannedExercises" type="hidden" value={plannedExercisesPayload} />
 
-      <div className="form-grid">
+      <div className="pt-assignment-grid">
         <label>
           Member
-          <select
-            name="memberId"
-            required
-            value={selectedMemberId}
-            onChange={(e) => setSelectedMemberId(e.target.value)}
-          >
-            <option value="">— Select member —</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>{m.fullName}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Trainer
-          <select
-            name="trainerId"
-            required
-            value={selectedTrainerId}
-            onChange={(e) => setSelectedTrainerId(e.target.value)}
-          >
-            <option value="">— Select trainer —</option>
-            {trainers.map((t) => (
-              <option key={t.id} value={t.id}>{t.fullName}</option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          Date &amp; time
           <input
-            defaultValue={defaultScheduledAt()}
-            name="scheduledAt"
+            autoComplete="off"
+            list="pt-member-options"
+            name="memberSearch"
+            onChange={(event) => setMemberSearch(event.target.value)}
+            placeholder="Search member by name or username"
             required
-            type="datetime-local"
+            value={memberSearch}
           />
+          <datalist id="pt-member-options">
+            {members.map((member) => (
+              <option key={member.id} value={personLabel(member)} />
+            ))}
+          </datalist>
+          {memberSearch && !selectedMember && (
+            <span className="pt-field-hint is-error">Choose a valid member from the list.</span>
+          )}
         </label>
 
         <label>
-          Duration
-          <select defaultValue="60" name="durationMinutes">
-            {DURATIONS.map((d) => (
-              <option key={d} value={d}>{d} min</option>
+          Trainer / owner
+          <input
+            autoComplete="off"
+            list="pt-trainer-options"
+            name="trainerSearch"
+            onChange={(event) => setTrainerSearch(event.target.value)}
+            placeholder="Search trainer or owner"
+            required
+            value={trainerSearch}
+          />
+          <datalist id="pt-trainer-options">
+            {trainers.map((trainer) => (
+              <option key={trainer.id} value={personLabel(trainer)} />
             ))}
-          </select>
+          </datalist>
+          {trainerSearch && !selectedTrainer && (
+            <span className="pt-field-hint is-error">Choose a valid trainer or owner from the list.</span>
+          )}
         </label>
 
-        <label className="form-grid-full">
-          Session notes / goals <span className="optional-label">(optional)</span>
-          <textarea
-            maxLength={400}
-            name="notes"
-            placeholder="e.g. Focus on lower body. Member has mild knee pain — avoid deep squats."
-            rows={2}
-          />
+        <label>
+          PT starts
+          <input defaultValue={defaultPlanStartDate()} name="planStartDate" required type="date" />
+        </label>
+
+        <label>
+          Plan duration
+          <input defaultValue="30" inputMode="numeric" min="1" max="365" name="planDurationDays" required type="number" />
+          <span className="pt-field-hint">Default is 30 days. Change it for shorter or longer PT packages.</span>
         </label>
       </div>
+
+      <div className="pt-plan-builder">
+        <div className="pt-plan-builder-header">
+          <div>
+            <h3>PT plan exercises</h3>
+            <p>This is separate from the member&apos;s normal assigned workout program.</p>
+          </div>
+          <span className="status-pill status-neutral">
+            {plannedExercises.length} planned
+          </span>
+        </div>
+
+        <div className="pt-exercise-picker">
+          <label>
+            Search exercise
+            <input
+              autoComplete="off"
+              onChange={(event) => setExerciseSearch(event.target.value)}
+              placeholder="Search by exercise, muscle, equipment"
+              value={exerciseSearch}
+            />
+          </label>
+          <label>
+            Exercise
+            <select
+              onChange={(event) => setSelectedExerciseId(event.target.value)}
+              value={selectedExerciseId}
+            >
+              {filteredExercises.map((exercise) => (
+                <option key={exercise.id} value={exercise.id}>
+                  {exercise.name} · {exercise.muscleGroup}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Sets
+            <input
+              inputMode="numeric"
+              min="1"
+              onChange={(event) => setSets(event.target.value)}
+              type="number"
+              value={sets}
+            />
+          </label>
+          <label>
+            Reps
+            <input
+              onChange={(event) => setReps(event.target.value)}
+              placeholder="8-12"
+              value={reps}
+            />
+          </label>
+          <label className="form-grid-full">
+            Exercise notes <span className="optional-label">(optional)</span>
+            <input
+              maxLength={160}
+              onChange={(event) => setExerciseNotes(event.target.value)}
+              placeholder="Tempo, range limits, cues"
+              value={exerciseNotes}
+            />
+          </label>
+          <button className="button button-secondary" onClick={addExercise} type="button">
+            <Plus /> Add exercise
+          </button>
+        </div>
+
+        {plannedExercises.length > 0 ? (
+          <div className="pt-planned-list">
+            {plannedExercises.map((entry) => {
+              const exercise = exerciseById.get(entry.exerciseId);
+              return (
+                <article className="pt-planned-row" key={entry.localId}>
+                  <div>
+                    <strong>{exercise?.name ?? entry.exerciseId}</strong>
+                    <span>{exercise?.muscleGroup ?? "Exercise"}</span>
+                  </div>
+                  <input
+                    aria-label="Sets"
+                    inputMode="numeric"
+                    min="1"
+                    onChange={(event) =>
+                      updatePlannedExercise(entry.localId, { sets: Number(event.target.value) || 1 })
+                    }
+                    type="number"
+                    value={entry.sets ?? 3}
+                  />
+                  <input
+                    aria-label="Reps"
+                    onChange={(event) =>
+                      updatePlannedExercise(entry.localId, { reps: event.target.value })
+                    }
+                    value={entry.reps ?? "8-12"}
+                  />
+                  <button
+                    aria-label="Remove exercise"
+                    className="button button-secondary icon-button"
+                    onClick={() =>
+                      setPlannedExercises((current) =>
+                        current.filter((item) => item.localId !== entry.localId)
+                      )
+                    }
+                    type="button"
+                  >
+                    <X />
+                  </button>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="pt-empty-plan">Add at least one exercise to assign a PT plan.</p>
+        )}
+      </div>
+
+      <label className="form-grid-full">
+        PT notes / goals <span className="optional-label">(optional)</span>
+        <textarea
+          maxLength={400}
+          name="notes"
+          placeholder="e.g. 30-day lower body strength block. Member has mild knee pain, avoid deep squat depth."
+          rows={2}
+        />
+      </label>
 
       {state.status === "error" && state.message && (
         <p className="form-message form-message-error" role="alert">{state.message}</p>
       )}
       {state.status === "success" && (
-        <p className="form-message form-message-success" role="status">Session booked successfully.</p>
+        <p className="form-message form-message-success" role="status">PT plan assigned successfully.</p>
       )}
 
       <div className="form-actions">
-        <button className="button button-primary" disabled={isPending} type="submit">
-          {isPending ? "Booking��" : "Book PT session"}
+        <button
+          className="button button-primary"
+          disabled={isPending || !selectedMember || !selectedTrainer || plannedExercises.length === 0}
+          type="submit"
+        >
+          {isPending ? "Assigning..." : "Assign PT plan"}
         </button>
       </div>
     </form>

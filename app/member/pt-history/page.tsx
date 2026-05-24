@@ -33,6 +33,22 @@ function formatDateTime(iso: string) {
   } catch { return iso; }
 }
 
+function formatPlanRange(session: PTSession) {
+  if (session.planStartDate) {
+    return session.planEndDate
+      ? `${session.planStartDate} to ${session.planEndDate}`
+      : session.planStartDate;
+  }
+  return formatDateTime(session.scheduledAt);
+}
+
+function formatPlanDuration(session: PTSession) {
+  if (session.planDurationDays) {
+    return `${session.planDurationDays} day${session.planDurationDays === 1 ? "" : "s"}`;
+  }
+  return `${session.durationMinutes} min`;
+}
+
 function formatTime(iso: string) {
   try {
     return new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
@@ -57,9 +73,9 @@ export default async function MemberPTHistoryPage() {
     <main className="page">
       <section className="dashboard-header compact-header">
         <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "PT Sessions" }]} />
+          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "PT Plans" }]} />
           <h1>Personal training.</h1>
-          <p>Your sessions with your trainer — upcoming bookings and completed history.</p>
+          <p>Your personal-training plans, upcoming work, and completed history.</p>
         </div>
 
         <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 14 }}>
@@ -76,10 +92,10 @@ export default async function MemberPTHistoryPage() {
 
       {sessions.length === 0 ? (
         <div className="list-panel" style={{ textAlign: "center", padding: "48px 24px" }}>
-          <Calendar />
-          <h2 style={{ marginTop: 8 }}>No PT sessions yet</h2>
+          <Calendar className="pt-empty-icon" />
+          <h2 style={{ marginTop: 8 }}>No PT plans yet</h2>
           <p style={{ color: "var(--text-soft)", marginBottom: 16 }}>
-            Your trainer will schedule a personal training session for you.
+            Your trainer will assign a personal-training plan for you.
           </p>
           <Link className="button button-secondary" href="/member">Back to dashboard</Link>
         </div>
@@ -88,7 +104,7 @@ export default async function MemberPTHistoryPage() {
           {upcoming.length > 0 && (
             <section className="list-panel" style={{ padding: 0 }}>
               <div className="panel-title" style={{ padding: "16px 20px 12px", borderBottom: "1px solid var(--border)" }}>
-                <h2>Upcoming sessions</h2>
+                <h2>Current and upcoming PT plans</h2>
               </div>
               {upcoming.map((session) => (
                 <PTSessionHistoryCard key={session.id} session={session} gymId={gymId} />
@@ -99,7 +115,7 @@ export default async function MemberPTHistoryPage() {
           {past.length > 0 && (
             <section className="list-panel" style={{ padding: 0 }}>
               <div className="panel-title" style={{ padding: "16px 20px 12px", borderBottom: "1px solid var(--border)" }}>
-                <h2>Past sessions</h2>
+                <h2>Past PT plans</h2>
               </div>
               {past.map((session) => (
                 <PTSessionHistoryCard key={session.id} session={session} gymId={gymId} />
@@ -137,8 +153,8 @@ async function PTSessionHistoryCard({ session, gymId }: { session: PTSession; gy
           <span className={`status-pill ${STATUS_PILL[session.status]}`}>
             {STATUS_LABELS[session.status]}
           </span>
-          <span className="pt-history-date">{formatDateTime(session.scheduledAt)}</span>
-          <span className="pt-history-duration">{session.durationMinutes} min</span>
+          <span className="pt-history-date">{formatPlanRange(session)}</span>
+          <span className="pt-history-duration">{formatPlanDuration(session)}</span>
         </div>
         <div className="pt-history-trainer">
           <span className="pt-trainer-badge">🏋️ {session.trainerName ?? "Your trainer"}</span>

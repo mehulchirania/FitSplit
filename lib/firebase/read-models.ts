@@ -1594,7 +1594,8 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
     program.days.forEach(day => {
       day.exercises.forEach(we => {
         const ex = exercises.find(e => e.id === we.exerciseId);
-        const name = ex?.name || "Exercise";
+        if (!ex?.name) return; // skip unresolvable exercise IDs (e.g. migration artifacts)
+        const name = ex.name;
 
         // Increment count in slots
         [slots.primary, slots.secondary].forEach(slotId => {
@@ -1665,6 +1666,22 @@ export async function getWorkoutPrograms(gymId?: string) {
 // ─── Personal Training read models ───────────────────────────────────────────
 
 function mapPTSession(docId: string, data: Record<string, unknown>): PTSession {
+  const plannedExercises = Array.isArray(data.plannedExercises)
+    ? data.plannedExercises
+        .map((item) => {
+          const entry = item as Record<string, unknown>;
+          const exerciseId = String(entry.exerciseId ?? "").trim();
+          if (!exerciseId) return null;
+          return {
+            exerciseId,
+            sets: Number(entry.sets ?? 3),
+            reps: String(entry.reps ?? "8-12"),
+            notes: entry.notes ? String(entry.notes) : undefined
+          };
+        })
+        .filter(Boolean) as PTSession["plannedExercises"]
+    : undefined;
+
   return {
     id: String(data.id ?? docId),
     gymId: String(data.gymId ?? ""),
@@ -1674,9 +1691,13 @@ function mapPTSession(docId: string, data: Record<string, unknown>): PTSession {
     trainerName: data.trainerName ? String(data.trainerName) : undefined,
     scheduledAt: String(data.scheduledAt ?? ""),
     durationMinutes: Number(data.durationMinutes ?? 60),
+    planStartDate: data.planStartDate ? String(data.planStartDate) : undefined,
+    planEndDate: data.planEndDate ? String(data.planEndDate) : undefined,
+    planDurationDays: data.planDurationDays ? Number(data.planDurationDays) : undefined,
     status: (data.status ?? "scheduled") as PTSession["status"],
     startedAt: data.startedAt ? String(data.startedAt) : undefined,
     endedAt: data.endedAt ? String(data.endedAt) : undefined,
+    plannedExercises,
     notes: data.notes ? String(data.notes) : undefined,
     cancelReason: data.cancelReason ? String(data.cancelReason) : undefined,
     createdAt: String(data.createdAt ?? ""),
@@ -1801,29 +1822,31 @@ export async function getPTLiftLogsForSession(gymId: string, ptSessionId: string
 }
 
 /**
- * All trainers (staff with staffType "trainer") for a gym.
- * Used to populate the trainer assignment dropdown when booking.
+ * All assignable PT trainers for a gym.
+ * Includes staffType "trainer" and the gym owner, because owners often handle
+ * personal training directly in smaller gyms.
  */
 async function getTrainersForGymUncached(gymId: string): Promise<Member[]> {
   const { db } = getFirebaseAdminServices();
-  const snap = await gymCollection(db, gymId, "staff")
-    .where("staffType", "==", "trainer")
+  const scopedSnap = await gymCollection(db, gymId, "staff")
+    .where("role", "==", "owner")
     .get();
-  return snap.docs.map((d) => {
-    const data = d.data() as Record<string, unknown>;
-    return {
-      id: String(data.id ?? d.id),
-      fullName: String(data.fullName ?? ""),
-      email: String(data.email ?? ""),
-      phone: String(data.phone ?? ""),
-      joinedAt: String(data.joinedAt ?? data.createdAt ?? ""),
-      avatarInitials: String(data.avatarInitials ?? String(data.fullName ?? "").slice(0, 2).toUpperCase()),
-      goal: String(data.goal ?? ""),
-      isActive: Boolean(data.isActive ?? true),
-      username: data.username ? String(data.username) : undefined,
-      staffType: "trainer" as const
-    };
-  });
+  const rootSnap = scopedSnap.empty
+    ? await db
+        .collection(collectionPaths.authProfiles)
+        .where("defaultGymId", "==", gymId)
+        .where("role", "==", "owner")
+        .get()
+    : null;
+
+  const docs = scopedSnap.empty && rootSnap ? rootSnap.docs : scopedSnap.docs;
+  return docs
+    .map((d) => mapProfileToMember(d.id, d.data() as Record<string, unknown>))
+    .filter((staff) => staff.isActive !== false && staff.staffType !== "staff")
+    .sort((a, b) => {
+      if (a.staffType !== b.staffType) return a.staffType === "owner" ? -1 : 1;
+      return a.fullName.localeCompare(b.fullName);
+    });
 }
 
 export async function getTrainersForGym(gymId: string): Promise<Member[]> {

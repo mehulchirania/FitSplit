@@ -31,7 +31,7 @@ function exerciseCount(program: WorkoutProgram) {
 }
 
 function dayExerciseNames(day: WorkoutDay, names: Map<string, string>) {
-  return day.exercises.map((item) => names.get(item.exerciseId) ?? item.exerciseId);
+  return day.exercises.map((item) => names.get(item.exerciseId) ?? "Unknown exercise");
 }
 
 function assignmentNames(

@@ -1,5 +1,99 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-24: PT plans and owner dashboard refresh
+
+- Reworked PT from one-off session wording toward owner-assigned PT plans:
+  - PT assignment now stores `planStartDate`, `planDurationDays` (default 30, owner-editable), and calculated `planEndDate`.
+  - Existing `ptSessions` collection is still reused for compatibility, but records now carry PT plan period fields and planned exercises.
+  - Owner PT page copy now explains PT plans are separate from normal workout program assignments so they do not conflict.
+  - `/owner/training?memberId=member-mehul` opens a plan-oriented flow with member/trainer selection, start date, duration days, and exercise selection.
+- Cleaned PT UI:
+  - Reduced vague oversized icons on `/owner/training`.
+  - Replaced large generic cards with compact PT stat cards.
+  - Action labels now say "Assign PT plan", "Activate plan", "Complete plan", and "Cancel plan".
+  - Fixed member PT empty-state icon sizing via `.pt-empty-icon`.
+- Redesigned `/owner` dashboard:
+  - New "Training control room" layout.
+  - PT is a first-class owner action.
+  - Added summary metrics for total members, workout coverage, members on PT, and active workouts.
+  - Added PT snapshot panel, tool cards, priority queue, notifications, notices, and floor load in a cleaner hierarchy.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run build` passed.
+  - Restarted local dev server on `http://localhost:3000`.
+  - Browser smoke test: `/owner/training?memberId=member-mehul` and `/owner` render with no application errors, no console errors, and no horizontal overflow.
+
+## Latest Update - 2026-05-24: E2E Sanity Check — Findings & Fixes
+
+Full browser audit across member, owner, and admin flows. One build error was found and fixed during the audit; remaining issues are tracked below for implementation.
+
+### Build fix (already shipped)
+- **`startPTSession` duplicate `const gymId`** — Two declarations of `const gymId` existed in the same function scope in `lib/firebase/actions.ts`. Removed the premature one (line ~3793) before the session fetch; kept the post-fetch declaration that reads from `session.gymId`. Dev server recompiled clean.
+
+### P0 — Critical / Data Broken
+- ✅ **Raw UUIDs instead of exercise names in `/owner/programs`** — `exercise-list.tsx` now shows "Unknown exercise / Exercise no longer in catalog" placeholder instead of silently hiding the row. `workout-program-gallery.tsx` day-preview falls back to "Unknown exercise" instead of the raw UUID. **Firestore cleanup**: run `node scripts/delete-uuid-programs.mjs` (dry-run) then `node scripts/delete-uuid-programs.mjs --delete` to remove the duplicate UUID-exercise programs.
+- ✅ **"1. Exercise" in Gym Floor Traffic Map** — Fixed in `lib/firebase/read-models.ts`: unresolvable exercise IDs (UUID migration artifacts) are now skipped during slot aggregation instead of falling back to the string `"Exercise"`.
+- ✅ **Duplicate programs (migration artifact)** — Cleanup script written: `scripts/delete-uuid-programs.mjs`. Run with `--delete` flag to remove.
+
+### P1 — Significant UX Breakage
+- ✅ **PT history empty state: oversized Calendar icon** — Fixed: `<Calendar width={48} height={48} />`.
+- ✅ **`/owner/training` missing from desktop nav** — Fixed: added to `components/main-nav.tsx` owner links.
+- ✅ **Admin topbar shows SHG gym logo** — Fixed: `app-topbar.tsx` skips gym logo when `role === "admin"`.
+
+### P2 — Naming & Navigation Inconsistencies
+- ✅ **Admin side drawer missing Exercises and Programs** — Fixed in `app-topbar.tsx`.
+- ✅ **Owner desktop vs mobile nav label mismatches** — Fixed: "Home"→"Dashboard", "Plans"→"Programs" in `mobile-bottom-nav.tsx`; Training added to `main-nav.tsx`.
+- ✅ **Admin desktop vs mobile nav mismatch** — Fixed: mobile nav now has Exercises instead of Activity; Admin label consistent.
+- ✅ **"All members7"** — Fixed: count `<span>` moved outside `<h2>` in `app/owner/members/page.tsx`.
+- ✅ **Member username `@aarav@example.com`** — Fixed: `@` prefix guard in `components/member-row.tsx`.
+- ✅ **`/owner/training` mixes three unrelated functions** — Fixed: removed the `pt-creation-grid` section from `app/owner/training/page.tsx`; create-exercise and create-program panels removed.
+- ✅ **"Reset Pwd" button truncated** — Fixed: "Reset Password" in `app/admin/gyms/[gymId]/page.tsx`.
+- ✅ **"Exercise Library" vs "Exercise Catalog"** — Fixed: heading in `app/owner/exercises/page.tsx` updated to "Exercise Catalog".
+- ✅ **Owner profile shows "Gym Staff" for all staff roles** — Fixed: `app/profile/page.tsx` shows `currentUser.staffType` dynamically.
+
+### P3 — Polish / Dead Code
+- ✅ **4 orphaned components** — Deleted: `hamster-loader.tsx`, `sample-plan-demo.tsx`, `contact-form.tsx`, `workspace-switcher.tsx`.
+- ✅ **Inline Breadcrumb in `app/member/exercises/page.tsx`** — Fixed: now imports shared `@/components/breadcrumb`.
+- ✅ **About page hardcoded content** — Fixed: gym name from Firestore, social links from gym record, removed `mehul@example.com`.
+- ✅ **Landing page hero hardcoded** — Fixed: "Mehul – Week 3" → "Member — Week 3", "SHG Gym" → "My Gym".
+- ✅ **"Owner only" redundant badges** — Removed from Programs and Exercise Catalog pages.
+- ✅ **Emoji headings inconsistent** — Removed from `gym-floor-load-map.tsx`.
+- ✅ **Duplicate program builder on Training page** — Removed from `/owner/training`.
+- ✅ **Miscategorized exercises** — Patch script written: `scripts/patch-exercise-data.mjs`. Run `node scripts/patch-exercise-data.mjs` to fix Hip Thruster / Front Squats / Walking Lunges → Legs and Battle Rope Exercixse typo.
+- ✅ **Footer "Developed with 💪 by Mehul"** — Removed from layout entirely.
+- **Phone number display inconsistency** — Data quality issue in Firestore; no code change possible.
+- ✅ **"SHG Gym Demo" hardcoded labels** — Fixed in `catalog-video-preview.tsx` and `exercise-edit-form.tsx`: now shows "Gym video" / "Gym Demo".
+
+### Additional fixes (same audit pass)
+- ✅ **Owner dashboard "Sri Shakthi Hanuman Gym workspace"** — `app/owner/page.tsx` eyebrow now uses `gym?.name`.
+- ✅ **"PT Sessions" labels** — Updated to "PT Plans" in member drawer (`app-topbar.tsx`) and owner member-detail panel (`app/owner/members/[memberId]/page.tsx`); "Book session" button relabelled "Assign plan".
+- ✅ **"Exercise Library" on member pages** — Renamed to "Exercise Catalog" in `app/member/exercises/page.tsx` heading + breadcrumb and `app-topbar.tsx` member drawer link.
+- ✅ **`AppFooter` dead file** — `components/app-footer.tsx` deleted (no longer imported anywhere after layout.tsx cleanup).
+- ✅ **"1. Exercise" in Traffic Map (read model)** — `lib/firebase/read-models.ts` slot aggregator now skips exercises with unresolvable IDs instead of bucketing them all under `"Exercise"`.
+- ✅ **Stale comment in `exercise-edit-form.tsx`** — Removed "SHG Gym Demo = gym videos" comment.
+
+---
+
+## Latest Update - 2026-05-24: PT plan flow fixed end-to-end
+
+- Completed the Personal Training flow from booking to live trainer console:
+  - `/owner/training` now lets owners and admins create a PT plan by selecting a member, selecting a trainer/owner, choosing date and duration, and adding planned exercises from the catalog with sets/reps/notes.
+  - The trainer selector now includes gym owners as PT-capable staff, not only `staffType: trainer`.
+  - PT sessions now store `plannedExercises` on `ptSessions`, and the live console surfaces those planned exercises as quick-pick chips before logging sets.
+  - PT session actions now use the session's own `gymId` when updating scoped Firestore mirrors, so admins managing a selected gym do not accidentally write to their default gym.
+- Added admin/owner creation paths on the PT hub:
+  - Create a gym-scoped custom exercise directly from `/owner/training`.
+  - Create a custom workout program directly from `/owner/training`.
+  - Admin-created custom exercise/programs from this page can target the selected gym via `targetGymId`.
+- Updated `/admin/exercises` catalog grouping:
+  - Global FitSplit predefined catalog remains separate.
+  - Custom exercises are grouped gym-wise so admin can see which gym owns which custom movement.
+- Verification:
+  - `npm run typecheck` passes.
+  - `npm run build` passes.
+  - Local dev server restarted on `http://localhost:3000`.
+  - Browser smoke test: landing loads, owner login works, `/owner/training` renders PT booking, custom exercise, and custom program panels without console errors.
+
 ## Latest Update - 2026-05-24: B2C Evolved Platform Architecture & Implementation Roadmap
 
 Introduced the strategic architecture and technical roadmap to expand the FitSplit B2B platform with B2C (direct-to-consumer) capabilities.

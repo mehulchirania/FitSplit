@@ -310,19 +310,19 @@ export default async function MemberDetailPage({
             </ConfirmActionForm>
           </section>
 
-          {/* PT Sessions mini-panel */}
+          {/* PT Plans mini-panel */}
           <section className="form-panel">
             <div className="panel-title" style={{ marginBottom: 12 }}>
               <div>
                 <p className="eyebrow">Personal training</p>
-                <h2><Calendar /> PT Sessions</h2>
+                <h2><Calendar /> PT Plans</h2>
               </div>
               <Link className="button button-secondary" href={`/owner/training?memberId=${member.id}`} style={{ fontSize: "0.82rem", padding: "6px 12px" }}>
-                Book session
+                Assign plan
               </Link>
             </div>
             {ptSessions.length === 0 ? (
-              <p style={{ color: "var(--text-soft)", fontSize: "0.85rem" }}>No PT sessions yet.</p>
+              <p style={{ color: "var(--text-soft)", fontSize: "0.85rem" }}>No PT plans yet.</p>
             ) : (
               <ul className="pt-session-mini-list">
                 {ptSessions.slice(0, 5).map((s) => (

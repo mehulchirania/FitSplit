@@ -227,7 +227,7 @@ export default async function ProfilePage({
           <aside className="summary-panel">
             <div className="detail-window">
               <span>Email<strong>{currentUser.email}</strong></span>
-              <span>Role<strong>Gym Staff</strong></span>
+              <span>Role<strong style={{ textTransform: "capitalize" }}>{currentUser.staffType ?? "Owner"}</strong></span>
               <span>Gym<strong>{gym?.name ?? currentUser.gymId}</strong></span>
               <span>User ID<strong style={{ fontSize: "0.75rem", wordBreak: "break-all" }}>{currentUser.uid}</strong></span>
             </div>

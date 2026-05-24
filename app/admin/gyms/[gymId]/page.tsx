@@ -182,7 +182,7 @@ export default async function GymManagementPage({
                 confirmMessage={`Reset password for ${staffMember.fullName}? Default is 'password'.`}
                 confirmTitle="Reset Staff Password"
                 pendingLabel="Resetting..."
-                submitLabel="Reset Pwd"
+                submitLabel="Reset Password"
                 style={{ padding: 0, background: 'none', border: 'none' }}
               >
                 <input name="userId" type="hidden" value={staffMember.id} />

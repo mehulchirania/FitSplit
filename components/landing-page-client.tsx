@@ -184,7 +184,7 @@ function AppMockup({ reduced }: { reduced: boolean }) {
     <div className="lp-mockup">
       {/* top bar */}
       <div className="lp-mockup-bar">
-        <span className="lp-mockup-gym">SHG Gym</span>
+        <span className="lp-mockup-gym">My Gym</span>
         <span className="lp-mockup-plan-tag">Push Day</span>
       </div>
 
@@ -192,7 +192,7 @@ function AppMockup({ reduced }: { reduced: boolean }) {
       <div className="lp-mockup-header">
         <div>
           <div className="lp-mockup-day">Today&rsquo;s Workout</div>
-          <div className="lp-mockup-member">Mehul - Week 3</div>
+          <div className="lp-mockup-member">Member — Week 3</div>
         </div>
         <div className="lp-mockup-progress-ring" aria-label="50% complete">
           <svg width="40" height="40" viewBox="0 0 40 40">

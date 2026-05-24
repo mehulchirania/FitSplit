@@ -27,6 +27,22 @@ function formatDateTime(iso: string) {
   } catch { return iso; }
 }
 
+function formatPlanRange(session: PTSession) {
+  if (session.planStartDate) {
+    return session.planEndDate
+      ? `${session.planStartDate} to ${session.planEndDate}`
+      : session.planStartDate;
+  }
+  return formatDateTime(session.scheduledAt);
+}
+
+function formatPlanDuration(session: PTSession) {
+  if (session.planDurationDays) {
+    return `${session.planDurationDays} day${session.planDurationDays === 1 ? "" : "s"}`;
+  }
+  return `${session.durationMinutes} min`;
+}
+
 function toDatetimeLocal(iso: string) {
   try {
     const d = new Date(iso);
@@ -57,13 +73,13 @@ export function TrainerLiveConsole({
   const [, startLiftTransition] = useTransition();
   const liftFormRef = useRef<HTMLFormElement>(null);
 
-  const [exerciseId, setExerciseId] = useState("");
+  const [exerciseId, setExerciseId] = useState(session.plannedExercises?.[0]?.exerciseId ?? "");
   const [weight, setWeight] = useState("");
   const [sets, setSets] = useState("3");
   const [reps, setReps] = useState("10");
   const [liftNotes, setLiftNotes] = useState("");
 
-  // ── Session lifecycle state ────────────────────────────────────────────────
+  // ── PT plan lifecycle state ────────────────────────────────────────────────
   const [startState, startAction, startPending] = useActionState(startPTSession, initialFormActionState);
   const [completeState, completeAction, completePending] = useActionState(completePTSession, initialFormActionState);
   const [cancelState, cancelAction, cancelPending] = useActionState(cancelPTSession, initialFormActionState);
@@ -89,9 +105,14 @@ export function TrainerLiveConsole({
   }
 
   const exerciseById = new Map(exercises.map((e) => [e.id, e]));
+  const plannedExerciseIds = new Set(session.plannedExercises?.map((entry) => entry.exerciseId) ?? []);
+  const orderedExercises = [
+    ...exercises.filter((exercise) => plannedExerciseIds.has(exercise.id)),
+    ...exercises.filter((exercise) => !plannedExerciseIds.has(exercise.id))
+  ];
 
   // Group exercises by muscle group for optgroups
-  const byMuscle = exercises.reduce<Record<string, Exercise[]>>((acc, ex) => {
+  const byMuscle = orderedExercises.reduce<Record<string, Exercise[]>>((acc, ex) => {
     (acc[ex.muscleGroup] ??= []).push(ex);
     return acc;
   }, {});
@@ -138,7 +159,7 @@ export function TrainerLiveConsole({
 
   return (
     <div className="pt-console">
-      {/* ── Session header ──────────────────────────────────────────────────── */}
+      {/* ── PT plan header ──────────────────────────────────────────────────── */}
       <section className="pt-console-header list-panel">
         <div className="pt-console-meta">
           <div className="pt-console-person">
@@ -150,12 +171,12 @@ export function TrainerLiveConsole({
             <strong className="pt-console-value">{session.trainerName ?? session.trainerId}</strong>
           </div>
           <div className="pt-console-person">
-            <span className="pt-console-label">Scheduled</span>
-            <strong className="pt-console-value">{formatDateTime(session.scheduledAt)}</strong>
+            <span className="pt-console-label">PT plan period</span>
+            <strong className="pt-console-value">{formatPlanRange(session)}</strong>
           </div>
           <div className="pt-console-person">
-            <span className="pt-console-label">Duration</span>
-            <strong className="pt-console-value">{session.durationMinutes} min</strong>
+            <span className="pt-console-label">Plan length</span>
+            <strong className="pt-console-value">{formatPlanDuration(session)}</strong>
           </div>
           {session.startedAt && (
             <div className="pt-console-person">
@@ -169,13 +190,40 @@ export function TrainerLiveConsole({
           <p className="pt-console-notes"><em>Goals: {session.notes}</em></p>
         )}
 
+        {session.plannedExercises && session.plannedExercises.length > 0 && (
+          <div className="pt-console-plan">
+            <span className="pt-console-label">Planned PT work</span>
+            <div className="pt-console-plan-list">
+              {session.plannedExercises.map((entry, index) => {
+                const exercise = exerciseById.get(entry.exerciseId);
+                return (
+                  <button
+                    className={`pt-console-plan-chip${exerciseId === entry.exerciseId ? " is-selected" : ""}`}
+                    key={`${entry.exerciseId}-${index}`}
+                    onClick={() => {
+                      setExerciseId(entry.exerciseId);
+                      setSets(String(entry.sets ?? 3));
+                      setReps(entry.reps ?? "8-12");
+                      setLiftNotes(entry.notes ?? "");
+                    }}
+                    type="button"
+                  >
+                    <strong>{exercise?.name ?? entry.exerciseId}</strong>
+                    <span>{entry.sets ?? 3} x {entry.reps ?? "8-12"}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Lifecycle buttons */}
         <div className="pt-console-lifecycle">
           {isScheduled && (
             <form action={startAction} style={{ display: "inline" }}>
               <input type="hidden" name="ptSessionId" value={session.id} />
               <button className="button button-primary" disabled={anyLifecyclePending} type="submit">
-                {startPending ? "Starting…" : "▶ Start session"}
+                {startPending ? "Activating..." : "Activate plan"}
               </button>
             </form>
           )}
@@ -184,7 +232,7 @@ export function TrainerLiveConsole({
             <form action={completeAction} style={{ display: "inline" }}>
               <input type="hidden" name="ptSessionId" value={session.id} />
               <button className="button button-secondary" disabled={anyLifecyclePending} type="submit">
-                {completePending ? "Ending…" : "✓ End session"}
+                {completePending ? "Completing..." : "Complete plan"}
               </button>
             </form>
           )}
@@ -205,7 +253,7 @@ export function TrainerLiveConsole({
                 onClick={() => setShowCancel(true)}
                 type="button"
               >
-                Cancel session
+                Cancel plan
               </button>
             </>
           )}
@@ -267,7 +315,7 @@ export function TrainerLiveConsole({
 
         {isDone && (
           <p className={`pt-done-banner ${session.status === "completed" ? "pt-done-completed" : "pt-done-cancelled"}`}>
-            Session {session.status}.
+            PT plan {session.status}.
             {session.endedAt && ` Ended at ${formatTime(session.endedAt)}.`}
             {session.cancelReason && ` Reason: ${session.cancelReason}`}
           </p>
@@ -387,7 +435,7 @@ export function TrainerLiveConsole({
 
         {optimisticLogs.length === 0 ? (
           <p style={{ color: "var(--text-soft)", fontSize: "0.9rem" }}>
-            {isActive ? "No sets logged yet. Use the form above to start." : "No sets were logged in this session."}
+            {isActive ? "No sets logged yet. Use the form above to start." : "No sets were logged for this PT plan."}
           </p>
         ) : (
           <div className="pt-logs-list">

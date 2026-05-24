@@ -15,6 +15,7 @@ const adminLinks = [
 const ownerLinks = [
   { href: "/owner", label: "Dashboard" },
   { href: "/owner/members", label: "Members" },
+  { href: "/owner/training", label: "Training" },
   { href: "/owner/programs", label: "Workout Programs" },
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];

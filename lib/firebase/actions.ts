@@ -1350,7 +1350,10 @@ export async function logLiftSet(
       throw new Error("Lift log values are invalid.");
     }
 
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const targetGymId = String(formData.get("targetGymId") ?? "").trim();
+    const gymId = currentUser.role === "admin"
+      ? (targetGymId || currentUser.gymId || PRIMARY_GYM_ID)
+      : (currentUser.gymId ?? PRIMARY_GYM_ID);
     const liftLogRecord = {
       id: liftLogId,
       gymId,
@@ -2257,7 +2260,10 @@ export async function startWorkoutSession(
     const latitude = rawLat != null ? Number(rawLat) : Number.NaN;
     const longitude = rawLng != null ? Number(rawLng) : Number.NaN;
     const deviceInfo = String(formData.get("deviceInfo") ?? "").slice(0, 500);
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const targetGymId = String(formData.get("targetGymId") ?? "").trim();
+    const gymId = currentUser.role === "admin"
+      ? (targetGymId || currentUser.gymId || PRIMARY_GYM_ID)
+      : (currentUser.gymId ?? PRIMARY_GYM_ID);
     const gymConfig = await getGymGeofenceConfig(gymId);
     const geofence = validateGymGeofence(latitude, longitude, gymConfig);
     const now = new Date().toISOString();
@@ -2795,26 +2801,29 @@ export async function createCatalogExercise(
     const name = requireText(formData, "name", "Exercise name");
     const isAdmin = currentUser.role === "admin";
 
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const targetGymId = String(formData.get("targetGymId") ?? "").trim();
+    const gymId = currentUser.role === "admin"
+      ? (targetGymId || currentUser.gymId || PRIMARY_GYM_ID)
+      : (currentUser.gymId ?? PRIMARY_GYM_ID);
     const exerciseRecord = {
       id: exerciseId,
-      gymId: isAdmin ? "global" : gymId,
-      scope: isAdmin ? "default" : "custom",
+      gymId: isAdmin && !targetGymId ? "global" : gymId,
+      scope: isAdmin && !targetGymId ? "default" : "custom",
       name,
       muscleGroup: requireText(formData, "muscleGroup", "Muscle group"),
       equipment: String(formData.get("equipment") ?? "").trim(),
       instructions: String(formData.get("instructions") ?? "").trim(),
-      videoSource: isAdmin && String(formData.get("videoUrl") ?? "").trim() ? String(formData.get("videoSource") ?? "youtube") : "none",
-      videoUrl: isAdmin ? String(formData.get("videoUrl") ?? "").trim() : "",
-      gymVideoUrl: isAdmin ? "" : String(formData.get("gymVideoUrl") ?? "").trim(),
-      gymVideoSource: !isAdmin && String(formData.get("gymVideoUrl") ?? "").trim() ? String(formData.get("gymVideoSource") ?? "youtube") : "none",
+      videoSource: isAdmin && !targetGymId && String(formData.get("videoUrl") ?? "").trim() ? String(formData.get("videoSource") ?? "youtube") : "none",
+      videoUrl: isAdmin && !targetGymId ? String(formData.get("videoUrl") ?? "").trim() : "",
+      gymVideoUrl: isAdmin && !targetGymId ? "" : String(formData.get("gymVideoUrl") ?? "").trim(),
+      gymVideoSource: (targetGymId || !isAdmin) && String(formData.get("gymVideoUrl") ?? "").trim() ? String(formData.get("gymVideoSource") ?? "youtube") : "none",
       ownerOnly: true,
       isActive: true,
       createdBy: currentUser.uid,
       createdAt: now,
       updatedAt: now
     };
-    if (isAdmin) {
+    if (isAdmin && !targetGymId) {
       await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(exerciseRecord);
     } else {
       await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(exerciseRecord);
@@ -3214,7 +3223,10 @@ export async function createCustomWorkoutProgram(
       })
     );
 
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const targetGymId = String(formData.get("targetGymId") ?? "").trim();
+    const gymId = currentUser.role === "admin"
+      ? (targetGymId || currentUser.gymId || PRIMARY_GYM_ID)
+      : (currentUser.gymId ?? PRIMARY_GYM_ID);
     const programRecord = {
       id: programId,
       gymId,
@@ -3425,8 +3437,8 @@ export async function logBodyWeight(
       throw new Error("Body fat percentage must be between 0 and 100.");
     }
     const notes = String(formData.get("notes") ?? "").trim();
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
     const now = new Date().toISOString();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
     if (!hasFirebaseAdminConfig()) {
       return success(`Weight ${weightKg} kg logged.`);
@@ -3638,12 +3650,52 @@ async function requireGymStaff() {
   return requireRole(["admin", "owner"]);
 }
 
+function parsePTPlannedExercises(raw: string) {
+  if (!raw.trim()) return [];
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error("Planned exercises are invalid.");
+  }
+
+  if (!Array.isArray(parsed)) {
+    throw new Error("Planned exercises are invalid.");
+  }
+
+  return parsed.map((item, index) => {
+    const entry = item as Record<string, unknown>;
+    const exerciseId = String(entry.exerciseId ?? "").trim();
+    if (!exerciseId) {
+      throw new Error(`Exercise ${index + 1} is missing an exercise.`);
+    }
+
+    const sets = Number(entry.sets ?? 3);
+    const reps = String(entry.reps ?? "8-12").trim();
+    const notes = String(entry.notes ?? "").trim();
+    if (!Number.isFinite(sets) || sets < 1 || sets > 20) {
+      throw new Error(`Sets for exercise ${index + 1} must be between 1 and 20.`);
+    }
+    if (!reps) {
+      throw new Error(`Reps for exercise ${index + 1} are required.`);
+    }
+
+    return {
+      exerciseId,
+      sets,
+      reps,
+      ...(notes ? { notes } : {})
+    };
+  });
+}
+
 /**
- * Book a new PT session for a member.
+ * Book a new PT plan for a member.
  *
  * FormData keys:
- *   memberId, memberName?, trainerId, trainerName?, scheduledAt (ISO),
- *   durationMinutes?, notes?
+ *   memberId, memberName?, trainerId, trainerName?, planStartDate,
+ *   planDurationDays?, plannedExercises?, notes?
  */
 export async function bookPTSession(
   previousStateOrFormData: FormActionState | FormData,
@@ -3657,20 +3709,35 @@ export async function bookPTSession(
     const memberName = String(formData.get("memberName") ?? "").trim() || undefined;
     const trainerId = requireText(formData, "trainerId", "Trainer");
     const trainerName = String(formData.get("trainerName") ?? "").trim() || undefined;
-    const scheduledAt = requireText(formData, "scheduledAt", "Scheduled date/time");
-    const durationMinutes = Number(formData.get("durationMinutes") ?? 60);
+    const planStartDate = requireText(formData, "planStartDate", "PT start date");
+    const planDurationDays = Number(formData.get("planDurationDays") ?? 30);
+    const scheduledAt = `${planStartDate}T06:00:00`;
+    const durationMinutes = planDurationDays * 24 * 60;
     const notes = String(formData.get("notes") ?? "").trim() || undefined;
 
     if (isNaN(new Date(scheduledAt).getTime())) {
-      throw new Error("Scheduled date/time is invalid.");
+      throw new Error("PT start date is invalid.");
     }
-    if (durationMinutes < 15 || durationMinutes > 240) {
-      throw new Error("Duration must be between 15 and 240 minutes.");
+    if (!Number.isFinite(planDurationDays) || planDurationDays < 1 || planDurationDays > 365) {
+      throw new Error("PT plan duration must be between 1 and 365 days.");
     }
 
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const requestedGymId = String(formData.get("gymId") ?? "").trim();
+    const gymId = currentUser.role === "admin"
+      ? (requestedGymId || currentUser.gymId || PRIMARY_GYM_ID)
+      : (currentUser.gymId ?? PRIMARY_GYM_ID);
+    const plannedExercises = parsePTPlannedExercises(
+      String(formData.get("plannedExercises") ?? "")
+    );
+    if (plannedExercises.length === 0) {
+      throw new Error("Add at least one exercise to the PT plan.");
+    }
+
     const sessionId = randomUUID();
     const now = new Date().toISOString();
+    const planEnd = new Date(`${planStartDate}T00:00:00`);
+    planEnd.setDate(planEnd.getDate() + planDurationDays - 1);
+    const planEndDate = planEnd.toISOString().slice(0, 10);
 
     const sessionRecord = {
       id: sessionId,
@@ -3681,7 +3748,11 @@ export async function bookPTSession(
       trainerName,
       scheduledAt,
       durationMinutes,
+      planStartDate,
+      planEndDate,
+      planDurationDays,
       status: "scheduled",
+      plannedExercises,
       notes,
       createdAt: now,
       updatedAt: now
@@ -3699,8 +3770,8 @@ export async function bookPTSession(
       recipientId: memberId,
       recipientRole: "member",
       type: "pt_session_booked",
-      title: "PT Session Booked",
-      body: `Your personal training session has been scheduled for ${new Date(scheduledAt).toLocaleString()}.`,
+      title: "PT Plan Assigned",
+      body: `Your personal training plan runs from ${planStartDate} to ${planEndDate}.`,
       createdAt: now,
       updatedAt: now
     };
@@ -3711,10 +3782,10 @@ export async function bookPTSession(
     revalidatePath(`/owner/members/${memberId}`);
     revalidatePath("/trainer");
 
-    return success(`PT session booked. Session ID: ${sessionId}`, gymId);
+    return success(`PT plan assigned. Plan ID: ${sessionId}`, gymId);
   } catch (error) {
-    console.error("Unable to book PT session", error);
-    return failure(error, "Could not book session. Please try again.");
+    console.error("Unable to book PT plan", error);
+    return failure(error, "Could not assign PT plan. Please try again.");
   }
 }
 
@@ -3734,7 +3805,6 @@ export async function startPTSession(
 
     const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
     const db = requireFirebase();
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
     const now = new Date().toISOString();
 
     const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
@@ -3742,6 +3812,10 @@ export async function startPTSession(
     if (!snap.exists) throw new Error("PT session not found.");
 
     const session = snap.data()!;
+    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
+      throw new Error("This PT session belongs to another gym.");
+    }
     if (session.status !== "scheduled") {
       throw new Error(`Cannot start a session with status "${session.status}".`);
     }
@@ -3788,7 +3862,6 @@ export async function logPTLiftSet(
 
     if (weight < 0 || sets < 1) throw new Error("Invalid lift values.");
 
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
     const now = new Date().toISOString();
     const logId = randomUUID();
 
@@ -3797,7 +3870,12 @@ export async function logPTLiftSet(
     // Verify session is active
     const sessionSnap = await db.collection(collectionPaths.ptSessions).doc(ptSessionId).get();
     if (!sessionSnap.exists) throw new Error("PT session not found.");
-    if (sessionSnap.data()!.status !== "active") {
+    const session = sessionSnap.data()!;
+    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
+      throw new Error("This PT session belongs to another gym.");
+    }
+    if (session.status !== "active") {
       throw new Error("Lift can only be logged on an active session.");
     }
 
@@ -3867,7 +3945,6 @@ export async function completePTSession(
 
     const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
     const db = requireFirebase();
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
     const now = new Date().toISOString();
 
     const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
@@ -3875,6 +3952,10 @@ export async function completePTSession(
     if (!snap.exists) throw new Error("PT session not found.");
 
     const session = snap.data()!;
+    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
+      throw new Error("This PT session belongs to another gym.");
+    }
     if (session.status !== "active") {
       throw new Error(`Cannot complete a session with status "${session.status}".`);
     }
@@ -3927,7 +4008,6 @@ export async function cancelPTSession(
     const ptSessionId = requireText(formData, "ptSessionId", "Session ID");
     const cancelReason = String(formData.get("cancelReason") ?? "").trim() || undefined;
     const db = requireFirebase();
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
     const now = new Date().toISOString();
 
     const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
@@ -3935,6 +4015,10 @@ export async function cancelPTSession(
     if (!snap.exists) throw new Error("PT session not found.");
 
     const session = snap.data()!;
+    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
+      throw new Error("This PT session belongs to another gym.");
+    }
     if (session.status === "completed" || session.status === "cancelled") {
       throw new Error(`Session is already ${session.status}.`);
     }
@@ -3995,7 +4079,6 @@ export async function reschedulePTSession(
     }
 
     const db = requireFirebase();
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
     const now = new Date().toISOString();
 
     const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
@@ -4003,6 +4086,10 @@ export async function reschedulePTSession(
     if (!snap.exists) throw new Error("PT session not found.");
 
     const session = snap.data()!;
+    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
+      throw new Error("This PT session belongs to another gym.");
+    }
     if (session.status === "completed" || session.status === "cancelled") {
       throw new Error(`Cannot reschedule a ${session.status} session.`);
     }

@@ -37,7 +37,7 @@ export function GymFloorLoadMap({ slots }: { slots: SlotLoad[] }) {
       {/* Title */}
       <div>
         <h2 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
-          <span>📊</span> Gym Floor Traffic Load Map
+          Gym Floor Traffic Load Map
         </h2>
         <p style={{ margin: "4px 0 0", fontSize: "0.82rem", color: "var(--text-soft)" }}>
           Expected equipment congestion levels aggregated from member training program splits and slots.
@@ -147,7 +147,7 @@ export function GymFloorLoadMap({ slots }: { slots: SlotLoad[] }) {
             color: "var(--text-soft)",
             lineHeight: 1.4
           }}>
-            ⚙️ <strong>Coaching Tip:</strong>{" "}
+            <strong>Coaching Tip:</strong>{" "}
             {activeSlot.memberCount > 5
               ? "Overloaded bench & squat racks. Recommend shifting members to chest dumbbell presses or start on lower splits."
               : "Ample open space. Ideal slot for personal assessments and high-tempo circuits."}
@@ -157,7 +157,7 @@ export function GymFloorLoadMap({ slots }: { slots: SlotLoad[] }) {
         {/* Top Exercises Crowding Level */}
         <div>
           <span style={{ fontSize: "0.7rem", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700, display: "block", marginBottom: "8px" }}>
-            🔥 Equipment Load Distribution
+            Equipment Load Distribution
           </span>
 
           {activeSlot.exercises.length > 0 ? (

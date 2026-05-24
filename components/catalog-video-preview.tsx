@@ -74,13 +74,13 @@ export function CatalogVideoPreview({
         )}
         {hasDemo && (
           <button
-            aria-label={`Preview ${exerciseName} SHG Gym demo`}
+            aria-label={`Preview ${exerciseName} gym demo`}
             className="video-indicator video-indicator--demo"
             onClick={() => setActiveVideo("demo")}
-            title="SHG Gym demo"
+            title="Gym demo"
             type="button"
           >
-            <Video /><span className="video-indicator-label">SHG Gym</span>
+            <Video /><span className="video-indicator-label">Gym video</span>
           </button>
         )}
       </div>
@@ -100,7 +100,7 @@ export function CatalogVideoPreview({
                 <p className="eyebrow">
                   {muscleGroup}
                   {" · "}
-                  {activeVideo === "demo" ? "SHG Gym Demo" : "DeltaBolic Tutorial"}
+                  {activeVideo === "demo" ? "Gym Demo" : "DeltaBolic Tutorial"}
                 </p>
                 <h3 style={{ margin: 0, fontSize: "1rem" }}>{exerciseName}</h3>
               </div>

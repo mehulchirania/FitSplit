@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { AppFooter } from "@/components/app-footer";
 import { AppTopbar } from "@/components/app-topbar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
@@ -116,7 +115,6 @@ export default async function RootLayout({
             unreadInboxCount={unreadInboxCount}
           />
           {children}
-          {currentUser?.role === "member" && <AppFooter />}
           <MobileBottomNav role={currentUser?.role} />
         </div>
       </body>
