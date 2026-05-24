@@ -3,6 +3,8 @@ import { EditableMetrics } from "@/components/editable-metrics";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
+import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
+import { ProgressChart } from "@/components/progress-chart";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
@@ -156,104 +158,120 @@ export default async function MemberDashboard() {
         </div>
       </header>
 
-      {/* Coach note — surfaces the latest message from the gym's trainer/owner.
-          Renders above the workout console so members see it before training. */}
-      {profile.coachNote ? (
-        <section
-          className="member-dashboard-section"
-          aria-label="Note from your trainer"
-          style={{
-            background: "color-mix(in srgb, var(--brand) 8%, var(--bg-elevated))",
-            border: "1px solid color-mix(in srgb, var(--brand) 30%, var(--border))",
-            borderRadius: "var(--radius)",
-            padding: "14px 18px"
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
-            <strong style={{ color: "var(--brand)", fontSize: "0.78rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              Note from your trainer
-            </strong>
-            {profile.coachNoteUpdatedAt && (
-              <span style={{ color: "var(--text-faint)", fontSize: "0.72rem" }}>
-                {new Date(profile.coachNoteUpdatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-              </span>
+      <MemberDashboardTabs
+        workoutSection={
+          <div style={{ display: "grid", gap: "24px" }}>
+            {profile.coachNote ? (
+              <section
+                className="member-dashboard-section"
+                aria-label="Note from your trainer"
+                style={{
+                  background: "color-mix(in srgb, var(--brand) 8%, var(--bg-elevated))",
+                  border: "1px solid color-mix(in srgb, var(--brand) 30%, var(--border))",
+                  borderRadius: "var(--radius)",
+                  padding: "14px 18px"
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                  <strong style={{ color: "var(--brand)", fontSize: "0.78rem", letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                    Note from your trainer
+                  </strong>
+                  {profile.coachNoteUpdatedAt && (
+                    <span style={{ color: "var(--text-faint)", fontSize: "0.72rem" }}>
+                      {new Date(profile.coachNoteUpdatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                    </span>
+                  )}
+                </div>
+                <p style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.5 }}>{profile.coachNote}</p>
+                {profile.coachNoteUpdatedByName && (
+                  <p style={{ margin: "8px 0 0", fontSize: "0.78rem", color: "var(--text-soft)" }}>
+                    — {profile.coachNoteUpdatedByName}
+                  </p>
+                )}
+              </section>
+            ) : null}
+
+            {program ? (
+              <MemberWorkoutConsole
+                exercises={exercises}
+                gymId={currentUser.gymId ?? ""}
+                initialActiveSessionCount={sessions.length}
+                initialDayLogs={dayLogs}
+                initialInjuryNote={profile.injuryNotes}
+                initialLiftLogs={liftLogs}
+                memberId={member.id}
+                program={program}
+              />
+            ) : (
+              <div className="md-empty">
+                <div className="md-empty-icon">
+                  <svg
+                    fill="none"
+                    height="48"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.5"
+                    viewBox="0 0 24 24"
+                    width="48"
+                  >
+                    <path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11" />
+                    <rect height="18" rx="3" width="18" x="3" y="3" />
+                  </svg>
+                </div>
+                <h2>No workout plan assigned</h2>
+                <p>Your trainer at {gym?.name ?? "your gym"} hasn&apos;t assigned a program yet. Check back soon.</p>
+                {gym?.phone ? (
+                  <a className="md-empty-link" href={`tel:${gym.phone}`}>
+                    Call {gym.phone}
+                  </a>
+                ) : null}
+                {gym?.email ? (
+                  <a className="md-empty-link muted" href={`mailto:${gym.email}`}>
+                    {gym.email}
+                  </a>
+                ) : null}
+              </div>
             )}
-          </div>
-          <p style={{ margin: 0, fontSize: "0.92rem", lineHeight: 1.5 }}>{profile.coachNote}</p>
-          {profile.coachNoteUpdatedByName && (
-            <p style={{ margin: "8px 0 0", fontSize: "0.78rem", color: "var(--text-soft)" }}>
-              — {profile.coachNoteUpdatedByName}
-            </p>
-          )}
-        </section>
-      ) : null}
 
-      {program ? (
-        <MemberWorkoutConsole
-          exercises={exercises}
-          gymId={currentUser.gymId ?? ""}
-          initialActiveSessionCount={sessions.length}
-          initialDayLogs={dayLogs}
-          initialInjuryNote={profile.injuryNotes}
-          initialLiftLogs={liftLogs}
-          memberId={member.id}
-          program={program}
-        />
-      ) : (
-        <div className="md-empty">
-          <div className="md-empty-icon">
-            <svg
-              fill="none"
-              height="48"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="1.5"
-              viewBox="0 0 24 24"
-              width="48"
-            >
-              <path d="M6.5 6.5h11M6.5 12h11M6.5 17.5h11" />
-              <rect height="18" rx="3" width="18" x="3" y="3" />
-            </svg>
+            {gym?.notices && gym.notices.length > 0 ? (
+              <div className="member-dashboard-section">
+                <GymNoticeBoard notices={gym.notices} />
+              </div>
+            ) : null}
           </div>
-          <h2>No workout plan assigned</h2>
-          <p>Your trainer at {gym?.name ?? "your gym"} hasn&apos;t assigned a program yet. Check back soon.</p>
-          {gym?.phone ? (
-            <a className="md-empty-link" href={`tel:${gym.phone}`}>
-              Call {gym.phone}
-            </a>
-          ) : null}
-          {gym?.email ? (
-            <a className="md-empty-link muted" href={`mailto:${gym.email}`}>
-              {gym.email}
-            </a>
-          ) : null}
-        </div>
-      )}
-
-      {gym?.notices && gym.notices.length > 0 ? (
-        <div className="member-dashboard-section">
-          <GymNoticeBoard notices={gym.notices} />
-        </div>
-      ) : null}
-
-      <section className="member-dashboard-section member-wellness-section" aria-labelledby="member-wellness-title">
-        <div className="panel-title">
-          <div>
-            <p className="eyebrow">Wellness</p>
-            <h2 id="member-wellness-title">Body metrics & nutrition</h2>
+        }
+        progressSection={
+          <div className="member-dashboard-section">
+            <div className="panel-title" style={{ marginBottom: "20px" }}>
+              <div>
+                <p className="eyebrow">Progress</p>
+                <h2>Volume & Strength</h2>
+              </div>
+            </div>
+            <ProgressChart exercises={exercises} liftLogs={liftLogs} />
           </div>
-          <span className="status-pill status-neutral">Optional tracking</span>
-        </div>
-        <div className="member-wellness-grid">
-          <div className="member-metrics-card">
-            <h3>Profile metrics</h3>
-            <p>Keep these updated so your trainer has useful context.</p>
-            <EditableMetrics member={memberWithProfile as any} />
-          </div>
-          <MacroProgressPanel memberId={member.id} target={profile.macroNutritionTarget} />
-        </div>
-      </section>
+        }
+        wellnessSection={
+          <section className="member-dashboard-section member-wellness-section" aria-labelledby="member-wellness-title">
+            <div className="panel-title">
+              <div>
+                <p className="eyebrow">Wellness</p>
+                <h2 id="member-wellness-title">Body metrics & nutrition</h2>
+              </div>
+              <span className="status-pill status-neutral">Optional tracking</span>
+            </div>
+            <div className="member-wellness-grid">
+              <div className="member-metrics-card">
+                <h3>Profile metrics</h3>
+                <p>Keep these updated so your trainer has useful context.</p>
+                <EditableMetrics member={memberWithProfile as any} />
+              </div>
+              <MacroProgressPanel memberId={member.id} target={profile.macroNutritionTarget} />
+            </div>
+          </section>
+        }
+      />
     </main>
   );
 }

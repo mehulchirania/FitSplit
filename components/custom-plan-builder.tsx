@@ -166,6 +166,20 @@ export function CustomPlanBuilder({
     setActiveDayIdx(Math.min(activeDayIdx, next.length - 1));
   }
 
+  function copyDay(idx: number) {
+    if (days.length >= 7) return;
+    const src = days[idx];
+    const copy: PlanDay = {
+      id: nextId(),
+      title: `${src.title} (copy)`,
+      entries: src.entries.map((e) => ({ ...e, id: nextId() }))
+    };
+    const next = [...days];
+    next.splice(idx + 1, 0, copy);
+    setDays(next);
+    setActiveDayIdx(idx + 1);
+  }
+
   // Serialise days for server action
   const daysJson = JSON.stringify(
     days.map((d) => ({
@@ -269,6 +283,17 @@ export function CustomPlanBuilder({
           {days.map((day, idx) => (
             <button key={day.id} type="button" onClick={() => setActiveDayIdx(idx)} style={tabStyle(idx === activeDayIdx)}>
               {day.title || `Day ${idx + 1}`}
+              {days.length < 7 && (
+                <span
+                  role="button"
+                  aria-label={`Duplicate ${day.title}`}
+                  onClick={(e) => { e.stopPropagation(); copyDay(idx); }}
+                  style={{ opacity: 0.5, lineHeight: 1, marginLeft: 2, fontSize: "0.7rem" }}
+                  title="Duplicate this day"
+                >
+                  ⧉
+                </span>
+              )}
               {days.length > 1 && (
                 <span
                   role="button"

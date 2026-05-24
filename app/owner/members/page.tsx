@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { AddMemberForm } from "@/components/add-member-form";
 import { Breadcrumb } from "@/components/breadcrumb";
-import { MemberRow } from "@/components/member-row";
+import { BulkMemberList } from "@/components/bulk-member-list";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
-import { getActiveProgramAssignments, getMembers } from "@/lib/firebase/read-models";
+import { getActiveProgramAssignments, getMembers, getWorkoutPrograms } from "@/lib/firebase/read-models";
+
 
 export const dynamic = "force-dynamic";
 
@@ -41,9 +42,10 @@ export default async function MembersPage({
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
 
-  const [{ members }, { assignments }] = await Promise.all([
+  const [{ members }, { assignments }, { programs }] = await Promise.all([
     getMembers(currentUser.gymId),
     getActiveProgramAssignments(currentUser.gymId),
+    getWorkoutPrograms(currentUser.gymId)
   ]);
 
   const { sort: rawSort = "name", filter: rawFilter = "all" } = await searchParams;
@@ -156,12 +158,12 @@ export default async function MembersPage({
         </div>
       </div>
 
-      {/* ── Member list ── */}
+      {/* ── Member list with bulk select ── */}
       <section className="list-panel" style={{ padding: 0 }}>
         <div className="panel-title" style={{ padding: "14px 20px 12px" }}>
           <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <UsersRound />
-            {filter === "all"     ? "All members"      :
+            {filter === "all"     ? "All members"       :
              filter === "plan"    ? "Members with plan" :
                                     "Members needing a plan"}
           </h2>
@@ -170,21 +172,11 @@ export default async function MembersPage({
           </span>
         </div>
 
-        {sorted.length === 0 ? (
-          <p style={{ color: "var(--text-soft)", fontSize: "0.88rem", padding: "24px 20px", textAlign: "center" }}>
-            {filter === "no-plan"
-              ? "All members have a program assigned."
-              : "No members found."}
-          </p>
-        ) : (
-          sorted.map((member) => (
-            <MemberRow
-              hasPlan={assignedIds.has(member.id)}
-              key={member.id}
-              member={member}
-            />
-          ))
-        )}
+        <BulkMemberList
+          assignedIds={assignedIds}
+          members={sorted}
+          programs={programs.map((p) => ({ id: p.id, title: p.title }))}
+        />
       </section>
     </main>
   );

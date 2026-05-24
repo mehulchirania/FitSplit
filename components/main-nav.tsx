@@ -20,23 +20,30 @@ const ownerLinks = [
   { href: "/owner/exercises", label: "Exercise Catalog" }
 ];
 
+const trainerLinks = [
+  { href: "/trainer", label: "My Schedule" },
+  { href: "/owner/members", label: "Members" },
+  { href: "/owner/training", label: "All PT Plans" }
+];
+
 function isActiveLink(pathname: string, href: string) {
-  // Exact match for the dashboard ("/admin", "/owner")
-  // Prefix match (with trailing slash) for nested routes ("/admin/gyms/abc" matches "/admin/gyms")
   if (pathname === href) return true;
   return pathname.startsWith(href + "/");
 }
 
-export function MainNav({ role }: { role?: Role }) {
+export function MainNav({ role, staffType }: { role?: Role; staffType?: string }) {
   const pathname = usePathname();
 
   if (!role || role === "member" || pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
     return null;
   }
 
-  const links = role === "admin" || pathname.startsWith("/admin")
-    ? adminLinks
-    : ownerLinks;
+  let links = ownerLinks;
+  if (role === "admin" || pathname.startsWith("/admin")) {
+    links = adminLinks;
+  } else if (staffType === "trainer") {
+    links = trainerLinks;
+  }
 
   return (
     <nav className="topnav" aria-label="Primary navigation">

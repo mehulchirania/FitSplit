@@ -407,6 +407,41 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
   gap: 8px;
 }
 
+.pt-reschedule-inline {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  width: 100%;
+}
+
+.pt-reschedule-label {
+  color: var(--text-soft);
+  display: grid;
+  font-size: 0.8rem;
+  font-weight: 600;
+  gap: 4px;
+}
+
+.pt-reschedule-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.88rem;
+  padding: 7px 10px;
+  width: 100%;
+}
+
+.pt-reschedule-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .pt-cancel-reason {
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -881,6 +916,188 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
   .odp-stat {
     padding: 12px 18px;
   }
+}
+
+/* ── Trainer schedule page ───────────────────────────────────────────────── */
+
+.trainer-schedule-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 400px);
+  margin: 18px auto 0;
+  max-width: var(--page-max-width, 1220px);
+  padding: 0 clamp(18px, 4vw, 56px);
+}
+
+.trainer-session-list {
+  display: grid;
+  gap: 12px;
+  padding: 12px 16px 16px;
+}
+
+.trainer-session-card {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+}
+
+.trainer-session-card--past {
+  opacity: 0.75;
+}
+
+.trainer-session-header {
+  align-items: flex-start;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.trainer-session-member {
+  display: block;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.trainer-session-date {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.trainer-session-duration {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.trainer-session-notes {
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  margin: 6px 0 0;
+}
+
+.trainer-session-actions {
+  margin-top: 10px;
+}
+
+@media (max-width: 900px) {
+  .trainer-schedule-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Bulk member list ─────────────────────────────────────────────────────── */
+
+.bml-root {
+  position: relative;
+}
+
+.bml-action-bar {
+  align-items: center;
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+  border-top: 1px solid color-mix(in srgb, var(--brand) 30%, var(--border));
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 20px;
+  position: sticky;
+  top: 56px;
+  z-index: 10;
+}
+
+.bml-count {
+  color: var(--brand);
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bml-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bml-btn {
+  font-size: 0.8rem !important;
+  padding: 5px 12px !important;
+}
+
+.bml-assign-row {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bml-program-select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 0.85rem;
+  padding: 5px 10px;
+}
+
+.bml-feedback {
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+.bml-feedback--success {
+  background: color-mix(in srgb, var(--success, #4caf50) 12%, transparent);
+  color: var(--success, #4caf50);
+}
+
+.bml-feedback--error {
+  background: color-mix(in srgb, var(--danger, #e05252) 12%, transparent);
+  color: var(--danger, #e05252);
+}
+
+.bml-header-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-faint);
+  display: flex;
+  font-size: 0.72rem;
+  font-weight: 700;
+  gap: 12px;
+  letter-spacing: 0.05em;
+  padding: 6px 20px;
+  text-transform: uppercase;
+}
+
+.bml-check-cell {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  flex: 0 0 20px;
+  justify-content: center;
+}
+
+.bml-check-cell input[type="checkbox"] {
+  accent-color: var(--brand);
+  cursor: pointer;
+  height: 16px;
+  width: 16px;
+}
+
+.bml-col-name  { flex: 1; }
+.bml-col-plan  { flex: 0 0 80px; }
+.bml-col-status { flex: 0 0 80px; }
+.bml-col-actions { flex: 0 0 60px; }
+
+.bml-row {
+  transition: background 100ms;
+}
+
+.bml-row--selected {
+  background: color-mix(in srgb, var(--brand) 5%, var(--bg-subtle)) !important;
+  border-left: 2px solid var(--brand);
 }
 
 /* ── Mobile responsive adjustments ──────────────────────────────────────── */

@@ -2,6 +2,7 @@ import { getApps, initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 import { getFunctions } from "firebase/functions";
+import { getMessaging, isSupported } from "firebase/messaging";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -34,4 +35,15 @@ export function getFirebaseClientServices() {
     storage: getStorage(app),
     functions: getFunctions(app, FUNCTIONS_REGION),
   };
+}
+
+/**
+ * Returns a Firebase Messaging instance if the browser supports it, otherwise null.
+ * Must only be called in client-side code (not in Server Components or actions).
+ */
+export async function getFirebaseMessaging() {
+  const supported = await isSupported();
+  if (!supported) return null;
+  const app = createFirebaseApp();
+  return getMessaging(app);
 }

@@ -273,7 +273,11 @@ export default async function OwnerTrainingPage({
 
               {(session.status === "scheduled" || session.status === "active") && (
                 <div className="pt-card-footer">
-                  <PTSessionActions session={session} showLiveLink={session.status === "active"} />
+                  <PTSessionActions
+                    session={session}
+                    showLiveLink={session.status === "active"}
+                    trainers={trainers.map((t) => ({ id: t.id, fullName: t.fullName }))}
+                  />
                 </div>
               )}
             </article>

@@ -1,0 +1,92 @@
+.md-tabs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.md-tab-list {
+  display: flex;
+  gap: 8px;
+  background: color-mix(in srgb, var(--bg-elevated) 50%, transparent);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 6px;
+  border-radius: calc(var(--radius) + 4px);
+  position: sticky;
+  top: 16px;
+  z-index: 10;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.md-tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.md-tab-icon {
+  width: 18px;
+  height: 18px;
+  opacity: 0.7;
+}
+
+.md-tab-btn:hover {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.md-tab-btn.active {
+  color: var(--bg);
+  background: var(--brand);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--brand) 25%, transparent);
+}
+
+.md-tab-btn.active .md-tab-icon {
+  opacity: 1;
+}
+
+.md-tab-panels {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 768px) {
+  .md-tab-list {
+    position: fixed;
+    bottom: 20px;
+    top: auto;
+    left: 16px;
+    right: 16px;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  }
+  
+  .md-tab-btn span {
+    display: none;
+  }
+  
+  .md-tab-icon {
+    width: 22px;
+    height: 22px;
+  }
+  
+  /* Add padding to panels so content isn't hidden behind the fixed bottom bar */
+  .md-tab-panels {
+    padding-bottom: 80px;
+  }
+}

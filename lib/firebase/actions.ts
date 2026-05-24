@@ -5,7 +5,7 @@ import { revalidatePath, revalidateTag } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, gymCollectionPath, gymProfileCollectionKey, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "./collections";
-import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
+import { getAdminMessaging, getFirebaseAdminServices, hasFirebaseAdminConfig } from "./admin";
 import type { FormActionState } from "@/types/action-state";
 import type { GymWorkspace, Role, WorkoutProgram } from "@/types/domain";
 import { getWorkoutPrograms } from "@/lib/firebase/read-models";
@@ -1047,6 +1047,15 @@ export async function assignProgramToMember(
     await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
     await mirrorGymScopedRecord(db, assignGymId, "activityEvents", activityId, activityRecord);
 
+    // Fire push notification (non-blocking, never throws)
+    void sendPushToMember(
+      db,
+      memberId,
+      "Workout program assigned",
+      `${programTitle} is now available in your weekly schedule.`,
+      "/member"
+    );
+
     revalidatePath("/owner");
     revalidatePath("/owner/members");
     revalidatePath(`/owner/members/${memberId}`);
@@ -1673,6 +1682,170 @@ export async function toggleMemberAccess(
     return success(`Member access ${isActive ? "enabled" : "disabled"}.`);
   } catch (error) {
     return failure(error, "Unable to toggle member access.");
+  }
+}
+
+// ─── FCM Push Notifications ──────────────────────────────────────────────────
+
+/**
+ * Saves an FCM registration token for the currently authenticated user.
+ * Called from the client-side FcmSetup component after the user grants notification permission.
+ *
+ * FormData keys: token
+ */
+export async function saveFcmToken(
+  _prev: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const token = String(formData.get("token") ?? "").trim();
+    if (!token) return failure(new Error("No token provided"), "Invalid FCM token.");
+
+    const db = requireFirebase();
+    await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
+      { fcmToken: token, fcmTokenUpdatedAt: new Date().toISOString() },
+      { merge: true }
+    );
+    return success("Push notifications enabled.");
+  } catch (error) {
+    console.error("Unable to save FCM token", error);
+    return failure(error, "Could not enable push notifications.");
+  }
+}
+
+/**
+ * Sends a push notification to a single member via FCM.
+ * Silently no-ops if the member has no FCM token or if Admin Messaging is unavailable.
+ * Never throws — notification failure must not break the parent flow.
+ */
+async function sendPushToMember(
+  db: FirebaseFirestore.Firestore,
+  memberId: string,
+  title: string,
+  body: string,
+  url?: string
+): Promise<void> {
+  try {
+    const profileSnap = await db.collection(collectionPaths.authProfiles).doc(memberId).get();
+    const token = String(profileSnap.data()?.fcmToken ?? "").trim();
+    if (!token) return;
+
+    const messaging = getAdminMessaging();
+    await messaging.send({
+      token,
+      notification: { title, body },
+      webpush: {
+        notification: {
+          title,
+          body,
+          icon: "/apple-touch-icon.png",
+          badge: "/favicon-32x32.png",
+          data: { url: url ?? "/member" }
+        },
+        fcmOptions: { link: url ?? "/member" }
+      }
+    });
+  } catch (err) {
+    // Log but never surface FCM errors to the caller — the in-app notification is the fallback.
+    console.warn("FCM push skipped or failed for member", memberId, err);
+  }
+}
+
+/**
+ * Suspend or restore multiple members in one call.
+ * Expects a JSON array of member IDs in the "memberIds" field and "isActive" boolean string.
+ */
+export async function bulkToggleMemberAccess(
+  _prev: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  try {
+    const user = await requireOwner();
+    const { auth, db } = requireFirebaseServices();
+    const raw = String(formData.get("memberIds") ?? "[]");
+    const memberIds: string[] = JSON.parse(raw);
+    if (!Array.isArray(memberIds) || memberIds.length === 0) {
+      throw new Error("No members selected.");
+    }
+    const isActive = formData.get("isActive") === "true";
+    const now = new Date().toISOString();
+
+    await Promise.all(
+      memberIds.map(async (memberId) => {
+        await assertMemberBelongsToCallerGym(user, memberId);
+        await db.collection(collectionPaths.authProfiles).doc(memberId).set({ isActive, updatedAt: now }, { merge: true });
+        await mirrorProfileToGym(db, memberId, { id: memberId, role: "member", defaultGymId: user.gymId ?? PRIMARY_GYM_ID, isActive, updatedAt: now });
+        try { await auth.updateUser(memberId, { disabled: !isActive }); } catch { /* soft fail */ }
+      })
+    );
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    return success(`${memberIds.length} member${memberIds.length === 1 ? "" : "s"} ${isActive ? "restored" : "suspended"}.`);
+  } catch (error) {
+    return failure(error, "Bulk access update failed.");
+  }
+}
+
+/**
+ * Assign the same workout program to multiple members at once.
+ * Expects "memberIds" (JSON array), "programId", and "programTitle".
+ */
+export async function bulkAssignProgram(
+  _prev: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireRole(["admin", "owner"]);
+    if (!hasFirebaseAdminConfig()) return success("Assigned (local mode — no Firebase).");
+
+    const db = requireFirebase();
+    const raw = String(formData.get("memberIds") ?? "[]");
+    const memberIds: string[] = JSON.parse(raw);
+    if (!Array.isArray(memberIds) || memberIds.length === 0) throw new Error("No members selected.");
+
+    const programId = requireText(formData, "programId", "Workout program");
+    const programTitle = String(formData.get("programTitle") ?? "Workout program").trim();
+    const assignGymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    await Promise.all(
+      memberIds.map(async (memberId) => {
+        await assertMemberBelongsToCallerGym(currentUser, memberId);
+        const assignmentId = randomUUID();
+
+        // Deactivate existing active assignments
+        const existing = await db
+          .collection(collectionPaths.programAssignments)
+          .where("gymId", "==", assignGymId)
+          .where("memberId", "==", memberId)
+          .where("status", "==", "active")
+          .get();
+        await Promise.all(existing.docs.map((d) => d.ref.set({ status: "cancelled", updatedAt: now }, { merge: true })));
+
+        const record = {
+          id: assignmentId,
+          gymId: assignGymId,
+          memberId,
+          programId,
+          assignedBy: currentUser.uid,
+          assignedAt: now,
+          status: "active",
+          createdAt: now,
+          updatedAt: now
+        };
+        await db.collection(collectionPaths.programAssignments).doc(assignmentId).set(record);
+        await mirrorGymScopedRecord(db, assignGymId, "programAssignments", assignmentId, record);
+      })
+    );
+
+    revalidatePath("/owner");
+    revalidatePath("/owner/members");
+    revalidateTag(`gym:${assignGymId}`);
+    return success(`"${programTitle}" assigned to ${memberIds.length} member${memberIds.length === 1 ? "" : "s"}.`);
+  } catch (error) {
+    return failure(error, "Bulk program assignment failed.");
   }
 }
 
@@ -3778,6 +3951,15 @@ export async function bookPTSession(
     await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
 
+    // Fire push notification (non-blocking, never throws)
+    void sendPushToMember(
+      db,
+      memberId,
+      "PT Plan Assigned",
+      `Your personal training plan runs from ${planStartDate} to ${planEndDate}.`,
+      "/member/pt-history"
+    );
+
     revalidatePath("/owner/training");
     revalidatePath(`/owner/members/${memberId}`);
     revalidatePath("/trainer");
@@ -3979,6 +4161,15 @@ export async function completePTSession(
     };
     await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
+
+    // Fire push notification (non-blocking, never throws)
+    void sendPushToMember(
+      db,
+      session.memberId,
+      "PT Session Completed",
+      "Your personal training session has been completed. Great work!",
+      "/member/pt-history"
+    );
 
     revalidatePath("/owner/training");
     revalidatePath("/trainer");

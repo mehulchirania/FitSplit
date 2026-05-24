@@ -570,11 +570,6 @@ export function LandingPageClient() {
                 See how it works →
               </a>
             </motion.div>
-            <motion.p className="lp-hero-proof"
-              initial={reduced ? false : { opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.65, ease: EASE, delay: 0.48 }}>
-              Used by Sri Shakthi Hanuman Gym &amp; Titan V2 Fitness
-            </motion.p>
           </div>
 
           {/* App mockup visual */}

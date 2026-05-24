@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AppTopbar } from "@/components/app-topbar";
+import { FcmSetup } from "@/components/fcm-setup";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
@@ -22,6 +23,7 @@ import "./styles/09-profile-history-notices-loader.css";
 import "./styles/forms.css";
 import "./styles/member.css";
 import "./styles/10-pt-training.css";
+import "./styles/11-member-tabs.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
@@ -112,8 +114,10 @@ export default async function RootLayout({
             gymName={gymName}
             notifications={notifications}
             role={currentUser?.role}
+            staffType={currentUser?.staffType}
             unreadInboxCount={unreadInboxCount}
           />
+          {currentUser?.role === "member" && <FcmSetup />}
           {children}
           <MobileBottomNav role={currentUser?.role} />
         </div>

@@ -1,5 +1,54 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-24: FCM push notifications + trainer dashboard + bulk member ops + owner dashboard redesign
+
+### FCM push notifications (end-to-end)
+- `public/firebase-messaging-sw.js` — service worker using Firebase compat SDK 11.8.1. Handles background messages and `notificationclick` (focuses/opens the member tab). Config values are hardcoded because service workers cannot access `process.env`.
+- `lib/firebase/client.ts` — added `getFirebaseMessaging()` async helper; uses `isSupported()` check so it gracefully returns `null` on browsers that do not support the Push API.
+- `lib/firebase/admin.ts` — added `getAdminMessaging()` returning the Firebase Admin Messaging instance.
+- `lib/firebase/actions.ts`:
+  - `saveFcmToken` (exported server action) — saves `fcmToken` + `fcmTokenUpdatedAt` to `authProfiles/{uid}` via `merge: true`. Called from the client after permission is granted.
+  - `sendPushToMember` (private helper) — reads `authProfiles/{memberId}.fcmToken`, calls Admin Messaging. Never throws — FCM failure is logged but never surfaces to the calling action.
+  - Wired into `assignProgramToMember`, `bookPTSession`, and `completePTSession` (all fire-and-forget with `void`).
+- `components/fcm-setup.tsx` — new client component. Requests notification permission, registers the service worker, gets the FCM token via `getToken()`, saves via `saveFcmToken`. Silently no-ops on denied/unsupported browsers.
+- `app/layout.tsx` — mounts `<FcmSetup />` only when `currentUser?.role === "member"`.
+- `.env.example` — documents `NEXT_PUBLIC_FIREBASE_VAPID_KEY` (get from Firebase Console → Project Settings → Cloud Messaging → Web Push certificates).
+
+**Deploy step (owner must do):** Add `NEXT_PUBLIC_FIREBASE_VAPID_KEY=<your-vapid-key>` to `.env.local` and production environment variables.
+
+### Trainer-dedicated dashboard (`/trainer`)
+- `app/trainer/page.tsx` — new route. `requireRole(["owner"])` guards it. Shows upcoming/active sessions (left column) and past sessions (right column). `?book=1` param opens PT booking form pre-filled with trainer's own ID.
+- `components/main-nav.tsx` — `trainerLinks` added; shown when `staffType === "trainer"`.
+- `components/app-topbar.tsx` — `staffType` prop threaded through. Side drawer shows trainer-specific links when `staffType === "trainer"`.
+- `app/layout.tsx` — passes `staffType={currentUser?.staffType}` to `AppTopbar`.
+
+### Bulk member operations
+- `lib/firebase/actions.ts`: `bulkToggleMemberAccess` and `bulkAssignProgram` server actions (JSON array of memberIds).
+- `components/bulk-member-list.tsx` — client component with multi-select, sticky action bar, inline program select for bulk assign. Uses `useTransition`.
+- `app/owner/members/page.tsx` — replaced `MemberRow` map with `<BulkMemberList>`.
+
+### Plan builder — duplicate day
+- `components/custom-plan-builder.tsx` — `copyDay(idx)` + ⧉ button in day tab row.
+
+### PT session reschedule — trainer reassignment UI
+- `components/pt-session-actions.tsx` — reschedule form now includes trainer `<select>` alongside datetime-local input.
+- `app/owner/training/page.tsx` — passes `trainers` to `<PTSessionActions>`.
+
+### Owner dashboard redesign (`/owner`)
+- Replaced cluttered hero + metric cards + tool grid with compact `odp-header` pill quick-links, `odp-stats` strip, `odp-grid` two-column layout.
+
+### Verification
+- `npx tsc --noEmit` — zero errors.
+
+### Remaining pending items
+- **Deploy step**: Add `NEXT_PUBLIC_FIREBASE_VAPID_KEY` to `.env.local` and production env.
+- Tech debt: split `lib/firebase/actions.ts` (~3k lines), inline `style={{...}}` cleanup, `Member` + `ProfileMetrics` type merge, zod validation.
+- Workout templates, exercise variations, payment/membership tracker.
+- Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes --project fitsplit-29215`
+- Data cleanup scripts: `node scripts/delete-uuid-programs.mjs --delete`, `node scripts/patch-exercise-data.mjs`
+
+---
+
 ## Latest Update - 2026-05-24: PT plans and owner dashboard refresh
 
 - Reworked PT from one-off session wording toward owner-assigned PT plans:

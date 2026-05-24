@@ -18,6 +18,7 @@ export function AppTopbar({
   initials,
   notifications = [],
   role,
+  staffType,
   unreadInboxCount = 0
 }: {
   gymName?: string;
@@ -25,6 +26,7 @@ export function AppTopbar({
   initials?: string;
   notifications?: Notification[];
   role?: Role;
+  staffType?: string;
   unreadInboxCount?: number;
 }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -173,7 +175,7 @@ export function AppTopbar({
           </Link>
         </div>
 
-        <MainNav role={role} />
+        <MainNav role={role} staffType={staffType} />
 
         <div className="topbar-actions">
           {role === "member" ? (
@@ -320,7 +322,20 @@ export function AppTopbar({
                   </Link>
                 </>
               )}
-              {role === "owner" && (
+              {role === "owner" && staffType === "trainer" && (
+                <>
+                  <Link href="/trainer" onClick={() => setIsDrawerOpen(false)}>
+                    My Schedule
+                  </Link>
+                  <Link href="/owner/members" onClick={() => setIsDrawerOpen(false)}>
+                    Members
+                  </Link>
+                  <Link href="/owner/training" onClick={() => setIsDrawerOpen(false)}>
+                    All PT Plans
+                  </Link>
+                </>
+              )}
+              {role === "owner" && staffType !== "trainer" && (
                 <>
                   <Link href="/owner" onClick={() => setIsDrawerOpen(false)}>
                     Dashboard
