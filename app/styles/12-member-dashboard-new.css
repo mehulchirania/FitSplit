@@ -1,0 +1,250 @@
+.md-hero-new {
+  position: relative;
+  padding: 32px 24px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 12%, var(--bg-elevated)), var(--bg-elevated));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+  margin-bottom: 32px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.md-hero-new::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 300px;
+  height: 300px;
+  background: var(--brand);
+  filter: blur(100px);
+  opacity: 0.15;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.md-hero-inner-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 32px;
+  justify-content: space-between;
+  align-items: flex-end;
+  position: relative;
+  z-index: 1;
+}
+
+.md-hero-copy-new {
+  flex: 1 1 300px;
+}
+
+.md-greeting-new {
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--brand);
+  margin-bottom: 8px;
+}
+
+.md-hero-title-new {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--text);
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
+}
+
+.md-hero-meta-new {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.md-badge-new {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.md-badge-accent-new {
+  background: color-mix(in srgb, var(--brand) 15%, transparent);
+  color: var(--brand);
+  border-color: color-mix(in srgb, var(--brand) 30%, transparent);
+}
+
+.md-hero-summary-new {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.md-hero-stat-new {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 16px 20px;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.md-hero-stat-new:hover {
+  background: rgba(0, 0, 0, 0.3);
+  transform: translateY(-2px);
+}
+
+.md-hero-stat-new span {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+
+.md-hero-stat-new strong {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.md-hero-stat-new small {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.md-hero-stat-link-new {
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+}
+.md-hero-stat-link-new::after {
+  content: '↗';
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  font-size: 0.9rem;
+  color: var(--text-faint);
+  transition: color 0.2s ease;
+}
+.md-hero-stat-link-new:hover::after {
+  color: var(--brand);
+}
+
+@media (max-width: 768px) {
+  .md-hero-new {
+    padding: 24px 20px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+  }
+  .md-hero-title-new {
+    font-size: 1.8rem;
+  }
+  .md-hero-inner-new {
+    gap: 24px;
+  }
+  .md-hero-summary-new {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .md-hero-stat-new {
+    min-width: 0;
+    padding: 12px 14px;
+  }
+  .md-hero-stat-new strong {
+    font-size: 1.4rem;
+  }
+}
+
+/* Premium styling for Workout Console Side Panels */
+.member-workout-side {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.member-workout-side > .lift-log-panel,
+.member-workout-side > .injury-card,
+.member-workout-side > .ai-modification-panel {
+  background: linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+.member-workout-side .panel-title h2,
+.member-workout-side h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 8px 0;
+}
+
+.member-workout-side p {
+  font-size: 0.9rem;
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+.lift-log-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.lift-log-fields label,
+.lift-log-exercise-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lift-log-fields input,
+.lift-log-exercise-field select,
+.injury-card textarea {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.lift-log-fields input:focus,
+.lift-log-exercise-field select:focus,
+.injury-card textarea:focus {
+  border-color: var(--brand);
+  background: rgba(0, 0, 0, 0.4);
+  outline: none;
+}
+
+.member-workout-side .button-primary {
+  width: 100%;
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 12px;
+  font-weight: 700;
+}

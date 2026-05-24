@@ -97,14 +97,15 @@ export function MacroProgressPanel({
 
   return (
     <div style={{
-      background: "rgba(255, 255, 255, 0.02)",
-      backdropFilter: "blur(12px)",
+      background: "linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01))",
+      backdropFilter: "blur(24px)",
+      WebkitBackdropFilter: "blur(24px)",
       border: "1px solid rgba(255, 255, 255, 0.08)",
-      borderRadius: "16px",
-      padding: "20px",
+      borderRadius: "24px",
+      padding: "24px",
       display: "grid",
-      gap: "20px",
-      boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)"
+      gap: "24px",
+      boxShadow: "0 12px 40px rgba(0, 0, 0, 0.2)"
     }}>
       {/* Panel title and top status */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -233,12 +234,12 @@ export function MacroProgressPanel({
             <div
               key={item.key}
               style={{
-                background: "rgba(255, 255, 255, 0.01)",
+                background: "linear-gradient(145deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01))",
                 border: "1px solid rgba(255, 255, 255, 0.04)",
-                borderRadius: "10px",
-                padding: "12px 10px",
+                borderRadius: "16px",
+                padding: "16px 12px",
                 display: "grid",
-                gap: "8px",
+                gap: "12px",
                 textAlign: "center"
               }}
             >
@@ -253,13 +254,13 @@ export function MacroProgressPanel({
               </div>
 
               {/* Progress bar */}
-              <div style={{ height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "2px", overflow: "hidden" }}>
+              <div style={{ height: "6px", background: "rgba(255,255,255,0.06)", borderRadius: "3px", overflow: "hidden" }}>
                 <div style={{
                   height: "100%",
                   width: `${percent}%`,
-                  background: item.color,
-                  borderRadius: "2px",
-                  transition: "width 200ms ease"
+                  background: `linear-gradient(90deg, ${item.color}, color-mix(in srgb, ${item.color} 40%, white))`,
+                  borderRadius: "3px",
+                  transition: "width 0.4s cubic-bezier(0.4, 0, 0.2, 1)"
                 }} />
               </div>
 

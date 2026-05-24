@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   Tooltip,
@@ -88,7 +88,13 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
       {/* Chart */}
       <div style={{ height: 180, minHeight: 180, minWidth: 0 }}>
         <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-          <LineChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+          <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
+            <defs>
+              <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#C8F135" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="#C8F135" stopOpacity={0} />
+              </linearGradient>
+            </defs>
             <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" vertical={false} />
             <XAxis
               dataKey="date"
@@ -104,24 +110,28 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
             />
             <Tooltip
               contentStyle={{
-                background: "var(--bg-elevated)",
-                border: "1px solid var(--border)",
-                borderRadius: "8px",
+                background: "rgba(10, 10, 10, 0.8)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "12px",
                 fontSize: "12px",
                 color: "var(--text)",
+                backdropFilter: "blur(8px)",
+                WebkitBackdropFilter: "blur(8px)"
               }}
               formatter={(val) => [`${Number(val ?? 0)} kg`, "Weight"]}
-              labelStyle={{ color: "var(--text-soft)", marginBottom: "4px" }}
+              labelStyle={{ color: "var(--text-soft)", marginBottom: "6px", fontWeight: 600 }}
             />
-            <Line
+            <Area
               type="monotone"
               dataKey="weight"
               stroke="#C8F135"
-              strokeWidth={2}
-              dot={{ fill: "#C8F135", r: 3, strokeWidth: 0 }}
-              activeDot={{ r: 5, strokeWidth: 0 }}
+              strokeWidth={3}
+              fillOpacity={1}
+              fill="url(#colorWeight)"
+              dot={{ fill: "#C8F135", r: 4, strokeWidth: 0, strokeOpacity: 0.2 }}
+              activeDot={{ r: 6, strokeWidth: 4, stroke: "rgba(200,241,53,0.3)" }}
             />
-          </LineChart>
+          </AreaChart>
         </ResponsiveContainer>
       </div>
 

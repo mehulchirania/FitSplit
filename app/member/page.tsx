@@ -114,42 +114,53 @@ export default async function MemberDashboard() {
   })();
 
   return (
-    <main className="md-page">
-      <header className="md-hero">
-        <div className="md-hero-inner">
-          <div className="md-hero-copy">
-            <p className="md-greeting">{getGreeting()}, {firstName}</p>
-            <h1 className="md-hero-title">{program ? program.title : "No plan assigned yet"}</h1>
-            <div className="md-hero-meta">
+    <main className="md-page" style={{ padding: "16px", maxWidth: "1200px", margin: "0 auto" }}>
+      <header className="md-hero-new">
+        <div className="md-hero-inner-new">
+          <div className="md-hero-copy-new">
+            <p className="md-greeting-new">{getGreeting()}, {firstName}</p>
+            <h1 className="md-hero-title-new">{program ? program.title : "No plan assigned yet"}</h1>
+            <div className="md-hero-meta-new">
               {program ? (
                 <>
-                  <span className="md-badge md-badge-accent">{program.daysPerWeek} days / week</span>
-                  {currentWeek ? <span className="md-badge">Week {currentWeek}</span> : null}
+                  <span className="md-badge-new md-badge-accent-new">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    {program.daysPerWeek} days / week
+                  </span>
+                  {currentWeek ? (
+                    <span className="md-badge-new">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      Week {currentWeek}
+                    </span>
+                  ) : null}
                 </>
               ) : (
-                <span className="md-badge md-badge-accent">Awaiting trainer</span>
+                <span className="md-badge-new md-badge-accent-new">Awaiting trainer</span>
               )}
-              <span className="md-badge">{gym?.name ?? "Your gym"}</span>
+              <span className="md-badge-new">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                {gym?.name ?? "Your gym"}
+              </span>
             </div>
           </div>
 
-          <div className="md-hero-summary" aria-label="Training summary">
-            <div className="md-hero-stat">
+          <div className="md-hero-summary-new" aria-label="Training summary">
+            <div className="md-hero-stat-new">
               <span>Streak</span>
               <strong>{weeklyStreak > 0 ? `🔥 ${weeklyStreak}` : "—"}</strong>
               <small>{weeklyStreak === 1 ? "week" : "weeks"} in a row</small>
             </div>
-            <div className="md-hero-stat">
+            <div className="md-hero-stat-new">
               <span>This week</span>
               <strong>{daysTrainedThisWeek}</strong>
               <small>training day{daysTrainedThisWeek === 1 ? "" : "s"}</small>
             </div>
-            <Link href="/member/history" className="md-hero-stat md-hero-stat--link">
+            <Link href="/member/history" className="md-hero-stat-new md-hero-stat-link-new">
               <span>Lift logs</span>
               <strong>{liftLogs.length}</strong>
-              <small>sets saved · view history</small>
+              <small>sets saved</small>
             </Link>
-            <div className="md-hero-stat">
+            <div className="md-hero-stat-new">
               <span>Status</span>
               <strong>{program ? "Ready" : "Pending"}</strong>
               <small>{program ? "plan assigned" : "trainer review"}</small>

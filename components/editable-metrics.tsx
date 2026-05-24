@@ -91,52 +91,60 @@ export function EditableMetrics({ member }: { member: Member }) {
   ];
 
   return (
-    <div style={{ display: "flex", gap: "8px", alignItems: "stretch", flexWrap: "wrap" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: "12px", width: "100%" }}>
       {stats.map(({ label, value }) => (
         <div key={label} style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid var(--border)",
-          borderRadius: "10px",
-          padding: "10px 14px",
-          minWidth: "72px",
+          background: "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          borderRadius: "16px",
+          padding: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
         }}>
-          <div style={{ fontSize: "10px", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700, marginBottom: "4px" }}>{label}</div>
-          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: "var(--text)", lineHeight: 1 }}>{value}</div>
+          <div style={{ fontSize: "0.75rem", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>{label}</div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>{value}</div>
         </div>
       ))}
 
       {/* BMI tile */}
       <div style={{ position: "relative" }}>
         <div style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid var(--border)",
-          borderRadius: "10px",
-          padding: "10px 14px",
-          minWidth: "72px",
-          cursor: "pointer",
+          background: `linear-gradient(145deg, color-mix(in srgb, ${getBmiColor(bmiValue)} 15%, transparent), rgba(255,255,255,0.02))`,
+          border: `1px solid color-mix(in srgb, ${getBmiColor(bmiValue)} 30%, transparent)`,
+          borderRadius: "16px",
+          padding: "16px",
+          cursor: "help",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px",
+          boxShadow: `0 8px 24px color-mix(in srgb, ${getBmiColor(bmiValue)} 15%, transparent)`,
+          transition: "transform 0.2s ease"
         }}
           onClick={() => setShowBmiInfo(v => !v)}
           onMouseEnter={() => setShowBmiInfo(true)}
           onMouseLeave={() => setShowBmiInfo(false)}
         >
-          <div style={{ fontSize: "10px", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.07em", fontWeight: 700, marginBottom: "4px" }}>BMI</div>
-          <div style={{ fontSize: "1.1rem", fontWeight: 700, color: getBmiColor(bmiValue), lineHeight: 1 }}>{bmi}</div>
+          <div style={{ fontSize: "0.75rem", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>BMI</div>
+          <div style={{ fontSize: "1.4rem", fontWeight: 800, color: getBmiColor(bmiValue), lineHeight: 1 }}>{bmi}</div>
         </div>
         {showBmiInfo && (
           <div style={{
-            position: "absolute", top: "calc(100% + 8px)", right: 0,
-            background: "var(--bg-elevated)", border: "1px solid var(--border)",
-            borderRadius: "10px", padding: "12px", boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
-            zIndex: 100, width: "190px", fontSize: "0.78rem",
+            position: "absolute", bottom: "calc(100% + 12px)", right: 0,
+            background: "rgba(10, 10, 10, 0.9)", border: "1px solid rgba(255, 255, 255, 0.1)",
+            borderRadius: "16px", padding: "16px", boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+            zIndex: 100, width: "220px", fontSize: "0.85rem",
+            backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)"
           }}>
-            <div style={{ display: "grid", gap: "5px" }}>
+            <div style={{ display: "grid", gap: "8px" }}>
               {[
                 { label: "Underweight", range: "< 18.5", color: "var(--warning)" },
                 { label: "Normal", range: "18.5 – 24.9", color: "var(--brand)" },
                 { label: "Overweight", range: "25 – 29.9", color: "var(--warning)" },
                 { label: "Obese", range: "> 30", color: "var(--danger)" },
               ].map(({ label, range, color }) => (
-                <div key={label} style={{ display: "flex", justifyContent: "space-between", color }}>
+                <div key={label} style={{ display: "flex", justifyContent: "space-between", color, fontWeight: 600 }}>
                   <span>{label}</span><span>{range}</span>
                 </div>
               ))}
@@ -152,24 +160,25 @@ export function EditableMetrics({ member }: { member: Member }) {
         title="Edit metrics"
         aria-label="Edit body metrics"
         style={{
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid var(--border)",
-          borderRadius: "10px",
-          padding: "10px 12px",
-          color: "var(--text-faint)",
-          cursor: "pointer",
+          background: "transparent",
+          border: "1px dashed rgba(255,255,255,0.2)",
+          borderRadius: "16px",
+          width: "100%",
+          padding: "12px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          alignSelf: "stretch",
-          transition: "color 150ms, border-color 150ms",
+          cursor: "pointer",
+          color: "var(--text-soft)",
+          fontSize: "0.85rem",
+          fontWeight: 600,
+          transition: "all 0.2s ease"
         }}
-        onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border-strong)"; }}
-        onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.color = "var(--text-faint)"; (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border)"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "var(--text)"; }}
+        onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-soft)"; }}
       >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-        </svg>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px" }}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        Edit metrics
       </button>
     </div>
   );
