@@ -1,0 +1,3 @@
+export {
+  submitContactMessage
+} from "./legacy";

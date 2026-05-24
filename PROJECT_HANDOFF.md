@@ -1,5 +1,43 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-24: Action split scaffold + callable Function fast paths
+
+- Split the public server-action entrypoint:
+  - `lib/firebase/actions.ts` is now a compatibility barrel.
+  - Feature-scoped modules were added under `lib/firebase/actions/` for members, staff, gyms, programs, exercises, PT, progress, notifications, and contact.
+  - The existing implementation is preserved in `lib/firebase/actions/legacy.ts` so behavior stays stable while future work extracts internals into true feature-owned modules.
+- Added/standardized Firebase Callable Function contracts in `functions/src/index.ts`:
+  - `bulkToggleMemberAccess`
+  - `bulkAssignProgram`
+  - `assignPTPlan`
+  - Existing `assignProgramToMember` now also returns a `data.assignmentId` payload.
+- Moved callable assignment side effects off the blocking path:
+  - `onProgramAssignmentCreated` creates member notification, owner activity, gym-scoped mirrors, and push notification after callable-created assignments.
+  - `onPTPlanCreated` creates PT notification/activity/mirrors/push after callable-created PT plans.
+  - Legacy server actions do not set `sideEffectsMode: "trigger"`, so they keep their existing behavior and do not double-notify.
+- Extended typed client callable wrappers in `lib/firebase/functions.ts` for:
+  - Bulk member access updates.
+  - Bulk program assignment.
+  - PT plan assignment.
+  - Corrected create-member/create-staff input types to match optional email + required phone behavior.
+- Migrated fast UI paths to callable Functions with server-action fallback:
+  - `components/member-row.tsx`: optimistic active/suspended toggle.
+  - `components/member-access-actions.tsx`: member detail access toggle and PIN reset use callable Functions first.
+  - `components/bulk-member-list.tsx`: optimistic bulk restore/suspend and bulk assign.
+  - `components/program-assignment-form.tsx`: existing-program assignment uses callable Function first.
+  - `components/pt-booking-form.tsx`: PT plan assignment uses callable Function first.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run functions:build` passed.
+  - `npm run build` passed after clearing stale `.next`.
+
+### Follow-up TODO
+- Continue extracting code from `actions/legacy.ts` into the feature modules instead of re-exporting legacy functions.
+- Continue moving remaining notifications/activity/FCM side effects to Firestore triggers where the legacy server action path still performs them inline.
+- Convert member creation/archive and reset password/PIN UI paths to callable Functions.
+- Harden Firestore rules once privileged client writes are fully routed through Functions.
+- Deploy updated Functions and Firestore indexes/rules to the dev Firebase project before production.
+
 ## Latest Update - 2026-05-24: FCM push notifications + trainer dashboard + bulk member ops + owner dashboard redesign
 
 ### FCM push notifications (end-to-end)

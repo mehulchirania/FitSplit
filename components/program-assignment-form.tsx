@@ -1,9 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import type { FormEvent } from "react";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Plus, X } from "@/components/icons";
 import { assignProgramToMember, createAndAssignCustomProgram } from "@/lib/firebase/actions";
+import { callAssignProgramToMember } from "@/lib/firebase/functions";
+import { initialFormActionState } from "@/types/action-state";
 import type { Member, MuscleGroup, WorkoutProgram } from "@/types/domain";
 
 type CatalogGroup = { muscleGroup: MuscleGroup; exercises: Array<{ id: string; name: string }> };
@@ -25,10 +28,36 @@ function PickPlanForm({
   programs: WorkoutProgram[];
 }) {
   const [selectedId, setSelectedId] = useState(currentProgramId ?? programs[0]?.id ?? "");
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [isPending, startTransition] = useTransition();
   const selected = programs.find((p) => p.id === selectedId) ?? programs[0];
   const predefined = programs.filter((p) => p.source !== "gym");
   const gym = programs.filter((p) => p.source === "gym");
   const trainingDays = selected?.days.filter((d) => d.exercises.length > 0) ?? [];
+
+  function handleAssign(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selected?.id) return;
+    const ok = window.confirm("This will replace the member's active workout assignment and notify them.");
+    if (!ok) return;
+
+    const formData = new FormData(event.currentTarget);
+    setFeedback(null);
+    startTransition(async () => {
+      try {
+        const result = await callAssignProgramToMember({
+          memberId: member.id,
+          memberName: member.fullName,
+          programId: selected.id,
+          programTitle: selected.title
+        });
+        setFeedback({ type: "success", message: result.data.message });
+      } catch {
+        const result = await assignProgramToMember(initialFormActionState, formData);
+        setFeedback({ type: result.status === "success" ? "success" : "error", message: result.message });
+      }
+    });
+  }
 
   if (programs.length === 0) {
     return (
@@ -42,14 +71,7 @@ function PickPlanForm({
   }
 
   return (
-    <ConfirmActionForm
-      action={assignProgramToMember}
-      className="inline-action-form"
-      confirmMessage="This will replace the member's active workout assignment and notify them."
-      confirmTitle="Assign this program?"
-      pendingLabel="Assigning..."
-      submitLabel="Assign selected program"
-    >
+    <form className="inline-action-form" onSubmit={handleAssign}>
       <input name="memberId" type="hidden" value={member.id} />
       <input name="memberName" type="hidden" value={member.fullName} />
       <input name="programTitle" type="hidden" value={selected?.title ?? ""} />
@@ -97,7 +119,15 @@ function PickPlanForm({
         </div>
       ) : null}
       <p>The selected weekly schedule appears immediately on the member dashboard after confirmation.</p>
-    </ConfirmActionForm>
+      {feedback ? (
+        <p className={`form-message form-message-${feedback.type}`} role="status">
+          {feedback.message}
+        </p>
+      ) : null}
+      <button className="button button-primary" disabled={isPending || !selectedId} type="submit">
+        {isPending ? "Assigning..." : "Assign selected program"}
+      </button>
+    </form>
   );
 }
 

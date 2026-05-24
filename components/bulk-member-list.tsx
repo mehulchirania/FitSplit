@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { bulkAssignProgram, bulkToggleMemberAccess } from "@/lib/firebase/actions";
+import { callBulkAssignProgram, callBulkToggleMemberAccess } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member, WorkoutProgram } from "@/types/domain";
 
@@ -24,8 +25,25 @@ export function BulkMemberList({
   const [bulkAction, setBulkAction] = useState<"assign" | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState(programs[0]?.id ?? "");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; msg: string } | null>(null);
+  const [accessById, setAccessById] = useState(() => new Map(members.map((m) => [m.id, m.isActive] as const)));
+  const [assignedById, setAssignedById] = useState(() => new Set(assignedIds));
   const [isPending, startTransition] = useTransition();
 
+  useEffect(() => {
+    setAccessById(new Map(members.map((m) => [m.id, m.isActive] as const)));
+  }, [members]);
+
+  useEffect(() => {
+    setAssignedById(new Set(assignedIds));
+  }, [assignedIds]);
+
+  useEffect(() => {
+    if (!selectedProgramId && programs[0]?.id) {
+      setSelectedProgramId(programs[0].id);
+    }
+  }, [programs, selectedProgramId]);
+
+  const selectedIds = useMemo(() => Array.from(selected), [selected]);
   const allSelected = members.length > 0 && selected.size === members.length;
 
   function toggleAll() {
@@ -47,31 +65,89 @@ export function BulkMemberList({
   }
 
   function executeBulk(action: "assign" | "suspend" | "restore") {
-    const memberIds = JSON.stringify(Array.from(selected));
+    const targetIds = selectedIds;
+    if (!targetIds.length) return;
+    const previousAccess = new Map(accessById);
+    const previousAssigned = new Set(assignedById);
+    const program = programs.find((p) => p.id === selectedProgramId);
+
+    setFeedback(null);
+    if (action === "assign") {
+      setAssignedById((current) => new Set([...current, ...targetIds]));
+    } else {
+      const nextActive = action === "restore";
+      setAccessById((current) => {
+        const next = new Map(current);
+        targetIds.forEach((id) => next.set(id, nextActive));
+        return next;
+      });
+    }
+
     startTransition(async () => {
-      const fd = new FormData();
-      fd.set("memberIds", memberIds);
-      let result;
-      if (action === "assign") {
-        const prog = programs.find((p) => p.id === selectedProgramId);
-        fd.set("programId", selectedProgramId);
-        fd.set("programTitle", prog?.title ?? "");
-        result = await bulkAssignProgram(initialFormActionState, fd);
-      } else {
-        fd.set("isActive", action === "restore" ? "true" : "false");
-        result = await bulkToggleMemberAccess(initialFormActionState, fd);
-      }
-      setFeedback({ type: result.status === "success" ? "success" : "error", msg: result.message });
-      if (result.status === "success") {
+      try {
+        let message = "";
+        if (action === "assign") {
+          const result = await callBulkAssignProgram({
+            memberIds: targetIds,
+            programId: selectedProgramId,
+            programTitle: program?.title
+          });
+          message = result.data.message;
+          const failed = result.data.data?.failed ?? [];
+          if (failed.length) {
+            setAssignedById((current) => {
+              const next = new Set(current);
+              failed.forEach((item) => next.delete(item.memberId));
+              return next;
+            });
+          }
+        } else {
+          const result = await callBulkToggleMemberAccess({
+            memberIds: targetIds,
+            isActive: action === "restore"
+          });
+          message = result.data.message;
+          const failed = result.data.data?.failed ?? [];
+          if (failed.length) {
+            setAccessById((current) => {
+              const next = new Map(current);
+              failed.forEach((item) => next.set(item.memberId, previousAccess.get(item.memberId) ?? false));
+              return next;
+            });
+          }
+        }
+
+        setFeedback({ type: "success", msg: message });
         setSelected(new Set());
         setBulkAction(null);
+      } catch {
+        const fd = new FormData();
+        fd.set("memberIds", JSON.stringify(targetIds));
+        let result;
+        if (action === "assign") {
+          fd.set("programId", selectedProgramId);
+          fd.set("programTitle", program?.title ?? "");
+          result = await bulkAssignProgram(initialFormActionState, fd);
+        } else {
+          fd.set("isActive", action === "restore" ? "true" : "false");
+          result = await bulkToggleMemberAccess(initialFormActionState, fd);
+        }
+
+        if (result.status === "error") {
+          setAccessById(previousAccess);
+          setAssignedById(previousAssigned);
+        }
+        setFeedback({ type: result.status === "success" ? "success" : "error", msg: result.message });
+        if (result.status === "success") {
+          setSelected(new Set());
+          setBulkAction(null);
+        }
       }
     });
   }
 
   return (
     <div className="bml-root">
-      {/* ── Sticky action bar ── */}
       {selected.size > 0 && (
         <div className="bml-action-bar" role="toolbar" aria-label="Bulk actions">
           <span className="bml-count">{selected.size} selected</span>
@@ -155,7 +231,6 @@ export function BulkMemberList({
         </div>
       )}
 
-      {/* ── Modern Member Table ── */}
       <div className="bml-table-container">
         <table className="bml-table">
           <thead>
@@ -174,13 +249,13 @@ export function BulkMemberList({
           <tbody>
             {members.map((member) => {
               const isSelected = selected.has(member.id);
-              const hasPlan = assignedIds.has(member.id);
+              const hasPlan = assignedById.has(member.id);
+              const isActive = accessById.get(member.id) ?? member.isActive;
               return (
                 <tr
                   className={`bml-tr ${isSelected ? "bml-tr--selected" : ""}`}
                   key={member.id}
                   onClick={(e) => {
-                    // if they didn't click a link or checkbox, toggle selection
                     if (
                       (e.target as HTMLElement).tagName !== "A" &&
                       (e.target as HTMLElement).tagName !== "INPUT"
@@ -199,7 +274,7 @@ export function BulkMemberList({
                       />
                     </label>
                   </td>
-                  
+
                   <td className="bml-td-member">
                     <div className="bml-member-profile">
                       <span className="mcard-avatar" aria-hidden="true">{member.avatarInitials}</span>
@@ -217,8 +292,8 @@ export function BulkMemberList({
                   </td>
 
                   <td className="bml-td-status">
-                    <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`} style={{ fontSize: "0.72rem" }}>
-                      {member.isActive ? "Active" : "Suspended"}
+                    <span className={`status-pill ${isActive ? "status-active" : "status-inactive"}`} style={{ fontSize: "0.72rem" }}>
+                      {isActive ? "Active" : "Suspended"}
                     </span>
                   </td>
 

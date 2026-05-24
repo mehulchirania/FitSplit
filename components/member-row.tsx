@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { toggleMemberAccess } from "@/lib/firebase/actions";
+import { callToggleMemberAccess } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member } from "@/types/domain";
 
@@ -13,21 +14,48 @@ export function MemberRow({
   member: Member;
   hasPlan?: boolean;
 }) {
-  const [, action, isPending] = useActionState(toggleMemberAccess, initialFormActionState);
+  const [isActive, setIsActive] = useState(member.isActive);
+  const [feedback, setFeedback] = useState("");
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setIsActive(member.isActive);
+  }, [member.isActive]);
+
+  function updateAccess() {
+    const next = !isActive;
+    const previous = isActive;
+    setFeedback("");
+    setIsActive(next);
+
+    startTransition(async () => {
+      try {
+        await callToggleMemberAccess({ memberId: member.id, isActive: next });
+        setFeedback(next ? "Access restored." : "Access suspended.");
+      } catch {
+        const fd = new FormData();
+        fd.set("memberId", member.id);
+        fd.set("isActive", String(next));
+        const result = await toggleMemberAccess(initialFormActionState, fd);
+        if (result.status === "error") {
+          setIsActive(previous);
+        }
+        setFeedback(result.message);
+      }
+    });
+  }
 
   return (
     <div className="member-card-row">
-      {/* Avatar */}
       <span className="mcard-avatar" aria-hidden="true">{member.avatarInitials}</span>
 
-      {/* Identity */}
       <div className="mcard-identity">
         <div className="mcard-name-row">
           <Link className="mcard-name mcard-name-link" href={`/owner/members/${member.id}`}>{member.fullName}</Link>
           <span className={`mcard-plan-badge ${hasPlan ? "badge-has-plan" : "badge-no-plan"}`}>
             {hasPlan ? "Plan set" : "No plan"}
           </span>
-          {!member.isActive && (
+          {!isActive && (
             <span className="mcard-plan-badge" style={{ background: "color-mix(in srgb, var(--danger) 14%, transparent)", color: "var(--danger)" }}>
               Suspended
             </span>
@@ -49,20 +77,18 @@ export function MemberRow({
         </div>
       </div>
 
-      {/* Actions — no confirm modal, direct submit for speed */}
       <div className="mcard-actions">
-        <form action={action} style={{ display: "contents" }}>
-          <input name="memberId" type="hidden" value={member.id} />
-          <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
-          <button
-            className={`mcard-toggle ${member.isActive ? "mcard-toggle-suspend" : "mcard-toggle-restore"}`}
-            disabled={isPending}
-            title={member.isActive ? "Suspend access" : "Restore access"}
-            type="submit"
-          >
-            {isPending ? "…" : member.isActive ? "Suspend" : "Restore"}
-          </button>
-        </form>
+        <button
+          aria-pressed={isActive}
+          className={`mcard-toggle ${isActive ? "mcard-toggle-suspend" : "mcard-toggle-restore"}`}
+          disabled={isPending}
+          onClick={updateAccess}
+          title={isActive ? "Suspend access" : "Restore access"}
+          type="button"
+        >
+          {isPending ? "..." : isActive ? "Suspend" : "Restore"}
+        </button>
+        {feedback ? <span className="sr-only" role="status">{feedback}</span> : null}
       </div>
     </div>
   );

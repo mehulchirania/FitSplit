@@ -16,15 +16,19 @@ function fns() {
 
 // ── Shared response ──────────────────────────────────────────────────────────
 
-export type FnResult<T = Record<string, unknown>> = { status: "success" } & T;
+export type FnResult<T = Record<string, unknown>> = {
+  status: "success";
+  message: string;
+  data?: T;
+} & T;
 
 // ── createMemberAccount ──────────────────────────────────────────────────────
 
 export type CreateMemberInput = {
   gymId?: string;
   fullName: string;
-  email: string;
-  phone?: string;
+  email?: string;
+  phone: string;
   username: string;
   goal?: string;
 };
@@ -43,7 +47,8 @@ export function callCreateMemberAccount(input: CreateMemberInput) {
 export type CreateStaffInput = {
   gymId: string;
   fullName: string;
-  email: string;
+  email?: string;
+  phone: string;
   staffType?: "owner" | "trainer" | "staff";
 };
 
@@ -65,6 +70,27 @@ export function callToggleMemberAccess(input: ToggleAccessInput) {
   return httpsCallable<ToggleAccessInput, ToggleAccessResult>(
     fns(),
     "toggleMemberAccess"
+)(input);
+}
+
+// ── bulkToggleMemberAccess ────────────────────────────────────────────────
+
+export type BulkToggleAccessInput = {
+  gymId?: string;
+  memberIds: string[];
+  isActive: boolean;
+};
+
+export type BulkActionFailure = { memberId: string; message: string };
+export type BulkToggleAccessResult = FnResult<{
+  updated: number;
+  failed: BulkActionFailure[];
+}>;
+
+export function callBulkToggleMemberAccess(input: BulkToggleAccessInput) {
+  return httpsCallable<BulkToggleAccessInput, BulkToggleAccessResult>(
+    fns(),
+    "bulkToggleMemberAccess"
   )(input);
 }
 
@@ -107,6 +133,58 @@ export function callAssignProgramToMember(input: AssignProgramInput) {
   return httpsCallable<AssignProgramInput, AssignProgramResult>(
     fns(),
     "assignProgramToMember"
+  )(input);
+}
+
+// ── bulkAssignProgram ─────────────────────────────────────────────────────
+
+export type BulkAssignProgramInput = {
+  gymId?: string;
+  memberIds: string[];
+  programId: string;
+  programTitle?: string;
+};
+
+export type BulkAssignProgramResult = FnResult<{
+  updated: number;
+  failed: BulkActionFailure[];
+}>;
+
+export function callBulkAssignProgram(input: BulkAssignProgramInput) {
+  return httpsCallable<BulkAssignProgramInput, BulkAssignProgramResult>(
+    fns(),
+    "bulkAssignProgram"
+  )(input);
+}
+
+// ── assignPTPlan ──────────────────────────────────────────────────────────
+
+export type AssignPTPlanInput = {
+  gymId?: string;
+  memberId: string;
+  memberName?: string;
+  trainerId: string;
+  trainerName?: string;
+  planStartDate: string;
+  planDurationDays: number;
+  plannedExercises: Array<{
+    exerciseId: string;
+    sets?: number;
+    reps?: string;
+    notes?: string;
+  }>;
+  notes?: string;
+};
+
+export type AssignPTPlanResult = FnResult<{
+  ptPlanId: string;
+  planEndDate: string;
+}>;
+
+export function callAssignPTPlan(input: AssignPTPlanInput) {
+  return httpsCallable<AssignPTPlanInput, AssignPTPlanResult>(
+    fns(),
+    "assignPTPlan"
   )(input);
 }
 

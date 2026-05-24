@@ -3,6 +3,8 @@ import { randomUUID } from "node:crypto";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
+import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
@@ -10,6 +12,7 @@ initializeApp();
 
 const db = getFirestore();
 const auth = getAuth();
+const messaging = getMessaging();
 const region = "asia-south1";
 const primaryGymId = "shg";
 
@@ -21,6 +24,12 @@ type CallableUser = {
   role: Role;
   gymId: string;
   memberId?: string;
+};
+
+type FunctionResult<T = Record<string, unknown>> = {
+  status: "success";
+  message: string;
+  data?: T;
 };
 
 function asString(value: unknown, label: string) {
@@ -157,6 +166,41 @@ function gymDoc(gymId: string, collection: string, docId: string) {
   return db.collection(`gyms/${gymId}/${collection}`).doc(docId);
 }
 
+function asStringArray(value: unknown, label: string) {
+  if (!Array.isArray(value)) {
+    throw new HttpsError("invalid-argument", `${label} must be an array.`);
+  }
+  const ids = value.map((item) => String(item ?? "").trim()).filter(Boolean);
+  if (!ids.length) {
+    throw new HttpsError("invalid-argument", `${label} cannot be empty.`);
+  }
+  return Array.from(new Set(ids));
+}
+
+function asBoolean(value: unknown, label: string) {
+  if (typeof value === "boolean") return value;
+  if (value === "true") return true;
+  if (value === "false") return false;
+  throw new HttpsError("invalid-argument", `${label} must be true or false.`);
+}
+
+function parsePlannedExercises(value: unknown) {
+  const items = Array.isArray(value) ? value : [];
+  return items
+    .map((item) => {
+      const row = item as Record<string, unknown>;
+      const exerciseId = String(row.exerciseId ?? "").trim();
+      if (!exerciseId) return null;
+      return {
+        exerciseId,
+        sets: Number(row.sets ?? 3) || 3,
+        reps: String(row.reps ?? "8-12").trim() || "8-12",
+        notes: optionalString(row.notes) || undefined
+      };
+    })
+    .filter(Boolean);
+}
+
 async function mirrorProfileToGym(profileId: string, profile: Record<string, unknown>) {
   const gymId = String(profile.defaultGymId ?? profile.gymId ?? primaryGymId);
   const collection = profile.role === "member" ? "members" : "staff";
@@ -183,6 +227,24 @@ async function mirrorGymRecord(gymId: string, collection: string, docId: string,
     },
     { merge: true }
   );
+}
+
+async function sendPushToMember(memberId: string, title: string, body: string, url = "/member") {
+  try {
+    const profile = await db.collection("authProfiles").doc(memberId).get();
+    const token = String(profile.get("fcmToken") ?? "");
+    if (!token) return;
+
+    await messaging.send({
+      token,
+      notification: { title, body },
+      webpush: {
+        fcmOptions: { link: url }
+      }
+    });
+  } catch (error) {
+    console.warn("[sendPushToMember] skipped or failed", memberId, error);
+  }
 }
 
 function archiveExpiry() {
@@ -469,44 +531,313 @@ export const assignProgramToMember = onCall({ region }, async (request) => {
     gymId,
     memberId,
     programId,
+    programTitle,
+    memberName,
     assignedAt: now,
     status: "active",
     createdBy: user.uid,
+    sideEffectsMode: "trigger",
     createdAt: now,
     updatedAt: now
   };
   await db.collection("programAssignments").doc(assignmentId).set(assignment);
   await mirrorGymRecord(gymId, "programAssignments", assignmentId, assignment);
 
-  const notificationId = randomUUID();
-  const notification = {
-    id: notificationId,
-    recipientRole: "member",
-    recipientId: memberId,
-    gymId,
-    type: "program_assigned",
-    title: "Workout program assigned",
-    body: `${programTitle} is now available in your weekly schedule.`,
-    createdAt: now
-  };
-  await db.collection("notifications").doc(notificationId).set(notification);
-  await mirrorGymRecord(gymId, "notifications", notificationId, notification);
-
-  const activityId = randomUUID();
-  const activity = {
-    id: activityId,
-    gymId,
-    audience: "owner",
-    title: `Program assigned - ${programTitle}`,
-    detail: `${memberName} now has ${programTitle} as the active weekly schedule.`,
-    icon: "dumbbell",
-    createdAt: now
-  };
-  await db.collection("activityEvents").doc(activityId).set(activity);
-  await mirrorGymRecord(gymId, "activityEvents", activityId, activity);
-
-  return { status: "success", assignmentId, message: `${programTitle} was assigned to ${memberName}.` };
+  return {
+    status: "success",
+    assignmentId,
+    message: `${programTitle} was assigned to ${memberName}.`,
+    data: { assignmentId }
+  } satisfies FunctionResult<{ assignmentId: string }> & { assignmentId: string };
 });
+
+export const bulkToggleMemberAccess = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = optionalString(request.data?.gymId) || user.gymId || primaryGymId;
+  assertCanManageGym(user, gymId);
+
+  const memberIds = asStringArray(request.data?.memberIds, "Member IDs");
+  const isActive = asBoolean(request.data?.isActive, "Access state");
+  const now = new Date().toISOString();
+  const failed: Array<{ memberId: string; message: string }> = [];
+  let updated = 0;
+
+  for (const memberId of memberIds) {
+    try {
+      const { data } = await assertMemberBelongsToGym(memberId, gymId);
+      await db.collection("authProfiles").doc(memberId).set({ isActive, updatedAt: now }, { merge: true });
+      await mirrorProfileToGym(memberId, {
+        ...data,
+        id: memberId,
+        role: "member",
+        defaultGymId: gymId,
+        isActive,
+        updatedAt: now
+      });
+      await auth.updateUser(memberId, { disabled: !isActive });
+      updated += 1;
+    } catch (error) {
+      failed.push({
+        memberId,
+        message: error instanceof Error ? error.message : "Could not update member."
+      });
+    }
+  }
+
+  return {
+    status: "success",
+    message: failed.length
+      ? `Updated ${updated} member(s); ${failed.length} failed.`
+      : `Updated ${updated} member(s).`,
+    data: { updated, failed }
+  } satisfies FunctionResult<{ updated: number; failed: Array<{ memberId: string; message: string }> }>;
+});
+
+export const bulkAssignProgram = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = optionalString(request.data?.gymId) || user.gymId || primaryGymId;
+  assertCanManageGym(user, gymId);
+
+  const memberIds = asStringArray(request.data?.memberIds, "Member IDs");
+  const programId = asString(request.data?.programId, "Program ID");
+  const programTitle = optionalString(request.data?.programTitle) || "Workout program";
+  const now = new Date().toISOString();
+  const failed: Array<{ memberId: string; message: string }> = [];
+  let updated = 0;
+
+  for (const memberId of memberIds) {
+    try {
+      await assertMemberBelongsToGym(memberId, gymId);
+
+      const [existingRoot, existingScoped] = await Promise.all([
+        db
+          .collection("programAssignments")
+          .where("gymId", "==", gymId)
+          .where("memberId", "==", memberId)
+          .where("status", "==", "active")
+          .get(),
+        db
+          .collection(`gyms/${gymId}/programAssignments`)
+          .where("memberId", "==", memberId)
+          .where("status", "==", "active")
+          .get()
+      ]);
+
+      await Promise.all(
+        [...existingRoot.docs, ...existingScoped.docs].map((doc) =>
+          doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true })
+        )
+      );
+
+      const assignmentId = randomUUID();
+      const assignment = {
+        id: assignmentId,
+        gymId,
+        memberId,
+        programId,
+        programTitle,
+        memberName: "Member",
+        assignedAt: now,
+        status: "active",
+        createdBy: user.uid,
+        sideEffectsMode: "trigger",
+        createdAt: now,
+        updatedAt: now
+      };
+      await db.collection("programAssignments").doc(assignmentId).set(assignment);
+      await mirrorGymRecord(gymId, "programAssignments", assignmentId, assignment);
+      updated += 1;
+    } catch (error) {
+      failed.push({
+        memberId,
+        message: error instanceof Error ? error.message : "Could not assign program."
+      });
+    }
+  }
+
+  return {
+    status: "success",
+    message: failed.length
+      ? `Assigned ${programTitle} to ${updated} member(s); ${failed.length} failed.`
+      : `Assigned ${programTitle} to ${updated} member(s).`,
+    data: { updated, failed }
+  } satisfies FunctionResult<{ updated: number; failed: Array<{ memberId: string; message: string }> }>;
+});
+
+export const assignPTPlan = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = optionalString(request.data?.gymId) || user.gymId || primaryGymId;
+  assertCanManageGym(user, gymId);
+
+  const memberId = asString(request.data?.memberId, "Member ID");
+  const trainerId = asString(request.data?.trainerId, "Trainer ID");
+  const memberName = optionalString(request.data?.memberName) || undefined;
+  const trainerName = optionalString(request.data?.trainerName) || undefined;
+  const planStartDate = asString(request.data?.planStartDate, "PT start date");
+  const planDurationDays = Number(request.data?.planDurationDays ?? 30);
+  const plannedExercises = parsePlannedExercises(request.data?.plannedExercises);
+  const notes = optionalString(request.data?.notes) || undefined;
+
+  if (isNaN(new Date(`${planStartDate}T00:00:00`).getTime())) {
+    throw new HttpsError("invalid-argument", "PT start date is invalid.");
+  }
+  if (!Number.isFinite(planDurationDays) || planDurationDays < 1 || planDurationDays > 365) {
+    throw new HttpsError("invalid-argument", "PT plan duration must be between 1 and 365 days.");
+  }
+  if (!plannedExercises.length) {
+    throw new HttpsError("invalid-argument", "Add at least one exercise to the PT plan.");
+  }
+
+  await assertMemberBelongsToGym(memberId, gymId);
+  const trainerProfile = await db.collection("authProfiles").doc(trainerId).get();
+  if (!trainerProfile.exists || String(trainerProfile.get("defaultGymId") ?? trainerProfile.get("gymId") ?? "") !== gymId) {
+    throw new HttpsError("permission-denied", "Trainer is not part of this gym.");
+  }
+
+  const now = new Date().toISOString();
+  const planEnd = new Date(`${planStartDate}T00:00:00`);
+  planEnd.setDate(planEnd.getDate() + planDurationDays - 1);
+  const planEndDate = planEnd.toISOString().slice(0, 10);
+  const sessionId = randomUUID();
+  const record = {
+    id: sessionId,
+    gymId,
+    memberId,
+    memberName,
+    trainerId,
+    trainerName,
+    scheduledAt: `${planStartDate}T06:00:00`,
+    durationMinutes: planDurationDays * 24 * 60,
+    planStartDate,
+    planEndDate,
+    planDurationDays,
+    status: "scheduled",
+    plannedExercises,
+    notes,
+    sideEffectsMode: "trigger",
+    createdAt: now,
+    updatedAt: now
+  };
+
+  await db.collection("ptSessions").doc(sessionId).set(record);
+  await mirrorGymRecord(gymId, "ptSessions", sessionId, record);
+
+  return {
+    status: "success",
+    message: `PT plan assigned. Plan ID: ${sessionId}`,
+    data: { ptPlanId: sessionId, planEndDate }
+  } satisfies FunctionResult<{ ptPlanId: string; planEndDate: string }>;
+});
+
+export const onProgramAssignmentCreated = onDocumentCreated(
+  { region, document: "programAssignments/{assignmentId}" },
+  async (event) => {
+    const assignment = event.data?.data();
+    if (!assignment || assignment.sideEffectsMode !== "trigger") return;
+
+    const now = new Date().toISOString();
+    const gymId = String(assignment.gymId ?? primaryGymId);
+    const memberId = String(assignment.memberId ?? "");
+    const programTitle = String(assignment.programTitle ?? "Workout program");
+    const memberName = String(assignment.memberName ?? "Member");
+
+    if (!memberId) return;
+
+    const notificationId = randomUUID();
+    const notification = {
+      id: notificationId,
+      recipientRole: "member",
+      recipientId: memberId,
+      gymId,
+      type: "program_assigned",
+      title: "Workout program assigned",
+      body: `${programTitle} is now available in your weekly schedule.`,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const activityId = randomUUID();
+    const activity = {
+      id: activityId,
+      gymId,
+      audience: "owner",
+      title: `Program assigned - ${programTitle}`,
+      detail: `${memberName} now has ${programTitle} as the active weekly schedule.`,
+      icon: "dumbbell",
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await Promise.all([
+      db.collection("notifications").doc(notificationId).set(notification),
+      mirrorGymRecord(gymId, "notifications", notificationId, notification),
+      db.collection("activityEvents").doc(activityId).set(activity),
+      mirrorGymRecord(gymId, "activityEvents", activityId, activity),
+      sendPushToMember(
+        memberId,
+        "Workout program assigned",
+        `${programTitle} is now available in your weekly schedule.`,
+        "/member"
+      )
+    ]);
+  }
+);
+
+export const onPTPlanCreated = onDocumentCreated(
+  { region, document: "ptSessions/{ptSessionId}" },
+  async (event) => {
+    const plan = event.data?.data();
+    if (!plan || plan.sideEffectsMode !== "trigger") return;
+
+    const now = new Date().toISOString();
+    const gymId = String(plan.gymId ?? primaryGymId);
+    const memberId = String(plan.memberId ?? "");
+    const memberName = String(plan.memberName ?? "Member");
+    const trainerName = String(plan.trainerName ?? "trainer");
+    const planStartDate = String(plan.planStartDate ?? "");
+    const planEndDate = String(plan.planEndDate ?? "");
+
+    if (!memberId) return;
+
+    const notificationId = randomUUID();
+    const notification = {
+      id: notificationId,
+      gymId,
+      recipientId: memberId,
+      recipientRole: "member",
+      type: "pt_session_booked",
+      title: "PT Plan Assigned",
+      body: `Your personal training plan with ${trainerName} runs from ${planStartDate} to ${planEndDate}.`,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const activityId = randomUUID();
+    const activity = {
+      id: activityId,
+      gymId,
+      audience: "owner",
+      title: "PT plan assigned",
+      detail: `${memberName} has a PT plan with ${trainerName} from ${planStartDate} to ${planEndDate}.`,
+      icon: "activity",
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await Promise.all([
+      db.collection("notifications").doc(notificationId).set(notification),
+      mirrorGymRecord(gymId, "notifications", notificationId, notification),
+      db.collection("activityEvents").doc(activityId).set(activity),
+      mirrorGymRecord(gymId, "activityEvents", activityId, activity),
+      sendPushToMember(
+        memberId,
+        "PT Plan Assigned",
+        `Your personal training plan runs from ${planStartDate} to ${planEndDate}.`,
+        "/member/pt-history"
+      )
+    ]);
+  }
+);
 
 export const archiveMemberAccount = onCall({ region }, async (request) => {
   const user = getCallableUser(request);
@@ -681,7 +1012,7 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
   throw new HttpsError("not-found", "No account found for that username or phone number.");
 });
 
-export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hours" }, async () => {
+export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hours", retryCount: 0 }, async () => {
   const expired = await db.collection("archives").where("retentionExpiresAt", "<=", new Date()).limit(450).get();
   await deleteDocs(expired.docs);
 });
@@ -695,7 +1026,7 @@ export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hou
  * Marks each session with notified24h / notified1h flags to avoid duplicates.
  */
 export const notifyUpcomingPTSessions = onSchedule(
-  { region, schedule: "every 60 minutes" },
+  { region, schedule: "every 60 minutes", retryCount: 0 },
   async () => {
     const now = new Date();
 
@@ -789,7 +1120,7 @@ export const notifyUpcomingPTSessions = onSchedule(
  * Runs daily at 2 AM IST (UTC+5:30 = 20:30 UTC previous day).
  */
 export const autoExpireAbandonedPTSessions = onSchedule(
-  { region, schedule: "30 20 * * *" },   // 02:00 IST = 20:30 UTC
+  { region, schedule: "30 20 * * *", retryCount: 0 },   // 02:00 IST = 20:30 UTC
   async () => {
     const cutoff = new Date(Date.now() - 6 * 60 * 60 * 1000); // 6 hours ago
     const now = new Date().toISOString();

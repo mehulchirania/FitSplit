@@ -3,15 +3,14 @@ import { AiProgramBrief } from "@/components/ai-program-brief";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import Link from "next/link";
-import { Activity, Calendar, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
+import { Calendar, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
+import { MemberAccessActions } from "@/components/member-access-actions";
 import { MemberContextEditor } from "@/components/member-context-editor";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
 import {
   deleteMemberProfile,
-  resetPassword,
-  toggleMemberAccess,
   updateCoachNote
 } from "@/lib/firebase/actions";
 import {
@@ -250,65 +249,11 @@ export default async function MemberDetailPage({
             memberName={member.fullName}
           />
 
-          <section className="form-panel mpd-account-panel">
-            <div className="panel-title">
-              <div>
-                <p className="eyebrow">Member login</p>
-                <h2>
-                  <Activity /> Account access
-                </h2>
-                <p className="mpd-login-username">
-                  Username: <strong>{member.username ?? "Not set"}</strong>
-                </p>
-              </div>
-              <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`}>
-                {member.isActive ? "Enabled" : "Suspended"}
-              </span>
-            </div>
-            <ConfirmActionForm
-              action={toggleMemberAccess}
-              className="mpd-account-section"
-              confirmMessage={
-                member.isActive
-                  ? "This will disable the member's login access immediately."
-                  : "This will restore the member's login access."
-              }
-              confirmTitle={member.isActive ? "Suspend member?" : "Restore member?"}
-              pendingLabel="Updating..."
-              submitClassName={`access-toggle ${member.isActive ? "is-on" : "is-off"}`}
-              submitLabel={member.isActive ? "Access enabled" : "Access suspended"}
-            >
-              <input name="memberId" type="hidden" value={member.id} />
-              <input name="isActive" type="hidden" value={(!member.isActive).toString()} />
-              <p className="mpd-section-hint">
-                {member.isActive
-                  ? "Toggle only when this member should no longer access their workout app."
-                  : "Restore when this member should regain app access."}
-              </p>
-            </ConfirmActionForm>
-
-            <ConfirmActionForm
-              action={resetPassword}
-              className="mpd-account-section"
-              confirmMessage="This will reset the member's login PIN."
-              confirmTitle="Reset PIN?"
-              pendingLabel="Resetting..."
-              submitLabel="Reset PIN"
-            >
-              <input name="userId" type="hidden" value={member.id} />
-              <p className="mpd-section-label">Reset login PIN</p>
-              <label>
-                <input
-                  inputMode="numeric"
-                  maxLength={4}
-                  name="newPin"
-                  pattern="\d{4}"
-                  placeholder="Enter new 4-digit PIN"
-                  required
-                />
-              </label>
-            </ConfirmActionForm>
-          </section>
+          <MemberAccessActions
+            isActive={member.isActive}
+            memberId={member.id}
+            username={member.username}
+          />
 
           {/* PT Plans mini-panel */}
           <section className="form-panel">
@@ -376,4 +321,3 @@ export default async function MemberDetailPage({
     </main>
   );
 }
-
