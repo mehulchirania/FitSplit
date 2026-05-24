@@ -8,6 +8,7 @@ import { assignProgramToMember, createAndAssignCustomProgram } from "@/lib/fireb
 import { callAssignProgramToMember } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member, MuscleGroup, WorkoutProgram } from "@/types/domain";
+import { FieldError } from "./form-action-context";
 
 type CatalogGroup = { muscleGroup: MuscleGroup; exercises: Array<{ id: string; name: string }> };
 type PlanEntry = { id: string; exerciseId: string; label: string; sets: number; reps: string };
@@ -250,6 +251,7 @@ function BuildCustomForm({
       <label>
         Plan title
         <input name="title" onChange={(e) => setTitle(e.target.value)} required value={title} />
+        <FieldError name="title" />
       </label>
 
       {/* Day tab strip */}

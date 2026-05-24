@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
 import type { Member, ProfileMetrics } from "@/types/domain";
 import { ConfirmActionForm } from "./confirm-action-form";
+import { FieldError } from "./form-action-context";
 
 const slots = [
   { id: "A", label: "Slot A", time: "6 AM - 10 AM" },
@@ -74,14 +75,17 @@ export function ProfileForm({
           <label>
             Full name
             <input defaultValue={profile.fullName} name="fullName" required />
+            <FieldError name="fullName" />
           </label>
           <label>
             Email
             <input defaultValue={profile.email} name="email" type="email" required />
+            <FieldError name="email" />
           </label>
           <label>
             Phone
-            <input defaultValue={profile.phone} inputMode="tel" name="phone" pattern="(\\+91[\\s-]?)?[6-9][0-9]{9}" />
+            <input defaultValue={profile.phone} inputMode="tel" name="phone" pattern="(\+91[\s-]?)?[6-9][0-9]{9}" />
+            <FieldError name="phone" />
           </label>
           <label>
             Gender
@@ -95,10 +99,12 @@ export function ProfileForm({
           <label>
             Date of birth
             <input defaultValue={profile.dob} name="dob" type="date" />
+            <FieldError name="dob" />
           </label>
           <label>
             Age
             <input defaultValue={profile.age} min="1" name="age" type="number" />
+            <FieldError name="age" />
           </label>
           <label>
             Height
@@ -109,6 +115,7 @@ export function ProfileForm({
               type="number"
               value={height}
             />
+            <FieldError name="heightCm" />
           </label>
           <label>
             Weight
@@ -119,6 +126,7 @@ export function ProfileForm({
               type="number"
               value={weight}
             />
+            <FieldError name="weightKg" />
           </label>
           <label>
             Primary slot
@@ -140,14 +148,17 @@ export function ProfileForm({
         <label>
           Fitness goals
           <textarea defaultValue={profile.fitnessGoals} name="fitnessGoals" placeholder="Fat loss, strength, muscle gain, sport-specific goals..." rows={3} />
+          <FieldError name="fitnessGoals" />
         </label>
         <label>
           Medical notes
           <textarea defaultValue={profile.medicalNotes} name="medicalNotes" placeholder="Medical conditions your trainer should know about" rows={3} />
+          <FieldError name="medicalNotes" />
         </label>
         <label>
           Injury and pain management
           <textarea defaultValue={profile.injuryNotes} name="injuryNotes" placeholder="Injuries, pain areas, mobility issues, restrictions" rows={4} />
+          <FieldError name="injuryNotes" />
         </label>
         <label>
           Assigned trainer

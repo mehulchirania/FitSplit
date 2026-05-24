@@ -3,6 +3,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { Calendar, Dumbbell, UsersRound } from "@/components/icons";
 import { PTBookingForm } from "@/components/pt-booking-form";
 import { PTSessionActions } from "@/components/pt-session-actions";
+import { PTCalendar } from "@/components/pt-calendar";
 import { requireRole } from "@/lib/auth";
 import {
   getAllPTSessionsForGym,
@@ -58,10 +59,10 @@ function formatPlanDuration(session: PTSession) {
 export default async function OwnerTrainingPage({
   searchParams
 }: {
-  searchParams: Promise<{ status?: string; trainerId?: string; memberId?: string; book?: string; gym?: string }>;
+  searchParams: Promise<{ status?: string; trainerId?: string; memberId?: string; book?: string; gym?: string; view?: string }>;
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
-  const { status, trainerId, memberId, book, gym: gymParam } = await searchParams;
+  const { status, trainerId, memberId, book, gym: gymParam, view } = await searchParams;
   const { gyms } = currentUser.role === "admin" ? await getGymWorkspaces() : { gyms: [] };
   const gymId = currentUser.role === "admin"
     ? (gymParam ?? currentUser.gymId ?? gyms[0]?.id ?? "shg")
@@ -181,6 +182,22 @@ export default async function OwnerTrainingPage({
         </div>
       )}
 
+      {/* View toggle tabs */}
+      <div className="pt-trainer-tabs" style={{ marginTop: 12, borderBottom: "none" }}>
+        <Link
+          href={`/owner/training?${new URLSearchParams({ ...(trainerId ? { trainerId } : {}), ...(memberId ? { memberId } : {}), ...(status ? { status } : {}) })}`}
+          className={`pt-trainer-tab${view !== "calendar" ? " is-selected" : ""}`}
+        >
+          List View
+        </Link>
+        <Link
+          href={`/owner/training?${new URLSearchParams({ view: "calendar", ...(trainerId ? { trainerId } : {}), ...(memberId ? { memberId } : {}), ...(status ? { status } : {}) })}`}
+          className={`pt-trainer-tab${view === "calendar" ? " is-selected" : ""}`}
+        >
+          Calendar View
+        </Link>
+      </div>
+
       {/* Status filter tabs */}
       <div className="members-filter-bar" style={{ marginTop: 0 }}>
         <div className="members-filter-tabs">
@@ -217,7 +234,7 @@ export default async function OwnerTrainingPage({
             {activeFilter === "all" ? "No PT plans have been assigned yet." : `No ${activeFilter} PT plans.`}
           </p>
         </div>
-      ) : (
+      ) : view === "calendar" ? null : (
         <section className="list-panel" style={{ padding: 0 }}>
           {filtered.map((session) => (
             <article key={session.id} className="pt-session-card">
@@ -283,6 +300,10 @@ export default async function OwnerTrainingPage({
             </article>
           ))}
         </section>
+      )}
+
+      {view === "calendar" && filtered.length > 0 && (
+        <PTCalendar sessions={filtered} />
       )}
     </main>
   );

@@ -7,6 +7,7 @@ import { bookPTSession } from "@/lib/firebase/actions";
 import { callAssignPTPlan } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Exercise, Member, WorkoutExercise } from "@/types/domain";
+import { FormActionContext, FieldError } from "./form-action-context";
 
 type PersonOption = Pick<Member, "id" | "fullName" | "username" | "staffType">;
 type PlannedExercise = WorkoutExercise & { localId: string };
@@ -167,15 +168,16 @@ export function PTBookingForm({
   }
 
   return (
-    <form className="pt-booking-form" onSubmit={handleSubmit} ref={formRef}>
-      <input name="gymId" type="hidden" value={gymId} />
-      <input name="memberId" type="hidden" value={selectedMember?.id ?? ""} />
-      <input name="memberName" type="hidden" value={selectedMember?.fullName ?? ""} />
-      <input name="trainerId" type="hidden" value={selectedTrainer?.id ?? ""} />
-      <input name="trainerName" type="hidden" value={selectedTrainer?.fullName ?? ""} />
-      <input name="plannedExercises" type="hidden" value={plannedExercisesPayload} />
+    <FormActionContext.Provider value={state}>
+      <form className="pt-booking-form" onSubmit={handleSubmit} ref={formRef}>
+        <input name="gymId" type="hidden" value={gymId} />
+        <input name="memberId" type="hidden" value={selectedMember?.id ?? ""} />
+        <input name="memberName" type="hidden" value={selectedMember?.fullName ?? ""} />
+        <input name="trainerId" type="hidden" value={selectedTrainer?.id ?? ""} />
+        <input name="trainerName" type="hidden" value={selectedTrainer?.fullName ?? ""} />
+        <input name="plannedExercises" type="hidden" value={plannedExercisesPayload} />
 
-      <div className="pt-assignment-grid">
+        <div className="pt-assignment-grid">
         <label>
           Member
           <input
@@ -361,15 +363,16 @@ export function PTBookingForm({
         <p className="form-message form-message-success" role="status">PT plan assigned successfully.</p>
       )}
 
-      <div className="form-actions">
-        <button
-          className="button button-primary"
-          disabled={isPending || !selectedMember || !selectedTrainer || plannedExercises.length === 0}
-          type="submit"
-        >
-          {isPending ? "Assigning..." : "Assign PT plan"}
-        </button>
-      </div>
-    </form>
+        <div className="form-actions">
+          <button
+            className="button button-primary"
+            disabled={isPending || !selectedMember || !selectedTrainer || plannedExercises.length === 0}
+            type="submit"
+          >
+            {isPending ? "Assigning..." : "Assign PT plan"}
+          </button>
+        </div>
+      </form>
+    </FormActionContext.Provider>
   );
 }

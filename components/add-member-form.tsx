@@ -7,6 +7,7 @@ import { createMemberProfile } from "@/lib/firebase/actions";
 import { callCreateMemberAccount } from "@/lib/firebase/functions";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
+import { FormActionContext, FieldError } from "./form-action-context";
 
 const emptyForm = {
   email: "",
@@ -21,6 +22,7 @@ export function AddMemberForm() {
   const [formValues, setFormValues] = useState(emptyForm);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
   const [status, setStatus] = useState<FormActionState | null>(null);
+  const [dismissedMessage, setDismissedMessage] = useState("");
   const [isPending, startTransition] = useTransition();
 
   function updateValue(key: keyof typeof emptyForm, value: string) {
@@ -44,6 +46,7 @@ export function AddMemberForm() {
 
     const submittedForm = pendingForm;
     setPendingForm(null);
+    setDismissedMessage("");
     startTransition(async () => {
       try {
         const result = await callCreateMemberAccount({
@@ -67,8 +70,10 @@ export function AddMemberForm() {
     });
   }
 
+  const showResultModal = status?.message && !isPending && dismissedMessage !== status.message;
+
   return (
-    <>
+    <FormActionContext.Provider value={status}>
       <form className="form-panel" onSubmit={handleSubmit}>
         <h2>Add member</h2>
         <div className="form-grid">
@@ -82,6 +87,7 @@ export function AddMemberForm() {
               required
               value={formValues.fullName}
             />
+            <FieldError name="fullName" />
           </label>
           <label>
             Login username
@@ -95,6 +101,7 @@ export function AddMemberForm() {
               title="Use 3-32 letters, numbers, dots, underscores, or hyphens."
               value={formValues.username}
             />
+            <FieldError name="username" />
           </label>
           <label>
             <span className="flex items-center gap-2">Email <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>(optional)</span></span>
@@ -106,6 +113,7 @@ export function AddMemberForm() {
               type="email"
               value={formValues.email}
             />
+            <FieldError name="email" />
           </label>
           <label>
             Phone
@@ -118,6 +126,7 @@ export function AddMemberForm() {
               required
               value={formValues.phone}
             />
+            <FieldError name="phone" />
           </label>
           <label>
             Goal
@@ -127,6 +136,7 @@ export function AddMemberForm() {
               placeholder="Build muscle, fat loss, strength"
               value={formValues.goal}
             />
+            <FieldError name="goal" />
           </label>
         </div>
         <button className="button button-primary" disabled={isPending} type="submit">
@@ -151,19 +161,19 @@ export function AddMemberForm() {
         </div>
       ) : null}
 
-      {status ? (
+      {showResultModal ? (
         <div className="dialog-backdrop" role="presentation">
           <div aria-live="polite" aria-modal="true" className="confirm-dialog" role="dialog">
-            <h2>{status.status === "success" ? "Member saved" : "Could not save member"}</h2>
-            <p className={`form-message form-message-${status.status}`}>{status.message}</p>
+            <h2>{status?.status === "success" ? "Member saved" : "Could not save member"}</h2>
+            <p className={`form-message form-message-${status?.status}`}>{status?.message}</p>
             <div className="quick-actions">
-              <button className="button button-primary" onClick={() => setStatus(null)} type="button">
+              <button className="button button-primary" onClick={() => setDismissedMessage(status?.message || "")} type="button">
                 Done
               </button>
             </div>
           </div>
         </div>
       ) : null}
-    </>
+    </FormActionContext.Provider>
   );
 }

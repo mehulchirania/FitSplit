@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
+import * as Dialog from "@radix-ui/react-dialog";
+import { FormActionContext } from "./form-action-context";
 
 type ConfirmAction = (
   previousState: FormActionState,
@@ -36,12 +38,6 @@ export function ConfirmActionForm({
   confirmTitle?: string;
   onBeforeConfirm?: () => void;
   pendingLabel?: string;
-  /**
-   * When true (default), shows a "are you sure?" modal before submitting.
-   * Set to false for non-destructive forms (editing a phone number, toggling
-   * a notice). The form will submit immediately on click and the result is
-   * surfaced inline instead of in a modal.
-   */
   requireConfirmation?: boolean;
   style?: CSSProperties;
   submitClassName?: string;
@@ -73,10 +69,8 @@ export function ConfirmActionForm({
 
     setDismissedMessage("");
 
-    // requireConfirmation === false → submit immediately, no modal
     if (!requireConfirmation) {
       setIsConfirmedSubmit(true);
-      // Let native form submission proceed
       return;
     }
 
@@ -91,8 +85,10 @@ export function ConfirmActionForm({
     window.setTimeout(() => formRef.current?.requestSubmit(), 0);
   }
 
+  const showResultModal = state.message && !isPending && dismissedMessage !== state.message;
+
   return (
-    <>
+    <FormActionContext.Provider value={state}>
       <form action={formAction} className={className} onSubmit={handleSubmit} ref={formRef} style={style}>
         {children}
         <button className={submitClassName ?? "button button-primary"} disabled={isPending} type="submit">
@@ -100,38 +96,39 @@ export function ConfirmActionForm({
         </button>
       </form>
 
-      {isDialogOpen ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div
-            aria-describedby="confirm-dialog-message"
-            aria-modal="true"
-            className="confirm-dialog"
-            role="dialog"
-          >
-            <h2>{confirmTitle}</h2>
-            <p id="confirm-dialog-message">{confirmMessage}</p>
-            <div className="quick-actions">
-              <button
-                className="button button-secondary"
-                onClick={() => setIsDialogOpen(false)}
-                type="button"
-              >
-                {cancelLabel}
-              </button>
+      <Dialog.Root open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-backdrop" />
+          <Dialog.Content className="confirm-dialog">
+            <Dialog.Title>{confirmTitle}</Dialog.Title>
+            <Dialog.Description id="confirm-dialog-message">
+              {confirmMessage}
+            </Dialog.Description>
+            <div className="quick-actions" style={{ marginTop: '1rem' }}>
+              <Dialog.Close asChild>
+                <button className="button button-secondary" type="button">
+                  {cancelLabel}
+                </button>
+              </Dialog.Close>
               <button className="button button-primary" onClick={confirmSubmit} type="button">
                 {confirmLabel}
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
-      {state.message && !isPending && dismissedMessage !== state.message ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div aria-live="polite" aria-modal="true" className="confirm-dialog" role="dialog">
-            <h2>{state.status === "success" ? "Update complete" : "Update failed"}</h2>
-            <p className={`form-message form-message-${state.status}`}>{state.message}</p>
-            <div className="quick-actions">
+      <Dialog.Root open={!!showResultModal}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-backdrop" />
+          <Dialog.Content className="confirm-dialog">
+            <Dialog.Title>
+              {state.status === "success" ? "Update complete" : "Update failed"}
+            </Dialog.Title>
+            <Dialog.Description className={`form-message form-message-${state.status}`}>
+              {state.message}
+            </Dialog.Description>
+            <div className="quick-actions" style={{ marginTop: '1rem' }}>
               <button
                 className="button button-primary"
                 onClick={() => {
@@ -149,9 +146,9 @@ export function ConfirmActionForm({
                 Done
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
-    </>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </FormActionContext.Provider>
   );
 }

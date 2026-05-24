@@ -5,6 +5,7 @@ import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CloseDetailsButton } from "@/components/close-details-button";
 import type { Exercise } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
+import { FieldError } from "./form-action-context";
 
 type FormAction = (prev: FormActionState, formData: FormData) => Promise<FormActionState>;
 
@@ -142,6 +143,7 @@ export function ExerciseEditForm({
               placeholder="e.g. Incline Dumbbell Press"
               required
             />
+            <FieldError name="name" />
           </label>
           <label>
             Muscle group
@@ -150,6 +152,7 @@ export function ExerciseEditForm({
                 <option key={g} value={g}>{g}</option>
               ))}
             </select>
+            <FieldError name="muscleGroup" />
           </label>
         </div>
 
@@ -200,6 +203,7 @@ export function ExerciseEditForm({
             placeholder="https://..."
             type="url"
           />
+          <FieldError name="thumbnailUrl" />
         </label>
       </div>
 
@@ -233,6 +237,7 @@ export function ExerciseEditForm({
                 type="url"
                 value={shgEntry?.url ?? ""}
               />
+              <FieldError name="gymVideoUrl" />
             </label>
 
             {/* Tutorial video — read-only reference */}
@@ -311,6 +316,7 @@ export function ExerciseEditForm({
           rows={3}
           style={{ width: "100%" }}
         />
+        <FieldError name="instructions" />
       </div>
 
       {/* ── Actions ─────────────────────────────────────────────────── */}

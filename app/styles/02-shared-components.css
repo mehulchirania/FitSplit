@@ -549,6 +549,19 @@ textarea {
   color: var(--danger);
 }
 
+.field-errors {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.field-error-text {
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
 .activity-feed {
   display: grid;
   gap: 12px;

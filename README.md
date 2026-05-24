@@ -10,8 +10,10 @@ FitSplit leverages a modern, server-centric, high-performance stack:
 *   **Framework**: Next.js (App Router, React 19, TypeScript)
 *   **Database & Auth**: Cloud Firestore, Firebase Authentication (email/password and 4-digit PIN resolution), and Firebase Storage.
 *   **Server Controls**: Next.js Server Actions with strict Firebase Admin role session verification (2-hour secure cookie limits).
+*   **Client State**: Zustand for fast, lightweight global state in live workout tracking.
 *   **AI Engine**: Official `@google/genai` integration with Gemini Flash (`gemini-flash-latest`).
-*   **PWA Core**: Native manifest, custom service worker, responsive bottom navigation, and offline-resilient local state management.
+*   **PWA Core**: Native manifest, custom service worker, responsive bottom navigation, and offline-resilient local state management powered by Dexie.js (IndexedDB).
+*   **UI/UX Components**: Radix UI for highly accessible headless primitives (styled with Vanilla CSS) and FullCalendar for PT scheduling.
 
 ---
 
@@ -116,8 +118,8 @@ npm run backfill:member-access # Repairs missing member usernames and creates mi
 ## 📂 Key Architecture Map
 
 *   `lib/auth.ts`: Auth guards, server-side session cookies, and login credential resolution.
-*   `lib/firebase/actions.ts`: Firestore mutations, custom program updates, and member onboarding.
-*   `lib/firebase/read-models.ts`: Reactive query layers, mock fallbacks, and occupancy aggregations.
+*   `lib/firebase/actions/`: Domain-scoped server actions for Firestore mutations, custom program updates, and member onboarding.
+*   `lib/firebase/read-models/`: Domain-scoped query layers, mock fallbacks, and occupancy aggregations.
 *   `components/member-workout-console.tsx`: Core member screen displaying workouts, GPS checks, and swaps.
 *   `components/macro-progress-panel.tsx`: High-end glassmorphic progressive nutrient logging dashboard.
 *   `components/gym-floor-load-map.tsx`: Interactive gym operations equipment congestion heatmap.

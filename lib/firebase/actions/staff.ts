@@ -1,8 +1,407 @@
-export {
-  changeAdminEmail,
-  changeStaffPassword,
-  createOwnerProfile,
-  deleteGymStaffProfile,
-  resetPassword,
-  updateAdminDisplayName
-} from "./legacy";
+"use server";
+
+import { randomUUID } from "crypto";
+import { revalidatePath } from "next/cache";
+import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
+import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
+import type { FormActionState } from "@/types/action-state";
+import type { Role } from "@/types/domain";
+import {
+  requireFirebase,
+  requireFirebaseServices,
+  requireText,
+  assertValidEmail,
+  assertValidPin,
+  memberAuthEmail,
+  upsertAuthUser,
+  getActionFormData,
+  success,
+  failure,
+  scopedGymDoc,
+  archiveDocumentSnapshot,
+  getAuthProfileDoc,
+  writeAuthProfileIndex,
+  mirrorProfileToGym,
+  mirrorGymScopedRecord,
+  assertMemberBelongsToCallerGym,
+  assertCanManageGym
+} from "./shared";
+import { z } from "zod";
+import { parseActionData, ZodHelpers } from "./validation";
+
+const CreateStaffSchema = z.object({
+  fullName: ZodHelpers.textRequired("Full name"),
+  email: ZodHelpers.emailRequired,
+  phone: ZodHelpers.textRequired("Phone number"),
+  gymId: ZodHelpers.textRequired("Gym"),
+  staffType: z.enum(["owner", "trainer", "staff"]).default("owner")
+});
+
+const ChangePasswordSchema = z.object({
+  newPassword: z.string().min(6, "Password must be at least 6 characters."),
+  confirmPassword: z.string()
+}).refine(d => d.newPassword === d.confirmPassword, {
+  message: "Passwords do not match.",
+  path: ["confirmPassword"]
+});
+
+export async function changeStaffPassword(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role === "member") {
+      throw new Error("Members must use the PIN change form.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, ChangePasswordSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { auth } = requireFirebaseServices();
+    const newPassword = parsed.data.newPassword;
+
+    await auth.updateUser(currentUser.uid, { password: newPassword });
+
+    // Clear the "must change password on first login" flag, if it was set.
+    // Wrapped in try/catch so an existing-staff password rotation doesn't fail
+    // if the doc happens to be missing — the auth update is the source of truth.
+    try {
+      const { db } = requireFirebaseServices();
+      await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
+        { mustChangePassword: false, updatedAt: new Date().toISOString() },
+        { merge: true }
+      );
+    } catch (e) {
+      console.warn("Could not clear mustChangePassword flag:", e);
+    }
+
+    return success("Password changed successfully.");
+  } catch (error) {
+    console.error("Unable to change password", error);
+    return failure(error, "Could not change password. Please try again.");
+  }
+}
+
+export async function createOwnerProfile(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const parsed = parseActionData(formData, CreateStaffSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { auth, db } = requireFirebaseServices();
+    const ownerId = randomUUID();
+    const { fullName, email, gymId, staffType: normalizedStaffType } = parsed.data;
+    const phone = parsed.data.phone;
+    const now = new Date().toISOString();
+    const authEmail = `${ownerId}@staff.fitsplit.app`;
+
+    await upsertAuthUser(auth, {
+      email: authEmail,
+      fullName,
+      uid: ownerId,
+      role: "owner",
+      gymId,
+      isActive: true
+    });
+
+    const staffProfile = {
+      id: ownerId,
+      fullName,
+      email,
+      phone,
+      authEmail,
+      username: phone,
+      role: "owner",
+      staffType: normalizedStaffType,
+      defaultGymId: gymId,
+      avatarInitials: fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase(),
+      isActive: true,
+      // Force first-login password change — every new staff account starts with
+      // the default password "password" and must rotate it before they can use
+      // any other page. Cleared in changeStaffPassword.
+      mustChangePassword: true,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await writeAuthProfileIndex(db, ownerId, staffProfile);
+    await mirrorProfileToGym(db, ownerId, staffProfile);
+
+    // Audit log: admin created a new staff account. Tracks who provisioned
+    // gym access — useful for compliance and onboarding visibility.
+    try {
+      const auditId = randomUUID();
+      const auditRecord = {
+        id: auditId,
+        gymId,
+        audience: "owner",
+        title: `Staff account created — ${normalizedStaffType}`,
+        detail: `${fullName} (${phone}) was added to the gym with the default password. They will be forced to change it on first login.`,
+        icon: "users",
+        createdAt: now,
+        targetId: ownerId
+      };
+      await db.collection(collectionPaths.activityEvents).doc(auditId).set(auditRecord);
+      await mirrorGymScopedRecord(db, gymId, "activityEvents", auditId, auditRecord);
+    } catch (e) {
+      console.warn("Failed to write audit event for createOwnerProfile:", e);
+    }
+
+    revalidatePath("/admin");
+    revalidatePath(`/admin/gyms/${gymId}`);
+
+    return success(`${fullName} was added as gym ${normalizedStaffType}.`, gymId);
+  } catch (error) {
+    return failure(error, "Unable to create gym staff profile.");
+  }
+}
+
+const DeleteStaffSchema = z.object({
+  userId: ZodHelpers.textRequired("User ID"),
+  gymId: ZodHelpers.textRequired("Gym ID")
+});
+
+export async function deleteGymStaffProfile(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const user = await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, DeleteStaffSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { auth, db } = requireFirebaseServices();
+    const { userId, gymId } = parsed.data;
+
+    const profileDoc = await getAuthProfileDoc(db, userId);
+    const scopedStaffDoc = await scopedGymDoc(db, gymId, "staff", userId).get();
+    await Promise.all([
+      archiveDocumentSnapshot(db, profileDoc, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" }),
+      archiveDocumentSnapshot(db, scopedStaffDoc, { entityType: "staffProfile", deletedBy: user.uid, gymId, reason: "staff_deleted" })
+    ]);
+
+    await db.collection(collectionPaths.authProfiles).doc(userId).delete();
+    await db.collection(collectionPaths.profiles).doc(userId).delete().catch(() => undefined);
+    await scopedGymDoc(db, gymId, "staff", userId).delete();
+
+    try {
+      await auth.deleteUser(userId);
+    } catch (error: any) {
+      if (error?.code !== "auth/user-not-found") {
+        throw error;
+      }
+    }
+
+    revalidatePath("/admin");
+    revalidatePath(`/admin/gyms/${gymId}`);
+
+    return success("Gym staff access was deleted.");
+  } catch (error) {
+    return failure(error, "Unable to delete gym staff.");
+  }
+}
+
+const AdminEmailSchema = z.object({
+  newEmail: ZodHelpers.emailRequired,
+  confirmEmail: ZodHelpers.emailRequired
+}).refine(d => d.newEmail === d.confirmEmail, {
+  message: "Email and confirmation do not match.",
+  path: ["confirmEmail"]
+});
+
+export async function changeAdminEmail(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role !== "admin") {
+      throw new Error("Only the platform admin can use this form.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, AdminEmailSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { auth, db } = requireFirebaseServices();
+    const newEmail = parsed.data.newEmail;
+    const now = new Date().toISOString();
+    await auth.updateUser(currentUser.uid, { email: newEmail });
+    await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
+      { email: newEmail, updatedAt: now },
+      { merge: true }
+    );
+    return success("Email updated. Log in again with your new email.");
+  } catch (error) {
+    return failure(error, "Unable to change email.");
+  }
+}
+
+const AdminDisplayNameSchema = z.object({
+  displayName: ZodHelpers.textRequired("Display name")
+});
+
+export async function updateAdminDisplayName(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    if (currentUser.role !== "admin") {
+      throw new Error("Only the platform admin can use this form.");
+    }
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, AdminDisplayNameSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { auth, db } = requireFirebaseServices();
+    const displayName = parsed.data.displayName;
+    const now = new Date().toISOString();
+    const initials = displayName
+      .split(" ")
+      .map((p: string) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+    await auth.updateUser(currentUser.uid, { displayName });
+    await db.collection(collectionPaths.authProfiles).doc(currentUser.uid).set(
+      { fullName: displayName, avatarInitials: initials, updatedAt: now },
+      { merge: true }
+    );
+    revalidatePath("/profile");
+    return success("Display name updated.");
+  } catch (error) {
+    return failure(error, "Unable to update display name.");
+  }
+}
+
+const ResetPasswordSchema = z.object({
+  userId: ZodHelpers.textRequired("User ID"),
+  newPassword: z.string().optional(),
+  newPin: z.string().optional()
+});
+
+export async function resetPassword(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, ResetPasswordSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { userId, newPassword: rawNewPassword = "", newPin = "" } = parsed.data;
+
+    // Block owners from resetting members of other gyms. Admin bypasses inside the helper.
+    await assertMemberBelongsToCallerGym(currentUser, userId);
+    const { auth, db } = requireFirebaseServices();
+
+    const rawPassword = rawNewPassword.trim() || newPin.trim() || "password";
+    let newPassword = rawPassword;
+    const isPinReset = Boolean(newPin);
+    if (isPinReset) {
+      assertValidPin(rawPassword);
+      newPassword = `pin-${rawPassword}`;
+    }
+
+    const profileRef = db.collection(collectionPaths.authProfiles).doc(userId);
+    const profileDoc = await profileRef.get();
+    const profile = profileDoc.data() ?? {};
+    const gymId = String(profile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    assertCanManageGym(currentUser, gymId);
+
+    let authEmail = String(profile.authEmail ?? memberAuthEmail(userId));
+    const fullName = String(profile.fullName ?? userId);
+    const role = String(profile.role ?? "member") as Role;
+    const username =
+      String(profile.username ?? "").trim() ||
+      String(profile.phone ?? "").trim() ||
+      String(profile.email ?? "").trim() ||
+      userId;
+
+    try {
+      await upsertAuthUser(
+        auth,
+        {
+          email: authEmail,
+          fullName,
+          uid: userId,
+          role,
+          gymId,
+          isActive: profile.isActive !== false
+        },
+        newPassword,
+        true
+      );
+    } catch (error: any) {
+      if (role !== "member" || error?.code !== "auth/email-already-exists") {
+        throw error;
+      }
+
+      authEmail = memberAuthEmail(userId);
+      await upsertAuthUser(
+        auth,
+        {
+          email: authEmail,
+          fullName,
+          uid: userId,
+          role,
+          gymId,
+          isActive: profile.isActive !== false
+        },
+        newPassword,
+        true
+      );
+    }
+
+    if (role === "member") {
+      await writeAuthProfileIndex(db, userId,
+        {
+          ...profile,
+          authEmail,
+          username,
+          updatedAt: new Date().toISOString()
+        },
+      );
+    }
+
+    // Audit log: who reset whose access code, when. Helps if a member ever
+    // disputes "someone changed my login".
+    try {
+      const auditId = randomUUID();
+      await db.collection(collectionPaths.activityEvents).doc(auditId).set({
+        id: auditId,
+        gymId,
+        audience: "owner",
+        title: isPinReset ? "PIN reset" : "Password reset",
+        detail: `${currentUser.fullName} reset ${role === "member" ? "the PIN" : "the password"} for ${fullName}.`,
+        icon: "bell",
+        createdAt: new Date().toISOString(),
+        actorId: currentUser.uid,
+        targetId: userId
+      });
+    } catch (e) {
+      console.warn("Failed to write audit event for resetPassword:", e);
+    }
+
+    revalidatePath("/owner/members");
+    revalidatePath(`/owner/members/${userId}`);
+
+    return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.", gymId);
+  } catch (error) {
+    console.error("Unable to reset password", error);
+    return failure(error, "Could not reset access code.");
+  }
+}

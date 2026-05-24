@@ -10,258 +10,18 @@ import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { Dumbbell } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
-import dynamic from "next/dynamic";
-
-const ProgressChart = dynamic(() => import("@/components/progress-chart").then(mod => mod.ProgressChart), {
-  ssr: false,
-  loading: () => <p className="form-message">Loading chart...</p>
-});
-
-const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-/** Returns the ISO date string (YYYY-MM-DD) for the Monday of the given date's week. */
-function getWeekStart(date: Date = new Date()): string {
-  const d = new Date(date);
-  const day = (d.getDay() + 6) % 7; // shift so Monday = 0
-  d.setDate(d.getDate() - day);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
-}
-
-const SKIP_REASONS: { value: SkipReason; label: string }[] = [
-  { value: "rest",      label: "Rest day" },
-  { value: "no_time",   label: "No time" },
-  { value: "equipment", label: "No equipment" },
-  { value: "sick",      label: "Feeling sick" },
-  { value: "other",     label: "Other" },
-];
-
-type Modification = {
-  injury: string;
-  summary: string;
-  swaps: Array<{ from: string; to: string; reason: string }>;
-  addedStretches: Array<{ name: string; reason: string }>;
-  routine: WorkoutExercise[];
-};
-
-type PendingEvent = {
-  confirmLabel: string;
-  message: string;
-  run: () => Promise<FormActionState>;
-  title: string;
-  liftExerciseId?: string;
-  liftWeight?: number;
-};
-
-function getDefaultDayIndex(dayCount: number) {
-  const mondayFirstIndex = (new Date().getDay() + 6) % 7;
-  return Math.min(Math.max(mondayFirstIndex, 0), Math.max(dayCount - 1, 0));
-}
-
-function getInjuryRule(injury: string) {
-  const value = injury.toLowerCase();
-
-  if (value.includes("shoulder")) {
-    return {
-      avoidMuscles: ["Shoulders", "Chest"],
-      avoidTerms: ["overhead", "press", "bench", "fly"],
-      preferredMuscles: ["Legs", "Core", "Back"],
-      summary:
-        "Reduced shoulder-loaded pressing and replaced it with lower-body, core, and controlled pulling work.",
-      stretches: ["stretch-band-pulls"]
-    };
-  }
-
-  if (value.includes("knee")) {
-    return {
-      avoidMuscles: ["Legs"],
-      avoidTerms: ["squat", "lunge", "leg press", "extension"],
-      preferredMuscles: ["Chest", "Back", "Core"],
-      summary:
-        "Removed knee-dominant leg work and shifted the session toward upper-body and trunk-safe movements.",
-      stretches: ["stretch-quad"]
-    };
-  }
-
-  if (value.includes("back") || value.includes("spine") || value.includes("lower back")) {
-    return {
-      avoidMuscles: ["Back"] as string[],
-      avoidTerms: ["deadlift", "row", "good morning"],
-      preferredMuscles: ["Chest", "Shoulders", "Biceps"] as string[],
-      summary:
-        "Avoided spinal loading and rebuilt the day around supported upper-body push/pull work.",
-      stretches: ["stretch-cat-cow"]
-    };
-  }
-
-  return {
-    avoidMuscles: [] as string[],
-    avoidTerms: [] as string[],
-    preferredMuscles: ["Core", "Cardio", "Chest"] as string[],
-    summary:
-      "Generated a conservative recovery routine while the owner reviews the limitation details.",
-    stretches: [] as string[]
-  };
-}
-
-function isContraindicated(
-  item: WorkoutExercise,
-  injury: string,
-  exercises: Exercise[]
-) {
-  const exercise = exercises.find((entry) => entry.id === item.exerciseId);
-  const rule = getInjuryRule(injury);
-
-  if (!exercise) {
-    return false;
-  }
-
-  const text = `${exercise.name} ${exercise.instructions}`.toLowerCase();
-  return (
-    rule.avoidMuscles.includes(exercise.muscleGroup as string) ||
-    rule.avoidTerms.some((term) => text.includes(term))
-  );
-}
-
-function findAlternative(
-  usedIds: Set<string>,
-  injury: string,
-  exercises: Exercise[],
-  originalMuscleGroup?: string
-) {
-  const rule = getInjuryRule(injury);
-  // Determine mechanic type of the original exercise to prevent push/pull confusion
-  const PUSH_MUSCLES = ["Chest", "Shoulders", "Triceps"];
-  const PULL_MUSCLES = ["Back", "Biceps"];
-  const originalIsPush = originalMuscleGroup && PUSH_MUSCLES.includes(originalMuscleGroup);
-  const originalIsPull = originalMuscleGroup && PULL_MUSCLES.includes(originalMuscleGroup);
-
-  return exercises.find((exercise) => {
-    if (usedIds.has(exercise.id)) return false;
-    if (!exercise.ownerOnly) return false;
-    if (!rule.preferredMuscles.includes(exercise.muscleGroup as string)) return false;
-    // If original was a pull exercise and preferred is a push exercise, skip (and vice versa)
-    // unless the original's muscle group is contraindicated
-    const thisIsPush = PUSH_MUSCLES.includes(exercise.muscleGroup as string);
-    const thisIsPull = PULL_MUSCLES.includes(exercise.muscleGroup as string);
-    if (originalMuscleGroup && !rule.avoidMuscles.includes(originalMuscleGroup)) {
-      if (originalIsPush && thisIsPull) return false;
-      if (originalIsPull && thisIsPush) return false;
-    }
-    return true;
-  });
-}
-
-function createModification(
-  activeDay: WorkoutProgram["days"][number],
-  injury: string,
-  exercises: Exercise[]
-): Modification {
-  const usedIds = new Set(activeDay.exercises.map((item) => item.exerciseId));
-  const swaps: Modification["swaps"] = [];
-  const addedStretches: Modification["addedStretches"] = [];
-  const routine = activeDay.exercises.map((item) => {
-    if (!isContraindicated(item, injury, exercises)) {
-      return item;
-    }
-
-    const original = exercises.find((exercise) => exercise.id === item.exerciseId);
-    const alternative = findAlternative(usedIds, injury, exercises, original?.muscleGroup as string | undefined);
-
-    if (!original || !alternative) {
-      return item;
-    }
-
-    usedIds.add(alternative.id);
-    swaps.push({
-      from: original.name,
-      to: alternative.name,
-      reason: `Swapped to protect your ${injury}. Maintains similar movement pattern.`
-    });
-
-    return { ...item, exerciseId: alternative.id, notes: "AI Semi-Personal Trainer swap" };
-  });
-
-  const rule = getInjuryRule(injury);
-  if (rule.stretches && rule.stretches.length > 0) {
-    const stretchExercises = rule.stretches.map((stretchId) => {
-      const ex = exercises.find(e => e.id === stretchId);
-      if (ex) {
-        addedStretches.push({
-          name: ex.name,
-          reason: `Therapeutic warm-up for your reported ${injury}.`
-        });
-      }
-      return {
-        exerciseId: stretchId,
-        sets: 2,
-        reps: "10-15",
-        restSeconds: 30,
-        notes: "AI Suggestion: Warm-up stretch"
-      };
-    });
-    routine.unshift(...stretchExercises);
-  }
-
-  if (!swaps.length && !addedStretches.length) {
-    const recoveryExercises = exercises
-      .filter((exercise) => getInjuryRule(injury).preferredMuscles.includes(exercise.muscleGroup as string))
-      .slice(0, 4)
-      .map((exercise, index) => ({
-        exerciseId: exercise.id,
-        sets: index === 0 ? 2 : 3,
-        reps: index === 0 ? "easy warm-up" : "12-15",
-        restSeconds: 60,
-        notes: "AI Semi-Personal Trainer recovery routine"
-      }));
-
-    return {
-      injury,
-      summary: getInjuryRule(injury).summary,
-      swaps: [{
-        from: "Original training intensity",
-        to: "Dedicated recovery routine",
-        reason: "No direct contraindicated exercise was detected, so the plan was softened."
-      }],
-      addedStretches: [],
-      routine: recoveryExercises
-    };
-  }
-
-  return {
-    injury,
-    summary: getInjuryRule(injury).summary,
-    swaps,
-    addedStretches,
-    routine
-  };
-}
-
-function getExerciseName(exerciseId: string, exercises: Exercise[]) {
-  return exercises.find((exercise) => exercise.id === exerciseId)?.name ?? "Exercise";
-}
-
-function getDayMuscleTargets(items: WorkoutExercise[], exercises: Exercise[]) {
-  const counts = new Map<string, number>();
-
-  for (const item of items) {
-    const exercise = exercises.find((entry) => entry.id === item.exerciseId);
-    if (!exercise) {
-      continue;
-    }
-
-    counts.set(exercise.muscleGroup, (counts.get(exercise.muscleGroup) ?? 0) + 1);
-  }
-
-  const sortedGroups = Array.from(counts.entries())
-    .sort((left, right) => right[1] - left[1])
-    .map(([muscleGroup]) => muscleGroup);
-
-  return {
-    primary: sortedGroups[0] ?? "Full body",
-    secondary: sortedGroups.slice(1, 4)
-  };
-}
+import { useWorkoutStore } from "@/lib/stores/workout-store";
+import { offlineDB } from "@/lib/offline-db";
+import {
+  SKIP_REASONS,
+  dayNames,
+  getWeekStart,
+  getDefaultDayIndex,
+  createModification,
+  getExerciseName,
+  getDayMuscleTargets
+} from "@/lib/workout-utils";
+import { WorkoutLiftLogForm } from "@/components/workout-lift-log-form";
 
 export function MemberWorkoutConsole({
   exercises,
@@ -283,33 +43,44 @@ export function MemberWorkoutConsole({
   program: WorkoutProgram;
 }) {
   const router = useRouter();
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const [sessionId, setSessionId] = useState<string>("");
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [sessionStatus, setSessionStatus] = useState<FormActionState | null>(null);
-  const [isSessionPending, setIsSessionPending] = useState(false);
-  const [injury, setInjury] = useState(initialInjuryNote);
-  const [modification, setModification] = useState<Modification | null>(null);
-  const [workoutMode, setWorkoutMode] = useState<"default" | "ai">("default");
-  const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
-  const [pendingEvent, setPendingEvent] = useState<PendingEvent | null>(null);
-  const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
-  const [isEventPending, setIsEventPending] = useState(false);
-  const [offlineLogsCount, setOfflineLogsCount] = useState(0);
-  const [logSuccess, setLogSuccess] = useState(false);
-  const [isNewPR, setIsNewPR] = useState(false);
-  const [isAiSwapping, setIsAiSwapping] = useState(false);
+  const {
+    isSessionActive, setSessionActive,
+    sessionId,
+    elapsedSeconds, setElapsedSeconds,
+    sessionStatus, setSessionStatus,
+    isSessionPending, setIsSessionPending,
+    injury, setInjury,
+    modification, setModification,
+    workoutMode, setWorkoutMode,
+    liftLogs, setLiftLogs, addLiftLog,
+    pendingEvent, setPendingEvent,
+    eventStatus, setEventStatus,
+    isEventPending, setIsEventPending,
+    offlineLogsCount, setOfflineLogsCount,
+    logSuccess, setLogSuccess,
+    isNewPR, setIsNewPR,
+    isAiSwapping, setIsAiSwapping,
+    selectedDayIndex, setSelectedDayIndex,
+    dayLogs, setDayLogs,
+    skipMode, setSkipMode,
+    skipReason, setSkipReason,
+    skipNote, setSkipNote,
+    isDayLogging, setIsDayLogging,
+    dayLogStatus, setDayLogStatus,
+    selectedExerciseIdForForm, setSelectedExerciseIdForForm
+  } = useWorkoutStore();
+
   const liftFormRef = useRef<HTMLFormElement>(null);
-  const [selectedDayIndex, setSelectedDayIndex] = useState(() =>
-    getDefaultDayIndex(program.days.length)
-  );
-  // Day-skip / did-something-else state
-  const [dayLogs, setDayLogs] = useState<DayLog[]>(initialDayLogs);
-  const [skipMode, setSkipMode] = useState<"none" | "skip" | "other">("none");
-  const [skipReason, setSkipReason] = useState<SkipReason | "">("");
-  const [skipNote, setSkipNote] = useState("");
-  const [isDayLogging, setIsDayLogging] = useState(false);
-  const [dayLogStatus, setDayLogStatus] = useState<FormActionState | null>(null);
+
+  // Initialize store state on mount if not already done
+  useEffect(() => {
+    useWorkoutStore.setState({
+      liftLogs: initialLiftLogs,
+      dayLogs: initialDayLogs,
+      injury: initialInjuryNote,
+      selectedDayIndex: getDefaultDayIndex(program.days.length)
+    });
+  }, [initialLiftLogs, initialDayLogs, initialInjuryNote, program.days.length]);
   // The current week's Monday — stable for the lifetime of this render
   const weekStart = useMemo(() => getWeekStart(), []);
   // Max weight per exercise for PR detection
@@ -329,10 +100,7 @@ export function MemberWorkoutConsole({
     return acc;
   }, new Map());
 
-  // Which exercise is currently selected in the log-set form (drives the hint
-  // and the PR summary highlight). Tracked in component state so we can react
-  // to the <select onChange> instead of querying the DOM.
-  const [selectedExerciseIdForForm, setSelectedExerciseIdForForm] = useState<string>("");
+
 
   const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
   const aiStorageKey = `fitsplit-ai-trainer-${memberId}-${program.id}`;
@@ -368,8 +136,7 @@ export function MemberWorkoutConsole({
     if (storedId && storedStart) {
       const startMs = Number(storedStart);
       if (Number.isFinite(startMs)) {
-        setIsSessionActive(true);
-        setSessionId(storedId);
+        setSessionActive(true, storedId);
         setElapsedSeconds(Math.floor((Date.now() - startMs) / 1000));
       }
     }
@@ -388,23 +155,27 @@ export function MemberWorkoutConsole({
   }, [isSessionActive]);
 
   useEffect(() => {
-    function handleOnline() {
-      const offlineLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
-      if (offlineLogs.length > 0) {
-        syncOfflineLifts(offlineLogs).then((res) => {
-           if (res.status === "success") {
-             window.localStorage.removeItem("fitsplit-offline-logs");
-             setOfflineLogsCount(0);
-           }
-        });
+    async function handleOnline() {
+      try {
+        const offlineLogs = await offlineDB.liftLogs.toArray();
+        if (offlineLogs.length > 0) {
+          const res = await syncOfflineLifts(offlineLogs);
+          if (res.status === "success") {
+            await offlineDB.liftLogs.clear();
+            setOfflineLogsCount(0);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to sync offline logs:", err);
       }
     }
-    
-    setOfflineLogsCount(JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]").length);
+
+    offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
+
     if (typeof navigator !== "undefined" && navigator.onLine) {
        handleOnline();
     }
-    
+
     window.addEventListener("online", handleOnline);
     return () => window.removeEventListener("online", handleOnline);
   }, []);
@@ -464,8 +235,7 @@ export function MemberWorkoutConsole({
     setIsSessionPending(false);
     window.localStorage.removeItem("fitsplit-session-id");
     window.localStorage.removeItem("fitsplit-session-start");
-    setIsSessionActive(false);
-    setSessionId("");
+    setSessionActive(false);
     setElapsedSeconds(0);
     setSessionStatus(result);
     router.refresh();
@@ -646,11 +416,10 @@ export function MemberWorkoutConsole({
         };
 
         if (typeof navigator !== "undefined" && !navigator.onLine) {
-           const existingLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
-           existingLogs.push(newLog);
-           window.localStorage.setItem("fitsplit-offline-logs", JSON.stringify(existingLogs));
-           setLiftLogs((current) => [newLog, ...current].slice(0, 12));
-           setOfflineLogsCount(existingLogs.length);
+           const offlineLog = { ...newLog, synced: false };
+           await offlineDB.liftLogs.add(offlineLog);
+           addLiftLog(newLog);
+           offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
            return { status: "success", message: "Saved offline. Will sync when connected." } as FormActionState;
         }
 
@@ -662,11 +431,10 @@ export function MemberWorkoutConsole({
           }
           return result;
         } catch (e) {
-           const existingLogs = JSON.parse(window.localStorage.getItem("fitsplit-offline-logs") || "[]");
-           existingLogs.push(newLog);
-           window.localStorage.setItem("fitsplit-offline-logs", JSON.stringify(existingLogs));
-           setLiftLogs((current) => [newLog, ...current].slice(0, 12));
-           setOfflineLogsCount(existingLogs.length);
+           const offlineLog = { ...newLog, synced: false };
+           await offlineDB.liftLogs.add(offlineLog);
+           addLiftLog(newLog);
+           offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
            return { status: "success", message: "Saved offline. Will sync when connected." } as FormActionState;
         }
       }
@@ -974,136 +742,27 @@ export function MemberWorkoutConsole({
       </div>
 
       <aside className="member-workout-side">
-        <div className="lift-log-panel">
-          <div className="panel-title lift-log-title">
-            <div className="lift-log-heading">
-              <h2>Log your sets</h2>
-              {offlineLogsCount > 0 && (
-                <span className="status-pill status-expired">
-                  {offlineLogsCount} unsynced (Offline)
-                </span>
-              )}
-            </div>
-            {logSuccess && (
-              <span className="lift-log-success">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                {isNewPR ? "New PR!" : "Set logged!"}
-              </span>
-            )}
-          </div>
-
-          <form ref={liftFormRef} className="lift-log-form" onSubmit={handleLiftLog}>
-            <input name="memberId" type="hidden" value={memberId} />
-            <input name="sessionId" type="hidden" value={`session-${memberId}`} />
-
-            <label className="lift-log-exercise-field">
-              Exercise
-              <select
-                name="exerciseId"
-                onChange={(e) => setSelectedExerciseIdForForm(e.target.value)}
-                required
-                value={selectedExerciseIdForForm || uniqueLoggableExercises[0]?.exerciseId || ""}
-              >
-                {uniqueLoggableExercises.length > 0 && (
-                  <optgroup label="Today's plan">
-                    {uniqueLoggableExercises.map((item) => (
-                      <option key={item.exerciseId} value={item.exerciseId}>
-                        {getExerciseName(item.exerciseId, exercises)}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {otherExercises.length > 0 && (
-                  <optgroup label="Other exercises">
-                    {otherExercises.map((ex) => (
-                      <option key={ex.id} value={ex.id}>
-                        {ex.name} ({ex.muscleGroup})
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </select>
-            </label>
-
-            {/* "Last time" hint — shows the most recent lift for the selected exercise.
-                Gives users a fast reference point without needing to open lift history. */}
-            {(() => {
-              const targetId = selectedExerciseIdForForm || uniqueLoggableExercises[0]?.exerciseId;
-              const lastLog = targetId ? lastLogByExercise.get(targetId) : undefined;
-              const isPR = lastLog && lastLog.weight === prMap.get(lastLog.exerciseId);
-              if (!lastLog) {
-                return (
-                  <p className="lift-log-last-hint lift-log-last-hint--empty">
-                    No prior logs for this exercise yet.
-                  </p>
-                );
-              }
-              return (
-                <p className="lift-log-last-hint">
-                  Last time: <strong>{lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}</strong>
-                  {isPR ? <span className="pr-chip" style={{ marginLeft: 8 }}>PR</span> : null}
-                </p>
-              );
-            })()}
-
-            <div className="lift-log-fields">
-              <label>
-                Weight (kg)
-                <input min="0" name="weight" placeholder="60" required step="0.5" type="number" />
-              </label>
-              <label>
-                Sets
-                <input defaultValue="3" min="1" name="sets" required type="number" />
-              </label>
-              <label>
-                Reps
-                <input name="reps" placeholder="e.g. 10 or 8,8,7" title="Single number for uniform reps (10) or comma-separated per set (8,8,7)" required />
-              </label>
-            </div>
-
-            <button className="button button-primary lift-log-submit" type="submit">
-              Log Set
-            </button>
-          </form>
-
-          <details className="member-details-panel">
-            <summary className="member-details-summary">
-              <span className="status-pill status-neutral">View Lift History</span>
-            </summary>
-            <div className="lift-log-table" role="table" aria-label="Historical lift data">
-              <div role="row">
-                <span>Exercise</span>
-                <span>Weight</span>
-                <span>Sets</span>
-                <span>Reps</span>
-              </div>
-              {liftLogs.length === 0 ? (
-                <p className="empty-lift-state">No sets logged yet. Log your first set above.</p>
-              ) : liftLogs.slice(0, 8).map((log) => {
-                const isPR = log.weight != null && log.exerciseId && prMap.get(log.exerciseId) === log.weight;
-                return (
-                  <div key={log.id} role="row">
-                    <span>{getExerciseName(log.exerciseId, exercises)}{isPR && <span className="pr-chip" title="Personal record">PR</span>}</span>
-                    <span>{log.weight} kg</span>
-                    <span>{log.sets}</span>
-                    <span>{log.reps}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </details>
-
-          {liftLogs.length > 0 && (
-            <details className="member-details-panel">
-              <summary className="member-details-summary">
-                <span className="status-pill status-neutral">Progress Chart</span>
-              </summary>
-              <div className="member-details-body">
-                <ProgressChart exercises={exercises} liftLogs={liftLogs} />
-              </div>
-            </details>
-          )}
-        </div>
+        <WorkoutLiftLogForm
+          memberId={memberId}
+          exercises={exercises}
+          uniqueLoggableExercises={uniqueLoggableExercises}
+          otherExercises={otherExercises}
+          logSuccess={logSuccess}
+          isNewPR={isNewPR}
+          offlineLogsCount={offlineLogsCount}
+          lastLogByExercise={lastLogByExercise}
+          prMap={prMap}
+          liftLogs={liftLogs}
+          liftFormRef={liftFormRef}
+          selectedExerciseId={selectedExerciseIdForForm}
+          onExerciseChange={setSelectedExerciseIdForForm}
+          onSubmit={handleLiftLog}
+          pendingEvent={pendingEvent}
+          eventStatus={eventStatus}
+          isEventPending={isEventPending}
+          onConfirm={confirmPendingEvent}
+          onCancelEvent={() => setPendingEvent(null)}
+        />
 
         <div className="injury-card">
           <h2>AI Semi-Personal Trainer</h2>

@@ -51,21 +51,70 @@ export type GymWorkspace = {
   notices?: GymNotice[];
 };
 
-export type Member = {
+/**
+ * Canonical record for a gym member.
+ *
+ * Combines the old list-view fields (formerly `Member`) with the extended
+ * profile/training context fields (formerly `ProfileMetrics`) into a single
+ * source of truth.  The two narrower aliases below preserve backward compat
+ * so existing code that typed props as `Member` or `ProfileMetrics` continues
+ * to compile without any changes.
+ */
+export type MemberProfile = {
+  // ── Identity ──────────────────────────────────────────────────────────────
   id: string;
   fullName: string;
   email?: string;
   phone: string;
   joinedAt: string;
   avatarInitials: string;
+  /** Short fitness goal shown on member cards (e.g. "Build muscle"). */
   goal: string;
   isActive: boolean;
   username?: string;
   staffType?: "owner" | "trainer" | "staff";
+
+  // ── Body metrics ──────────────────────────────────────────────────────────
   age?: number;
   weightKg?: number;
   heightCm?: number;
+
+  // ── Extended profile / training context ───────────────────────────────────
+  gender?: string;
+  dob?: string;
+  /** Long-form fitness goals from the profile form (distinct from the short `goal` field). */
+  fitnessGoals?: string;
+  medicalNotes?: string;
+  primarySlot?: "A" | "B" | "C" | "D";
+  secondarySlot?: "A" | "B" | "C" | "D";
+  injuryNotes?: string;
+  assignedTrainer?: string;
+  macroNutritionTarget?: MacroNutritionTarget;
+  coachNote?: string;
+  coachNoteUpdatedAt?: string;
+  coachNoteUpdatedByName?: string;
 };
+
+/**
+ * List-view alias — only the fields needed to render a member card or table row.
+ * Structurally identical to the old standalone `Member` type.
+ */
+export type Member = Pick<
+  MemberProfile,
+  | "id"
+  | "fullName"
+  | "email"
+  | "phone"
+  | "joinedAt"
+  | "avatarInitials"
+  | "goal"
+  | "isActive"
+  | "username"
+  | "staffType"
+  | "age"
+  | "weightKg"
+  | "heightCm"
+>;
 
 export type Membership = {
   id: string;
@@ -234,26 +283,31 @@ export type MacroNutritionTarget = {
   notes?: string;
 };
 
-export type ProfileMetrics = {
-  fullName: string;
-  email?: string;
-  phone: string;
-  age?: number;
-  gender?: string;
-  dob?: string;
-  heightCm?: number;
-  weightKg?: number;
-  fitnessGoals?: string;
-  medicalNotes?: string;
-  primarySlot?: "A" | "B" | "C" | "D";
-  secondarySlot?: "A" | "B" | "C" | "D";
-  injuryNotes?: string;
-  assignedTrainer?: string;
-  macroNutritionTarget?: MacroNutritionTarget;
-  coachNote?: string;
-  coachNoteUpdatedAt?: string;
-  coachNoteUpdatedByName?: string;
-};
+/**
+ * Detail-view alias — contact info + training context used by profile/edit forms.
+ * Structurally identical to the old standalone `ProfileMetrics` type.
+ */
+export type ProfileMetrics = Pick<
+  MemberProfile,
+  | "fullName"
+  | "email"
+  | "phone"
+  | "age"
+  | "gender"
+  | "dob"
+  | "heightCm"
+  | "weightKg"
+  | "fitnessGoals"
+  | "medicalNotes"
+  | "primarySlot"
+  | "secondarySlot"
+  | "injuryNotes"
+  | "assignedTrainer"
+  | "macroNutritionTarget"
+  | "coachNote"
+  | "coachNoteUpdatedAt"
+  | "coachNoteUpdatedByName"
+>;
 
 export type WorkoutSession = {
   id: string;

@@ -1,5 +1,85 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-24: Codebase Modularisation (all 8 items complete)
+
+Full modularisation pass executed in one session. Every item on the priority list is now done.
+
+### 1. Error boundaries
+- `app/error.tsx` — global root boundary (retry button + `console.error`).
+- `app/owner/error.tsx` — owner segment; "Back to dashboard" link.
+- `app/member/error.tsx` — member segment; "Go to dashboard" link.
+- `app/admin/error.tsx` — admin segment; "Back to admin" link.
+All four are `"use client"` components with `useEffect` error logging.
+
+### 2. `legacy.ts` split — real code, not stubs
+The old `lib/firebase/actions/legacy.ts` (4,341 lines) has been deleted.  All server actions now live in nine domain files with real implementations:
+- `lib/firebase/actions/shared.ts` — ~40 private utility functions shared across all action files (no `"use server"` — utilities only).
+- `lib/firebase/actions/contact.ts` — contact messages.
+- `lib/firebase/actions/exercises.ts` — exercise catalog.
+- `lib/firebase/actions/gyms.ts` — gym CRUD.
+- `lib/firebase/actions/members.ts` — member management.
+- `lib/firebase/actions/notifications.ts` — FCM token + clear notifications.
+- `lib/firebase/actions/programs.ts` — program assignment.
+- `lib/firebase/actions/progress.ts` — lift logs, body weight, day logs.
+- `lib/firebase/actions/pt.ts` — PT session lifecycle.
+- `lib/firebase/actions/staff.ts` — staff / password management.
+- `lib/firebase/actions.ts` — barrel re-exporting all public symbols (unchanged public API).
+
+### 3. `read-models.ts` split
+`lib/firebase/read-models.ts` deleted. Replaced by `lib/firebase/read-models/` with eleven focused modules:
+- `shared.ts`, `gyms.ts`, `members.ts`, `exercises.ts`, `programs.ts`, `notifications.ts`, `activity.ts`, `progress.ts`, `sessions.ts`, `pt.ts`, `misc.ts`, `index.ts` (barrel).
+
+### 4. Zod validation for all server actions
+Every server action in every domain file now validates form input through a Zod schema + `parseActionData` helper (returns `FormActionState` with `fieldErrors` on failure).  The `ZodHelpers` utility object in `lib/firebase/actions/validation.ts` provides reusable schema primitives (`textRequired`, `emailRequired`, `phone`, `pin`, etc.).
+
+### 5. `member-workout-console.tsx` split
+- `lib/workout-utils.ts` — pure utility functions (`getWeekStart`, `getInjuryRule`, `isContraindicated`, `findAlternative`, `createModification`, `getExerciseName`, `getDayMuscleTargets`) + `SKIP_REASONS` and `dayNames` constants.
+- `components/workout-lift-log-form.tsx` — lift log panel extracted as a self-contained client component.
+- `components/member-workout-console.tsx` — significantly reduced; orchestrates state only.
+
+### 6. `Member` + `ProfileMetrics` type merge
+`types/domain.ts` now has a single canonical `MemberProfile` type.  Both `Member` and `ProfileMetrics` are `Pick<MemberProfile, ...>` aliases — backward-compatible, no call sites changed.
+
+### 7. Bug fix found during tests: `getWeekStart` timezone
+`getWeekStart()` was calling `setHours(0,0,0,0)` (local midnight) then `toISOString()` (UTC). In IST (UTC+5:30) this returned the *previous* day. Fixed by building the date string from local `getFullYear/getMonth/getDate` instead.
+
+### 8. Tests — Vitest (49 tests, all passing)
+- `vitest` + `@vitest/coverage-v8` added to devDependencies.
+- `vitest.config.ts` — node environment, `@/` path alias.
+- New `npm` scripts: `test`, `test:watch`, `test:coverage`.
+- `lib/__tests__/workout-utils.test.ts` — 34 unit tests for all pure utility functions and constants.
+- `lib/__tests__/validation.test.ts` — 15 tests for `ZodHelpers` helpers and `parseActionData`.
+
+### Inline styles (ongoing guideline)
+The project currently has ~437 inline `style={{...}}` instances across 53 files.  **New components must use CSS class names** — no new inline styles.  The bulk cleanup of existing instances is a separate deferred item.
+
+### Verification
+- `npx tsc --noEmit` — zero errors.
+- `npx vitest run` — 49/49 tests passing.
+
+---
+
+## Latest Update - 2026-05-24: Modern Tech Stack Integration (Phases 2-5)
+
+- **Client State Management (Zustand)**:
+  - Replaced massive, complex `useState` hooks in the live workout tracking (`member-workout-console.tsx`) with a modular Zustand store (`lib/stores/workout-store.ts`).
+  - Improved re-render efficiency and decoupled logic for the member workout console.
+- **Offline Resilience (Dexie.js)**:
+  - Upgraded the offline lift logging system. Replaced the synchronous 5MB-limited `localStorage` approach with an asynchronous IndexedDB store powered by Dexie.js (`lib/offline-db.ts`).
+  - Lift logs are saved seamlessly to `offlineDB.liftLogs` when offline, and synced smoothly when the browser fires the `online` event.
+- **UX & Accessibility (Radix UI)**:
+  - Integrated `@radix-ui/react-dialog` for fully accessible, headless, unstyled primitives.
+  - Rewrote the custom `confirm-action-form.tsx` modal to utilize Radix's robust `<Dialog.Root>`, `<Dialog.Portal>`, and `<Dialog.Content>`, managing focus and ARIA attributes automatically while still using FitSplit's native CSS variables for aesthetics.
+- **Advanced Scheduling (FullCalendar)**:
+  - Added `@fullcalendar/react` to provide a visual calendar alternative to the raw list view for PT scheduling.
+  - Created `components/pt-calendar.tsx` and integrated it into `/owner/training`, adding a new "List View / Calendar View" toggle state so owners can view 30-day PT plans stretching over the calendar grid.
+- **Verification**:
+  - `npm run typecheck` passes after the action/read-model modularisation was reconciled.
+
+### Follow-up TODO
+- Proceed with Phase 6: Push Notifications (Firebase Cloud Messaging). Ensure `NEXT_PUBLIC_FIREBASE_VAPID_KEY` is added to environments.
+- ~~After Codex finishes splitting `actions.ts`, implement Phase 1 (Zod validation for server actions).~~ ✅ Both done.
+
 ## Latest Update - 2026-05-24: Functions migration pass 2
 
 - Added more callable Function contracts in `functions/src/index.ts`:
@@ -31,7 +111,7 @@
 
 ### Follow-up TODO
 - Deploy Functions and Firestore rules/indexes to the dev Firebase project before relying on callable-first paths in hosted environments.
-- Continue extracting `lib/firebase/actions/legacy.ts` internals into true feature-owned implementations.
+- ~~Continue extracting `lib/firebase/actions/legacy.ts` internals into true feature-owned implementations.~~ ✅ `legacy.ts` deleted; all actions are in domain files.
 - Move remaining exercise/program create/update flows behind callable Functions.
 - Re-check Firestore rules in Firebase Emulator after deployment because direct privileged writes are now intentionally blocked.
 
@@ -67,7 +147,7 @@
   - `npm run build` passed after clearing stale `.next`.
 
 ### Follow-up TODO
-- Continue extracting code from `actions/legacy.ts` into the feature modules instead of re-exporting legacy functions.
+- ~~Continue extracting code from `actions/legacy.ts` into the feature modules instead of re-exporting legacy functions.~~ ✅ `legacy.ts` deleted; extraction complete.
 - Continue moving remaining notifications/activity/FCM side effects to Firestore triggers where the legacy server action path still performs them inline.
 - Convert member creation/archive and reset password/PIN UI paths to callable Functions.
 - Harden Firestore rules once privileged client writes are fully routed through Functions.
@@ -115,7 +195,7 @@
 
 ### Remaining pending items
 - **Deploy step**: Add `NEXT_PUBLIC_FIREBASE_VAPID_KEY` to `.env.local` and production env.
-- Tech debt: split `lib/firebase/actions.ts` (~3k lines), inline `style={{...}}` cleanup, `Member` + `ProfileMetrics` type merge, zod validation.
+- Tech debt: ~~split `lib/firebase/actions.ts`~~ ✅ done, ~~zod validation~~ ✅ done, ~~`Member` + `ProfileMetrics` type merge~~ ✅ done — remaining: inline `style={{...}}` cleanup (437 instances, 53 files; new components must use CSS classes).
 - Workout templates, exercise variations, payment/membership tracker.
 - Deploy Firestore rules + indexes: `firebase deploy --only firestore:rules,firestore:indexes --project fitsplit-29215`
 - Data cleanup scripts: `node scripts/delete-uuid-programs.mjs --delete`, `node scripts/patch-exercise-data.mjs`
@@ -499,16 +579,16 @@ Members don't always follow their program exactly. This adds full week-aware dev
 
 ### Deferred — still NOT done
 1. **Optimistic lift logging via `useOptimistic`** — partial optimistic update already in place via `setLiftLogs`. Full refactor is medium-risk due to offline-log interaction.
-2. **Split `lib/firebase/actions.ts` (~3k lines)** — pure tech debt; no user value.
+2. ~~**Split `lib/firebase/actions.ts` (~3k lines)**~~ ✅ Done — `legacy.ts` deleted, 9 domain files, real implementations.
 3. **Replace rule-based AI swap logic with real Gemini** — `getInjuryRule` is a hardcoded 3-branch lookup. Wire to `lib/ai.ts`.
 4. **Bulk member operations** — multi-select + suspend/restore/message.
 5. **"Today only" injury flag** — session-level state; couples with #3.
-6. **Validation via zod** — scattered `requireText` + inline parsing.
+6. ~~**Validation via zod**~~ ✅ Done — all action files use Zod schemas + `parseActionData`.
 7. **`useActionState` for `AddMemberForm`** — cosmetic; works today.
-8. **FCM push notifications** — service worker + token registration + server messaging.
+8. ~~**FCM push notifications**~~ ✅ Done in a prior session.
 9. **Workout templates, exercise variations, payment/membership tracker** — each a standalone feature.
-10. **`Member` + `ProfileMetrics` merge** — same person, two types.
-11. **Inline `style={{...}}` cleanup + tokens.css extraction**.
+10. ~~**`Member` + `ProfileMetrics` merge**~~ ✅ Done — `MemberProfile` canonical type, both aliases are `Pick<>`.
+11. **Inline `style={{...}}` cleanup** — 437 instances, 53 files. New components must use CSS classes; bulk cleanup is a standalone session.
 
 ---
 
@@ -629,16 +709,16 @@ Second batch from the e2e audit. Worked through the deferred list from the previ
 
 ### Deferred — still NOT done (with honest scope reasons)
 1. **Optimistic lift logging via `useOptimistic`** — `MemberWorkoutConsole` already does optimistic prepend via `setLiftLogs`. The full `useOptimistic` refactor is medium-risk because of the offline-log interaction (`fitsplit-offline-logs` localStorage path). Worth a dedicated session that also reworks the offline-sync flow.
-2. **Split `lib/firebase/actions.ts` (~2.9k lines)** — still pending. `globals.css` has now been split into ordered files under `app/styles/`.
-3. **Replace rule-based "AI Trainer" swap logic with real Gemini** — the `getInjuryRule` function in `MemberWorkoutConsole` is a hardcoded knee/shoulder/back lookup. Either rename ("Smart Swaps" / "Recovery Mode") OR wire to `lib/ai.ts`. Substantial work; needs prompt tuning + cost monitoring.
-4. **Bulk operations on members page** — multi-select + bulk suspend/restore/message. Needs a client-side wrapper component and new server actions. Roughly a 2-hour standalone feature with its own UX considerations (select-all-on-page vs select-all-filtered, optimistic UI for many parallel writes, what to do if 3 of 10 fail).
+2. ~~**Split `lib/firebase/actions.ts` (~2.9k lines)**~~ ✅ Done — `legacy.ts` deleted, real implementations in 9 domain files.
+3. **Replace rule-based "AI Trainer" swap logic with real Gemini** — `getInjuryRule` in `lib/workout-utils.ts` is a hardcoded knee/shoulder/back lookup. Either rename ("Smart Swaps" / "Recovery Mode") OR wire to `lib/ai.ts`. Substantial work; needs prompt tuning + cost monitoring.
+4. **Bulk operations on members page** — multi-select + bulk suspend/restore/message. Needs a client-side wrapper component and new server actions. Roughly a 2-hour standalone feature with its own UX considerations.
 5. **"Today only" injury flag** — touches session-level state and reroutes the AI swap logic. Couples with #3 above and the existing `injuryNotes` model.
-6. **Validation consolidation via zod** — currently parsing is scattered between `requireText` and inline `String(formData.get(...))`. Refactor is invasive; would touch every action in `actions.ts`.
+6. ~~**Validation consolidation via zod**~~ ✅ Done — all action files use Zod schemas; `parseActionData` returns `fieldErrors`.
 7. **`useActionState` consistency for `AddMemberForm`** — works correctly today, conversion is cosmetic. Would require extending `ConfirmActionForm` with an `onSuccess` reset callback. No user-visible improvement.
-8. **PWA push notifications (FCM)** — TODO from the original handoff. Needs service worker + token registration + server-side messaging flow.
+8. ~~**PWA push notifications (FCM)**~~ ✅ Done in a prior session.
 9. **Workout templates** (duplicate Monday→Wednesday), **exercise variations** (band/dumbbell/cable variants), **payment/membership tracker** — each is a feature in its own right.
-10. **Member + ProfileMetrics merge** — same person, two types. Pure data refactor; the type duplication is mildly annoying but not blocking anything.
-11. **Inline `style={{...}}` cleanup** — extract tokens.css. Large refactor with no user value; would touch dozens of files.
+10. ~~**Member + ProfileMetrics merge**~~ ✅ Done — `MemberProfile` canonical type with `Member` and `ProfileMetrics` as `Pick<>` aliases.
+11. **Inline `style={{...}}` cleanup** — 437 instances across 53 files. New components must use CSS classes. Bulk cleanup is a standalone refactor session.
 
 ---
 
