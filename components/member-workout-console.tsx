@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { clearDayLog, endWorkoutSession, logDayStatus, logLiftSet, saveMemberAiTrainerNote, syncOfflineLifts } from "@/lib/firebase/actions";
 import { generateSmartSwaps } from "@/lib/ai";
@@ -269,14 +271,19 @@ export function MemberWorkoutConsole({
       return;
     }
 
-    window.localStorage.setItem(
-      aiStorageKey,
-      JSON.stringify({
-        injury: nextInjury,
-        mode: nextMode,
-        selectedDayIndex: nextSelectedDayIndex
-      })
-    );
+    // A5: Guard against QuotaExceededError and private-browsing restrictions.
+    try {
+      window.localStorage.setItem(
+        aiStorageKey,
+        JSON.stringify({
+          injury: nextInjury,
+          mode: nextMode,
+          selectedDayIndex: nextSelectedDayIndex
+        })
+      );
+    } catch {
+      // Non-fatal — preferences just won't persist this session.
+    }
   }
 
   async function updateInjury() {
@@ -578,8 +585,16 @@ export function MemberWorkoutConsole({
                 </button>
               </div>
             ) : null}
+            <AnimatePresence mode="wait" initial={false}>
             {visibleWorkoutDay ? (
-              <article className="selected-workout-day" key={visibleWorkoutDay.id}>
+              <motion.article
+                animate={{ opacity: 1, y: 0 }}
+                className="selected-workout-day"
+                exit={{ opacity: 0, y: -6 }}
+                initial={{ opacity: 0, y: 6 }}
+                key={`${visibleWorkoutDay.id}-${workoutMode}`}
+                transition={{ duration: 0.15, ease: "easeOut" }}
+              >
                 <p className="eyebrow">
                   {dayNames[selectedDayIndex] ?? `Day ${visibleWorkoutDay.dayNumber}`}
                 </p>
@@ -753,8 +768,9 @@ export function MemberWorkoutConsole({
                     </div>
                   )}
                 </div>
-              </article>
+              </motion.article>
             ) : null}
+            </AnimatePresence>
           </div>
         </div>
 
@@ -847,62 +863,73 @@ export function MemberWorkoutConsole({
 
       </aside>
 
-      {pendingEvent ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div
+      {/* ── Confirm dialog (Radix Dialog — focus trap, Escape to cancel) ── */}
+      <Dialog.Root
+        open={Boolean(pendingEvent)}
+        onOpenChange={(open) => { if (!open) setPendingEvent(null); }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-backdrop" />
+          <Dialog.Content
             aria-describedby="event-confirm-dialog-message"
-            aria-modal="true"
             className="confirm-dialog"
-            role="dialog"
           >
-            <h2>{pendingEvent.title}</h2>
-            <p id="event-confirm-dialog-message">{pendingEvent.message}</p>
+            <Dialog.Title>{pendingEvent?.title ?? ""}</Dialog.Title>
+            <Dialog.Description id="event-confirm-dialog-message">
+              {pendingEvent?.message ?? ""}
+            </Dialog.Description>
             <div className="quick-actions">
-              <button
-                className="button button-secondary"
-                disabled={isEventPending}
-                onClick={() => setPendingEvent(null)}
-                type="button"
-              >
-                Cancel
-              </button>
+              <Dialog.Close asChild>
+                <button
+                  className="button button-secondary"
+                  disabled={isEventPending}
+                  type="button"
+                >
+                  Cancel
+                </button>
+              </Dialog.Close>
               <button
                 className="button button-primary"
                 disabled={isEventPending}
                 onClick={confirmPendingEvent}
                 type="button"
               >
-                {isEventPending ? "Updating..." : pendingEvent.confirmLabel}
+                {isEventPending ? "Updating..." : (pendingEvent?.confirmLabel ?? "Confirm")}
               </button>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
-      {eventStatus ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div
-            aria-live="polite"
-            aria-modal="true"
-            className="confirm-dialog"
-            role="dialog"
-          >
-            <h2>{eventStatus.status === "success" ? "Update complete" : "Update failed"}</h2>
-            <p className={`form-message form-message-${eventStatus.status}`}>
-              {eventStatus.message}
-            </p>
-            <div className="quick-actions">
-              <button
-                className="button button-primary"
-                onClick={() => setEventStatus(null)}
-                type="button"
+      {/* ── Result dialog (Radix Dialog — focus trap, dismissible) ── */}
+      <Dialog.Root
+        open={Boolean(eventStatus)}
+        onOpenChange={(open) => { if (!open) setEventStatus(null); }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="dialog-backdrop" />
+          <Dialog.Content className="confirm-dialog">
+            <Dialog.Title>
+              {eventStatus?.status === "success" ? "Update complete" : "Update failed"}
+            </Dialog.Title>
+            <Dialog.Description asChild>
+              <p
+                aria-live="polite"
+                className={`form-message form-message-${eventStatus?.status ?? "success"}`}
               >
-                Done
-              </button>
+                {eventStatus?.message ?? ""}
+              </p>
+            </Dialog.Description>
+            <div className="quick-actions">
+              <Dialog.Close asChild>
+                <button className="button button-primary" type="button">
+                  Done
+                </button>
+              </Dialog.Close>
             </div>
-          </div>
-        </div>
-      ) : null}
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
     </section>
   );
 }

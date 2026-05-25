@@ -6,8 +6,9 @@ import difflib
 import codecs
 import sys
 
-# Load .env.local if present (simple key=value parser, no dependencies required)
-env_path = os.path.join(os.path.dirname(__file__), ".env.local")
+# Load .env.local from the repo root if present (simple key=value parser, no dependencies required)
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+env_path = os.path.join(repo_root, ".env.local")
 if os.path.exists(env_path):
     with open(env_path, encoding="utf-8") as f:
         for line in f:
@@ -55,7 +56,10 @@ def get_all_videos():
 
 all_videos = get_all_videos()
 
-with open('lib/workouts.json', 'r', encoding='utf-8') as f:
+workouts_path = os.path.join(repo_root, "lib", "workouts.json")
+unmapped_path = os.path.join(os.path.dirname(__file__), "unmapped_videos.md")
+
+with open(workouts_path, 'r', encoding='utf-8') as f:
     workouts = json.load(f)
 
 # Collect all exercises
@@ -93,14 +97,14 @@ for vid, title in all_videos.items():
     if vid not in mapped_videos:
         unmapped_videos.append(f"- [{title}](https://www.youtube.com/shorts/{vid})")
 
-with open('lib/workouts.json', 'w', encoding='utf-8') as f:
+with open(workouts_path, 'w', encoding='utf-8') as f:
     json.dump(workouts, f, indent=2)
 
-with open('unmapped_videos.md', 'w', encoding='utf-8') as f:
+with open(unmapped_path, 'w', encoding='utf-8') as f:
     f.write("# Unmapped Exercises\n")
     for e in unmapped_exercises:
         f.write(f"- {e}\n")
     f.write("\n# Unmapped Videos\n")
     f.write("\n".join(unmapped_videos))
 
-print(f"Mapped successfully. See unmapped_videos.md for the {len(unmapped_videos)} extra videos.")
+print(f"Mapped successfully. See {unmapped_path} for the {len(unmapped_videos)} extra videos.")

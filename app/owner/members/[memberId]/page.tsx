@@ -71,6 +71,8 @@ export default async function MemberDetailPage({
   if (!member) notFound();
 
   const program = programs.find((p) => p.id === assignment?.programId);
+  // D12: Detect when a member has an assignment pointing at a program that no longer exists.
+  const assignedProgramDeleted = !!assignment && !program;
   const bmi =
     profile.weightKg && profile.heightCm
       ? (profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1)
@@ -235,6 +237,14 @@ export default async function MemberDetailPage({
               Leave the field empty and save to clear the note.
             </p>
           </ConfirmActionForm>
+
+          {assignedProgramDeleted && (
+            <div className="form-message form-message-warning" role="alert">
+              <strong>Program no longer exists.</strong> The program previously assigned to{" "}
+              {member.fullName} (ID: <code>{assignment!.programId}</code>) has been deleted.
+              Please assign a new program below.
+            </div>
+          )}
 
           <ProgramAssignmentForm
             catalog={catalog}

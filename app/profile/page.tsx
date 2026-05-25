@@ -2,7 +2,7 @@ import { BodyWeightLogger } from "@/components/body-weight-logger";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
+import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart-lazy";
 import { requireAuth } from "@/lib/auth";
 import {
   getBodyMetricLogsForMember,

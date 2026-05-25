@@ -6,6 +6,8 @@ import { toggleMemberAccess } from "@/lib/firebase/actions";
 import { callToggleMemberAccess } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member } from "@/types/domain";
+// C4: Radix Popover for coach note hover preview.
+import * as Popover from "@radix-ui/react-popover";
 
 export function MemberRow({
   member,
@@ -74,6 +76,56 @@ export function MemberRow({
             </a>
           )}
           <span className="mcard-joined">Joined {member.joinedAt}</span>
+
+          {/* C4: Coach note hover popover */}
+          {member.coachNote && (
+            <Popover.Root>
+              <Popover.Trigger asChild>
+                <button
+                  type="button"
+                  title="View coach note"
+                  style={{
+                    background: "rgba(200, 241, 53, 0.08)",
+                    border: "1px solid rgba(200, 241, 53, 0.25)",
+                    borderRadius: "6px",
+                    color: "var(--brand)",
+                    cursor: "pointer",
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
+                    padding: "2px 8px",
+                  }}
+                >
+                  📋 Note
+                </button>
+              </Popover.Trigger>
+              <Popover.Portal>
+                <Popover.Content
+                  sideOffset={6}
+                  style={{
+                    background: "var(--bg-elevated)",
+                    border: "1px solid var(--border)",
+                    borderRadius: "10px",
+                    boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                    color: "var(--text)",
+                    fontSize: "0.85rem",
+                    lineHeight: 1.5,
+                    maxWidth: "280px",
+                    padding: "12px 14px",
+                    zIndex: 200,
+                  }}
+                >
+                  <p style={{ margin: 0 }}>{member.coachNote}</p>
+                  {member.coachNoteUpdatedAt && (
+                    <p style={{ fontSize: "0.72rem", color: "var(--text-faint)", margin: "6px 0 0" }}>
+                      Updated {new Date(member.coachNoteUpdatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                      {member.coachNoteUpdatedByName ? ` · ${member.coachNoteUpdatedByName}` : ""}
+                    </p>
+                  )}
+                  <Popover.Arrow style={{ fill: "var(--border)" }} />
+                </Popover.Content>
+              </Popover.Portal>
+            </Popover.Root>
+          )}
         </div>
       </div>
 

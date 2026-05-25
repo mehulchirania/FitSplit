@@ -1,6 +1,8 @@
 import json
+import os
 
-file_path = 'lib/workouts.json'
+repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+file_path = os.path.join(repo_root, "lib", "workouts.json")
 with open(file_path, 'r', encoding='utf-8') as f:
     data = json.load(f)
 

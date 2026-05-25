@@ -4,7 +4,8 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
 import { GymNoticeManager } from "@/components/gym-notice-manager";
-import { GymFloorLoadMap } from "@/components/gym-floor-load-map";
+import { GymFloorLoadMap } from "@/components/gym-floor-load-map-lazy";
+import { AttendanceTrendChart } from "@/components/attendance-trend-chart-lazy";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveProgramAssignments,
@@ -15,7 +16,8 @@ import {
   getMembers,
   getOwnerNotifications,
   getWorkoutPrograms,
-  getGymFloorLoadMap
+  getGymFloorLoadMap,
+  getRecentSessionCounts
 } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -40,7 +42,8 @@ export default async function OwnerDashboard() {
     { sessions: workoutSessions },
     { assignments },
     { slots },
-    ptPlans
+    ptPlans,
+    sessionCounts
   ] = await Promise.all([
     getMembers(gymId),
     getOwnerNotifications(gymId),
@@ -50,7 +53,8 @@ export default async function OwnerDashboard() {
     getActiveWorkoutSessions(gymId),
     getActiveProgramAssignments(gymId),
     getGymFloorLoadMap(gymId),
-    getAllPTSessionsForGym(gymId)
+    getAllPTSessionsForGym(gymId),
+    getRecentSessionCounts(gymId)
   ]);
 
   const assignedMemberIds = new Set(assignments.map((a) => a.memberId));
@@ -88,33 +92,39 @@ export default async function OwnerDashboard() {
           <h1>Dashboard</h1>
         </div>
 
-        <nav aria-label="Quick actions" className="odp-quick-links">
+        <nav aria-label="Quick actions" className="ui-cards odp-quick-links">
           <Link
-            className={unassignedMembers.length > 0 ? "odp-ql-link is-urgent" : "odp-ql-link"}
+            className={unassignedMembers.length > 0 ? "ui-card red odp-ql-link is-urgent" : "ui-card blue odp-ql-link"}
             href="/owner/members?filter=no-plan&sort=oldest"
           >
-            <Dumbbell />
-            <span>{isTrainer || isStaff ? "View members" : "Assign workout"}</span>
+            <p className="tip"><Dumbbell /></p>
+            <p className="second-text">{isTrainer || isStaff ? "View members" : "Assign workout"}</p>
             {unassignedMembers.length > 0 && (
               <em className="odp-ql-badge">{unassignedMembers.length}</em>
             )}
           </Link>
-          <Link className="odp-ql-link" href="/owner/training?book=1">
-            <Calendar />
-            <span>Assign PT</span>
+          <Link className="ui-card green odp-ql-link" href="/owner/training?book=1">
+            <p className="tip"><Calendar /></p>
+            <p className="second-text">Assign PT</p>
           </Link>
-          <Link className="odp-ql-link" href="/owner/members">
-            <UsersRound />
-            <span>Members</span>
+          <Link className="ui-card purple odp-ql-link" href="/owner/members">
+            <p className="tip"><UsersRound /></p>
+            <p className="second-text">Members</p>
           </Link>
-          <Link className="odp-ql-link" href="/owner/programs">
-            <Activity />
-            <span>Programs</span>
+          <Link className="ui-card blue odp-ql-link" href="/owner/programs">
+            <p className="tip"><Activity /></p>
+            <p className="second-text">Programs</p>
           </Link>
           {!isTrainer && !isStaff && (
-            <Link className="odp-ql-link" href="/owner/exercises">
-              <Dumbbell />
-              <span>Exercises</span>
+            <Link className="ui-card green odp-ql-link" href="/owner/exercises">
+              <p className="tip"><Dumbbell /></p>
+              <p className="second-text">Exercises</p>
+            </Link>
+          )}
+          {!isTrainer && !isStaff && (
+            <Link className="ui-card purple odp-ql-link" href="/owner/reports">
+              <p className="tip"><Activity /></p>
+              <p className="second-text">Reports</p>
             </Link>
           )}
         </nav>
@@ -190,6 +200,9 @@ export default async function OwnerDashboard() {
           </section>
 
           <GymFloorLoadMap slots={slots} />
+
+          {/* C10: Attendance-over-time LineChart */}
+          <AttendanceTrendChart data={sessionCounts} />
         </div>
 
         {/* ── Side column ─────────────────────────── */}

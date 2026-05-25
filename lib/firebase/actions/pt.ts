@@ -103,21 +103,9 @@ export async function bookPTSession(
     await db.collection(collectionPaths.ptSessions).doc(sessionId).set(sessionRecord);
     await mirrorGymScopedRecord(db, gymId, "ptSessions", sessionId, sessionRecord);
 
-    // Notify the member
-    const notifId = randomUUID();
-    const notifRecord = {
-      id: notifId,
-      gymId,
-      recipientId: memberId,
-      recipientRole: "member",
-      type: "pt_session_booked",
-      title: "PT Plan Assigned",
-      body: `Your personal training plan runs from ${planStartDate} to ${planEndDate}.`,
-      createdAt: now,
-      updatedAt: now
-    };
-    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
-    await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
+    // Notification is written by the onPTPlanCreated Cloud Function trigger
+    // using deterministic ID "pt_plan_${sessionId}" + an existence check, so
+    // no inline write is needed here (CF-MIRROR cleanup).
 
     // Fire push notification (non-blocking, never throws)
     void sendPushToMember(

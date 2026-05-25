@@ -7,6 +7,7 @@ import { getMessaging } from "firebase-admin/messaging";
 import { getStorage } from "firebase-admin/storage";
 import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
+import { beforeUserSignedIn } from "firebase-functions/v2/identity";
 import { onSchedule } from "firebase-functions/v2/scheduler";
 
 initializeApp();
@@ -1379,5 +1380,43 @@ export const autoExpireAbandonedPTSessions = onSchedule(
 
     await batch.commit();
     console.log(`[autoExpireAbandonedPTSessions] Expired ${snap.size} abandoned session(s).`);
+  }
+);
+
+// ─── D1: Blocking trigger — enforce login lockout at the Firebase Auth layer ──
+// This runs BEFORE Firebase issues an ID token, so even direct SDK calls
+// (mobile apps, Postman, etc.) are gated by the same lockout logic used in
+// loginWithCredentials.  No lock doc → allow.  Lock expired → allow.  Active
+// lock → throw unauthenticated to block the sign-in.
+export const blockLockedAccounts = beforeUserSignedIn(
+  { region },
+  async (event) => {
+    const email = event.data?.email?.toLowerCase().trim();
+    if (!email) return; // no email → nothing to check
+
+    try {
+      const lockDoc = await db.collection("loginAttempts").doc(email).get();
+      const data = lockDoc.data();
+      if (!data) return; // no attempts recorded → allow
+
+      const { lockedUntil } = data as { lockedUntil?: string };
+      if (!lockedUntil) return; // not locked → allow
+
+      const lockExpiry = new Date(lockedUntil).getTime();
+      if (Date.now() >= lockExpiry) return; // lock expired → allow
+
+      const minutesRemaining = Math.ceil((lockExpiry - Date.now()) / 60_000);
+      throw new HttpsError(
+        "resource-exhausted",
+        `Too many failed attempts. Try again in about ${minutesRemaining} minute${minutesRemaining === 1 ? "" : "s"}.`
+      );
+    } catch (err) {
+      // Re-throw HttpsError (our intentional block) or unknown errors.
+      // Never silently swallow the block.
+      if ((err as { code?: string })?.code === "resource-exhausted") throw err;
+      console.error("[blockLockedAccounts] Unexpected error during lockout check:", err);
+      // Fail open on unexpected errors — don't block legitimate logins due to
+      // a transient Firestore read failure.
+    }
   }
 );

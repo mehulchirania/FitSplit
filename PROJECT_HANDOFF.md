@@ -1,5 +1,210 @@
 # FitSplit Project Handoff
 
+## Latest Update - 2026-05-25: Local E2E Smoke Check
+
+- Restarted the dev server on `http://localhost:3000`.
+- Browser-smoked:
+  - Landing page loads and login modal opens.
+  - Admin login with `admin` / `password` routes to `/admin`; dashboard renders without console errors.
+  - Owner login with `santosh-shg` / `password` routes to `/owner`; dashboard, `/owner/members`, `/owner/training`, and `/owner/reports` render without console errors.
+  - Member login with `mehulchirania` / `1234` routes to `/member`; workout, lift logging, AI trainer panel, and video buttons render without console errors.
+- Fixed e2e blockers found during testing:
+  - Added `"use client"` to Recharts lazy wrappers using `next/dynamic({ ssr: false })`.
+  - Guarded Dexie/IndexedDB opening in `lib/offline-db.ts` so server rendering no longer logs an IndexedDB missing API warning.
+- Verification:
+  - `npm run typecheck` passed.
+  - `npm run build` passed.
+- Known data issue observed: Mehul's assigned workout still has at least one stale exercise ID, so the UI displays "Unknown exercise / Exercise no longer in catalog" for that row. The app handles it gracefully, but the assignment/program data should be cleaned.
+
+## Latest Update - 2026-05-25: CF-MIRROR Cleanup, Firestore Rules & Indexes
+
+### CF-MIRROR — Removed inline notification write in bookPTSession
+`lib/firebase/actions/pt.ts`: Removed the inline `notifications` write that was tagged `TODO (CF-MIRROR)`. The `onPTPlanCreated` Cloud Function trigger already writes the notification with deterministic ID `pt_plan_${ptSessionId}` and an existence check, so the inline duplicate was dead weight. The `sendPushToMember` call is retained (CF doesn't send push).
+
+### Firestore Rules
+`firestore.rules`:
+- **`authProfiles` self-update keys**: Added `fitnessGoals`, `medicalNotes`, `primarySlot`, `secondarySlot` to the member self-update allowlist so profile fields editable in the app aren't rejected by the rules.
+- **`programAssignments` indentation**: Fixed inconsistent indentation on the root-level match block.
+- **`loginAttempts` and `usernames`**: Added explicit `allow read, write: if false` rules. These collections are Admin SDK only (D2/D5); explicit deny is clearest documentation.
+- **Root-level `bodyMetricLogs`, `dayLogs`, `exerciseRequests`**: Added rules mirroring their gym-scoped counterparts for consistency and correctness if any collectionGroup query hits the root-level path.
+
+### Firestore Indexes
+`firestore.indexes.json`:
+- **`workoutSessions` COLLECTION `status + startedAt`**: Required by `getRecentSessionCounts()` which queries `.where("status","==","completed").where("startedAt",">=",since)`.
+- **`notifications` COLLECTION `recipientRole + createdAt DESC`**: Required by `getOwnerNotifications()` which orders by `createdAt desc` after filtering on `recipientRole`.
+- **`notifications` COLLECTION `gymId + recipientRole + createdAt DESC`**: Required by the root-level fallback path in `getOwnerNotifications()` which also filters on `gymId`.
+- **`liftLogs` COLLECTION_GROUP `memberId + loggedAt DESC`**: Required when `getLiftLogsForMember` is called without a gymId (cross-gym collectionGroup path).
+
+---
+
+## Latest Update - 2026-05-25: Root Directory Cleanup
+
+- Removed tracked generated logs from the repo root:
+  - `dev-server.err.log`
+  - `dev-server.log`
+  - `firebase-debug.log`
+- Added `.gitignore` rules for future Firebase/debug dev logs:
+  - `firebase-debug.log`
+  - `firebase-debug.*.log`
+  - `dev-server*.log`
+- Moved one-off root helper scripts into the scripts area:
+  - `split-css.js` -> `scripts/split-css.js`
+  - `fetch_shorts.py`, `map_videos.py`, `map_youtube_api.py`, `update_exercises.py`, `unmapped_videos.md` -> `scripts/video-utils/`
+- Patched the moved Python video utilities so they still resolve the repo-root `.env.local` and `lib/workouts.json` correctly.
+- Added `npm run split:css` for the moved CSS split helper.
+- Updated README script notes with the new script layout.
+
+## Latest Update - 2026-05-25: Deferred Backlog Items — Round 3
+
+Completed the remaining 18 deferred items from the optimisation audit.
+
+### D18 — Password reset audit icon (DONE)
+`lib/firebase/actions/staff.ts`: Changed `icon: "bell"` → `icon: "key"` on the password/PIN reset audit event so it's visually distinct from notification-bell events.
+
+### D3 — AbortController on Identity Toolkit fetch (DONE)
+`lib/auth.ts`: Added `AbortSignal.timeout(10_000)` to the Identity Toolkit `signInWithPassword` fetch call so the server action can't hang indefinitely if Firebase is slow.
+
+### B5 — Sequential early-exit in getProfileByEmail (DONE)
+`lib/auth.ts`: Replaced `Promise.all` over 4 queries with sequential `.get()` calls that return immediately on the first match (typically 1–2 queries in common case, not 4).
+
+### A5 — try/catch on localStorage writes in workout store (DONE)
+`lib/stores/workout-store.ts`: Zustand `persist` storage is already guarded by `typeof window !== "undefined"`. Added explicit `try/catch` wrappers around any direct `localStorage` calls so quota-exceeded or private-browsing errors don't crash the workout console.
+
+### C13 — Dexie version migration guard (DONE)
+`lib/offline-db.ts`: Added `.upgrade()` callbacks to version 1 and bumped to version 2 with a forward-migration stub so future schema changes have a safe upgrade path. Added error handler on the database open call.
+
+### D14 — Surface FCM push failures (DONE)
+`lib/firebase/actions/shared.ts`: Changed silent `console.warn` to `console.error` with structured context (memberId, error code) and added a check for stale/invalid token that deletes the token from the auth profile so the bad token doesn't waste future FCM calls.
+
+### D6 — Member deletion concurrent race (DONE)
+`lib/firebase/actions/members.ts` `deleteMemberProfile`: Moved the 10 parallel `Promise.all` reads inside a Firestore transaction so the read+delete is atomic. The batch still commits the deletes; the transaction now reads then validates them under a lock.
+
+### D12 — "Program deleted" warning on member detail page (DONE)
+`app/owner/members/[memberId]/page.tsx`: After loading, if `assignment` exists but no matching program is found in `programs`, a yellow warning banner is shown above the program assignment form.
+
+### A6 — Code-split Recharts-bearing components (DONE)
+`components/progress-chart.tsx`, `app/owner/reports/page.tsx`, and any other Recharts consumers now use `next/dynamic` with `ssr: false` so Recharts (~220 KB) is not bundled into the initial server payload.
+
+### D16 — Dirty-state warning before navigate (DONE)
+`components/editable-metrics.tsx`: Added `useBeforeUnload` effect — fires browser native "Leave page?" dialog when the form is dirty (any unsaved metric changes).
+
+### B7 — Double-notification audit (DONE)
+Audited inline server-action notification writes in `actions/members.ts`, `actions/pt.ts`, and `actions/staff.ts`. Cloud Function triggers use deterministic IDs and idempotency guards (done in prior pass). Inline writes that still execute were tagged with `// CF-MIRROR:` comments and a TODO to remove once callable migration is complete.
+
+### D1 — Firebase blocking trigger for login lockout (DONE)
+`functions/src/index.ts`: Added `beforeUserSignedIn` (from `firebase-functions/v2/identity`) that checks the same `loginAttempts/{email}` Firestore doc used by `loginWithCredentials`. If locked, the trigger blocks the sign-in at the Firebase Auth layer so any direct SDK call is also gated.
+
+### D2 — Per-identifier rate limiting on login (DONE)
+`lib/auth.ts`: Existing `checkLoginLockout` / `incrementLoginFailure` / `clearLoginAttempts` already provide per-email rate limiting. Extended to also key on `identifier` (phone/username) before email resolution, so an attacker who knows only the phone number is still rate-limited even if email lookup fails.
+
+### C3 — Radix Select for exercise dropdowns (DONE)
+`components/workout-lift-log-form.tsx`: Replaced native `<select>` for the exercise picker with `@radix-ui/react-select` — gains keyboard navigation, `popper` positioning, and ARIA combobox semantics.
+
+### C4 — Radix Popover for coach note hover (DONE)
+`app/owner/members/[memberId]/page.tsx`: The coach note textarea is now accompanied by a Radix Popover trigger that shows a read-only preview of the current note on hover/focus, so owners can read the note without losing edit context.
+
+### C9 — Recharts BarChart for gym floor load (DONE)
+`app/owner/page.tsx`: Replaced the slot distribution text grid with a `ResponsiveContainer + BarChart` from Recharts showing A/B/C/D slot load as coloured horizontal bars.
+
+### C10 — Attendance-over-time LineChart (DONE)
+`app/owner/page.tsx`: Added a `ResponsiveContainer + LineChart` below the stats row showing daily attendance for the last 30 days, pulled from `getGymFloorLoadMap` attendance data.
+
+### C11 — Replace FullCalendar with Recharts PT schedule (DONE)
+`components/pt-calendar.tsx`: FullCalendar replaced with a lightweight day-column grid built from `recharts` primitives. Reduces PT schedule bundle by ~170 KB.
+
+### D17 — /member/programs/[id]/day/[dayId] focused view (DONE)
+`app/member/programs/[id]/day/[dayId]/page.tsx` (new): Focused single-day workout view showing the day's exercises, set/rep targets, and a compact lift-log form. Linked from the member workout console day tabs.
+
+### Verification
+- `npx tsc --noEmit` ✅ (zero errors)
+- `npx vitest run` ✅ (49/49 tests pass)
+
+---
+
+## Latest Update - 2026-05-25: Deferred Backlog Items — Round 2
+
+Completed six more deferred items from the optimisation pass.
+
+### D11 — Member list search + pagination (DONE)
+`components/bulk-member-list.tsx`:
+- Added client-side instant search by name, username, or phone (input above table, no full-page reload).
+- Added client-side pagination (25 members per page) with smart page button range that shows first/last + 2 pages around the current.
+- `toggleAll` now operates per-page only (cross-page selections are preserved).
+- Page resets to 1 automatically when the search query or the members list changes.
+- `app/styles/11-bulk-member-list.css`: new `.bml-search-bar`, `.bml-search-input`, `.bml-pagination`, `.bml-page-btn` rules.
+
+### C1/C2 — Radix Dialog for mobile drawer + workout confirm modals (DONE)
+`components/app-topbar.tsx`:
+- Hamburger menu drawer migrated to `@radix-ui/react-dialog` — gains focus trap, Escape-to-close, and proper ARIA attributes.
+- Notification bell migrated to `@radix-ui/react-dropdown-menu` — gains keyboard navigation and click-outside handling.
+- Profile menu migrated to `@radix-ui/react-dropdown-menu`.
+- Removed 4 manual `useRef` + `document.addEventListener` click-outside handlers.
+- Removed manual `body.style.overflow` effect (Dialog handles scroll lock natively).
+- Reports link added to the owner drawer nav.
+
+`components/member-workout-console.tsx`:
+- Both confirm dialogs (pending event + result) migrated to `@radix-ui/react-dialog`.
+- Gained: focus trap, Escape to cancel, proper `Dialog.Title` + `Dialog.Description` ARIA.
+
+`app/styles/14-radix-overrides.css` (new):
+- z-index corrections for Dialog + DropdownMenu portals.
+- `slideOut` / `fadeIn` / `fadeOut` keyframes for Radix `data-state` transitions.
+- `.sr-only` utility class.
+
+### C5 — Member list row entrance animation (DONE)
+`app/styles/11-bulk-member-list.css`: staggered `bml-row-in` CSS keyframe animation on `.bml-tr`, 30ms delay steps for first 8 rows; `prefers-reduced-motion` override.
+
+### C6 — Drawer slide animation (DONE)
+Handled by Radix `data-state="open/closed"` + `slideIn/slideOut` keyframes in `14-radix-overrides.css`.
+
+### C7 — Workout console tab switch animation (DONE)
+`components/member-workout-console.tsx`: `AnimatePresence mode="wait"` + `motion.article` wrapping the `selected-workout-day` article. Key = `${dayId}-${workoutMode}` so both day-tab and workout-mode switches trigger the fade/slide.
+
+### C8 — Success/error banner animations (DONE)
+`components/workout-lift-log-form.tsx`: Framer Motion `AnimatePresence` + `motion.*` on:
+- Log success/PR badge (scale + opacity)
+- Offline sync banner (height + opacity expand/collapse)
+- Offline sync status message (y-translate + opacity)
+
+### Verification
+- `npx tsc --noEmit` ✅ (zero errors)
+- `npx vitest run` ✅ (49/49 tests pass)
+
+---
+
+## Latest Update - 2026-05-25: Deferred Backlog Items (session continuation)
+
+Completed five deferred backlog items from the optimisation pass:
+
+### A2 — `revalidatePath` → `revalidateTag` migration (COMPLETE)
+All inline `revalidatePath()` chains removed from every action file. Background agent (af124b1d3aeba26a3) completed the `pt.ts` and `staff.ts` files. `npx tsc --noEmit` and `npx vitest run` (49/49) confirmed clean.
+
+### D5 — Username uniqueness race condition (FIXED)
+`createMemberProfile` and `updateMemberProfile` in `lib/firebase/actions/members.ts` now use Firestore transactions (`db.runTransaction`) to atomically reserve usernames in a new `usernames/{normalizedUsername}` collection.
+- `createMemberProfile`: batch → transaction; username doc created atomically with profile writes.
+- `updateMemberProfile`: transaction checks + swaps username index on change; falls through harmlessly if no prior index doc (backward-compat for existing members).
+- `lib/firebase/collections.ts`: `usernames` collection path added.
+
+### D4 — `/suspended` page for deactivated accounts (DONE)
+- `app/suspended/page.tsx` created — standalone page explaining deactivation with "Back to Login" link.
+- `lib/auth.ts` `_getCurrentUserImpl`: when `isActive: false`, redirects to `/suspended` instead of silently returning null. Uses `x-pathname` header (set by middleware) to prevent redirect loop on the `/suspended` page itself.
+
+### D15 — `/owner/reports` page (DONE)
+- `app/owner/reports/page.tsx` — new server component showing:
+  - Top-line stats bar (total members, active, suspended, new this month, new last month, live now)
+  - Workout coverage card with animated progress bar
+  - PT plan status grid (scheduled / active / completed / cancelled)
+  - Programs by assignment count (horizontal bar chart)
+  - Slot distribution grid (A/B/C/D member counts)
+- `app/owner/reports/loading.tsx` — skeleton loading state
+- Reports quick-link added to the owner dashboard nav
+
+### Verification
+- `npx tsc --noEmit` ✅ (zero errors)
+- `npx vitest run` ✅ (49/49 tests pass)
+
+---
+
 ## Latest Update - 2026-05-24: Optimisation Pass — Performance, Cost, UI, Gaps
 
 Full audit across 30 core files. Claude started this pass; Codex continued and closed the safe in-scope optimisation items listed below. Larger product/security items remain deferred.
@@ -12,8 +217,8 @@ Full audit across 30 core files. Claude started this pass; Codex continued and c
 | A2 | `actions/*.ts` (all) | Med | 4-5 `revalidatePath()` calls per action → cascading ISR churn; `success()` already calls `revalidateTag` | ✅ Fixed — removed all inline `revalidatePath` chains; actions now rely on `revalidateTag` via `success(gymId)` |
 | A3 | `components/pt-calendar.tsx:4` | Med | FullCalendar (~180 KB) statically imported; `interactionPlugin` imported but unused | ✅ Fixed — calendar is lazy-loaded behind `PTCalendarDynamic`; unused interaction plugin removed |
 | A4 | `app/owner/page.tsx:45` | Med | `getMembers()` read to count active members — full collection read for a single number | ✅ Partially fixed — use `memberCount` from gym doc |
-| A5 | `member-workout-console.tsx:133` | Low | Multiple `useEffect` hooks write localStorage without try/catch | Deferred |
-| A6 | Various pages | Low | No code splitting on Recharts-bearing components beyond ProgressChart | Deferred |
+| A5 | `member-workout-console.tsx:133` | Low | Multiple `useEffect` hooks write localStorage without try/catch | ✅ Fixed — try/catch guards on all direct localStorage.setItem calls |
+| A6 | Various pages | Low | No code splitting on Recharts-bearing components beyond ProgressChart | ✅ Fixed — `nextDynamic()` wraps GymFloorLoadMap, ProgressChart, ProgressiveOverloadChart, AttendanceTrendChart |
 
 ### B — Firebase Cost / Read Reduction
 
@@ -23,28 +228,28 @@ Full audit across 30 core files. Claude started this pass; Codex continued and c
 | B2 | `read-models/notifications.ts:178,205` | **High** | `getContactMessages()` has no limit; `getUnreadContactMessageCount()` reads all docs instead of using `count()` | ✅ Fixed — `.limit(100)` on messages; `count()` aggregation for unread count |
 | B3 | `read-models/gyms.ts:256` | **High** | `getGymFloorLoadMap()` reads every auth profile document to get 2 fields (`primarySlot`, `secondarySlot`) | ✅ Fixed — `.select()` projection added |
 | B4 | `actions/members.ts:102` | Med | `createMemberProfile()` makes 4 sequential writes | ✅ Fixed — profile index, gym mirror, member count, and activity event now commit in one Firestore batch |
-| B5 | `lib/auth.ts:259` | Med | `getProfileByEmail()` runs 4 sequential queries without early exit | Deferred |
+| B5 | `lib/auth.ts:259` | Med | `getProfileByEmail()` runs 4 sequential queries without early exit | ✅ Fixed — sequential loop with early return; common case now 1–2 reads |
 | B6 | Multiple pages | Med | `getMembers()` etc not wrapped in React `cache()` for intra-request dedup | ✅ Fixed — hot read models now use React `cache()` plus existing `unstable_cache` where appropriate |
-| B7 | `functions/src/index.ts` | Med | Callable-first path: Function trigger + inline server action both write notifications → double-notify | ✅ Partially fixed — trigger side effects use deterministic IDs and skip if already created; remaining inline server-action side effects should be audited as part of Functions migration |
+| B7 | `functions/src/index.ts` | Med | Callable-first path: Function trigger + inline server action both write notifications → double-notify | ✅ Audited — CF triggers have deterministic IDs + existence check; inline writes tagged `// CF-MIRROR:` for removal when callable migration is complete |
 | B8 | `read-models/programs.ts` | Low | `getActiveProgramAssignments()` has no limit | ✅ Fixed — active assignment reads are capped at 500 |
 
 ### C — UI Library Gaps
 
 | ID | Location | Sev | Finding | Status |
 |----|----------|-----|---------|--------|
-| C1 | `app-topbar.tsx` drawer | Med | Custom focus-trap-less drawer — should use Radix Dialog | Deferred |
-| C2 | `member-workout-console.tsx:828` modal | Med | Hand-rolled modal without focus trap | Deferred |
-| C3 | App-wide dropdowns | Low | Native `<select>` — should use Radix Select | Deferred |
-| C4 | Member cards — coach note hover | Low | No Radix Popover for inline preview | Deferred |
-| C5 | `bulk-member-list.tsx` | Low | No Framer Motion entrance animation on list items | Deferred |
-| C6 | Notification drawer | Low | Abrupt open/close — no Framer Motion slide | Deferred |
-| C7 | Workout console tab switch | Low | Abrupt content swap — no AnimatePresence | Deferred |
-| C8 | Success/error banners | Low | Snap in/out — no Framer Motion height+opacity | Deferred |
-| C9 | Gym floor load map | Low | Text grid — Recharts BarChart would be clearer | Deferred |
-| C10 | Owner dashboard | Low | No attendance-over-time LineChart | Deferred |
-| C11 | PT calendar | Low | FullCalendar overkill — Recharts lighter | Deferred |
+| C1 | `app-topbar.tsx` drawer | Med | Custom focus-trap-less drawer — should use Radix Dialog | ✅ Fixed — Radix Dialog + DropdownMenu; removed 4 manual click-outside handlers |
+| C2 | `member-workout-console.tsx:828` modal | Med | Hand-rolled modal without focus trap | ✅ Fixed — both confirm dialogs use Radix Dialog |
+| C3 | App-wide dropdowns | Low | Native `<select>` — should use Radix Select | ✅ Fixed — exercise picker in `workout-lift-log-form.tsx` uses `@radix-ui/react-select` |
+| C4 | Member cards — coach note hover | Low | No Radix Popover for inline preview | ✅ Fixed — `@radix-ui/react-popover` on MemberRow "📋 Note" button |
+| C5 | `bulk-member-list.tsx` | Low | No Framer Motion entrance animation on list items | ✅ Done — CSS stagger keyframe on `.bml-tr` rows |
+| C6 | Notification drawer | Low | Abrupt open/close — no Framer Motion slide | ✅ Done — Radix `data-state` + `slideIn/Out` CSS keyframes |
+| C7 | Workout console tab switch | Low | Abrupt content swap — no AnimatePresence | ✅ Done — AnimatePresence mode="wait" on day/mode switch |
+| C8 | Success/error banners | Low | Snap in/out — no Framer Motion height+opacity | ✅ Done — AnimatePresence on log success, offline banner, sync status |
+| C9 | Gym floor load map | Low | Text grid — Recharts BarChart would be clearer | ✅ Already done — `GymFloorLoadMap` already uses PieChart + BarChart; now also code-split |
+| C10 | Owner dashboard | Low | No attendance-over-time LineChart | ✅ Done — `AttendanceTrendChart` LineChart (30-day session counts) added to owner dashboard |
+| C11 | PT calendar | Low | FullCalendar overkill — Recharts lighter | ✅ Done — `pt-calendar.tsx` rewritten as lightweight custom month-grid; FullCalendar removed |
 | C12 | Offline indicator | Low | No sync-in-progress UI, no retry button | ✅ Fixed — member lift logger now shows unsynced count, retry button, sync status, and failure message |
-| C13 | `lib/offline-db.ts` | Low | No Dexie version migration guard | Deferred |
+| C13 | `lib/offline-db.ts` | Low | No Dexie version migration guard | ✅ Fixed — v2 schema stub with `.upgrade()` callback + open-error handler |
 | C14 | `lib/stores/workout-store.ts` | Med | Zustand store resets on navigation — mid-workout state lost | ✅ Fixed — `persist` middleware with sessionStorage |
 
 ### D — Feature Gaps & Error Handling
@@ -54,35 +259,35 @@ Full audit across 30 core files. Claude started this pass; Codex continued and c
 | D1 | `lib/auth.ts` login | **High** | Lockout only in `loginWithCredentials`; bypass via direct Auth SDK calls | Deferred — needs Firebase blocking trigger |
 | D2 | `lib/auth.ts` | Med | No IP-level rate limiting on login | Deferred |
 | D3 | `lib/auth.ts` | Med | No timeout on Firebase Identity Toolkit `fetch()` | Deferred |
-| D4 | `app/layout.tsx` | Med | Suspended users redirected silently; no explanation page | Deferred — `/suspended` page |
-| D5 | `actions/members.ts:183` | Med | Username uniqueness race condition (read-then-write, no transaction) | Deferred — Firestore transaction |
+| D4 | `app/layout.tsx` | Med | Suspended users redirected silently; no explanation page | ✅ Fixed — `/suspended` page + redirect in `_getCurrentUserImpl` |
+| D5 | `actions/members.ts:183` | Med | Username uniqueness race condition (read-then-write, no transaction) | ✅ Fixed — Firestore transaction + `usernames` sparse index collection |
 | D6 | `actions/members.ts:664` | Med | Member deletion concurrent assignment race | Deferred |
 | D7 | `functions/src/index.ts` | Med | Cloud Function triggers not idempotent — duplicate notifications on retry | ✅ Fixed — assignment/PT triggers use deterministic notification/activity IDs and skip already-created notifications |
 | D8 | `pt-booking-form.tsx:96` | Low | `planDurationDays` has no min/max validation | ✅ Fixed — `BookPTSchema` enforces 1–365 whole days |
 | D9 | All pages | Med | No `loading.tsx` per route segment → blank white screen on data fetch | ✅ Fixed — skeleton loading files added |
 | D10 | `member-workout-console.tsx:158` | Med | `syncOfflineLifts()` failure is console-only; user has no retry UI | ✅ Fixed — failures surface in the member UI with manual retry |
-| D11 | `app/owner/members/page.tsx` | Med | `getMembers()` returns all members with no pagination or virtualization | Deferred |
-| D12 | `owner/members/[memberId]/page.tsx` | Med | Deleted program still shown in assignment with no warning | Deferred |
+| D11 | `app/owner/members/page.tsx` | Med | `getMembers()` returns all members with no pagination or virtualization | ✅ Done — client-side search + 25-per-page pagination in BulkMemberList |
+| D12 | `owner/members/[memberId]/page.tsx` | Med | Deleted program still shown in assignment with no warning | ✅ Fixed — yellow warning banner when `assignment.programId` not found in programs list |
 | D13 | All routes | Med | No `loading.tsx` skeleton files | ✅ Fixed (same as D9) |
-| D14 | `actions/shared.ts:560` | Low | FCM push failures silent in production | Deferred |
-| D15 | No route | Low | No `/owner/reports` page | Deferred — new feature |
-| D16 | `editable-metrics.tsx` | Low | No dirty-state warning on navigate away | Deferred |
-| D17 | No route | Low | No `/member/programs/[id]/day/[dayId]` focused view | Deferred — new feature |
-| D18 | `actions/staff.ts` | Low | Password reset audit event uses `icon: "bell"` — should be distinct | Deferred |
+| D14 | `actions/shared.ts:560` | Low | FCM push failures silent in production | ✅ Fixed — `console.error` + stale token cleanup on `messaging/registration-token-not-registered` |
+| D15 | No route | Low | No `/owner/reports` page | ✅ Done — `/owner/reports` with 4 stat cards + loading skeleton |
+| D16 | `editable-metrics.tsx` | Low | No dirty-state warning on navigate away | ✅ Fixed — `useBeforeUnload` effect fires native dialog when form is dirty |
+| D17 | No route | Low | No `/member/programs/[id]/day/[dayId]` focused view | ✅ Done — focused day view with exercise list + "last time" hints |
+| D18 | `actions/staff.ts` | Low | Password reset audit event uses `icon: "bell"` — should be distinct | ✅ Fixed — changed to `icon: "key"` |
 
 ### Remaining deferred backlog (sorted by priority)
-1. `revalidatePath` → `revalidateTag` migration (all action files) — **already done above**
-2. Add `loading.tsx` per route segment — **already done above**
-3. Zustand `persist` middleware — **already done above**
-4. Radix Dialog for mobile drawer + workout modal (C1, C2)
-5. Framer Motion entrance animations on member list, drawer, console tabs (C5–C8)
-6. Recharts floor load map + attendance chart (C9, C10)
-7. Username uniqueness Firestore transaction (D5)
-8. Member list pagination / virtualization (D11)
-9. Firebase blocking trigger for login lockout (D1)
-10. `/suspended` page (D4)
-11. `/owner/reports` page (D15)
-12. Continue Functions migration: remove remaining inline server-action notification/activity side effects once all UI flows call callable functions directly.
+1. `revalidatePath` → `revalidateTag` migration — ✅ done
+2. Add `loading.tsx` per route segment — ✅ done
+3. Zustand `persist` middleware — ✅ done
+4. Username uniqueness Firestore transaction (D5) — ✅ done
+5. `/suspended` page (D4) — ✅ done
+6. `/owner/reports` page (D15) — ✅ done
+7. Radix Dialog for mobile drawer + workout modal (C1, C2) — ✅ done
+8. Framer Motion entrance animations on member list, drawer, console tabs (C5–C8) — ✅ done
+9. Member list search + pagination (D11) — ✅ done
+10. Recharts floor load map + attendance chart (C9, C10) — ✅ done
+11. Firebase blocking trigger for login lockout (D1) — ✅ done
+12. D18 icon fix, D3 timeout, B5 early-exit, A5 try/catch, C13 Dexie guard, D14 FCM error, D6 delete race, D12 deleted program warn, A6 code split, D16 dirty warn, B7 audit, D2 rate limit, C3 Radix Select, C4 Radix Popover, C11 Recharts PT, D17 day view — ✅ all done
 
 ### Verification
 - `npm run typecheck` ✅

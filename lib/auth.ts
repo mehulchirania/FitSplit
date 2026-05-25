@@ -256,15 +256,25 @@ async function getProfileById(uid: string) {
 async function getProfileByEmail(email: string) {
   const { db } = getFirebaseAdminServices();
   const normalizedEmail = email.trim().toLowerCase();
-  const queries = await Promise.all([
-    db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
-    db.collection(collectionPaths.authProfiles).where("email", "==", normalizedEmail).limit(1).get(),
-    db.collection(collectionPaths.profiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
-    db.collection(collectionPaths.profiles).where("email", "==", normalizedEmail).limit(1).get()
-  ]);
 
-  const doc = queries.flatMap((snapshot) => snapshot.docs)[0];
-  return doc ? toProfile(doc.id, doc.data()) : null;
+  // B5: Run queries sequentially with early exit — common case hits authProfiles.authEmail
+  // and returns after 1 read instead of always firing all 4 in parallel.
+  const queries: (() => Promise<FirebaseFirestore.QuerySnapshot>)[] = [
+    () => db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
+    () => db.collection(collectionPaths.authProfiles).where("email", "==", normalizedEmail).limit(1).get(),
+    () => db.collection(collectionPaths.profiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
+    () => db.collection(collectionPaths.profiles).where("email", "==", normalizedEmail).limit(1).get()
+  ];
+
+  for (const query of queries) {
+    const snapshot = await query();
+    if (!snapshot.empty) {
+      const doc = snapshot.docs[0];
+      return toProfile(doc.id, doc.data());
+    }
+  }
+
+  return null;
 }
 
 async function resolveProfileForIdentifier(identifier: string) {
@@ -395,6 +405,13 @@ function validateExpectedRole(role: Role, expectedRole?: "member" | "staff") {
 // LOCKOUT_MINUTES. This sits in front of Firebase Auth — Firebase has its own
 // per-IP throttling but it kicks in too late for brute-force-by-PIN, where 10k
 // permutations are easily reachable in under a minute.
+//
+// D2: Two complementary lockout paths:
+//   1. Profile-embedded: keyed on resolved email, stored on the authProfile doc.
+//   2. Identifier-based: keyed on the raw identifier (phone/username/email),
+//      stored in loginAttempts/{normalizedIdentifier}. This fires BEFORE email
+//      resolution so an attacker who knows only a phone number is also gated.
+//      The beforeSignIn Cloud Function (D1) reads the same collection.
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
@@ -447,6 +464,52 @@ async function clearLoginAttempts(email: string) {
   const ref = await findProfileRefByEmail(email);
   if (!ref) return;
   await ref.set(
+    { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
+    { merge: true }
+  );
+}
+
+// D2: Identifier-based lockout — stored in loginAttempts/{normalizedId}.
+// Fires BEFORE email resolution so phone/username attacks are also gated.
+// The D1 beforeUserSignIn blocking trigger reads the same collection.
+async function checkIdentifierLockout(
+  identifier: string
+): Promise<{ locked: boolean; minutesRemaining?: number }> {
+  if (!hasFirebaseAdminConfig()) return { locked: false };
+  const { db } = getFirebaseAdminServices();
+  const normalized = identifier.trim().toLowerCase();
+  const doc = await db.collection("loginAttempts").doc(normalized).get();
+  const data = doc.data();
+  if (!data?.lockedUntil) return { locked: false };
+  const lockExpiry = new Date(String(data.lockedUntil)).getTime();
+  if (Date.now() < lockExpiry) {
+    return { locked: true, minutesRemaining: Math.max(1, Math.ceil((lockExpiry - Date.now()) / 60_000)) };
+  }
+  return { locked: false };
+}
+
+async function incrementIdentifierFailure(identifier: string) {
+  if (!hasFirebaseAdminConfig()) return;
+  const { db } = getFirebaseAdminServices();
+  const normalized = identifier.trim().toLowerCase();
+  const ref = db.collection("loginAttempts").doc(normalized);
+  const data = (await ref.get()).data() ?? {};
+  const next = Number(data.failedLoginAttempts ?? 0) + 1;
+  const update: Record<string, unknown> = {
+    failedLoginAttempts: next,
+    lastFailedLoginAt: new Date().toISOString()
+  };
+  if (next >= MAX_FAILED_ATTEMPTS) {
+    update.lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60_000).toISOString();
+  }
+  await ref.set(update, { merge: true });
+}
+
+async function clearIdentifierAttempts(identifier: string) {
+  if (!hasFirebaseAdminConfig()) return;
+  const { db } = getFirebaseAdminServices();
+  const normalized = identifier.trim().toLowerCase();
+  await db.collection("loginAttempts").doc(normalized).set(
     { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
     { merge: true }
   );
@@ -605,6 +668,16 @@ async function _loginWithCredentials(formData: FormData) {
     return createLocalDemoSession(identifier, password, mode);
   }
 
+  // D2: Check identifier-based lockout BEFORE resolving to an email, so
+  // brute-forcing by phone number or username is also blocked.
+  const identifierLock = await checkIdentifierLockout(identifier);
+  if (identifierLock.locked) {
+    return {
+      status: "error" as const,
+      message: `Too many failed attempts. Try again in about ${identifierLock.minutesRemaining} minute${identifierLock.minutesRemaining === 1 ? "" : "s"}.`
+    };
+  }
+
   const resolved = await resolveLoginIdentifier(identifier, mode);
 
   if (resolved.status !== "success") {
@@ -633,6 +706,7 @@ async function _loginWithCredentials(formData: FormData) {
   }
 
   const firebasePassword = mode === "member" ? `pin-${password}` : password;
+  // D3: 10-second timeout so the server action can't hang if Firebase is slow.
   const response = await fetch(
     `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
     {
@@ -642,15 +716,17 @@ async function _loginWithCredentials(formData: FormData) {
         returnSecureToken: true
       }),
       headers: { "Content-Type": "application/json" },
-      method: "POST"
+      method: "POST",
+      signal: AbortSignal.timeout(10_000)
     }
   );
 
   if (!response.ok) {
-    // Increment the failure counter so repeated wrong attempts trigger a lock.
+    // Increment both the profile-embedded and identifier-based failure counters.
     // Best-effort — if the write fails (mock mode, etc.) we still return the
     // standard auth error.
     try { await incrementLoginFailure(resolved.email); } catch {}
+    try { await incrementIdentifierFailure(identifier); } catch {}
     return {
       status: "error" as const,
       message: mode === "member" ? "Invalid mobile/email or PIN." : "Invalid username or password."
@@ -663,9 +739,9 @@ async function _loginWithCredentials(formData: FormData) {
     return { status: "error" as const, message: "Unable to sign in. Please try again." };
   }
 
-  // Successful auth — wipe the failure counter so a future wrong PIN starts
-  // fresh from 0.
+  // Successful auth — wipe both failure counters so a future wrong PIN starts fresh.
   try { await clearLoginAttempts(resolved.email); } catch {}
+  try { await clearIdentifierAttempts(identifier); } catch {}
 
   return createSession(payload.idToken);
 }
@@ -754,6 +830,13 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
       (decodedSession.email ? await getProfileByEmail(decodedSession.email) : null);
 
     if (!profile || !profile.isActive) {
+      // Redirect to the suspended page unless we're already there
+      // (the middleware injects x-pathname so we can check without parsing the URL).
+      const hdrs = await headers();
+      const pathname = hdrs.get("x-pathname") ?? "";
+      if (!pathname.startsWith("/suspended")) {
+        redirect("/suspended");
+      }
       return null;
     }
 

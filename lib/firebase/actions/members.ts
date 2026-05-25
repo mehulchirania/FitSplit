@@ -67,7 +67,6 @@ export async function createMemberProfile(
     const authEmail = memberAuthEmail(memberId);
 
     assertCanManageGym(user, gymId);
-    await assertUsernameAvailable(db, username);
 
     await upsertAuthUser(auth, {
       email: authEmail,
@@ -112,40 +111,45 @@ export async function createMemberProfile(
       createdAt: now
     };
 
-    const batch = db.batch();
-    batch.set(
-      db.collection(collectionPaths.authProfiles).doc(memberId),
-      authProfilePayload(memberId, memberProfile),
-      { merge: true }
-    );
-    batch.set(
-      scopedGymDoc(db, gymId, "members", memberId),
-      {
-        ...memberProfile,
-        authUid: memberId,
-        defaultGymId: gymId,
-        gymId,
-        mirroredFromRootProfile: true
-      },
-      { merge: true }
-    );
-    batch.set(
-      db.collection(collectionPaths.gyms).doc(gymId),
-      { memberCount: FieldValue.increment(1), updatedAt: now },
-      { merge: true }
-    );
-    batch.set(db.collection(collectionPaths.activityEvents).doc(createEventId), createEvent);
-    batch.set(
-      scopedGymDoc(db, gymId, "activityEvents", createEventId),
-      {
-        ...createEvent,
-        id: createEventId,
-        gymId,
-        mirroredFromRootCollection: true
-      },
-      { merge: true }
-    );
-    await batch.commit();
+    // Atomically reserve the username and write all profile documents in a single
+    // transaction. Prevents the race condition where two concurrent requests both
+    // see the username as available and both succeed.
+    const normalizedUsername = normalizeUsername(username);
+    const usernameIndexRef = db.collection(collectionPaths.usernames).doc(normalizedUsername);
+
+    await db.runTransaction(async (txn) => {
+      // Read must come before any write in a Firestore transaction.
+      const usernameDoc = await txn.get(usernameIndexRef);
+      if (usernameDoc.exists) {
+        throw new Error("That username is already in use.");
+      }
+
+      // Reserve username
+      txn.set(usernameIndexRef, { profileId: memberId, reservedAt: now });
+
+      // Write profile docs (was a batch — transactions support the same ops)
+      txn.set(
+        db.collection(collectionPaths.authProfiles).doc(memberId),
+        authProfilePayload(memberId, memberProfile),
+        { merge: true }
+      );
+      txn.set(
+        scopedGymDoc(db, gymId, "members", memberId),
+        { ...memberProfile, authUid: memberId, defaultGymId: gymId, gymId, mirroredFromRootProfile: true },
+        { merge: true }
+      );
+      txn.set(
+        db.collection(collectionPaths.gyms).doc(gymId),
+        { memberCount: FieldValue.increment(1), updatedAt: now },
+        { merge: true }
+      );
+      txn.set(db.collection(collectionPaths.activityEvents).doc(createEventId), createEvent);
+      txn.set(
+        scopedGymDoc(db, gymId, "activityEvents", createEventId),
+        { ...createEvent, id: createEventId, gymId, mirroredFromRootCollection: true },
+        { merge: true }
+      );
+    });
 
     return success(`${fullName} was added as a FitSplit member.`, gymId);
   } catch (error) {
@@ -201,7 +205,6 @@ export async function updateMemberProfile(
     assertValidUsername(username);
 
     assertCanManageGym(user, gymId);
-    await assertUsernameAvailable(db, username, memberId);
 
     const macroNutritionTarget = {
       calories: macroCalories,
@@ -231,10 +234,38 @@ export async function updateMemberProfile(
           .toUpperCase(),
         updatedAt: now
       };
-    await writeAuthProfileIndex(db, memberId, memberUpdate);
-    await mirrorProfileToGym(db, memberId, {
-      ...existingProfile,
-      ...memberUpdate
+
+    const normalizedUsername = normalizeUsername(username);
+    const existingUsername = normalizeUsername(String(existingProfile.username ?? ""));
+    const usernameChanged = normalizedUsername !== existingUsername;
+
+    const authProfileRef = db.collection(collectionPaths.authProfiles).doc(memberId);
+    const gymProfileRef = scopedGymDoc(db, gymId, "members", memberId);
+
+    // Atomically check+reserve username (if changed) and write profile docs.
+    await db.runTransaction(async (txn) => {
+      // --- reads before writes ---
+      if (usernameChanged) {
+        const newUsernameRef = db.collection(collectionPaths.usernames).doc(normalizedUsername);
+        const newUsernameDoc = await txn.get(newUsernameRef);
+        if (newUsernameDoc.exists && newUsernameDoc.data()?.profileId !== memberId) {
+          throw new Error("That username is already in use.");
+        }
+
+        // Release old reservation (harmless if doc never existed — older members)
+        if (existingUsername) {
+          txn.delete(db.collection(collectionPaths.usernames).doc(existingUsername));
+        }
+        txn.set(newUsernameRef, { profileId: memberId, reservedAt: now });
+      }
+
+      // Profile writes
+      txn.set(authProfileRef, authProfilePayload(memberId, memberUpdate), { merge: true });
+      txn.set(
+        gymProfileRef,
+        { ...existingProfile, ...memberUpdate, authUid: memberId, defaultGymId: gymId, gymId, mirroredFromRootProfile: true },
+        { merge: true }
+      );
     });
 
     await upsertAuthUser(auth, {
@@ -648,15 +679,32 @@ export async function deleteMemberProfile(
     const { auth, db } = requireFirebaseServices();
     const memberId = parsed.data.memberId;
     await assertMemberBelongsToCallerGym(user, memberId);
-    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", user.gymId);
-    const data = profileDoc.data();
+    // D6: Guard against concurrent deletion races by atomically marking the
+    // profile as "deletion in progress" inside a Firestore transaction.
+    // Any concurrent request will see isDeleted: true and throw before proceeding.
+    const profileRef = db.collection(collectionPaths.authProfiles).doc(memberId);
+    // D6: Using `let` with definite assignment operator — the transaction below always
+    // assigns these or throws, so TypeScript is satisfied without a non-null assertion.
+    let gymId = "";
+    let profileData: FirebaseFirestore.DocumentData = {};
 
-    if (!profileDoc.exists || data?.role !== "member") {
-      throw new Error("Member profile was not found.");
-    }
+    await db.runTransaction(async (txn) => {
+      const snap = await txn.get(profileRef);
+      if (!snap.exists || snap.data()?.role !== "member") {
+        throw new Error("Member profile was not found.");
+      }
+      if (snap.data()?.isDeleted) {
+        throw new Error("Member deletion already in progress.");
+      }
+      txn.set(profileRef, { isDeleted: true, deletedAt: new Date().toISOString() }, { merge: true });
+      profileData = snap.data()!;
+      gymId = String(snap.data()!.defaultGymId ?? PRIMARY_GYM_ID);
+    });
 
-    const gymId = String(data.defaultGymId ?? PRIMARY_GYM_ID);
     assertCanManageGym(user, gymId);
+
+    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", user.gymId);
+    const data = profileData;
 
     // Clean up all member-owned data before deleting the profile
     const [assignmentsSnap, liftLogsSnap, notificationsSnap, sessionsSnap, attendanceSnap] = await Promise.all([

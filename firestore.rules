@@ -240,7 +240,7 @@ service cloud.firestore {
         || (
           isMemberSelf(userId)
           && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(["age", "heightCm", "weightKg", "goal", "phone", "updatedAt"])
+            .hasOnly(["age", "heightCm", "weightKg", "goal", "fitnessGoals", "phone", "medicalNotes", "primarySlot", "secondarySlot", "updatedAt"])
         );
     }
 
@@ -287,8 +287,8 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
     }
 
-      match /programAssignments/{assignmentId} {
-        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+    match /programAssignments/{assignmentId} {
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
       // Assignment writes are privileged and must go through Firebase Functions/Admin SDK.
       allow create, update, delete: if false;
     }
@@ -331,6 +331,34 @@ service cloud.firestore {
     match /siteLinks/{linkId} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+
+    // Admin SDK only — no client access.  Rules are explicit deny for documentation.
+    match /loginAttempts/{id} {
+      allow read, write: if false;
+    }
+
+    match /usernames/{id} {
+      allow read, write: if false;
+    }
+
+    // Root-level mirrors for gym-scoped collections used by collectionGroup queries.
+    match /bodyMetricLogs/{bodyMetricLogId} {
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+    }
+
+    match /dayLogs/{dayLogId} {
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+    }
+
+    match /exerciseRequests/{requestId} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
     // Root-level PT mirrors — admin-only; gym-scoped paths are the primary access layer.

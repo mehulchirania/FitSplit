@@ -2,7 +2,7 @@
  * patch-exercise-videos.mjs
  *
  * Patches exerciseCatalog documents in Firestore that have an empty videoUrl
- * with the corresponding video_url from lib/workouts.json (populated by map_youtube_api.py).
+ * with the corresponding video_url from lib/workouts.json (populated by scripts/video-utils/map_youtube_api.py).
  *
  * Usage:
  *   node scripts/patch-exercise-videos.mjs

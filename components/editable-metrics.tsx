@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import type { Member } from "@/types/domain";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
 
@@ -12,6 +12,23 @@ export function EditableMetrics({ member }: { member: Member }) {
   const [height, setHeight] = useState(member.heightCm?.toString() || "");
   const [saveError, setSaveError] = useState("");
   const [isPending, startTransition] = useTransition();
+
+  // D16: Track whether the user has made changes since entering edit mode.
+  const isDirty =
+    isEditing &&
+    (age !== (member.age?.toString() || "") ||
+      weight !== (member.weightKg?.toString() || "") ||
+      height !== (member.heightCm?.toString() || ""));
+
+  // D16: Warn before tab close / browser navigation when there are unsaved changes.
+  useEffect(() => {
+    if (!isDirty) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isDirty]);
 
   const bmiValue = weight && height ? Number(weight) / Math.pow(Number(height) / 100, 2) : null;
   const bmi = bmiValue ? bmiValue.toFixed(1) : "--";

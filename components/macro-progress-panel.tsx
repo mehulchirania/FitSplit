@@ -49,8 +49,9 @@ export function MacroProgressPanel({
         ...prev,
         [key]: Math.max(0, Number((prev[key] + amount).toFixed(1)))
       };
+      // A5: Guard against QuotaExceededError / private-browsing restrictions.
       if (typeof window !== "undefined") {
-        window.localStorage.setItem(dateKey, JSON.stringify(updated));
+        try { window.localStorage.setItem(dateKey, JSON.stringify(updated)); } catch { /* non-fatal */ }
       }
       return updated;
     });
@@ -65,7 +66,8 @@ export function MacroProgressPanel({
     if (window.confirm("Are you sure you want to reset today's logged nutrition?")) {
       const resetState = { protein: 0, carbs: 0, fat: 0, water: 0 };
       setActual(resetState);
-      window.localStorage.setItem(dateKey, JSON.stringify(resetState));
+      // A5: Guard localStorage write.
+      try { window.localStorage.setItem(dateKey, JSON.stringify(resetState)); } catch { /* non-fatal */ }
     }
   };
 

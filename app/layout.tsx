@@ -6,7 +6,7 @@ import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
-import { getAdminNotifications, getGymDetail, getMemberNotifications, getUnreadContactMessageCount } from "@/lib/firebase/read-models";
+import { getAdminNotifications, getGymDetail, getMemberNotifications, getOwnerNotifications, getUnreadContactMessageCount, getActiveWorkoutSessions } from "@/lib/firebase/read-models";
 import type { Notification } from "@/types/domain";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
@@ -27,6 +27,8 @@ import "./styles/11-member-tabs.css";
 import "./styles/11-bulk-member-list.css";
 import "./styles/12-member-dashboard-new.css";
 import "./styles/13-skeletons.css";
+import "./styles/14-radix-overrides.css";
+import "./styles/15-ui-upgrades.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
@@ -56,6 +58,7 @@ export default async function RootLayout({
   let gymLogoUrl: string | undefined;
   let unreadInboxCount = 0;
   let notifications: Notification[] = [];
+  let hasLiveSession = false;
 
   if (currentUser) {
     initials = currentUser.fullName
@@ -76,6 +79,14 @@ export default async function RootLayout({
         : Promise.resolve(),
       currentUser.role === "member"
         ? getMemberNotifications(memberId).then((r) => { notifications = r.notifications; })
+        : Promise.resolve(),
+      currentUser.role === "owner"
+        ? getOwnerNotifications(currentUser.gymId).then((r) => { notifications = r.notifications; })
+        : Promise.resolve(),
+      currentUser.role === "member"
+        ? getActiveWorkoutSessions(currentUser.gymId).then((r) => {
+            hasLiveSession = r.sessions.some((s) => (s as { memberId?: string }).memberId === memberId);
+          })
         : Promise.resolve()
     ]);
     gymName = gym?.name;
@@ -113,6 +124,7 @@ export default async function RootLayout({
           <SessionTimeout isAuthenticated={Boolean(currentUser)} />
           <AppTopbar
             gymLogoUrl={gymLogoUrl}
+            hasLiveSession={hasLiveSession}
             initials={initials}
             gymName={gymName}
             notifications={notifications}

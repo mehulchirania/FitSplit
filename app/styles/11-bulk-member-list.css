@@ -203,7 +203,117 @@
   text-align: center;
 }
 
+/* ── Row entrance animation ─────────────────────────────────────────────── */
+@keyframes bml-row-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+.bml-tr {
+  animation: bml-row-in 180ms ease both;
+}
+
+/* Stagger: first 8 rows stagger by 30ms each; beyond that use same delay */
+.bml-tr:nth-child(1)  { animation-delay:   0ms; }
+.bml-tr:nth-child(2)  { animation-delay:  30ms; }
+.bml-tr:nth-child(3)  { animation-delay:  60ms; }
+.bml-tr:nth-child(4)  { animation-delay:  90ms; }
+.bml-tr:nth-child(5)  { animation-delay: 120ms; }
+.bml-tr:nth-child(6)  { animation-delay: 150ms; }
+.bml-tr:nth-child(7)  { animation-delay: 180ms; }
+.bml-tr:nth-child(8)  { animation-delay: 210ms; }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .bml-tr { animation: none; }
+}
+
 /* ── Specific Column Widths ── */
 .bml-th-check { width: 48px; }
 .bml-th-status { width: 100px; }
 .bml-th-joined { width: 120px; }
+
+/* ── Search bar ─────────────────────────────────────────────────────────── */
+.bml-search-bar {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  padding: 10px 20px;
+}
+
+.bml-search-input {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-main);
+  flex: 1;
+  font-size: 0.875rem;
+  max-width: 28rem;
+  outline: none;
+  padding: 7px 12px;
+  transition: border-color 0.15s;
+}
+.bml-search-input:focus {
+  border-color: var(--brand-strong);
+}
+.bml-search-input::placeholder {
+  color: var(--text-soft);
+}
+
+.bml-search-count {
+  color: var(--text-soft);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+/* ── Pagination ─────────────────────────────────────────────────────────── */
+.bml-pagination {
+  align-items: center;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 10px 20px;
+}
+
+.bml-page-btn {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-main);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 4px 8px;
+  transition: background 0.12s, border-color 0.12s;
+}
+.bml-page-btn:hover:not(:disabled) {
+  background: var(--bg-elevated);
+  border-color: var(--brand-strong);
+}
+.bml-page-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+.bml-page-btn--active {
+  background: var(--brand-strong);
+  border-color: var(--brand-strong);
+  color: #fff;
+}
+
+.bml-page-ellipsis {
+  color: var(--text-soft);
+  padding: 0 4px;
+}
+
+.bml-page-info {
+  color: var(--text-soft);
+  font-size: 0.8125rem;
+  margin-left: auto;
+  white-space: nowrap;
+}

@@ -111,7 +111,12 @@ npm run seed:demo             # Refresh Firestore with gyms, members, programs, 
 npm run fix:exercises         # Canonical Title Case cleanup, re-categorize WGER fields, and map videos
 npm run patch:videos          # Backfill catalog video URLs from static workout models
 npm run backfill:member-access # Repairs missing member usernames and creates missing auth profiles
+npm run split:css             # Legacy helper for splitting landing/app CSS selectors
 ```
+
+Script layout:
+- `scripts/*.mjs` contains maintained Firebase seed, migration, deploy, and data repair scripts.
+- `scripts/video-utils/*.py` contains older YouTube/workout catalog mapping utilities and their generated unmapped video report.
 
 ---
 

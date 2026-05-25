@@ -1,0 +1,89 @@
+/* ─── Radix UI component overrides ─────────────────────────────────────────
+   These rules ensure Radix portals integrate correctly with FitSplit's existing
+   z-index stack and CSS class-based styling.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* Drawer (Dialog) — must sit above the backdrop (z-index: 80) */
+.side-drawer[data-state] {
+  z-index: 90;
+}
+
+/* Drawer backdrop rendered by Radix Dialog.Overlay */
+.drawer-backdrop[data-state] {
+  z-index: 89;
+}
+
+/* Radix Dialog: animate in/out using existing slideIn keyframe */
+.side-drawer[data-state="open"] {
+  animation: slideIn var(--slow, 220ms) ease both;
+}
+.side-drawer[data-state="closed"] {
+  animation: slideOut var(--slow, 220ms) ease both;
+}
+
+@keyframes slideOut {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(-100%); opacity: 0; }
+}
+
+/* Backdrop fade in/out */
+.drawer-backdrop[data-state="open"] {
+  animation: fadeIn var(--slow, 220ms) ease both;
+}
+.drawer-backdrop[data-state="closed"] {
+  animation: fadeOut var(--slow, 220ms) ease both;
+}
+
+@keyframes fadeIn  { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* DropdownMenu portals — always above the topbar */
+.notification-dropdown[data-radix-popper-content-wrapper],
+.profile-dropdown[data-radix-popper-content-wrapper] {
+  z-index: 100 !important;
+}
+
+/* Override any position:absolute on Radix-portal dropdown classes;
+   Radix injects inline position styles that take precedence. */
+[data-radix-popper-content-wrapper] .notification-dropdown,
+[data-radix-popper-content-wrapper] .profile-dropdown {
+  position: static !important;
+  top: auto !important;
+  right: auto !important;
+  left: auto !important;
+}
+
+/* Remove the Radix DropdownMenu focus ring on items — rely on hover styles */
+[data-radix-dropdown-menu-content] [data-highlighted] {
+  outline: none;
+}
+
+/* Confirm / result dialogs in workout console */
+.confirm-dialog[data-state] {
+  z-index: 90;
+}
+
+/* ── Radix Select items ─────────────────────────────────────────────────── */
+.radix-select-item[data-highlighted] {
+  background: var(--bg-subtle);
+  color: var(--brand);
+  outline: none;
+}
+
+.radix-select-trigger:focus-visible {
+  border-color: var(--brand-strong);
+  outline: none;
+}
+
+/* sr-only helper for Radix Dialog.Title */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

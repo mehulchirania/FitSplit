@@ -225,6 +225,17 @@ function BodyWeightSparkline({ logs }: { logs: BodyMetricLog[] }) {
   return (
     <div className="bwl-chart" aria-label="Body weight trend over the last 12 entries">
       <svg viewBox={`0 0 ${width} ${height}`} width="100%" height={height} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="bwl-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--brand)" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="var(--brand)" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
+        <path
+          className="bwl-sparkline-area"
+          d={`${pathD} L ${points[points.length - 1]?.split(",")[0]},${height} L ${points[0]?.split(",")[0]},${height} Z`}
+          fill="url(#bwl-grad)"
+        />
         <path d={pathD} fill="none" stroke="var(--brand)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
         {/* End-of-series dot */}
         {points.length > 0 && (() => {

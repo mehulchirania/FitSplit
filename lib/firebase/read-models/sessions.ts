@@ -45,6 +45,66 @@ export async function getActiveWorkoutSessions(gymId?: string): Promise<{
   }
 }
 
+export type DailySessionCount = { date: string; sessions: number };
+
+/**
+ * C10: Returns day-by-day completed workout session counts for the last
+ * `days` calendar days (default 30) for use in the owner dashboard
+ * attendance trend LineChart.
+ */
+export async function getRecentSessionCounts(
+  gymId?: string,
+  days = 30
+): Promise<DailySessionCount[]> {
+  const targetGymId = gymId ?? PRIMARY_GYM_ID;
+
+  // Build the ordered label array so days with zero sessions still appear.
+  const now = new Date();
+  const labels: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    labels.push(d.toISOString().slice(0, 10)); // "YYYY-MM-DD"
+  }
+  const countMap = new Map<string, number>(labels.map((l) => [l, 0]));
+
+  if (!hasFirebaseAdminConfig()) {
+    return labels.map((date) => ({ date, sessions: countMap.get(date) ?? 0 }));
+  }
+
+  try {
+    const { db } = getFirebaseAdminServices();
+    const since = new Date(now);
+    since.setDate(since.getDate() - days);
+    const sinceIso = since.toISOString();
+
+    const scopedSnapshot = await gymCollection(db, targetGymId, "workoutSessions")
+      .where("status", "==", "completed")
+      .where("startedAt", ">=", sinceIso)
+      .get();
+    const snapshot = scopedSnapshot.empty
+      ? await db
+          .collection(collectionPaths.workoutSessions)
+          .where("gymId", "==", targetGymId)
+          .where("status", "==", "completed")
+          .where("startedAt", ">=", sinceIso)
+          .get()
+      : scopedSnapshot;
+
+    for (const doc of snapshot.docs) {
+      const startedAt = String(doc.data().startedAt ?? "");
+      const dateKey = startedAt.slice(0, 10);
+      if (countMap.has(dateKey)) {
+        countMap.set(dateKey, (countMap.get(dateKey) ?? 0) + 1);
+      }
+    }
+  } catch {
+    // Fail soft — return zero-filled array so the chart renders without breaking the page.
+  }
+
+  return labels.map((date) => ({ date, sessions: countMap.get(date) ?? 0 }));
+}
+
 export async function getAttendanceRecords(memberId: string): Promise<{
   records: AttendanceRecord[];
   isPersisted: boolean;

@@ -4,7 +4,7 @@ import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
-import { ProgressChart } from "@/components/progress-chart";
+import { ProgressChart } from "@/components/progress-chart-lazy";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,

@@ -584,8 +584,24 @@ export async function sendPushToMember(
         fcmOptions: { link: url ?? "/member" }
       }
     });
-  } catch (err) {
-    // Log but never surface FCM errors to the caller — the in-app notification is the fallback.
-    console.warn("FCM push skipped or failed for member", memberId, err);
+  } catch (err: unknown) {
+    // D14: Use console.error (not warn) so production error monitoring picks it up.
+    // If the token is stale/unregistered, delete it to avoid wasting future FCM calls.
+    const errorCode = (err as { errorInfo?: { code?: string } })?.errorInfo?.code ?? "";
+    const isStaleToken =
+      errorCode === "messaging/registration-token-not-registered" ||
+      errorCode === "messaging/invalid-registration-token";
+
+    if (isStaleToken) {
+      console.error(`[FCM] Stale token for member ${memberId} — removing from profile. Code: ${errorCode}`);
+      try {
+        await db.collection(collectionPaths.authProfiles).doc(memberId).update({ fcmToken: "" });
+      } catch (cleanupErr) {
+        console.error(`[FCM] Failed to clear stale token for member ${memberId}:`, cleanupErr);
+      }
+    } else {
+      // Unexpected error — log with full context for production monitoring.
+      console.error(`[FCM] Push failed for member ${memberId}. Code: ${errorCode}`, err);
+    }
   }
 }

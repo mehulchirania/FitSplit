@@ -114,6 +114,10 @@ export type Member = Pick<
   | "age"
   | "weightKg"
   | "heightCm"
+  // C4: Coach note preview shown on member cards via Radix Popover.
+  | "coachNote"
+  | "coachNoteUpdatedAt"
+  | "coachNoteUpdatedByName"
 >;
 
 export type Membership = {

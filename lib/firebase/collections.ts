@@ -23,7 +23,9 @@ export const collectionPaths = {
   dayLogs: "dayLogs",
   archives: "archives",
   ptSessions: "ptSessions",
-  ptLiftLogs: "ptLiftLogs"
+  ptLiftLogs: "ptLiftLogs",
+  // Sparse index for atomic username uniqueness. Doc ID = normalized username.
+  usernames: "usernames"
 } as const;
 
 export const gymScopedCollectionPaths = {

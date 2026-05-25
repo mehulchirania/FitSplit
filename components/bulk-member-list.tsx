@@ -7,6 +7,8 @@ import { callBulkAssignProgram, callBulkToggleMemberAccess } from "@/lib/firebas
 import { initialFormActionState } from "@/types/action-state";
 import type { Member, WorkoutProgram } from "@/types/domain";
 
+const PAGE_SIZE = 25;
+
 type RowMember = Pick<
   Member,
   "id" | "fullName" | "avatarInitials" | "isActive" | "username" | "goal" | "phone" | "joinedAt"
@@ -28,6 +30,8 @@ export function BulkMemberList({
   const [accessById, setAccessById] = useState(() => new Map(members.map((m) => [m.id, m.isActive] as const)));
   const [assignedById, setAssignedById] = useState(() => new Set(assignedIds));
   const [isPending, startTransition] = useTransition();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setAccessById(new Map(members.map((m) => [m.id, m.isActive] as const)));
@@ -43,11 +47,43 @@ export function BulkMemberList({
     }
   }, [programs, selectedProgramId]);
 
+  // Reset to page 1 when search or members list changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, members]);
+
   const selectedIds = useMemo(() => Array.from(selected), [selected]);
-  const allSelected = members.length > 0 && selected.size === members.length;
+
+  // Client-side search filter
+  const filteredMembers = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return members;
+    return members.filter(
+      (m) =>
+        m.fullName.toLowerCase().includes(q) ||
+        (m.username ?? "").toLowerCase().includes(q) ||
+        (m.phone ?? "").includes(q)
+    );
+  }, [members, searchQuery]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredMembers.length / PAGE_SIZE));
+  const safePage = Math.min(currentPage, totalPages);
+  const pageMembers = filteredMembers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  const allSelected = pageMembers.length > 0 && pageMembers.every((m) => selected.has(m.id));
 
   function toggleAll() {
-    setSelected(allSelected ? new Set() : new Set(members.map((m) => m.id)));
+    if (allSelected) {
+      // Deselect only this page
+      setSelected((prev) => {
+        const next = new Set(prev);
+        pageMembers.forEach((m) => next.delete(m.id));
+        return next;
+      });
+    } else {
+      // Select this page (keep other pages' selections intact)
+      setSelected((prev) => new Set([...prev, ...pageMembers.map((m) => m.id)]));
+    }
   }
 
   function toggleOne(id: string) {
@@ -148,6 +184,23 @@ export function BulkMemberList({
 
   return (
     <div className="bml-root">
+      {/* ── Search bar ─────────────────────────────────────────── */}
+      <div className="bml-search-bar">
+        <input
+          aria-label="Search members"
+          className="bml-search-input"
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name, username or phone…"
+          type="search"
+          value={searchQuery}
+        />
+        {searchQuery && (
+          <span className="bml-search-count">
+            {filteredMembers.length} result{filteredMembers.length !== 1 ? "s" : ""}
+          </span>
+        )}
+      </div>
+
       {selected.size > 0 && (
         <div className="bml-action-bar" role="toolbar" aria-label="Bulk actions">
           <span className="bml-count">{selected.size} selected</span>
@@ -247,7 +300,7 @@ export function BulkMemberList({
             </tr>
           </thead>
           <tbody>
-            {members.map((member) => {
+            {pageMembers.map((member) => {
               const isSelected = selected.has(member.id);
               const hasPlan = assignedById.has(member.id);
               const isActive = accessById.get(member.id) ?? member.isActive;
@@ -312,12 +365,64 @@ export function BulkMemberList({
           </tbody>
         </table>
 
-        {members.length === 0 && (
+        {filteredMembers.length === 0 && (
           <div className="bml-empty-state">
-            <p>No members found in this category.</p>
+            <p>{searchQuery ? `No members match "${searchQuery}".` : "No members found in this category."}</p>
           </div>
         )}
       </div>
+
+      {/* ── Pagination ─────────────────────────────────────────── */}
+      {totalPages > 1 && (
+        <div className="bml-pagination" role="navigation" aria-label="Member list pages">
+          <button
+            aria-label="Previous page"
+            className="bml-page-btn"
+            disabled={safePage <= 1}
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            type="button"
+          >
+            ‹
+          </button>
+
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter((p) => p === 1 || p === totalPages || Math.abs(p - safePage) <= 2)
+            .reduce<(number | "…")[]>((acc, p, idx, arr) => {
+              if (idx > 0 && (p as number) - (arr[idx - 1] as number) > 1) acc.push("…");
+              acc.push(p);
+              return acc;
+            }, [])
+            .map((p, i) =>
+              p === "…" ? (
+                <span className="bml-page-ellipsis" key={`ellipsis-${i}`}>…</span>
+              ) : (
+                <button
+                  aria-current={p === safePage ? "page" : undefined}
+                  className={`bml-page-btn ${p === safePage ? "bml-page-btn--active" : ""}`}
+                  key={p}
+                  onClick={() => setCurrentPage(p as number)}
+                  type="button"
+                >
+                  {p}
+                </button>
+              )
+            )}
+
+          <button
+            aria-label="Next page"
+            className="bml-page-btn"
+            disabled={safePage >= totalPages}
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            type="button"
+          >
+            ›
+          </button>
+
+          <span className="bml-page-info">
+            {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filteredMembers.length)} of {filteredMembers.length}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

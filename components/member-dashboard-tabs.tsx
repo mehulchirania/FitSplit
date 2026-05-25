@@ -18,7 +18,8 @@ export function MemberDashboardTabs({
   const tabs = [
     { id: "workout", label: "Workout", icon: Dumbbell },
     { id: "progress", label: "Progress", icon: Activity },
-    { id: "wellness", label: "Wellness", icon: HeartPulse }
+    { id: "wellness", label: "Wellness", icon: HeartPulse },
+    { id: "history", label: "History", icon: Activity, href: "/member/history" }
   ] as const;
 
   return (
@@ -27,14 +28,9 @@ export function MemberDashboardTabs({
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          return (
-            <button
-              key={tab.id}
-              role="tab"
-              aria-selected={isActive}
-              className={`md-tab-btn ${isActive ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
+          
+          const content = (
+            <>
               {isActive && (
                 <motion.div
                   layoutId="md-tab-indicator"
@@ -45,6 +41,31 @@ export function MemberDashboardTabs({
               )}
               <Icon className="md-tab-icon" />
               <span>{tab.label}</span>
+            </>
+          );
+
+          if ("href" in tab) {
+            return (
+              <a
+                key={tab.id}
+                href={tab.href}
+                className="md-tab-btn"
+                style={{ textDecoration: "none" }}
+              >
+                {content}
+              </a>
+            );
+          }
+
+          return (
+            <button
+              key={tab.id}
+              role="tab"
+              aria-selected={isActive}
+              className={`md-tab-btn ${isActive ? "active" : ""}`}
+              onClick={() => setActiveTab(tab.id as any)}
+            >
+              {content}
             </button>
           );
         })}

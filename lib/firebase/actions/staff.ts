@@ -379,7 +379,7 @@ export async function resetPassword(
         audience: "owner",
         title: isPinReset ? "PIN reset" : "Password reset",
         detail: `${currentUser.fullName} reset ${role === "member" ? "the PIN" : "the password"} for ${fullName}.`,
-        icon: "bell",
+        icon: "key",
         createdAt: new Date().toISOString(),
         actorId: currentUser.uid,
         targetId: userId

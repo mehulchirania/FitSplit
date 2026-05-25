@@ -1,0 +1,292 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   15-ui-upgrades.css — All 10 UI polish upgrades (2026-05-25)
+   Import order: after 14-radix-overrides.css in layout.tsx
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── #3: Status-active shimmer ──────────────────────────────────────────── */
+@keyframes status-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+.status-active {
+  animation: status-shimmer 3.2s linear infinite;
+  background: linear-gradient(
+    90deg,
+    var(--brand-soft) 0%,
+    color-mix(in srgb, var(--brand) 30%, transparent) 50%,
+    var(--brand-soft) 100%
+  );
+  background-size: 200% auto;
+  color: var(--brand-strong);
+}
+
+html[data-theme="dark"] .status-active {
+  background: linear-gradient(
+    90deg,
+    rgba(198,244,50,.10) 0%,
+    rgba(198,244,50,.24) 50%,
+    rgba(198,244,50,.10) 100%
+  );
+  background-size: 200% auto;
+  color: var(--brand);
+}
+
+/* ── #4: Set-logged row flash ───────────────────────────────────────────── */
+@keyframes row-flash {
+  0%   { background: color-mix(in srgb, var(--brand) 20%, transparent); }
+  100% { background: transparent; }
+}
+
+.lift-log-table div[data-new="true"] {
+  animation: row-flash 700ms ease-out both;
+}
+
+/* ── #6: Owner quick-action bento cards ────────────────────────────────── */
+.odp-quick-links {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  min-width: min(100%, 440px);
+  padding-bottom: 0;
+}
+
+.odp-ql-link {
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  font-size: 0.76rem;
+  font-weight: 720;
+  gap: 7px;
+  justify-content: center;
+  min-height: 72px;
+  padding: 12px 10px;
+  position: relative;
+  text-align: center;
+  text-decoration: none;
+  transition:
+    border-color var(--medium),
+    box-shadow var(--medium),
+    transform var(--spring),
+    background-color var(--medium);
+  white-space: normal;
+}
+
+.odp-ql-link svg {
+  color: var(--brand);
+  flex: 0 0 auto;
+  height: 20px;
+  width: 20px;
+}
+
+.odp-ql-link span {
+  line-height: 1.25;
+}
+
+.odp-ql-link:hover {
+  border-color: color-mix(in srgb, var(--brand) 36%, var(--border));
+  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--brand) 10%, transparent);
+  transform: translateY(-3px);
+  background: color-mix(in srgb, var(--brand) 4%, var(--bg-elevated));
+}
+
+.odp-ql-link.is-urgent {
+  background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--brand) 36%, var(--border));
+}
+
+.odp-ql-badge {
+  font-size: 0.65rem;
+  min-width: 16px;
+  padding: 2px 5px;
+  /* keep it positioned inline since flex-column */
+  position: static;
+}
+
+html[data-theme="dark"] .odp-ql-link {
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+html[data-theme="dark"] .odp-ql-link:hover {
+  background: rgba(255,255,255,.08);
+}
+
+/* ── #2: Live-session dot on profile trigger ────────────────────────────── */
+.profile-trigger-live-dot {
+  animation: live-pulse 2s ease-in-out infinite;
+  background: #22c55e;
+  border: 2px solid var(--bg);
+  border-radius: 50%;
+  bottom: 4px;
+  height: 10px;
+  pointer-events: none;
+  position: absolute;
+  right: 4px;
+  width: 10px;
+}
+
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+  50%       { box-shadow: 0 0 0 5px rgba(34, 197, 94, 0); }
+}
+
+.profile-trigger { position: relative; }
+
+/* ── #1: Mobile bottom-nav token fix ────────────────────────────────────── */
+/* var(--surface) and var(--shadow-lg) were undefined; map to design system tokens */
+@media (max-width: 760px) {
+  .mobile-bottom-nav {
+    background: color-mix(in srgb, var(--bg-elevated) 84%, transparent);
+    box-shadow: var(--shadow);
+  }
+
+  .mobile-bottom-nav a:hover {
+    background: var(--bg-subtle);
+    color: var(--text);
+  }
+
+  /* Stronger active indicator */
+  .mobile-bottom-nav a.is-active,
+  .mobile-bottom-nav a[aria-current="page"] {
+    background: color-mix(in srgb, var(--brand) 16%, transparent);
+    color: var(--brand);
+  }
+
+  .mobile-bottom-nav a.is-active svg,
+  .mobile-bottom-nav a[aria-current="page"] svg {
+    color: var(--brand);
+  }
+}
+
+/* ── #8: Notification red dot ──────────────────────────────────────────── */
+.notification-red-dot {
+  background: var(--danger, #ef4444);
+  border: 2px solid var(--bg-elevated);
+  border-radius: 50%;
+  height: 10px;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  width: 10px;
+}
+
+/* ── #7: PT calendar legend ─────────────────────────────────────────────── */
+.pt-cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+}
+
+.pt-cal-legend-item {
+  align-items: center;
+  color: var(--text-soft);
+  display: flex;
+  font-size: 0.74rem;
+  font-weight: 700;
+  gap: 6px;
+}
+
+.pt-cal-legend-dot {
+  border-radius: 50%;
+  flex: 0 0 auto;
+  height: 9px;
+  width: 9px;
+}
+
+/* ── #5: BWL sparkline area gradient ────────────────────────────────────── */
+.bwl-chart {
+  overflow: hidden;
+  position: relative;
+}
+
+.bwl-sparkline-area {
+  /* Filled by SVG <path fill="url(...)"> — no extra CSS needed, just presence */
+}
+
+/* ── #10: Day focus view exercise card ──────────────────────────────────── */
+.focus-exercise-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 40px 1fr auto;
+  padding: 16px 20px;
+  transition: border-color var(--medium), box-shadow var(--medium), transform var(--spring);
+}
+
+.focus-exercise-card:hover {
+  border-color: color-mix(in srgb, var(--brand) 28%, var(--border));
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+html[data-theme="dark"] .focus-exercise-card {
+  background: rgba(255,255,255,.04);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.focus-ex-number {
+  align-items: center;
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brand) 28%, transparent);
+  border-radius: 50%;
+  color: var(--brand);
+  display: flex;
+  flex: 0 0 40px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.focus-ex-target {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  padding: 4px 10px;
+  margin-top: 6px;
+}
+
+.focus-ex-last {
+  flex-shrink: 0;
+  text-align: right;
+  min-width: 100px;
+}
+
+.pr-chip {
+  background: linear-gradient(135deg, #f59e0b, #ef4444);
+  border-radius: 4px;
+  color: #fff;
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  padding: 2px 5px;
+  text-transform: uppercase;
+}
+
+/* ── #9: Reports page chart section ─────────────────────────────────────── */
+.reports-chart-section {
+  margin-top: 1rem;
+}
