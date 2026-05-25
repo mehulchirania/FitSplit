@@ -1,9 +1,11 @@
 import { getApps, initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import { getFunctions } from "firebase/functions";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getFunctions, connectFunctionsEmulator } from "firebase/functions";
 import { getMessaging, isSupported } from "firebase/messaging";
-import { getStorage } from "firebase/storage";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
+
+const USE_EMULATOR = process.env.NEXT_PUBLIC_USE_EMULATOR === "true";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -25,16 +27,24 @@ export function createFirebaseApp() {
   return getApps()[0];
 }
 
+let _emulatorsConnected = false;
+
 export function getFirebaseClientServices() {
   const app = createFirebaseApp();
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const storage = getStorage(app);
+  const functions = getFunctions(app, FUNCTIONS_REGION);
 
-  return {
-    app,
-    auth: getAuth(app),
-    db: getFirestore(app),
-    storage: getStorage(app),
-    functions: getFunctions(app, FUNCTIONS_REGION),
-  };
+  if (USE_EMULATOR && !_emulatorsConnected) {
+    _emulatorsConnected = true;
+    connectAuthEmulator(auth, "http://localhost:9099", { disableWarnings: true });
+    connectFirestoreEmulator(db, "localhost", 8080);
+    connectStorageEmulator(storage, "localhost", 9199);
+    connectFunctionsEmulator(functions, "localhost", 5001);
+  }
+
+  return { app, auth, db, storage, functions };
 }
 
 /**

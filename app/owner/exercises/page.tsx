@@ -1,10 +1,8 @@
 import { Breadcrumb } from "@/components/breadcrumb";
-import { ExerciseEditForm } from "@/components/exercise-edit-form";
 import { ExerciseCatalogView } from "@/components/exercise-catalog-view";
 import { requireRole } from "@/lib/auth";
 import { createCatalogExercise } from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
-import type { Exercise } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
 
@@ -55,20 +53,9 @@ export default async function ExerciseCatalogPage() {
           </div>
         </aside>
       </section>      <ExerciseCatalogView
-        predefined={predefined}
-        custom={custom}
-        exerciseCatalogByMuscle={exerciseCatalogByMuscle}
+        exercises={exercises}
+        createAction={createCatalogExercise}
       />
-
-      {/* ── Add new exercise ───────────────────────────────────────── */}
-      <section className="list-panel catalog-add-section" id="add-exercise">
-        <div className="panel-title">
-          <h2>Add new exercise</h2>
-        </div>
-        <div className="notification-list">
-          <ExerciseEditForm action={createCatalogExercise} isCreate isOwner />
-        </div>
-      </section>
     </main>
   );
 }

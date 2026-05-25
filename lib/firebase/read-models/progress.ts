@@ -141,3 +141,38 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string): Pr
 
   return { liftLogs, isPersisted: true };
 }
+
+export type MacroLogEntry = {
+  protein: number;
+  carbs: number;
+  fat: number;
+  water: number;
+};
+
+export async function getMacroLogForMember(
+  memberId: string,
+  gymId: string,
+  date: string
+): Promise<{ macroLog: MacroLogEntry | null }> {
+  if (!hasFirebaseAdminConfig()) return { macroLog: null };
+  try {
+    const { db } = getFirebaseAdminServices();
+    const docId = `${memberId}_${date}`;
+    const gymDoc = await db
+      .collection(`gyms/${gymId}/macroLogs`)
+      .doc(docId)
+      .get();
+    if (!gymDoc.exists) return { macroLog: null };
+    const data = gymDoc.data() ?? {};
+    return {
+      macroLog: {
+        protein: Number(data.protein ?? 0),
+        carbs: Number(data.carbs ?? 0),
+        fat: Number(data.fat ?? 0),
+        water: Number(data.water ?? 0)
+      }
+    };
+  } catch {
+    return { macroLog: null };
+  }
+}

@@ -121,6 +121,7 @@ export function sanitizeNotification(notification: Notification): Notification {
   return { ...notification, title: copy.title, body: copy.body };
 }
 
-export function gymTag(gymId?: string) {
-  return gymId ? `gym:${gymId}` : "gym:default";
+export function gymTag(gymId?: string, collection?: string) {
+  const base = gymId ? `gym:${gymId}` : "gym:default";
+  return collection ? `${base}:${collection}` : base;
 }

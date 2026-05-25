@@ -78,7 +78,7 @@ export async function getAllPTSessionsForGym(gymId: string): Promise<PTSession[]
   return unstable_cache(
     getAllPTSessionsForGymUncached,
     ["read:getAllPTSessionsForGym", gymId],
-    { tags: ["pt-sessions", gymTag(gymId)], revalidate: 30 }
+    { tags: ["pt-sessions", gymTag(gymId, "pt-sessions")], revalidate: 30 }
   )(gymId);
 }
 
@@ -99,7 +99,7 @@ export async function getPTSessionsForTrainer(gymId: string, trainerId: string):
   return unstable_cache(
     getPTSessionsForTrainerUncached,
     ["read:getPTSessionsForTrainer", gymId, trainerId],
-    { tags: ["pt-sessions", gymTag(gymId)], revalidate: 30 }
+    { tags: ["pt-sessions", gymTag(gymId, "pt-sessions")], revalidate: 30 }
   )(gymId, trainerId);
 }
 
@@ -119,7 +119,7 @@ export async function getPTSessionsForMember(gymId: string, memberId: string): P
   return unstable_cache(
     getPTSessionsForMemberUncached,
     ["read:getPTSessionsForMember", gymId, memberId],
-    { tags: ["pt-sessions", gymTag(gymId)], revalidate: 30 }
+    { tags: ["pt-sessions", gymTag(gymId, "pt-sessions")], revalidate: 30 }
   )(gymId, memberId);
 }
 
@@ -157,6 +157,6 @@ export async function getPTLiftLogsForSession(gymId: string, ptSessionId: string
   return unstable_cache(
     getPTLiftLogsForSessionUncached,
     ["read:getPTLiftLogsForSession", gymId, ptSessionId],
-    { tags: ["pt-lift-logs", gymTag(gymId)], revalidate: 15 }
+    { tags: ["pt-lift-logs", gymTag(gymId, "pt-lift-logs")], revalidate: 15 }
   )(gymId, ptSessionId);
 }

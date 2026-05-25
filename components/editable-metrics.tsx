@@ -1,10 +1,12 @@
 "use client";
 
 import { useState, useTransition, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { Member } from "@/types/domain";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
 
 export function EditableMetrics({ member }: { member: Member }) {
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [showBmiInfo, setShowBmiInfo] = useState(false);
   const [age, setAge] = useState(member.age?.toString() || "");
@@ -63,6 +65,7 @@ export function EditableMetrics({ member }: { member: Member }) {
       const result = await updateProfileMetrics({ status: "idle", message: "" }, formData);
       if (result.status === "success") {
         setIsEditing(false);
+        router.refresh();
       } else {
         setSaveError(result.message);
       }

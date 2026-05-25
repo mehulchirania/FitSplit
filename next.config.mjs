@@ -1,4 +1,7 @@
 /** @type {import('next').NextConfig} */
+import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
+const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
 
 // CSP sources that the app actually needs:
 // - Firebase Auth / Firestore / Hosting → *.googleapis.com, *.gstatic.com, *.firebaseio.com,
@@ -60,4 +63,15 @@ const nextConfig = {
   }
 };
 
-export default nextConfig;
+const sentryOptions = {
+  // Only upload source maps when SENTRY_AUTH_TOKEN is set (production CI).
+  // Local builds skip the upload silently.
+  silent: !process.env.SENTRY_AUTH_TOKEN,
+  org: process.env.SENTRY_ORG,
+  project: process.env.SENTRY_PROJECT,
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  // Disable the Sentry webpack plugin in development to avoid noise.
+  disableLogger: true
+};
+
+export default withSentryConfig(withBundleAnalyzer(nextConfig), sentryOptions);

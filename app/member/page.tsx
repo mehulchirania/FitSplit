@@ -12,6 +12,7 @@ import {
   getExerciseCatalog,
   getGymDetail,
   getLiftLogsForMember,
+  getMacroLogForMember,
   getMemberWithProfile,
   getProgramAssignmentForMember,
   getWorkoutPrograms
@@ -20,15 +21,24 @@ import {
 export const dynamic = "force-dynamic";
 
 function getGreeting() {
-  const h = new Date().getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
+  const h = Number(
+    new Intl.DateTimeFormat("en-IN", {
+      hour: "numeric",
+      hour12: false,
+      timeZone: "Asia/Kolkata"
+    }).format(new Date())
+  );
+
+  if (h >= 6 && h < 12) return "Good morning";
+  if (h >= 12 && h < 16) return "Good afternoon";
   return "Good evening";
 }
 
 export default async function MemberDashboard() {
   const currentUser = await requireRole(["member"]);
   const currentMemberId = currentUser.memberId ?? currentUser.uid;
+  const todayDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+
   const [
     { member, profile },
     { assignment },
@@ -37,7 +47,8 @@ export default async function MemberDashboard() {
     { exercises },
     { sessions },
     { gym },
-    { dayLogs }
+    { dayLogs },
+    { macroLog: initialMacroLog }
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
     getProgramAssignmentForMember(currentMemberId, currentUser.gymId),
@@ -46,7 +57,8 @@ export default async function MemberDashboard() {
     getExerciseCatalog(currentUser.gymId),
     getActiveWorkoutSessions(currentUser.gymId),
     getGymDetail(currentUser.gymId),
-    getDayLogsForMember(currentMemberId, currentUser.gymId)
+    getDayLogsForMember(currentMemberId, currentUser.gymId),
+    getMacroLogForMember(currentMemberId, currentUser.gymId, todayDate)
   ]);
 
   if (!member) return null;
@@ -286,7 +298,13 @@ export default async function MemberDashboard() {
                 <p>Keep these updated so your trainer has useful context.</p>
                 <EditableMetrics member={memberWithProfile as any} />
               </div>
-              <MacroProgressPanel memberId={member.id} target={profile.macroNutritionTarget} />
+              <MacroProgressPanel
+                memberId={member.id}
+                gymId={currentUser.gymId}
+                date={todayDate}
+                target={profile.macroNutritionTarget}
+                initialActual={initialMacroLog ?? undefined}
+              />
             </div>
           </section>
         }

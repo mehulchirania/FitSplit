@@ -2,11 +2,31 @@
 
 import { GoogleGenAI } from "@google/genai";
 import { requireAuth } from "./auth";
-import { getLiftLogsForMember, getExerciseCatalog } from "./firebase/read-models";
+import { getExerciseCatalog, getLiftLogsForMember } from "./firebase/read-models";
+import type { Exercise, LiftLog, WorkoutExercise } from "@/types/domain";
+
+type SmartSwap = {
+  from: string;
+  to: string;
+  reason: string;
+};
+
+type RehabSuggestion = {
+  name: string;
+  reason: string;
+};
+
+export type SmartSwapResult = {
+  injury: string;
+  summary: string;
+  swaps: SmartSwap[];
+  addedStretches: RehabSuggestion[];
+  routine: WorkoutExercise[];
+};
 
 export async function generateWorkoutSummary(memberId: string) {
-  let liftLogs: any[] = [];
-  let exercises: any[] = [];
+  let liftLogs: LiftLog[] = [];
+  let exercises: Exercise[] = [];
 
   try {
     const currentUser = await requireAuth();
@@ -14,39 +34,41 @@ export async function generateWorkoutSummary(memberId: string) {
       throw new Error("Not authorized to view this member's data.");
     }
 
-    // Load actual member lift logs and exercise catalog so they are available for local mock generation if needed
     const [logsResult, exercisesResult] = await Promise.all([
       getLiftLogsForMember(memberId),
       getExerciseCatalog()
     ]);
-    liftLogs = logsResult.liftLogs || [];
-    exercises = exercisesResult.exercises || [];
+    liftLogs = logsResult.liftLogs ?? [];
+    exercises = exercisesResult.exercises ?? [];
 
-    if (!liftLogs || liftLogs.length === 0) {
-      return "You haven't logged any lifts yet! Start logging your workouts to receive personalized AI insights and progress tracking.";
+    if (liftLogs.length === 0) {
+      return "You haven't logged any lifts yet. Start logging your workouts to receive personalized AI insights and progress tracking.";
     }
 
     if (!process.env.GEMINI_API_KEY) {
       throw new Error("GEMINI_API_KEY is not set.");
     }
-    
+
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    
-    const recentLogs = liftLogs.slice(0, 15).map(log => {
-      const exerciseName = exercises.find(e => e.id === log.exerciseId)?.name || "Exercise";
-      return `- ${exerciseName}: ${log.weight}kg for ${log.sets} sets of [${log.reps}] reps. (Logged: ${new Date(log.loggedAt).toLocaleDateString()})`;
-    }).join("\n");
+    const recentLogs = liftLogs
+      .slice(0, 15)
+      .map((log) => {
+        const exerciseName = exercises.find((exercise) => exercise.id === log.exerciseId)?.name ?? "Exercise";
+        const loggedDate = log.loggedAt ? new Date(log.loggedAt).toLocaleDateString() : "recently";
+        return `- ${exerciseName}: ${log.weight}kg for ${log.sets} sets of [${log.reps}] reps. (Logged: ${loggedDate})`;
+      })
+      .join("\n");
 
     const prompt = `
-      You are an encouraging and expert Semi-Personal Trainer for the FitSplit platform. 
+      You are an encouraging and expert Semi-Personal Trainer for the FitSplit platform.
       Analyze the following recent lift logs for a member.
-      
+
       Recent Lifts:
       ${recentLogs}
-      
-      Please provide a highly personalized, short (max 3-4 sentences) summary of their progress. 
-      Highlight any notable volume, consistency, or exercises they seem to be focusing on. 
-      End with a short, punchy, and actionable motivational tip!
+
+      Please provide a highly personalized, short (max 3-4 sentences) summary of their progress.
+      Highlight any notable volume, consistency, or exercises they seem to be focusing on.
+      End with a short, punchy, and actionable motivational tip.
       Keep the formatting clean using markdown.
     `;
 
@@ -57,65 +79,62 @@ export async function generateWorkoutSummary(memberId: string) {
 
     return response.text;
   } catch (error) {
-    console.error("Gemini AI Error: Falling back to smart offline analyzer...", error);
-    
-    // Provide a premium smart local insights generator fallback when the API key is invalid (403) or missing
-    if (liftLogs && liftLogs.length > 0) {
+    console.error("Gemini AI Error: falling back to offline analyzer.", error);
+
+    if (liftLogs.length > 0) {
       return generateLocalInsights(liftLogs, exercises);
     }
-    
-    return "Oops! We hit a snag while generating your AI summary. Please make sure your API key is configured correctly and try again.";
+
+    return "We could not generate your AI summary right now. Check that Gemini is configured and try again.";
   }
 }
 
-function generateLocalInsights(liftLogs: any[], exercises: any[]) {
-  if (!liftLogs || liftLogs.length === 0) {
-    return "You haven't logged any lifts yet! Start logging your workouts to receive personalized AI insights and progress tracking.";
+function generateLocalInsights(liftLogs: LiftLog[], exercises: Exercise[]) {
+  if (liftLogs.length === 0) {
+    return "You haven't logged any lifts yet. Start logging your workouts to receive personalized AI insights and progress tracking.";
   }
-  
-  // Find top exercise
+
   const exerciseCounts: Record<string, number> = {};
   let maxWeight = 0;
-  let maxWeightEx = "";
+  let maxWeightExerciseId = "";
   let totalSets = 0;
-  
-  liftLogs.forEach(log => {
-    exerciseCounts[log.exerciseId] = (exerciseCounts[log.exerciseId] || 0) + 1;
+
+  liftLogs.forEach((log) => {
+    exerciseCounts[log.exerciseId] = (exerciseCounts[log.exerciseId] ?? 0) + 1;
     totalSets += Number(log.sets || 0);
-    const w = Number(log.weight || 0);
-    if (w > maxWeight) {
-      maxWeight = w;
-      maxWeightEx = log.exerciseId;
+    const weight = Number(log.weight || 0);
+    if (weight > maxWeight) {
+      maxWeight = weight;
+      maxWeightExerciseId = log.exerciseId;
     }
   });
-  
-  const topExId = Object.keys(exerciseCounts).reduce((a, b) => exerciseCounts[a] > exerciseCounts[b] ? a : b);
-  const topExName = exercises.find(e => e.id === topExId)?.name || "your main lifts";
-  const maxExName = exercises.find(e => e.id === maxWeightEx)?.name || "lifts";
-  
-  const insights = [
-    `✨ **Trainer Assessment:** Impressive dedication! You are showing great consistency, particularly with **${topExName}**, which has been your most frequented exercise recently.`,
-    `Your raw strength is highly notable, pushing a peak of **${maxWeight}kg** on **${maxExName}**—this shows excellent muscular recruitment and progressive overload.`,
-    `With ${liftLogs.length} total logging entries this week, you're building a powerful habit loop that will yield long-term physical adaptations.`,
-    `🔥 **Trainer Tip:** For your next session, focus on the eccentric (lowering) phase of your **${topExName}** for a full 3-second count to maximize mechanical tension. Keep pushing!`
-  ];
-  
-  return insights.join(" ");
+
+  const topExerciseId = Object.entries(exerciseCounts).sort((left, right) => right[1] - left[1])[0]?.[0] ?? "";
+  const topExerciseName = exercises.find((exercise) => exercise.id === topExerciseId)?.name ?? "your main lifts";
+  const maxExerciseName = exercises.find((exercise) => exercise.id === maxWeightExerciseId)?.name ?? "your lifts";
+
+  return [
+    `**Trainer Assessment:** You are showing strong consistency, especially with **${topExerciseName}**.`,
+    `Your peak logged load is **${maxWeight}kg** on **${maxExerciseName}**, which gives your coach a useful strength marker to build from.`,
+    `Across ${liftLogs.length} logged entries and ${totalSets} total sets, you are creating the data needed for progressive overload.`,
+    `**Trainer Tip:** In your next session, control the lowering phase on **${topExerciseName}** for a full 3 seconds to improve tension and technique.`
+  ].join(" ");
 }
 
 export async function generateSmartSwaps(
   memberId: string,
-  dayExercises: any[],
+  dayExercises: WorkoutExercise[],
   injuryDescription: string,
-  exercises: any[]
-) {
+  exercises: Exercise[]
+): Promise<SmartSwapResult | null> {
   try {
     const currentUser = await requireAuth();
     if (currentUser.role === "member" && (currentUser.memberId ?? currentUser.uid) !== memberId) {
       throw new Error("Not authorized to view this member's data.");
     }
 
-    if (!injuryDescription || injuryDescription.trim() === "") {
+    const injury = injuryDescription.trim();
+    if (!injury) {
       return null;
     }
 
@@ -124,54 +143,51 @@ export async function generateSmartSwaps(
     }
 
     const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    
-    // Filter catalog down to minimize prompt token count
-    const catalogJson = exercises.map(e => ({
-      id: e.id,
-      name: e.name,
-      muscleGroup: e.muscleGroup,
-      equipment: e.equipment,
-      instructions: e.instructions
+    const catalogJson = exercises.map((exercise) => ({
+      id: exercise.id,
+      name: exercise.name,
+      muscleGroup: exercise.muscleGroup,
+      equipment: exercise.equipment,
+      instructions: exercise.instructions
     }));
 
-    const dayExercisesJson = dayExercises.map(de => {
-      const exName = exercises.find(e => e.id === de.exerciseId)?.name || "Unknown Exercise";
-      const exGroup = exercises.find(e => e.id === de.exerciseId)?.muscleGroup || "Unknown";
+    const dayExercisesJson = dayExercises.map((dayExercise) => {
+      const exercise = exercises.find((item) => item.id === dayExercise.exerciseId);
       return {
-        exerciseId: de.exerciseId,
-        name: exName,
-        muscleGroup: exGroup,
-        sets: de.sets,
-        reps: de.reps,
-        restSeconds: de.restSeconds,
-        notes: de.notes
+        exerciseId: dayExercise.exerciseId,
+        name: exercise?.name ?? "Unknown Exercise",
+        muscleGroup: exercise?.muscleGroup ?? "Unknown",
+        sets: dayExercise.sets,
+        reps: dayExercise.reps,
+        restSeconds: dayExercise.restSeconds,
+        notes: dayExercise.notes
       };
     });
 
     const prompt = `
       You are an elite sports physiotherapist and certified strength and conditioning specialist (CSCS).
-      A member has reported the following physical limitation/injury: "${injuryDescription}".
-      
+      A member has reported the following physical limitation/injury: "${injury}".
+
       Here is their scheduled workout for today:
       ${JSON.stringify(dayExercisesJson, null, 2)}
-      
+
       Here is the complete gym exercise catalog:
       ${JSON.stringify(catalogJson, null, 2)}
-      
+
       Your tasks:
-      1. Inspect the scheduled workout. Identify any exercises that are contraindicated or unsafe for the reported injury/limitation.
-      2. For each contraindicated exercise, suggest an alternative exercise ONLY from the provided complete gym exercise catalog. Try to keep the target muscle group similar unless the entire muscle group is contraindicated.
-      3. If an exercise is safe, keep it as-is.
-      4. Provide a general clinical summary of the routine changes (1-2 sentences).
-      5. Provide an explanation per swap (1 sentence).
-      6. Output a final list of exercises for their workout, maintaining the correct schema.
-      
-      You must respond strictly in valid JSON format. Do not wrap your response in markdown code blocks. The JSON response must strictly conform to this structure:
+      1. Identify any exercises that are contraindicated or unsafe for the reported injury/limitation.
+      2. Suggest alternatives only from the provided gym exercise catalog.
+      3. Keep safe exercises as-is.
+      4. Provide a clinical summary of the routine changes in 1-2 sentences.
+      5. Explain each swap in 1 sentence.
+      6. Output a final routine list using the requested schema.
+
+      Respond strictly in valid JSON. Do not wrap the response in markdown.
       {
-        "injury": "${injuryDescription}",
+        "injury": "${injury}",
         "summary": "Clinical summary of modifications...",
         "swaps": [
-          { "from": "Name of original exercise", "to": "Name of alternative exercise", "reason": "Explanation of swap..." }
+          { "from": "Original exercise", "to": "Alternative exercise", "reason": "Explanation of swap..." }
         ],
         "addedStretches": [],
         "routine": [
@@ -185,13 +201,67 @@ export async function generateSmartSwaps(
       contents: prompt,
     });
 
-    const responseText = response.text || "";
-    const jsonText = responseText.replace(/^```json\s*/i, "").replace(/```\s*$/, "").trim();
-    const result = JSON.parse(jsonText);
-    return result;
+    const responseText = response.text ?? "";
+    const jsonText = responseText.replace(/^```json\s*/i, "").replace(/```\s*$/i, "").trim();
+    return normalizeSmartSwapResult(JSON.parse(jsonText) as unknown, injury);
   } catch (error) {
-    console.error("AI swap generation failed. Falling back to local heuristics...", error);
+    console.error("AI swap generation failed. Falling back to local heuristics.", error);
     return null;
   }
 }
 
+function normalizeSmartSwapResult(value: unknown, fallbackInjury: string): SmartSwapResult | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const routine = Array.isArray(record.routine)
+    ? record.routine.map(normalizeWorkoutExercise).filter((item): item is WorkoutExercise => Boolean(item))
+    : [];
+
+  if (routine.length === 0) return null;
+
+  return {
+    injury: String(record.injury ?? fallbackInjury),
+    summary: String(record.summary ?? "Workout adjusted based on the reported limitation."),
+    swaps: normalizeSwaps(record.swaps),
+    addedStretches: normalizeRehabSuggestions(record.addedStretches),
+    routine
+  };
+}
+
+function normalizeWorkoutExercise(value: unknown): WorkoutExercise | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const exerciseId = String(record.exerciseId ?? "").trim();
+  if (!exerciseId) return null;
+
+  return {
+    exerciseId,
+    sets: record.sets == null ? undefined : Number(record.sets),
+    reps: record.reps == null ? undefined : String(record.reps),
+    restSeconds: record.restSeconds == null ? undefined : Number(record.restSeconds),
+    notes: record.notes == null ? undefined : String(record.notes)
+  };
+}
+
+function normalizeSwaps(value: unknown): SmartSwap[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((item) => ({
+      from: String(item.from ?? ""),
+      to: String(item.to ?? ""),
+      reason: String(item.reason ?? "")
+    }))
+    .filter((item) => item.from || item.to || item.reason);
+}
+
+function normalizeRehabSuggestions(value: unknown): RehabSuggestion[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((item) => ({
+      name: String(item.name ?? ""),
+      reason: String(item.reason ?? "")
+    }))
+    .filter((item) => item.name || item.reason);
+}

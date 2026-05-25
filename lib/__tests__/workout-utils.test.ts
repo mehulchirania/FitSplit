@@ -1,8 +1,11 @@
 import { describe, it, expect } from "vitest";
 import {
   getWeekStart,
+  getDefaultDayIndex,
   getInjuryRule,
   isContraindicated,
+  findAlternative,
+  createModification,
   getExerciseName,
   getDayMuscleTargets,
   SKIP_REASONS,
@@ -133,6 +136,31 @@ describe("isContraindicated", () => {
     const item = makeWorkoutExercise("unknown-id");
     expect(isContraindicated(item, "shoulder", exercises)).toBe(false);
   });
+
+  it("flags an exercise via avoidTerms when its instructions contain a banned term", () => {
+    // e.g. a 'Core' exercise whose instructions mention 'deadlift' should be flagged for back injury
+    const coreWithDeadliftCue = makeExercise({
+      id: "e5",
+      name: "Stiff-Leg Deadlift",
+      muscleGroup: "Core",
+      instructions: "perform a deadlift with straight legs"
+    });
+    const catalog = [...exercises, coreWithDeadliftCue];
+    const item = makeWorkoutExercise("e5");
+    expect(isContraindicated(item, "back", catalog)).toBe(true);
+  });
+
+  it("does NOT flag an exercise whose muscle group and instructions are both safe", () => {
+    const safeCoreExercise = makeExercise({
+      id: "e6",
+      name: "Bird Dog",
+      muscleGroup: "Core",
+      instructions: "extend opposite arm and leg while on all fours"
+    });
+    const catalog = [...exercises, safeCoreExercise];
+    const item = makeWorkoutExercise("e6");
+    expect(isContraindicated(item, "back", catalog)).toBe(false);
+  });
 });
 
 // ─── getExerciseName ─────────────────────────────────────────────────────────
@@ -215,5 +243,181 @@ describe("dayNames", () => {
 
   it("has exactly 7 entries", () => {
     expect(dayNames).toHaveLength(7);
+  });
+});
+
+// ─── getDefaultDayIndex ───────────────────────────────────────────────────────
+
+describe("getDefaultDayIndex", () => {
+  it("returns 0 when dayCount is 0 (no program days)", () => {
+    expect(getDefaultDayIndex(0)).toBe(0);
+  });
+
+  it("returns 0 when dayCount is 1 (only one day)", () => {
+    expect(getDefaultDayIndex(1)).toBe(0);
+  });
+
+  it("returns a value in [0, dayCount-1] for typical program lengths", () => {
+    for (const dayCount of [3, 4, 5, 6, 7]) {
+      const result = getDefaultDayIndex(dayCount);
+      expect(result).toBeGreaterThanOrEqual(0);
+      expect(result).toBeLessThan(dayCount);
+    }
+  });
+
+  it("never returns a negative value regardless of input", () => {
+    expect(getDefaultDayIndex(0)).toBeGreaterThanOrEqual(0);
+    expect(getDefaultDayIndex(1)).toBeGreaterThanOrEqual(0);
+    expect(getDefaultDayIndex(7)).toBeGreaterThanOrEqual(0);
+  });
+});
+
+// ─── findAlternative ──────────────────────────────────────────────────────────
+
+describe("findAlternative", () => {
+  // ownerOnly=true = custom gym exercise (eligible as swap target)
+  const catalog: Exercise[] = [
+    makeExercise({ id: "alt1", name: "Leg Press",      muscleGroup: "Legs",       ownerOnly: true }),
+    makeExercise({ id: "alt2", name: "Plank",           muscleGroup: "Core",       ownerOnly: true }),
+    makeExercise({ id: "alt3", name: "Cable Row",       muscleGroup: "Back",       ownerOnly: true }),
+    makeExercise({ id: "alt4", name: "Default Plank",   muscleGroup: "Core",       ownerOnly: false }),
+    makeExercise({ id: "alt5", name: "Incline Press",   muscleGroup: "Chest",      ownerOnly: true }),
+  ];
+
+  it("returns an exercise from a preferred muscle group", () => {
+    // shoulder: preferredMuscles = Legs, Core, Back
+    const result = findAlternative(new Set(), "shoulder", catalog);
+    expect(result).toBeDefined();
+    expect(["Legs", "Core", "Back"]).toContain(result?.muscleGroup);
+  });
+
+  it("skips exercises whose IDs are already used", () => {
+    // Mark all Legs/Core/Back ownerOnly exercises as used; nothing should be returned for shoulder
+    const used = new Set(["alt1", "alt2", "alt3"]);
+    const result = findAlternative(used, "shoulder", catalog);
+    expect(result).toBeUndefined();
+  });
+
+  it("skips exercises where ownerOnly is false (default catalog)", () => {
+    // alt4 is Core but ownerOnly=false — should never be picked
+    const used = new Set(["alt1", "alt2", "alt3"]); // all ownerOnly preferred are used
+    const result = findAlternative(used, "shoulder", catalog);
+    expect(result).toBeUndefined();
+  });
+
+  it("prevents a pull-muscle replacement for a push-muscle original", () => {
+    // For knee injury, preferred = Chest, Back, Core
+    // If original is Chest (push), Back (pull) alternatives should be skipped
+    const used = new Set<string>();
+    const result = findAlternative(used, "knee", catalog, "Chest");
+    expect(result).toBeDefined();
+    expect(result?.muscleGroup).not.toBe("Back");
+  });
+
+  it("prevents a push-muscle replacement for a pull-muscle original", () => {
+    // For knee injury, preferred = Chest, Back, Core
+    // If original is Back (pull), Chest (push) alternatives should be skipped
+    const used = new Set<string>();
+    const result = findAlternative(used, "knee", catalog, "Back");
+    expect(result).toBeDefined();
+    expect(result?.muscleGroup).not.toBe("Chest");
+  });
+
+  it("allows cross-mechanic swap when the original muscle is itself contraindicated", () => {
+    // Shoulder injury avoids Chest; so if original is Chest (push), push/pull guard is lifted
+    // because Chest is in rule.avoidMuscles. Any preferred ownerOnly exercise is fair game.
+    const used = new Set<string>();
+    const result = findAlternative(used, "shoulder", catalog, "Chest");
+    expect(result).toBeDefined();
+  });
+});
+
+// ─── createModification ───────────────────────────────────────────────────────
+
+describe("createModification", () => {
+  // Shoulder: avoidMuscles=[Shoulders,Chest], preferredMuscles=[Legs,Core,Back]
+  const catalog: Exercise[] = [
+    makeExercise({ id: "e1", name: "Overhead Press", muscleGroup: "Shoulders", ownerOnly: false }),
+    makeExercise({ id: "e2", name: "Bench Press",    muscleGroup: "Chest",     ownerOnly: false }),
+    makeExercise({ id: "e3", name: "Squat",          muscleGroup: "Legs",      ownerOnly: true }),
+    makeExercise({ id: "e4", name: "Plank",          muscleGroup: "Core",      ownerOnly: true }),
+    makeExercise({ id: "e5", name: "Cable Row",      muscleGroup: "Back",      ownerOnly: true }),
+    makeExercise({ id: "e6", name: "Leg Press",      muscleGroup: "Legs",      ownerOnly: true }),
+  ];
+
+  it("sets the injury field on the returned Modification", () => {
+    const day = { exercises: [makeWorkoutExercise("e4")] };
+    const result = createModification(day, "shoulder pain", catalog);
+    expect(result.injury).toBe("shoulder pain");
+  });
+
+  it("returns a non-empty summary string", () => {
+    const day = { exercises: [makeWorkoutExercise("e1")] };
+    const result = createModification(day, "shoulder", catalog);
+    expect(typeof result.summary).toBe("string");
+    expect(result.summary.length).toBeGreaterThan(0);
+  });
+
+  it("swaps a contraindicated exercise and records it in swaps", () => {
+    const day = { exercises: [makeWorkoutExercise("e1")] }; // Overhead Press = contraindicated
+    const result = createModification(day, "shoulder", catalog);
+    expect(result.swaps.length).toBeGreaterThan(0);
+    expect(result.swaps[0].from).toBe("Overhead Press");
+    expect(result.swaps[0].to).not.toBe("Overhead Press");
+  });
+
+  it("keeps safe exercises unchanged in the routine", () => {
+    // e5 (Back) is safe for shoulder and also in preferredMuscles
+    const day = { exercises: [makeWorkoutExercise("e1"), makeWorkoutExercise("e5")] };
+    const result = createModification(day, "shoulder", catalog);
+    const backStillPresent = result.routine.some((r) => r.exerciseId === "e5");
+    expect(backStillPresent).toBe(true);
+  });
+
+  it("falls back to a recovery routine when nothing is contraindicated", () => {
+    // e4 (Core) is safe and preferred; no swaps will be triggered
+    const day = { exercises: [makeWorkoutExercise("e4")] };
+    const result = createModification(day, "shoulder", catalog);
+    // Recovery-routine branch sets a pseudo swap with this sentinel from-value
+    expect(result.swaps[0].from).toBe("Original training intensity");
+    expect(result.routine.length).toBeGreaterThan(0);
+  });
+
+  it("keeps the original exercise when no ownerOnly alternative is available", () => {
+    const limited = [
+      makeExercise({ id: "s1", name: "Overhead Press", muscleGroup: "Shoulders", ownerOnly: false }),
+      // No ownerOnly preferred muscle alternatives
+    ];
+    const day = { exercises: [makeWorkoutExercise("s1")] };
+    const result = createModification(day, "shoulder", limited);
+    // No swap possible → falls to recovery routine
+    expect(result.swaps[0].from).toBe("Original training intensity");
+  });
+
+  it("prepends stretch exercises to the routine when they exist in the catalog", () => {
+    const stretchEx = makeExercise({
+      id: "stretch-band-pulls",
+      name: "Band Pull-Aparts",
+      muscleGroup: "Back",
+      ownerOnly: true
+    });
+    const withStretch = [...catalog, stretchEx];
+    const day = { exercises: [makeWorkoutExercise("e1")] }; // contraindicated → triggers swap + stretches
+    const result = createModification(day, "shoulder", withStretch);
+    // Stretches are unshifted to the front
+    expect(result.routine[0].exerciseId).toBe("stretch-band-pulls");
+    expect(result.addedStretches.some((s) => s.name === "Band Pull-Aparts")).toBe(true);
+  });
+
+  it("does not reuse the same alternative for two contraindicated exercises", () => {
+    // Both e1 (Shoulders) and e2 (Chest) are contraindicated for shoulder injury
+    const day = { exercises: [makeWorkoutExercise("e1"), makeWorkoutExercise("e2")] };
+    const result = createModification(day, "shoulder", catalog);
+    // If two swaps happened, the alternatives must be distinct
+    const swappedIds = result.routine
+      .filter((r) => r.notes === "AI Semi-Personal Trainer swap")
+      .map((r) => r.exerciseId);
+    const unique = new Set(swappedIds);
+    expect(unique.size).toBe(swappedIds.length);
   });
 });

@@ -75,7 +75,8 @@ function ProgramCard({
   onDelete,
   onEdit,
   onView,
-  program
+  program,
+  showAssignments = true
 }: {
   assignedNames: string[];
   exerciseNames: Map<string, string>;
@@ -84,6 +85,7 @@ function ProgramCard({
   onEdit?: () => void;
   onView: () => void;
   program: WorkoutProgram;
+  showAssignments?: boolean;
 }) {
   const activeDays = trainingDays(program);
   const previewDays = activeDays.slice(0, 3);
@@ -125,10 +127,12 @@ function ProgramCard({
             <strong>{exerciseCount(program)}</strong>
             exercises
           </span>
-          <span>
-            <strong>{assignedNames.length}</strong>
-            members
-          </span>
+          {showAssignments ? (
+            <span>
+              <strong>{assignedNames.length}</strong>
+              members
+            </span>
+          ) : null}
         </div>
 
         <div className="program-day-preview">
@@ -144,13 +148,15 @@ function ProgramCard({
           )}
         </div>
 
-        <div className="assigned-preview">
-          <span>Assigned members</span>
-          <strong>
-            {assignedNames.length ? assignedNames.slice(0, 3).join(", ") : "None yet"}
-            {assignedNames.length > 3 ? ` +${assignedNames.length - 3}` : ""}
-          </strong>
-        </div>
+        {showAssignments ? (
+          <div className="assigned-preview">
+            <span>Assigned members</span>
+            <strong>
+              {assignedNames.length ? assignedNames.slice(0, 3).join(", ") : "None yet"}
+              {assignedNames.length > 3 ? ` +${assignedNames.length - 3}` : ""}
+            </strong>
+          </div>
+        ) : null}
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           <button className="button button-primary" onClick={onView} type="button" style={{ flex: 1 }}>
@@ -180,7 +186,8 @@ export function WorkoutProgramGallery({
   customGroups = [],
   exercises,
   members,
-  programs
+  programs,
+  readOnly = false
 }: {
   assignments: ProgramAssignment[];
   catalog?: CatalogGroup[];
@@ -188,11 +195,12 @@ export function WorkoutProgramGallery({
   exercises: Exercise[];
   members: Member[];
   programs: WorkoutProgram[];
+  readOnly?: boolean;
 }) {
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
   const [selectedProgramContext, setSelectedProgramContext] = useState<ProgramContext | null>(null);
   const [editProgram, setEditProgram] = useState<WorkoutProgram | null>(null);
-  const [showPredefined, setShowPredefined] = useState(false);
+  const [showPredefined, setShowPredefined] = useState(readOnly);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [isDeleting, startDelete] = useTransition();
@@ -238,7 +246,11 @@ export function WorkoutProgramGallery({
         <div className="panel-title">
           <div>
             <h2>Custom gym plans</h2>
-            <p className="member-meta">Programs created by gyms, grouped by workspace so defaults never mix with custom plans.</p>
+            <p className="member-meta">
+              {readOnly
+                ? "Gym-created plans available in your workspace."
+                : "Programs created by gyms, grouped by workspace so defaults never mix with custom plans."}
+            </p>
           </div>
           <span className="status-pill status-neutral">
             {totalCustomPrograms} plan{totalCustomPrograms === 1 ? "" : "s"}
@@ -274,10 +286,11 @@ export function WorkoutProgramGallery({
                         exerciseNames={groupExerciseNames}
                         isCustom
                         key={`${group.gymId}-${program.id}`}
-                        onDelete={() => setConfirmDeleteId(program.id)}
-                        onEdit={() => { setEditProgram(program); setSelectedProgram(null); setSelectedProgramContext(null); }}
+                        onDelete={readOnly ? undefined : () => setConfirmDeleteId(program.id)}
+                        onEdit={readOnly ? undefined : () => { setEditProgram(program); setSelectedProgram(null); setSelectedProgramContext(null); }}
                         onView={() => viewProgram(program, groupContext)}
                         program={program}
+                        showAssignments={!readOnly}
                       />
                     ))}
                   </div>
@@ -293,16 +306,21 @@ export function WorkoutProgramGallery({
                 exerciseNames={exerciseNames}
                 isCustom
                 key={program.id}
-                onDelete={() => setConfirmDeleteId(program.id)}
-                onEdit={() => { setEditProgram(program); setSelectedProgram(null); setSelectedProgramContext(null); }}
+                onDelete={readOnly ? undefined : () => setConfirmDeleteId(program.id)}
+                onEdit={readOnly ? undefined : () => { setEditProgram(program); setSelectedProgram(null); setSelectedProgramContext(null); }}
                 onView={() => viewProgram(program)}
                 program={program}
+                showAssignments={!readOnly}
               />
             ))}
           </div>
         ) : (
           <div className="empty-state">
-            <p>No gym-created custom plans saved yet. Owners can create gym-specific plans from their programs page.</p>
+            <p>
+              {readOnly
+                ? "No gym-created custom plans are available yet."
+                : "No gym-created custom plans saved yet. Owners can create gym-specific plans from their programs page."}
+            </p>
           </div>
         )}
       </section>
@@ -315,7 +333,9 @@ export function WorkoutProgramGallery({
         <div className="panel-title">
           <div>
             <h2>Predefined workout plans</h2>
-            <p className="member-meta">Built-in FitSplit splits such as PPL, Bro Split, and Arnold Split. They can be assigned, but not edited here.</p>
+            <p className="member-meta">
+              Built-in FitSplit splits such as PPL, Bro Split, and Arnold Split. These are read-only reference plans.
+            </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="status-pill status-neutral">{predefinedPrograms.length} plans</span>
@@ -339,6 +359,7 @@ export function WorkoutProgramGallery({
                 key={program.id}
                 onView={() => viewProgram(program)}
                 program={program}
+                showAssignments={!readOnly}
               />
             ))}
           </div>
@@ -364,8 +385,10 @@ export function WorkoutProgramGallery({
               <div>
                 <h2>{selectedProgram.title}</h2>
                 <p className="member-meta">
-                  {trainingDays(selectedProgram).length} training days · {exerciseCount(selectedProgram)} exercises ·{" "}
-                  {assignmentNames(selectedProgram, activeContext.assignments, activeContext.members).length} assigned members
+                  {trainingDays(selectedProgram).length} training days · {exerciseCount(selectedProgram)} exercises
+                  {!readOnly
+                    ? ` · ${assignmentNames(selectedProgram, activeContext.assignments, activeContext.members).length} assigned members`
+                    : ""}
                 </p>
               </div>
               <button

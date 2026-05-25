@@ -10,7 +10,6 @@ import { getDefaultDayIndex, getExerciseName } from "@/lib/workout-utils";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
-import type { Exercise, LiftLog, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import { ProgressChart } from "@/components/progress-chart-lazy";
 import { WorkoutLiftLogForm } from "@/components/workout-lift-log-form";
 

@@ -351,6 +351,62 @@ export async function clearDayLog(
   }
 }
 
+// ── Macro logging ─────────────────────────────────────────────────────────────
+
+const SaveMacroLogSchema = z.object({
+  memberId: ZodHelpers.textRequired("Member"),
+  date: ZodHelpers.textRequired("Date"),
+  protein: z.coerce.number().min(0).max(2000),
+  carbs: z.coerce.number().min(0).max(2000),
+  fat: z.coerce.number().min(0).max(2000),
+  water: z.coerce.number().min(0).max(30)
+});
+
+export async function saveMacroLog(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, SaveMacroLogSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { memberId, date, protein, carbs, fat, water } = parsed.data;
+    assertCanManageMember(currentUser, memberId);
+
+    if (!hasFirebaseAdminConfig()) {
+      return success("Macro log saved (local mode).");
+    }
+
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+    const docId = `${memberId}_${date}`;
+
+    const macroRecord = {
+      id: docId,
+      memberId,
+      gymId,
+      date,
+      protein,
+      carbs,
+      fat,
+      water,
+      updatedAt: now
+    };
+
+    await db.collection(collectionPaths.macroLogs).doc(docId).set(macroRecord, { merge: true });
+    await mirrorGymScopedRecord(db, gymId, "macroLogs", docId, macroRecord);
+
+    return success("Macros saved.", gymId);
+  } catch (error) {
+    return failure(error, "Could not save macro log.");
+  }
+}
+
+// ── Workout sessions ──────────────────────────────────────────────────────────
+
 const SessionSchema = z.object({
   memberId: ZodHelpers.textRequired("Member"),
   sessionId: ZodHelpers.textRequired("Session"),

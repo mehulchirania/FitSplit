@@ -352,6 +352,45 @@ export async function updateCatalogExercise(
   }
 }
 
+// ── Set gym exercise video (owner-only, predefined exercises) ─────────────────
+
+const SetGymExerciseVideoSchema = z.object({
+  exerciseId: ZodHelpers.textRequired("Exercise ID"),
+  gymVideoUrl: z.string().optional(),
+});
+
+export async function setGymExerciseVideo(
+  previousState: FormActionState,
+  formData: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireOwner();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const parsed = parseActionData(formData, SetGymExerciseVideoSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { exerciseId, gymVideoUrl = "" } = parsed.data;
+    const trimmedUrl = gymVideoUrl.trim();
+
+    const db = requireFirebase();
+    await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(
+      {
+        gymVideoUrl: trimmedUrl,
+        gymVideoSource: trimmedUrl ? "youtube" : "none",
+        updatedBy: currentUser.uid,
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    return success("Gym video updated.", gymId);
+  } catch (error) {
+    return failure(error, "Unable to update gym video.");
+  }
+}
+
+// ── Reset exercise videos ─────────────────────────────────────────────────────
+
 const ResetVideosSchema = z.object({
   exerciseId: ZodHelpers.textRequired("Exercise ID"),
   exerciseName: z.string().optional()

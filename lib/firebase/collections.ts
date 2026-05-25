@@ -24,6 +24,7 @@ export const collectionPaths = {
   archives: "archives",
   ptSessions: "ptSessions",
   ptLiftLogs: "ptLiftLogs",
+  macroLogs: "macroLogs",
   // Sparse index for atomic username uniqueness. Doc ID = normalized username.
   usernames: "usernames"
 } as const;
@@ -46,7 +47,8 @@ export const gymScopedCollectionPaths = {
   bodyMetricLogs: "bodyMetricLogs",
   dayLogs: "dayLogs",
   ptSessions: "ptSessions",
-  ptLiftLogs: "ptLiftLogs"
+  ptLiftLogs: "ptLiftLogs",
+  macroLogs: "macroLogs"
 } as const;
 
 export type GymScopedCollectionKey = keyof typeof gymScopedCollectionPaths;

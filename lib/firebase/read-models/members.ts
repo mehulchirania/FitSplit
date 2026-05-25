@@ -53,7 +53,7 @@ export async function getMembers(gymId?: string) {
   return unstable_cache(
     getMembersRequestCached,
     ["read:getMembers", gymId ?? "default"],
-    { tags: ["members", "gym-data", gymTag(gymId)], revalidate: 60 }
+    { tags: ["members", gymTag(gymId, "members")], revalidate: 60 }
   )(gymId);
 }
 
@@ -318,6 +318,6 @@ export async function getTrainersForGym(gymId: string): Promise<Member[]> {
   return unstable_cache(
     getTrainersForGymUncached,
     ["read:getTrainersForGym", gymId],
-    { tags: ["staff", gymTag(gymId)], revalidate: 60 }
+    { tags: ["staff", gymTag(gymId, "staff")], revalidate: 60 }
   )(gymId);
 }

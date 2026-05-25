@@ -129,7 +129,7 @@ export async function getWorkoutPrograms(gymId?: string) {
   return unstable_cache(
     getWorkoutProgramsRequestCached,
     ["read:getWorkoutPrograms", gymId ?? "default"],
-    { tags: ["programs", "gym-data", gymTag(gymId)], revalidate: 120 }
+    { tags: ["programs", gymTag(gymId, "programs")], revalidate: 120 }
   )(gymId);
 }
 

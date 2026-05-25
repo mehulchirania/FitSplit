@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { revalidateTag } from "next/cache";
 import { requireRole, requireOwner } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
@@ -20,7 +19,8 @@ import {
   mirrorGymScopedRecord,
   assertMemberBelongsToCallerGym,
   assertCanManageGym,
-  sendPushToMember
+  sendPushToMember,
+  revalidateGymTags
 } from "./shared";
 import { ensurePrimaryWorkspace } from "./gyms";
 import { z } from "zod";
@@ -326,7 +326,7 @@ export async function bulkAssignProgram(
       })
     );
 
-    revalidateTag(`gym:${assignGymId}`);
+    revalidateGymTags(assignGymId, ["members", "notifications", "programs"]);
     return success(`"${programTitle}" assigned to ${memberIds.length} member${memberIds.length === 1 ? "" : "s"}.`, assignGymId);
   } catch (error) {
     return failure(error, "Bulk program assignment failed.");

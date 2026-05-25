@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useRef, useState, useMemo, useTransition } from "react";
+import { saveMacroLog } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
 import type { MacroNutritionTarget } from "@/types/domain";
 
 type ActualMacros = {
@@ -12,26 +14,35 @@ type ActualMacros = {
 
 export function MacroProgressPanel({
   memberId,
-  target
+  gymId,
+  date,
+  target,
+  initialActual
 }: {
   memberId: string;
+  gymId?: string;
+  date?: string;
   target?: MacroNutritionTarget;
+  initialActual?: ActualMacros;
 }) {
-  const [actual, setActual] = useState<ActualMacros>({
-    protein: 0,
-    carbs: 0,
-    fat: 0,
-    water: 0
-  });
+  const [actual, setActual] = useState<ActualMacros>(
+    initialActual ?? { protein: 0, carbs: 0, fat: 0, water: 0 }
+  );
+  const [_isSyncing, startSyncTransition] = useTransition();
+  const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Scoped localStorage key per member per calendar day
   const dateKey = useMemo(() => {
-    const today = new Date().toDateString();
+    const today = date ?? new Date().toDateString();
     return `fitsplit-macros-${memberId}-${today}`;
-  }, [memberId]);
+  }, [memberId, date]);
 
-  // Load from localStorage on client side mount
+  // Load from server data (initialActual) first, fall back to localStorage
   useEffect(() => {
+    if (initialActual) {
+      setActual(initialActual);
+      return;
+    }
     const stored = window.localStorage.getItem(dateKey);
     if (stored) {
       try {
@@ -40,34 +51,49 @@ export function MacroProgressPanel({
         console.error("Failed to parse macro logs from local storage", err);
       }
     }
-  }, [dateKey]);
+  }, [dateKey]); // intentionally excludes initialActual — server value wins on first render
 
-  // Persist to local storage
+  // Debounced Firestore sync
+  const syncToFirestore = useCallback((next: ActualMacros) => {
+    if (!gymId || !date) return;
+    if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
+    syncTimerRef.current = setTimeout(() => {
+      const fd = new FormData();
+      fd.set("memberId", memberId);
+      fd.set("date", date);
+      fd.set("protein", String(next.protein));
+      fd.set("carbs", String(next.carbs));
+      fd.set("fat", String(next.fat));
+      fd.set("water", String(next.water));
+      startSyncTransition(async () => {
+        await saveMacroLog(initialFormActionState, fd);
+      });
+    }, 1500);
+  }, [memberId, gymId, date]);
+
+  // Persist to localStorage + debounce Firestore sync
   const updateActual = (key: keyof ActualMacros, amount: number) => {
     setActual((prev) => {
       const updated = {
         ...prev,
         [key]: Math.max(0, Number((prev[key] + amount).toFixed(1)))
       };
-      // A5: Guard against QuotaExceededError / private-browsing restrictions.
       if (typeof window !== "undefined") {
         try { window.localStorage.setItem(dateKey, JSON.stringify(updated)); } catch { /* non-fatal */ }
       }
+      syncToFirestore(updated);
       return updated;
     });
   };
 
   // Reset helper
   const handleReset = () => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
+    if (typeof window === "undefined") return;
     if (window.confirm("Are you sure you want to reset today's logged nutrition?")) {
       const resetState = { protein: 0, carbs: 0, fat: 0, water: 0 };
       setActual(resetState);
-      // A5: Guard localStorage write.
       try { window.localStorage.setItem(dateKey, JSON.stringify(resetState)); } catch { /* non-fatal */ }
+      syncToFirestore(resetState);
     }
   };
 

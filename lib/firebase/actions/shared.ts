@@ -111,7 +111,12 @@ export async function upsertAuthUser(
   forceResetPassword = false
 ) {
   try {
-    const updateData: any = {
+    const updateData: {
+      email: string;
+      displayName: string;
+      disabled: boolean;
+      password?: string;
+    } = {
       email: user.email,
       displayName: user.fullName,
       disabled: !user.isActive
@@ -122,8 +127,12 @@ export async function upsertAuthUser(
     }
 
     await auth.updateUser(user.uid, updateData);
-  } catch (error: any) {
-    if (error.code === "auth/user-not-found") {
+  } catch (error: unknown) {
+    const errorCode =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code?: unknown }).code ?? "")
+        : "";
+    if (errorCode === "auth/user-not-found") {
       await auth.createUser({
         uid: user.uid,
         email: user.email,
@@ -151,19 +160,54 @@ export function getActionFormData(
   return maybeFormData ?? (previousStateOrFormData as FormData);
 }
 
-export function success(message: string, gymId?: string): FormActionState {
-  // Bust the cache so the next read pulls fresh data.
-  // If we know the gymId, use the per-gym tag (doesn't punish other gyms).
-  // Otherwise fall back to the global "gym-data" tag.
+export type GymCacheCollection =
+  | "activity"
+  | "body-metrics"
+  | "contact"
+  | "day-logs"
+  | "exercises"
+  | "gyms"
+  | "lift-logs"
+  | "members"
+  | "notifications"
+  | "programs"
+  | "pt-lift-logs"
+  | "pt-sessions"
+  | "sessions"
+  | "staff";
+
+const DEFAULT_GYM_CACHE_COLLECTIONS: GymCacheCollection[] = [
+  "activity",
+  "exercises",
+  "gyms",
+  "members",
+  "notifications",
+  "programs",
+  "pt-sessions",
+  "sessions",
+  "staff"
+];
+
+export function revalidateGymTags(gymId?: string, collections: GymCacheCollection[] = DEFAULT_GYM_CACHE_COLLECTIONS) {
   try {
     if (gymId) {
-      revalidateTag(`gym:${gymId}`);
+      collections.forEach((collection) => revalidateTag(`gym:${gymId}:${collection}`));
     } else {
-      revalidateTag("gym-data");
+      collections.forEach((collection) => revalidateTag(collection));
     }
   } catch {
-    // revalidateTag is a noop outside a request context; ignore
+    // revalidateTag is a noop outside a request context.
   }
+}
+
+export function success(
+  message: string,
+  gymId?: string,
+  collections?: GymCacheCollection[]
+): FormActionState {
+  // Bust only the collection caches touched by this action. This avoids
+  // invalidating every cached read for every gym after a small write.
+  revalidateGymTags(gymId, collections);
   return { status: "success", message };
 }
 

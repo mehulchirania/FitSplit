@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "analyze": "ANALYZE=true next build",
     "deploy:firebase": "npm run build && firebase deploy",
     "functions:build": "npm --prefix functions run build",
     "functions:deploy": "npm --prefix functions run build && firebase deploy --only functions",
@@ -21,11 +22,12 @@
     "fix:exercises": "node scripts/fix-exercise-catalog.mjs",
     "split:css": "node scripts/split-css.js",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "prepare": "husky"
   },
   "dependencies": {
     "@fullcalendar/core": "^6.1.20",
@@ -51,13 +53,21 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@next/bundle-analyzer": "^15.5.18",
+    "@sentry/nextjs": "^9.0.0",
     "@types/node": "^22.15.3",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
     "@vitest/coverage-v8": "^4.1.7",
     "eslint": "^9.25.1",
     "eslint-config-next": "^15.3.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.0.5",
     "typescript": "^5.8.3",
     "vitest": "^4.1.7"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": "eslint"
   }
 }

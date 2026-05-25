@@ -79,9 +79,7 @@ export async function getExerciseCatalogUncached(gymId?: string): Promise<{
         ? getExerciseThumbnail(String(data.name), muscleGroup)
         : storedThumbnailUrl,
       ownerOnly: true,
-      source: (data.source === "custom" || data.source === "gym" || data.scope === "custom")
-        ? "custom"
-        : hasDefaultExercise ? "predefined" : "custom",
+      source: hasDefaultExercise ? "predefined" : "custom",
       showTutorial: data.showTutorial !== false,
       skipDefaultOverride: isMirroredDefault && hasDefaultExercise
     };
@@ -123,7 +121,7 @@ export async function getExerciseCatalog(gymId?: string) {
   return unstable_cache(
     getExerciseCatalogRequestCached,
     ["read:getExerciseCatalog", gymId ?? "default"],
-    { tags: ["exercises", "gym-data", gymTag(gymId)], revalidate: 300 }
+    { tags: ["exercises", gymTag(gymId, "exercises")], revalidate: 300 }
   )(gymId);
 }
 

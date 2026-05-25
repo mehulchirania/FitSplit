@@ -94,6 +94,40 @@ describe("ZodHelpers.emailOrEmpty", () => {
   });
 });
 
+describe("ZodHelpers.username", () => {
+  it("accepts a valid lowercase alphanumeric username", () => {
+    expect(ZodHelpers.username.safeParse("mehul123").success).toBe(true);
+  });
+
+  it("accepts a username with dots, underscores, and hyphens", () => {
+    expect(ZodHelpers.username.safeParse("mehul.chirania_dev-01").success).toBe(true);
+  });
+
+  it("rejects a username shorter than 3 characters", () => {
+    expect(ZodHelpers.username.safeParse("me").success).toBe(false);
+  });
+
+  it("rejects a username longer than 32 characters", () => {
+    expect(ZodHelpers.username.safeParse("a".repeat(33)).success).toBe(false);
+  });
+
+  it("rejects a username with uppercase letters", () => {
+    expect(ZodHelpers.username.safeParse("Mehul").success).toBe(false);
+  });
+
+  it("rejects a username with spaces", () => {
+    expect(ZodHelpers.username.safeParse("mehul chirania").success).toBe(false);
+  });
+
+  it("accepts a username of exactly 3 characters (lower boundary)", () => {
+    expect(ZodHelpers.username.safeParse("abc").success).toBe(true);
+  });
+
+  it("accepts a username of exactly 32 characters (upper boundary)", () => {
+    expect(ZodHelpers.username.safeParse("a".repeat(32)).success).toBe(true);
+  });
+});
+
 // ─── parseActionData ──────────────────────────────────────────────────────────
 
 const TestSchema = z.object({
@@ -148,5 +182,32 @@ describe("parseActionData", () => {
       // zod's .trim() should give us the trimmed value
       expect(result.data.fullName).toBe("Bob");
     }
+  });
+
+  it("returns status 'error' (not 'success') on validation failure", () => {
+    const fd = makeFormData({ fullName: "Alice", email: "not-valid" });
+    const result = parseActionData(fd, TestSchema);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.state.status).toBe("error");
+    }
+  });
+
+  it("fieldErrors only contains keys that failed validation", () => {
+    // fullName is valid; only email fails
+    const fd = makeFormData({ fullName: "Carol", email: "not-an-email" });
+    const result = parseActionData(fd, TestSchema);
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.state.fieldErrors?.email).toBeDefined();
+      expect(result.state.fieldErrors?.fullName).toBeUndefined();
+    }
+  });
+
+  it("ignores extra keys in FormData that are not in the schema", () => {
+    const fd = makeFormData({ fullName: "Dave", email: "dave@example.com", extra: "ignored" });
+    const result = parseActionData(fd, TestSchema);
+    // Zod strips unknown keys by default; the extra field should not cause failure
+    expect(result.success).toBe(true);
   });
 });
