@@ -251,7 +251,10 @@
 .member-workout-main,
 .member-workout-side > .lift-log-panel,
 .member-workout-side > .injury-card,
-.member-workout-side > .ai-modification-panel {
+.member-workout-side > .ai-modification-panel,
+.member-progress-console > .lift-log-panel,
+.member-progress-chart-card,
+.member-progress-history-card {
   background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 96%, white 4%), var(--bg-elevated));
   border: 1px solid var(--border);
   border-radius: 22px;
@@ -670,13 +673,28 @@
 
 .member-workout-side > .lift-log-panel,
 .member-workout-side > .injury-card,
-.member-workout-side > .ai-modification-panel {
+.member-workout-side > .ai-modification-panel,
+.member-progress-console > .lift-log-panel,
+.member-progress-chart-card,
+.member-progress-history-card {
   margin: 0;
   overflow: hidden;
   padding: 16px;
 }
 
-.member-workout-side .lift-log-title {
+.member-progress-section {
+  display: grid;
+  gap: 16px;
+}
+
+.member-progress-console {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+}
+
+.member-workout-side .lift-log-title,
+.member-progress-console .lift-log-title {
   align-items: flex-start;
   display: flex;
   gap: 10px;
@@ -715,7 +733,8 @@
   padding: 7px 10px;
 }
 
-.member-workout-side .lift-log-form {
+.member-workout-side .lift-log-form,
+.member-progress-console .lift-log-form {
   display: grid;
   gap: 12px;
   grid-template-columns: 1fr;
@@ -723,30 +742,37 @@
 }
 
 .member-workout-side .lift-log-exercise-field,
-.member-workout-side .lift-log-fields label {
+.member-workout-side .lift-log-fields label,
+.member-progress-console .lift-log-exercise-field,
+.member-progress-console .lift-log-fields label {
   display: grid;
   gap: 6px;
   min-width: 0;
 }
 
-.member-workout-side .lift-log-fields {
+.member-workout-side .lift-log-fields,
+.member-progress-console .lift-log-fields {
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .member-workout-side .lift-log-fields input,
-.member-workout-side .lift-log-exercise-field select {
+.member-workout-side .lift-log-exercise-field select,
+.member-progress-console .lift-log-fields input,
+.member-progress-console .lift-log-exercise-field select {
   max-width: 100%;
   width: 100%;
 }
 
-.member-workout-side .lift-log-submit {
+.member-workout-side .lift-log-submit,
+.member-progress-console .lift-log-submit {
   justify-content: center;
   width: 100%;
 }
 
-.member-workout-side .member-details-panel {
+.member-workout-side .member-details-panel,
+.member-progress-console .member-details-panel {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: 14px;
@@ -754,15 +780,18 @@
   padding: 10px;
 }
 
-.member-workout-side .member-details-summary {
+.member-workout-side .member-details-summary,
+.member-progress-console .member-details-summary {
   justify-content: space-between;
 }
 
-.member-workout-side .lift-log-table {
+.member-workout-side .lift-log-table,
+.member-progress-console .lift-log-table {
   overflow-x: auto;
 }
 
-.member-workout-side .lift-log-table div {
+.member-workout-side .lift-log-table div,
+.member-progress-console .lift-log-table div {
   grid-template-columns: minmax(130px, 1fr) 64px 44px 54px;
   min-width: 300px;
 }
@@ -923,7 +952,10 @@
   .member-workout-main,
   .member-workout-side > .lift-log-panel,
   .member-workout-side > .injury-card,
-  .member-workout-side > .ai-modification-panel {
+  .member-workout-side > .ai-modification-panel,
+  .member-progress-console > .lift-log-panel,
+  .member-progress-chart-card,
+  .member-progress-history-card {
     border-radius: 18px;
   }
 
@@ -970,7 +1002,14 @@
     min-height: 30px;
   }
 
-  .member-workout-side .lift-log-fields {
+  .member-workout-side .lift-log-fields,
+  .member-progress-console .lift-log-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .member-progress-console {
     grid-template-columns: 1fr;
   }
 }

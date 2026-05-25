@@ -1,18 +1,17 @@
-﻿import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 import { AiProgramBrief } from "@/components/ai-program-brief";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import Link from "next/link";
-import { Calendar, Dumbbell, Mail, Phone, UserRound, X } from "@/components/icons";
+import { Dumbbell, Mail, Phone } from "@/components/icons";
 import { MemberAccessActions } from "@/components/member-access-actions";
 import { MemberContextEditor } from "@/components/member-context-editor";
 import { MemberDeleteAction } from "@/components/member-delete-action";
 import { ProgramAssignmentForm } from "@/components/program-assignment-form";
+import { TrainerPtPanel } from "@/components/trainer-pt-panel";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
-import {
-  updateCoachNote
-} from "@/lib/firebase/actions";
+import { updateCoachNote } from "@/lib/firebase/actions";
 import {
   getExerciseCatalog,
   getLiftLogsForMember,
@@ -28,7 +27,6 @@ export const dynamic = "force-dynamic";
 
 function formatShortDate(value?: string) {
   if (!value) return "Not recorded";
-
   try {
     return new Intl.DateTimeFormat("en-IN", {
       day: "2-digit",
@@ -71,7 +69,6 @@ export default async function MemberDetailPage({
   if (!member) notFound();
 
   const program = programs.find((p) => p.id === assignment?.programId);
-  // D12: Detect when a member has an assignment pointing at a program that no longer exists.
   const assignedProgramDeleted = !!assignment && !program;
   const bmi =
     profile.weightKg && profile.heightCm
@@ -80,11 +77,18 @@ export default async function MemberDetailPage({
   const trainingDays = program?.days.filter((day) => day.exercises.length > 0) ?? [];
   const totalExercises = trainingDays.reduce((count, day) => count + day.exercises.length, 0);
   const lastLiftLog = liftLogs[0];
+  const upcomingPT = ptSessions.filter(
+    (s) => s.status === "scheduled" || s.status === "active"
+  ).length;
 
   return (
     <main className="page">
+
+      {/* ══════════════════════════════════════════════════════════════
+          HERO — avatar · name · status · contact strip · metrics bar
+          ══════════════════════════════════════════════════════════════ */}
       <section className="mpd-hero">
-        <div className="mpd-hero-top">
+        <div className="mpd-hero-body">
           <Breadcrumb
             crumbs={[
               { label: "Dashboard", href: "/owner" },
@@ -93,9 +97,10 @@ export default async function MemberDetailPage({
             ]}
           />
 
-          <div className="mpd-identity">
+          {/* Identity row */}
+          <div className="mpd-hero-identity">
             <span className="mpd-avatar">{member.avatarInitials}</span>
-            <div>
+            <div className="mpd-hero-name-block">
               <div className="mpd-name-row">
                 <h1 className="mpd-name">{member.fullName}</h1>
                 <span className={`status-pill ${member.isActive ? "status-active" : "status-inactive"}`}>
@@ -109,75 +114,81 @@ export default async function MemberDetailPage({
                   <span className="status-pill status-expiring">Needs program</span>
                 )}
               </div>
-              <div className="mpd-meta">
-                {member.goal ? (
-                  <span className="mpd-meta-item">
-                    <UserRound /> {member.goal}
+
+              {/* Goal + join date */}
+              {(member.goal || member.joinedAt) && (
+                <p className="mpd-hero-subline">
+                  {member.goal && <span>{member.goal}</span>}
+                  {member.goal && member.joinedAt && <span className="mpd-hero-sep">·</span>}
+                  {member.joinedAt && (
+                    <span className="mpd-hero-dim">Joined {member.joinedAt}</span>
+                  )}
+                </p>
+              )}
+
+              {/* Contact chips */}
+              <div className="mpd-hero-contacts">
+                {member.email && (
+                  <span className="mpd-contact-chip">
+                    <Mail /> {member.email}
                   </span>
-                ) : null}
-                <span className="mpd-meta-item mpd-joined">Joined {member.joinedAt}</span>
+                )}
+                {member.phone && (
+                  <span className="mpd-contact-chip">
+                    <Phone /> {member.phone}
+                  </span>
+                )}
+                {member.username && (
+                  <span className="mpd-contact-chip">
+                    <span className="mpd-username-at">@</span>
+                    <span className="mpd-username">{member.username}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
-
-          <dl className="mpd-contact-list" aria-label="Member contact and login details">
-            <div>
-              <dt>Username</dt>
-              <dd className="mpd-username">{member.username ?? "Not set"}</dd>
-            </div>
-            <div>
-              <dt>Email</dt>
-              <dd>
-                <Mail /> {member.email}
-              </dd>
-            </div>
-            <div>
-              <dt>Phone</dt>
-              <dd>
-                <Phone /> {member.phone || "Not recorded"}
-              </dd>
-            </div>
-          </dl>
         </div>
 
+        {/* Simplified Metrics strip */}
         <div className="mpd-metrics">
           <div className="mpd-metric">
             <strong>{program ? trainingDays.length : 0}</strong>
-            <span>Training days</span>
-          </div>
-          <div className="mpd-metric">
-            <strong>{program ? totalExercises : 0}</strong>
-            <span>Exercises</span>
-          </div>
-          <div className="mpd-metric">
-            <strong>{assignment ? formatShortDate(assignment.assignedAt) : "Not assigned"}</strong>
-            <span>Assigned</span>
+            <span>Days / week</span>
           </div>
           <div className="mpd-metric">
             <strong>{lastLiftLog ? formatShortDate(lastLiftLog.loggedAt) : "No logs"}</strong>
-            <span>Last lift</span>
+            <span>Last active</span>
           </div>
           <div className="mpd-metric">
-            <strong>{profile.assignedTrainer || "Unassigned"}</strong>
+            <strong style={profile.assignedTrainer ? {} : { color: "var(--text-faint)" }}>
+              {profile.assignedTrainer || "None"}
+            </strong>
             <span>Trainer</span>
           </div>
           <div className="mpd-metric">
-            <strong>{ptSessions.filter((s) => s.status === "scheduled" || s.status === "active").length}</strong>
-            <span>PT upcoming</span>
+            <strong style={upcomingPT > 0 ? { color: "var(--brand)" } : {}}>
+              {upcomingPT}
+            </strong>
+            <span>PT Sessions</span>
           </div>
         </div>
       </section>
 
+      {/* ══════════════════════════════════════════════════════════════
+          WORKSPACE — primary column + sidebar
+          ══════════════════════════════════════════════════════════════ */}
       <div className="mpd-workspace-layout">
+
+        {/* ── Primary column ── */}
         <section className="mpd-primary-stack">
+
+          {/* Program schedule */}
           {program ? (
             <div className="list-panel mpd-main-schedule">
               <div className="panel-title">
                 <div>
                   <p className="eyebrow">Current assignment</p>
-                  <h2>
-                    <Dumbbell /> Weekly schedule
-                  </h2>
+                  <h2><Dumbbell /> Weekly schedule</h2>
                 </div>
                 <span className="status-pill status-neutral">{program.title}</span>
               </div>
@@ -186,15 +197,15 @@ export default async function MemberDetailPage({
           ) : (
             <div className="list-panel mpd-empty-schedule">
               <Dumbbell />
-              <h2>No active program assigned</h2>
-              <p>Assign a saved program or use the AI match panel to pick the best available plan.</p>
+              <h2>Needs a Workout Plan</h2>
+              <p>Use the <strong>Assign program</strong> panel on the right to pick a plan or build a custom one.</p>
             </div>
           )}
 
+          {/* Member profile context */}
           <MemberContextEditor bmi={bmi} member={member} profile={profile} trainers={trainers} />
-        </section>
 
-        <aside className="mpd-side-stack">
+          {/* Coach note */}
           <ConfirmActionForm
             action={updateCoachNote}
             className="form-panel"
@@ -238,6 +249,26 @@ export default async function MemberDetailPage({
             </p>
           </ConfirmActionForm>
 
+          {/* AI program match */}
+          <AiProgramBrief
+            defaultGoal={member.goal}
+            memberId={member.id}
+            memberName={member.fullName}
+          />
+        </section>
+
+        {/* ── Sidebar ── */}
+        <aside className="mpd-side-stack">
+
+          {/* Trainer + PT (most common action — lives at top) */}
+          <TrainerPtPanel
+            memberId={member.id}
+            currentTrainer={profile.assignedTrainer}
+            trainers={trainers}
+            ptSessions={ptSessions}
+          />
+
+          {/* Assign / change program */}
           {assignedProgramDeleted && (
             <div className="form-message form-message-warning" role="alert">
               <strong>Program no longer exists.</strong> The program previously assigned to{" "}
@@ -253,64 +284,30 @@ export default async function MemberDetailPage({
             programs={programs}
           />
 
-          <AiProgramBrief
-            defaultGoal={member.goal}
-            memberId={member.id}
-            memberName={member.fullName}
-          />
-
-          <MemberAccessActions
-            isActive={member.isActive}
-            memberId={member.id}
-            username={member.username}
-          />
-
-          {/* PT Plans mini-panel */}
-          <section className="form-panel">
-            <div className="panel-title" style={{ marginBottom: 12 }}>
-              <div>
-                <p className="eyebrow">Personal training</p>
-                <h2><Calendar /> PT Plans</h2>
-              </div>
-              <Link className="button button-secondary" href={`/owner/training?memberId=${member.id}`} style={{ fontSize: "0.82rem", padding: "6px 12px" }}>
-                Assign plan
-              </Link>
+          {/* Account access */}
+          <details className="form-panel mpd-collapsible-panel">
+            <summary>
+              <span>Account access</span>
+              <span className="mpd-collapsible-chevron">▾</span>
+            </summary>
+            <div style={{ paddingTop: "14px", borderTop: "1px solid var(--border)" }}>
+              <MemberAccessActions
+                isActive={member.isActive}
+                memberId={member.id}
+                username={member.username}
+              />
             </div>
-            {ptSessions.length === 0 ? (
-              <p style={{ color: "var(--text-soft)", fontSize: "0.85rem" }}>No PT plans yet.</p>
-            ) : (
-              <ul className="pt-session-mini-list">
-                {ptSessions.slice(0, 5).map((s) => (
-                  <li key={s.id} className="pt-session-mini-row">
-                    <div className="pt-mini-info">
-                      <span className="pt-mini-trainer">{s.trainerName ?? "Trainer"}</span>
-                      <span className="pt-mini-date">
-                        {new Date(s.scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                      </span>
-                    </div>
-                    <span className={`status-pill ${s.status === "active" ? "status-active" : s.status === "completed" ? "status-neutral" : s.status === "cancelled" ? "status-inactive" : "status-expiring"}`}>
-                      {s.status}
-                    </span>
-                  </li>
-                ))}
-                {ptSessions.length > 5 && (
-                  <li style={{ padding: "8px 0", textAlign: "center" }}>
-                    <Link href={`/owner/training?memberId=${member.id}`} style={{ fontSize: "0.82rem", color: "var(--brand)" }}>
-                      View all {ptSessions.length} sessions →
-                    </Link>
-                  </li>
-                )}
-              </ul>
-            )}
-          </section>
+          </details>
 
+          {/* Danger zone */}
           <details className="form-panel mpd-collapsible-panel mpd-danger-panel">
             <summary>
-              <span>
-                <X /> Danger zone
-              </span>
+              <span>Danger zone</span>
+              <span className="mpd-collapsible-chevron">▾</span>
             </summary>
-            <MemberDeleteAction memberId={member.id} />
+            <div style={{ paddingTop: "14px", borderTop: "1px solid var(--border)" }}>
+              <MemberDeleteAction memberId={member.id} />
+            </div>
           </details>
         </aside>
       </div>

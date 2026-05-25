@@ -9,17 +9,16 @@ type MemberDashboardTabsProps = {
   workoutSection: ReactNode;
   progressSection: ReactNode;
   wellnessSection: ReactNode;
-  historySection: ReactNode;
 };
 
 export function MemberDashboardTabs(props: MemberDashboardTabsProps) {
-  const { workoutSection, progressSection, wellnessSection, historySection } = props;
-  const [activeTab, setActiveTab] = useState<"workout" | "progress" | "wellness" | "history">("workout");
+  const { workoutSection, progressSection, wellnessSection } = props;
+  const [activeTab, setActiveTab] = useState<"workout" | "progress" | "wellness">("workout");
 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (["workout", "progress", "wellness", "history"].includes(hash)) {
+      if (["workout", "progress", "wellness"].includes(hash)) {
         setActiveTab(hash as any);
       }
     };
@@ -41,7 +40,6 @@ export function MemberDashboardTabs(props: MemberDashboardTabsProps) {
     { id: "workout", label: "Workout", icon: Dumbbell },
     { id: "progress", label: "Progress", icon: Activity },
     { id: "wellness", label: "Wellness", icon: HeartPulse },
-    { id: "history", label: "History", icon: Activity }
   ] as const;
 
   return (
@@ -116,18 +114,6 @@ export function MemberDashboardTabs(props: MemberDashboardTabsProps) {
               transition={{ duration: 0.2 }}
             >
               {wellnessSection}
-            </motion.div>
-          )}
-          {activeTab === "history" && (
-            <motion.div
-              key="history"
-              role="tabpanel"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-            >
-              {historySection}
             </motion.div>
           )}
         </AnimatePresence>

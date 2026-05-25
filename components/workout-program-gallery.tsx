@@ -51,7 +51,9 @@ function programInsight(program: WorkoutProgram) {
 }
 
 function dayExerciseNames(day: WorkoutDay, names: Map<string, string>) {
-  return day.exercises.map((item) => names.get(item.exerciseId) ?? "Unknown exercise");
+  return day.exercises
+    .map((item) => names.get(item.exerciseId))
+    .filter((name): name is string => Boolean(name));
 }
 
 function assignmentNames(

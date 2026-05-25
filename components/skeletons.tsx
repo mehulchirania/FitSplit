@@ -78,8 +78,8 @@ export function SkeletonStat() {
         gap: 8,
         padding: "16px 20px",
         borderRadius: 12,
-        background: "var(--card-bg, #1a1a2e)",
-        border: "1px solid var(--border-color, rgba(255,255,255,0.07))",
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
       }}
       aria-hidden="true"
     >
@@ -96,8 +96,8 @@ export function SkeletonCard({ height = 120 }: { height?: number }) {
       style={{
         padding: "20px",
         borderRadius: 12,
-        background: "var(--card-bg, #1a1a2e)",
-        border: "1px solid var(--border-color, rgba(255,255,255,0.07))",
+        background: "var(--bg-elevated)",
+        border: "1px solid var(--border)",
         display: "flex",
         flexDirection: "column",
         gap: 12,
@@ -133,8 +133,8 @@ export function SkeletonList({
             alignItems: "center",
             gap: 14,
             padding: "14px 20px",
-            background: "var(--card-bg, #1a1a2e)",
-            borderBottom: "1px solid var(--border-color, rgba(255,255,255,0.05))",
+            background: "var(--bg-elevated)",
+            borderBottom: "1px solid var(--border)",
           }}
         >
           {withAvatar && <SkeletonAvatar size={36} />}

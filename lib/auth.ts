@@ -148,6 +148,94 @@ const demoLogins: Record<string, DemoLogin> = {
     gymId: "shg",
     role: "member"
   },
+  meera: {
+    uid: "member-meera",
+    authEmail: "meera@example.com",
+    phone: "+91 9876542109",
+    fullName: "Meera Iyer",
+    gymId: "shg",
+    role: "member"
+  },
+  "meera@example.com": {
+    uid: "member-meera",
+    authEmail: "meera@example.com",
+    phone: "+91 9876542109",
+    fullName: "Meera Iyer",
+    gymId: "shg",
+    role: "member"
+  },
+  kabir: {
+    uid: "member-kabir",
+    authEmail: "kabir@example.com",
+    phone: "+91 9876541098",
+    fullName: "Kabir Khan",
+    gymId: "shg",
+    role: "member"
+  },
+  "kabir@example.com": {
+    uid: "member-kabir",
+    authEmail: "kabir@example.com",
+    phone: "+91 9876541098",
+    fullName: "Kabir Khan",
+    gymId: "shg",
+    role: "member"
+  },
+  nisha: {
+    uid: "member-nisha",
+    authEmail: "nisha@example.com",
+    phone: "+91 9876540987",
+    fullName: "Nisha Rao",
+    gymId: "shg",
+    role: "member"
+  },
+  "nisha@example.com": {
+    uid: "member-nisha",
+    authEmail: "nisha@example.com",
+    phone: "+91 9876540987",
+    fullName: "Nisha Rao",
+    gymId: "shg",
+    role: "member"
+  },
+  mehulchirania: {
+    uid: "member-mehul",
+    authEmail: "mehul@example.com",
+    phone: "+91 9688227039",
+    fullName: "Mehul Chirania",
+    gymId: "shg",
+    role: "member"
+  },
+  "mehul@example.com": {
+    uid: "member-mehul",
+    authEmail: "mehul@example.com",
+    phone: "+91 9688227039",
+    fullName: "Mehul Chirania",
+    gymId: "shg",
+    role: "member"
+  },
+  "9688227039": {
+    uid: "member-mehul",
+    authEmail: "mehul@example.com",
+    phone: "+91 9688227039",
+    fullName: "Mehul Chirania",
+    gymId: "shg",
+    role: "member"
+  },
+  "+919688227039": {
+    uid: "member-mehul",
+    authEmail: "mehul@example.com",
+    phone: "+91 9688227039",
+    fullName: "Mehul Chirania",
+    gymId: "shg",
+    role: "member"
+  },
+  "+91 9688227039": {
+    uid: "member-mehul",
+    authEmail: "mehul@example.com",
+    phone: "+91 9688227039",
+    fullName: "Mehul Chirania",
+    gymId: "shg",
+    role: "member"
+  },
 };
 
 function normalizeIdentifier(identifier: string) {

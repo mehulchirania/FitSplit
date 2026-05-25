@@ -10,7 +10,7 @@ import { generateSmartSwaps } from "@/lib/ai";
 import type { DayLog, Exercise, LiftLog, SkipReason, WorkoutExercise, WorkoutProgram } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
-import { Dumbbell } from "@/components/icons";
+import { Dumbbell, Edit, SkipForward } from "@/components/icons";
 import { ExerciseList } from "@/components/exercise-list";
 import { useWorkoutStore } from "@/lib/stores/workout-store";
 import { offlineDB } from "@/lib/offline-db";
@@ -20,7 +20,6 @@ import {
   getWeekStart,
   getDefaultDayIndex,
   createModification,
-  getExerciseName,
   getDayMuscleTargets
 } from "@/lib/workout-utils";
 import { WorkoutLiftLogForm } from "@/components/workout-lift-log-form";
@@ -33,7 +32,8 @@ export function MemberWorkoutConsole({
   initialInjuryNote = "",
   initialLiftLogs,
   memberId,
-  program
+  program,
+  showLiftLogger = false
 }: {
   exercises: Exercise[];
   gymId: string;
@@ -43,6 +43,7 @@ export function MemberWorkoutConsole({
   initialLiftLogs: LiftLog[];
   memberId: string;
   program: WorkoutProgram;
+  showLiftLogger?: boolean;
 }) {
   const router = useRouter();
   const {
@@ -55,7 +56,6 @@ export function MemberWorkoutConsole({
     modification, setModification,
     workoutMode, setWorkoutMode,
     liftLogs, setLiftLogs, addLiftLog,
-    pendingEvent, setPendingEvent,
     eventStatus, setEventStatus,
     isEventPending, setIsEventPending,
     offlineLogsCount, setOfflineLogsCount,
@@ -106,11 +106,22 @@ export function MemberWorkoutConsole({
 
 
 
+  const exerciseById = useMemo(
+    () => new Map(exercises.map((exercise) => [exercise.id, exercise])),
+    [exercises]
+  );
+
   const selectedDay = program.days[selectedDayIndex] ?? program.days[0];
   const aiStorageKey = `fitsplit-ai-trainer-${memberId}-${program.id}`;
-  const visibleWorkoutDay = workoutMode === "ai" && modification && selectedDay
+  const rawVisibleWorkoutDay = workoutMode === "ai" && modification && selectedDay
     ? { ...selectedDay, exercises: modification.routine }
     : selectedDay;
+  const visibleWorkoutDay = rawVisibleWorkoutDay
+    ? {
+        ...rawVisibleWorkoutDay,
+        exercises: rawVisibleWorkoutDay.exercises.filter((item) => exerciseById.has(item.exerciseId))
+      }
+    : rawVisibleWorkoutDay;
   const loggableExercises = visibleWorkoutDay?.exercises ?? [];
   const dayMuscleTargets = getDayMuscleTargets(loggableExercises, exercises);
   const uniqueLoggableExercises = Array.from(
@@ -410,7 +421,7 @@ export function MemberWorkoutConsole({
     }
   }
 
-  function handleLiftLog(event: FormEvent<HTMLFormElement>) {
+  async function handleLiftLog(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!event.currentTarget.reportValidity()) {
@@ -419,79 +430,61 @@ export function MemberWorkoutConsole({
 
     const form = event.currentTarget;
     const formData = new FormData(form);
-    const exerciseName = getExerciseName(String(formData.get("exerciseId") ?? ""), exercises);
 
     const exerciseId = String(formData.get("exerciseId") ?? "");
     const weight = Number(formData.get("weight") ?? 0);
-    setPendingEvent({
-      confirmLabel: "Log lift",
-      message: `This will save a lift entry for ${exerciseName}.`,
-      title: "Log this lift?",
-      liftExerciseId: exerciseId,
-      liftWeight: weight,
-      run: async () => {
-        const newLog: LiftLog = {
-          id: `optimistic-${Date.now()}`,
-          memberId,
-          exerciseId: String(formData.get("exerciseId") ?? ""),
-          weight: Number(formData.get("weight") ?? 0),
-          sets: Number(formData.get("sets") ?? 1),
-          reps: String(formData.get("reps") ?? ""),
-          sessionId: String(formData.get("sessionId") ?? ""),
-          loggedAt: new Date().toISOString()
-        };
+    const prevMax = prMap.get(exerciseId) ?? 0;
 
-        if (typeof navigator !== "undefined" && !navigator.onLine) {
-           const offlineLog = { ...newLog, synced: false };
-           await offlineDB.liftLogs.add(offlineLog);
-           addLiftLog(newLog);
-           offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
-           return { status: "success", message: "Saved offline. Will sync when connected." } as FormActionState;
-        }
+    const newLog: LiftLog = {
+      id: `optimistic-${Date.now()}`,
+      memberId,
+      exerciseId,
+      weight,
+      sets: Number(formData.get("sets") ?? 1),
+      reps: String(formData.get("reps") ?? ""),
+      sessionId: String(formData.get("sessionId") ?? ""),
+      loggedAt: new Date().toISOString()
+    };
 
-        try {
-          const result = await logLiftSet(initialFormActionState, formData);
-          if (result.status === "success") {
-            setLiftLogs((current) => [newLog, ...current].slice(0, 12));
-            router.refresh();
-          }
-          return result;
-        } catch (e) {
-           const offlineLog = { ...newLog, synced: false };
-           await offlineDB.liftLogs.add(offlineLog);
-           addLiftLog(newLog);
-           offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
-           return { status: "success", message: "Saved offline. Will sync when connected." } as FormActionState;
-        }
-      }
-    });
-  }
-
-  async function confirmPendingEvent() {
-    if (!pendingEvent) {
+    // Offline path — save to IndexedDB immediately
+    if (typeof navigator !== "undefined" && !navigator.onLine) {
+      const offlineLog = { ...newLog, synced: false };
+      await offlineDB.liftLogs.add(offlineLog);
+      addLiftLog(newLog);
+      offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
+      setIsNewPR(false);
+      setLogSuccess(true);
+      liftFormRef.current?.reset();
+      setTimeout(() => setLogSuccess(false), 3000);
       return;
     }
 
-    const prevMaxForExercise = pendingEvent.liftExerciseId
-      ? prMap.get(pendingEvent.liftExerciseId) ?? 0
-      : 0;
+    // Online path — fire and forget, optimistic update
     setIsEventPending(true);
-    const result = await pendingEvent.run().catch((error) => ({
-      status: "error" as const,
-      message: error instanceof Error ? error.message : "Unable to complete this action."
-    }));
-    setIsEventPending(false);
-    setPendingEvent(null);
-    setEventStatus(result);
-    if (result.status === "success") {
-      const isNewRecord =
-        pendingEvent.liftExerciseId != null &&
-        pendingEvent.liftWeight != null &&
-        pendingEvent.liftWeight > prevMaxForExercise;
-      setIsNewPR(isNewRecord);
+    try {
+      const result = await logLiftSet(initialFormActionState, formData);
+      setIsEventPending(false);
+      if (result.status === "success") {
+        setLiftLogs((current) => [newLog, ...current].slice(0, 12));
+        setIsNewPR(weight > prevMax);
+        setLogSuccess(true);
+        liftFormRef.current?.reset();
+        setTimeout(() => { setLogSuccess(false); setIsNewPR(false); }, 3000);
+        router.refresh();
+      } else {
+        setEventStatus(result);
+      }
+    } catch {
+      setIsEventPending(false);
+      // Network error — fall back to offline queue
+      const offlineLog = { ...newLog, synced: false };
+      await offlineDB.liftLogs.add(offlineLog);
+      addLiftLog(newLog);
+      offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
+      setIsNewPR(false);
       setLogSuccess(true);
       liftFormRef.current?.reset();
-      setTimeout(() => { setLogSuccess(false); setIsNewPR(false); }, 3000);
+      setTimeout(() => setLogSuccess(false), 3000);
     }
   }
 
@@ -549,8 +542,8 @@ export function MemberWorkoutConsole({
                     <span>{dayNames[index] ?? `Day ${day.dayNumber}`}</span>
                     <strong>{day.title}</strong>
                     {tabLog && (
-                      <em className="day-tab-status-dot" aria-label={tabLog.status === "skipped" ? "Skipped" : "Modified"}>
-                        {tabLog.status === "skipped" ? "⏭" : "📝"}
+                      <em className="day-tab-status-icon" aria-label={tabLog.status === "skipped" ? "Skipped" : "Modified"}>
+                        {tabLog.status === "skipped" ? <SkipForward /> : <Edit />}
                       </em>
                     )}
                   </button>
@@ -777,36 +770,34 @@ export function MemberWorkoutConsole({
       </div>
 
       <aside className="member-workout-side">
-        <WorkoutLiftLogForm
-          memberId={memberId}
-          exercises={exercises}
-          uniqueLoggableExercises={uniqueLoggableExercises}
-          otherExercises={otherExercises}
-          logSuccess={logSuccess}
-          isNewPR={isNewPR}
-          offlineLogsCount={offlineLogsCount}
-          offlineSyncStatus={offlineSyncStatus}
-          isOfflineSyncing={isOfflineSyncing}
-          lastLogByExercise={lastLogByExercise}
-          prMap={prMap}
-          liftLogs={liftLogs}
-          liftFormRef={liftFormRef}
-          selectedExerciseId={selectedExerciseIdForForm}
-          onExerciseChange={setSelectedExerciseIdForForm}
-          onSubmit={handleLiftLog}
-          pendingEvent={pendingEvent}
-          eventStatus={eventStatus}
-          isEventPending={isEventPending}
-          onConfirm={confirmPendingEvent}
-          onCancelEvent={() => setPendingEvent(null)}
-          onRetryOfflineSync={() => syncOfflineQueue(true)}
-        />
+        {showLiftLogger ? (
+          <WorkoutLiftLogForm
+            memberId={memberId}
+            exercises={exercises}
+            uniqueLoggableExercises={uniqueLoggableExercises}
+            otherExercises={otherExercises}
+            logSuccess={logSuccess}
+            isNewPR={isNewPR}
+            offlineLogsCount={offlineLogsCount}
+            offlineSyncStatus={offlineSyncStatus}
+            isOfflineSyncing={isOfflineSyncing}
+            lastLogByExercise={lastLogByExercise}
+            prMap={prMap}
+            liftLogs={liftLogs}
+            liftFormRef={liftFormRef}
+            selectedExerciseId={selectedExerciseIdForForm}
+            onExerciseChange={setSelectedExerciseIdForForm}
+            onSubmit={handleLiftLog}
+            isSubmitting={isEventPending}
+            onRetryOfflineSync={() => syncOfflineQueue(true)}
+          />
+        ) : null}
 
         <div className="injury-card">
-          <h2>AI Semi-Personal Trainer</h2>
+          <p className="eyebrow">Semi-Personal Trainer</p>
+          <h2>AI workout adjustment</h2>
           <p>
-            Update Injury/Limitation to let the AI swap risky exercises or
-            create a conservative recovery routine for owner review.
+            Save a pain point, injury, or limitation. FitSplit keeps your default plan available and creates an AI-customized option for today.
           </p>
           <div style={{ display: "flex", gap: "8px", margin: "12px 0", flexWrap: "wrap" }}>
             <button type="button" className="status-pill status-neutral" style={{ cursor: "pointer", border: "none" }} onClick={() => setInjury("Shoulder pain")}>Shoulder pain</button>
@@ -822,15 +813,15 @@ export function MemberWorkoutConsole({
               value={injury}
             />
           </label>
-          <button className="button button-primary" onClick={updateInjury} type="button" disabled={isAiSwapping}>
-            {isAiSwapping ? "Applying AI Swaps..." : "Update Injury/Limitation"}
+          <button className="button button-primary" onClick={updateInjury} type="button" disabled={isAiSwapping || !injury.trim()}>
+            {isAiSwapping ? "Creating safe swaps..." : "Generate AI workout"}
           </button>
         </div>
 
         {modification ? (
           <div className="ai-modification-panel">
-            <p className="eyebrow">Plan modified</p>
-            <h2>AI Adjustments for {modification.injury}</h2>
+            <p className="eyebrow">AI customized workout</p>
+            <h2>{modification.injury}</h2>
             <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", margin: 0 }}>{modification.summary}</p>
 
             {modification.swaps.length > 0 && (
@@ -863,45 +854,7 @@ export function MemberWorkoutConsole({
 
       </aside>
 
-      {/* ── Confirm dialog (Radix Dialog — focus trap, Escape to cancel) ── */}
-      <Dialog.Root
-        open={Boolean(pendingEvent)}
-        onOpenChange={(open) => { if (!open) setPendingEvent(null); }}
-      >
-        <Dialog.Portal>
-          <Dialog.Overlay className="dialog-backdrop" />
-          <Dialog.Content
-            aria-describedby="event-confirm-dialog-message"
-            className="confirm-dialog"
-          >
-            <Dialog.Title>{pendingEvent?.title ?? ""}</Dialog.Title>
-            <Dialog.Description id="event-confirm-dialog-message">
-              {pendingEvent?.message ?? ""}
-            </Dialog.Description>
-            <div className="quick-actions">
-              <Dialog.Close asChild>
-                <button
-                  className="button button-secondary"
-                  disabled={isEventPending}
-                  type="button"
-                >
-                  Cancel
-                </button>
-              </Dialog.Close>
-              <button
-                className="button button-primary"
-                disabled={isEventPending}
-                onClick={confirmPendingEvent}
-                type="button"
-              >
-                {isEventPending ? "Updating..." : (pendingEvent?.confirmLabel ?? "Confirm")}
-              </button>
-            </div>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog.Root>
-
-      {/* ── Result dialog (Radix Dialog — focus trap, dismissible) ── */}
+      {/* ── Result dialog — shown only on error (Radix Dialog) ── */}
       <Dialog.Root
         open={Boolean(eventStatus)}
         onOpenChange={(open) => { if (!open) setEventStatus(null); }}

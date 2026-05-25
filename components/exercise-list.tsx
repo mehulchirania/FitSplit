@@ -74,6 +74,10 @@ function isPortraitVideo(videoUrl: string | null): boolean {
 
 type VideoType = "tutorial" | "demo";
 
+function getVideoCredit(type: VideoType) {
+  return type === "demo" ? "Gym demo video" : "YouTube tutorial";
+}
+
 export function ExerciseList({
   exercises,
   items
@@ -82,6 +86,9 @@ export function ExerciseList({
   items: WorkoutExercise[];
 }) {
   const [activeVideo, setActiveVideo] = useState<{ exercise: Exercise; type: VideoType } | null>(null);
+  const knownItems = items
+    .map((item, index) => ({ item, index, exercise: exercises.find((e) => e.id === item.exerciseId) }))
+    .filter((entry): entry is { item: WorkoutExercise; index: number; exercise: Exercise } => Boolean(entry.exercise));
 
   const activeUrl = activeVideo
     ? getYouTubeEmbedUrl(
@@ -96,22 +103,9 @@ export function ExerciseList({
   return (
     <>
       <div className="exercise-list">
-        {items.map((item, index) => {
-          const exercise = exercises.find((e) => e.id === item.exerciseId);
-          if (!exercise) {
-            return (
-              <article className="exercise-row" key={`unknown-${index}`} style={{ opacity: 0.45 }}>
-                <div className="exercise-row-copy">
-                  <h3 style={{ fontSize: "0.85rem", color: "var(--text-soft)" }}>Unknown exercise</h3>
-                  <span className="member-meta" style={{ fontSize: "0.75rem" }}>Exercise no longer in catalog</span>
-                </div>
-                <div className="exercise-row-actions">
-                  <span className="exercise-prescription">{getPrescription(item)}</span>
-                </div>
-              </article>
-            );
-          }
-
+        {knownItems.length === 0 ? (
+          <p className="form-message">No catalog exercises are available for this day yet.</p>
+        ) : knownItems.map(({ item, index, exercise }) => {
           // Only show tutorial when the gym owner hasn't hidden it
           const hasTutorial = Boolean(exercise.videoUrl) && exercise.showTutorial !== false;
           const hasDemo = Boolean(exercise.gymVideoUrl);
@@ -149,10 +143,10 @@ export function ExerciseList({
                   <button
                     className="exercise-video-button"
                     onClick={() => setActiveVideo({ exercise, type: "tutorial" })}
-                    title="DeltaBolic tutorial"
+                    title={getVideoCredit("tutorial")}
                     type="button"
                   >
-                    <Video /> DeltaBolic
+                    <Video /> Tutorial
                   </button>
                 )}
                 {hasDemo && (
@@ -187,9 +181,12 @@ export function ExerciseList({
                 <p className="eyebrow">
                   {activeVideo.exercise.muscleGroup}
                   {" · "}
-                  {activeVideo.type === "demo" ? "Gym Demo" : "DeltaBolic Tutorial"}
+                  {getVideoCredit(activeVideo.type)}
                 </p>
                 <h3 style={{ margin: 0, fontSize: "1rem" }}>{activeVideo.exercise.name}</h3>
+                <p className="member-meta" style={{ margin: "4px 0 0" }}>
+                  Credit: {getVideoCredit(activeVideo.type)}
+                </p>
               </div>
               <button
                 aria-label="Close video"

@@ -11,15 +11,6 @@ export type Modification = {
   routine: WorkoutExercise[];
 };
 
-export type PendingEvent = {
-  confirmLabel: string;
-  message: string;
-  run: () => Promise<FormActionState>;
-  title: string;
-  liftExerciseId?: string;
-  liftWeight?: number;
-};
-
 type WorkoutState = {
   // Session State
   isSessionActive: boolean;
@@ -41,7 +32,6 @@ type WorkoutState = {
   isNewPR: boolean;
   
   // Modals & Events
-  pendingEvent: PendingEvent | null;
   eventStatus: FormActionState | null;
   isEventPending: boolean;
   
@@ -74,7 +64,6 @@ type WorkoutState = {
   setLogSuccess: (success: boolean) => void;
   setIsNewPR: (isNewPR: boolean) => void;
   
-  setPendingEvent: (event: PendingEvent | null) => void;
   setEventStatus: (status: FormActionState | null) => void;
   setIsEventPending: (isPending: boolean) => void;
   
@@ -108,7 +97,6 @@ export const useWorkoutStore = create<WorkoutState>()(
   logSuccess: false,
   isNewPR: false,
   
-  pendingEvent: null,
   eventStatus: null,
   isEventPending: false,
   
@@ -142,7 +130,6 @@ export const useWorkoutStore = create<WorkoutState>()(
   setLogSuccess: (success) => set({ logSuccess: success }),
   setIsNewPR: (isNewPR) => set({ isNewPR }),
   
-  setPendingEvent: (event) => set({ pendingEvent: event }),
   setEventStatus: (status) => set({ eventStatus: status }),
   setIsEventPending: (isPending) => set({ isEventPending: isPending }),
   

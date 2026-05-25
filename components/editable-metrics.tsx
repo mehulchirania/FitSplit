@@ -20,6 +20,13 @@ export function EditableMetrics({ member }: { member: Member }) {
       weight !== (member.weightKg?.toString() || "") ||
       height !== (member.heightCm?.toString() || ""));
 
+  useEffect(() => {
+    if (isEditing) return;
+    setAge(member.age?.toString() || "");
+    setWeight(member.weightKg?.toString() || "");
+    setHeight(member.heightCm?.toString() || "");
+  }, [isEditing, member.age, member.heightCm, member.weightKg]);
+
   // D16: Warn before tab close / browser navigation when there are unsaved changes.
   useEffect(() => {
     if (!isDirty) return;

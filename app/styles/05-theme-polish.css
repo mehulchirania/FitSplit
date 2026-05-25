@@ -919,7 +919,7 @@ html[data-theme="light"] .login-segment {
   border: 1px solid rgb(255 255 255 / 0.12);
   border-radius: 14px;
   color: var(--text);
-  min-height: 48px;
+  min-height: 44px;
   padding: 12px 14px;
 }
 
@@ -1264,7 +1264,7 @@ html[data-theme="light"] .contact-form label {
   border: 1px solid rgb(255 255 255 / 0.12);
   border-radius: 16px;
   color: #fff;
-  min-height: 48px;
+  min-height: 44px;
 }
 
 html[data-theme="light"] .contact-form input,

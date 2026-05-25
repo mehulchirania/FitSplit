@@ -143,11 +143,11 @@ async function getProfileMetricsUncached(memberId: string): Promise<{
     fullName: fallbackMember.fullName,
     email: fallbackMember.email,
     phone: fallbackMember.phone,
-    age: 29,
+    age: fallbackMember.age ?? 29,
     gender: "",
     dob: "",
-    heightCm: 174,
-    weightKg: 72,
+    heightCm: fallbackMember.heightCm ?? 174,
+    weightKg: fallbackMember.weightKg ?? 72,
     fitnessGoals: fallbackMember.goal,
     medicalNotes: "",
     primarySlot: "A",
@@ -214,11 +214,11 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     fullName: fallbackMember.fullName,
     email: fallbackMember.email,
     phone: fallbackMember.phone,
-    age: 29,
+    age: fallbackMember.age ?? 29,
     gender: "",
     dob: "",
-    heightCm: 174,
-    weightKg: 72,
+    heightCm: fallbackMember.heightCm ?? 174,
+    weightKg: fallbackMember.weightKg ?? 72,
     fitnessGoals: fallbackMember.goal,
     medicalNotes: "",
     primarySlot: "A",
@@ -261,7 +261,11 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? "MB"),
     goal: String(data.goal ?? ""),
-    isActive: data.isActive !== false
+    isActive: data.isActive !== false,
+    username: String(data.username ?? "").trim() || undefined,
+    age: data.age ? Number(data.age) : undefined,
+    heightCm: data.heightCm ? Number(data.heightCm) : undefined,
+    weightKg: data.weightKg ? Number(data.weightKg) : undefined
   };
 
   const profile: ProfileMetrics = {

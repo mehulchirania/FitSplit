@@ -201,12 +201,28 @@ export function MacroProgressPanel({
               transition: "width 200ms ease"
             }} />
           </div>
-          {/* Increments */}
-          <div style={{ display: "flex", gap: "6px", marginTop: "4px" }}>
+          {/* Quick adjustments */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: "6px", marginTop: "4px" }}>
+            <button
+              onClick={() => updateActual("water", -0.5)}
+              className="button button-secondary"
+              style={{ padding: "4px 0", fontSize: "0.72rem", minHeight: "26px", borderRadius: "6px" }}
+              type="button"
+            >
+              -500ml
+            </button>
+            <button
+              onClick={() => updateActual("water", -0.25)}
+              className="button button-secondary"
+              style={{ padding: "4px 0", fontSize: "0.72rem", minHeight: "26px", borderRadius: "6px" }}
+              type="button"
+            >
+              -250ml
+            </button>
             <button
               onClick={() => updateActual("water", 0.25)}
               className="button button-secondary"
-              style={{ flex: 1, padding: "4px 0", fontSize: "0.72rem", minHeight: "26px", borderRadius: "6px" }}
+              style={{ padding: "4px 0", fontSize: "0.72rem", minHeight: "26px", borderRadius: "6px" }}
               type="button"
             >
               +250ml
@@ -214,7 +230,7 @@ export function MacroProgressPanel({
             <button
               onClick={() => updateActual("water", 0.5)}
               className="button button-secondary"
-              style={{ flex: 1, padding: "4px 0", fontSize: "0.72rem", minHeight: "26px", borderRadius: "6px" }}
+              style={{ padding: "4px 0", fontSize: "0.72rem", minHeight: "26px", borderRadius: "6px" }}
               type="button"
             >
               +500ml
@@ -266,18 +282,27 @@ export function MacroProgressPanel({
                 }} />
               </div>
 
-              {/* Quick addition buttons */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px", marginTop: "2px" }}>
+              {/* Quick adjustment buttons */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px", marginTop: "2px" }}>
                 {item.increments.map((inc) => (
-                  <button
-                    key={inc}
-                    onClick={() => updateActual(item.key, inc)}
-                    className="button button-secondary"
-                    style={{ padding: "3px 0", fontSize: "0.68rem", minHeight: "22px", borderRadius: "4px" }}
-                    type="button"
-                  >
-                    +{inc}{item.unit}
-                  </button>
+                  <span key={inc} style={{ display: "contents" }}>
+                    <button
+                      onClick={() => updateActual(item.key, -inc)}
+                      className="button button-secondary"
+                      style={{ padding: "3px 0", fontSize: "0.68rem", minHeight: "22px", borderRadius: "4px" }}
+                      type="button"
+                    >
+                      -{inc}{item.unit}
+                    </button>
+                    <button
+                      onClick={() => updateActual(item.key, inc)}
+                      className="button button-secondary"
+                      style={{ padding: "3px 0", fontSize: "0.68rem", minHeight: "22px", borderRadius: "4px" }}
+                      type="button"
+                    >
+                      +{inc}{item.unit}
+                    </button>
+                  </span>
                 ))}
               </div>
             </div>

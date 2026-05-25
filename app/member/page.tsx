@@ -1,11 +1,10 @@
-import Link from "next/link";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
 import { MemberHistory } from "@/components/member-history";
-import { ProgressChart } from "@/components/progress-chart-lazy";
+import { MemberProgressPanel } from "@/components/member-progress-panel";
 import { requireRole } from "@/lib/auth";
 import {
   getActiveWorkoutSessions,
@@ -254,14 +253,22 @@ export default async function MemberDashboard() {
           </div>
         }
         progressSection={
-          <div className="member-dashboard-section">
-            <div className="panel-title" style={{ marginBottom: "20px" }}>
-              <div>
-                <p className="eyebrow">Progress</p>
-                <h2>Volume & Strength</h2>
+          <div className="member-dashboard-section member-progress-section">
+            <MemberProgressPanel
+              exercises={exercises}
+              initialLiftLogs={liftLogs}
+              memberId={member.id}
+              program={program}
+            />
+            <div className="member-progress-history-card" id="history">
+              <div className="panel-title" style={{ marginBottom: "20px" }}>
+                <div>
+                  <p className="eyebrow">History</p>
+                  <h2>Recent training activity</h2>
+                </div>
               </div>
+              <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} />
             </div>
-            <ProgressChart exercises={exercises} liftLogs={liftLogs} />
           </div>
         }
         wellnessSection={
@@ -282,17 +289,6 @@ export default async function MemberDashboard() {
               <MacroProgressPanel memberId={member.id} target={profile.macroNutritionTarget} />
             </div>
           </section>
-        }
-        historySection={
-          <div className="member-dashboard-section">
-            <div className="panel-title" style={{ marginBottom: "20px" }}>
-              <div>
-                <p className="eyebrow">History</p>
-                <h2>All your logged workouts</h2>
-              </div>
-            </div>
-            <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} />
-          </div>
         }
       />
     </main>

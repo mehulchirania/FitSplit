@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import type { FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Plus, X } from "@/components/icons";
 import { assignProgramToMember, createAndAssignCustomProgram } from "@/lib/firebase/actions";
@@ -28,6 +29,7 @@ function PickPlanForm({
   member: Member;
   programs: WorkoutProgram[];
 }) {
+  const router = useRouter();
   const [selectedId, setSelectedId] = useState(currentProgramId ?? programs[0]?.id ?? "");
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -53,9 +55,11 @@ function PickPlanForm({
           programTitle: selected.title
         });
         setFeedback({ type: "success", message: result.data.message });
+        router.refresh();
       } catch {
         const result = await assignProgramToMember(initialFormActionState, formData);
         setFeedback({ type: result.status === "success" ? "success" : "error", message: result.message });
+        if (result.status === "success") router.refresh();
       }
     });
   }
@@ -76,66 +80,68 @@ function PickPlanForm({
       <input name="memberId" type="hidden" value={member.id} />
       <input name="memberName" type="hidden" value={member.fullName} />
       <input name="programTitle" type="hidden" value={selected?.title ?? ""} />
-      <label>
-        Workout program
-        <select
-          name="programId"
-          onChange={(e) => setSelectedId(e.target.value)}
-          required
-          value={selectedId}
-        >
-          {predefined.length ? (
-            <optgroup label="Predefined plans">
-              {predefined.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title} - {p.daysPerWeek} days - {p.difficulty}
-                </option>
-              ))}
-            </optgroup>
-          ) : null}
-          {gym.length ? (
-            <optgroup label="Saved gym plans">
-              {gym.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.title} - {p.daysPerWeek} days
-                </option>
-              ))}
-            </optgroup>
-          ) : null}
-        </select>
-      </label>
+      <div style={{ marginBottom: "12px" }}>
+        <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", marginBottom: "8px", fontWeight: 600 }}>1. Select a Plan</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "360px", overflowY: "auto", paddingRight: "4px" }}>
+          {programs.map((p) => {
+            const isSelected = selectedId === p.id;
+            return (
+              <div
+                key={p.id}
+                onClick={() => setSelectedId(p.id)}
+                style={{
+                  padding: "16px",
+                  border: isSelected ? "2px solid var(--brand)" : "1px solid var(--border)",
+                  borderRadius: "14px",
+                  background: isSelected ? "color-mix(in srgb, var(--brand) 12%, transparent)" : "var(--bg-subtle)",
+                  cursor: "pointer",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <strong style={{ fontSize: "1.15rem", color: isSelected ? "var(--brand)" : "var(--text)" }}>{p.title}</strong>
+                  <span className="status-pill status-neutral" style={{ fontSize: "0.7rem" }}>
+                    {p.source === "gym" ? "Gym" : "System"}
+                  </span>
+                </div>
+                <small style={{ fontSize: "0.9rem", color: "var(--text-soft)" }}>
+                  {[
+                    p.goal,
+                    p.daysPerWeek ? `${p.daysPerWeek} days/wk` : null,
+                    p.difficulty
+                  ].filter(Boolean).join(" · ")}
+                </small>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {selected ? (
-        <div className="assignment-preview">
-          <span className="status-pill status-neutral">
-            {selected.source === "gym" ? "Saved gym plan" : "Predefined plan"}
-          </span>
-          <strong>{selected.title}</strong>
-          <small>
-            {selected.goal} - {selected.daysPerWeek} weekly sessions - {selected.difficulty}
-          </small>
-          {selected.bestFor?.length ? (
-            <small>Best for: {selected.bestFor.slice(0, 3).join(" / ")}</small>
-          ) : null}
-          {selected.selectionHints ? (
-            <small>{selected.selectionHints.trainerNotes}</small>
-          ) : null}
-          {selected.weeklyVariations?.length ? (
-            <small>{selected.weeklyVariations.length}-week exercise rotation included for variety.</small>
-          ) : null}
-          <small>
-            {trainingDays.slice(0, 3).map((d) => d.title).join(" / ")}
-            {trainingDays.length > 3 ? " / ..." : ""}
-          </small>
+        <div style={{ marginTop: "16px", marginBottom: "16px" }}>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", marginBottom: "8px", fontWeight: 600 }}>2. Confirm Details</p>
+          <div className="assignment-preview" style={{ background: "transparent", border: "1px dashed var(--border)", padding: "14px" }}>
+            {trainingDays.length > 0 && (
+              <small style={{ color: "var(--text)", fontSize: "0.85rem", lineHeight: 1.5 }}>
+                <strong>Workouts included: </strong>
+                {trainingDays.slice(0, 4).map((d) => d.title).join(", ")}
+                {trainingDays.length > 4 ? ` +${trainingDays.length - 4} more` : ""}
+              </small>
+            )}
+          </div>
         </div>
       ) : null}
-      <p>The selected weekly schedule appears immediately on the member dashboard after confirmation.</p>
+
       {feedback ? (
-        <p className={`form-message form-message-${feedback.type}`} role="status">
+        <p className={`form-message form-message-${feedback.type}`} role="status" style={{ fontSize: "0.95rem", padding: "12px" }}>
           {feedback.message}
         </p>
       ) : null}
-      <button className="button button-primary" disabled={isPending || !selectedId} type="submit">
-        {isPending ? "Assigning..." : "Assign selected program"}
+      <button className="button button-primary" disabled={isPending || !selectedId} type="submit" style={{ width: "100%", padding: "16px", fontSize: "1.15rem", borderRadius: "14px", marginTop: "8px" }}>
+        {isPending ? "Assigning…" : "3. Assign Plan to Member"}
       </button>
     </form>
   );
@@ -453,7 +459,10 @@ export function ProgramAssignmentForm({
 
   return (
     <div className="form-panel">
-      <h2>{currentProgramId ? "Change program" : "Assign program"}</h2>
+      <div style={{ marginBottom: 18 }}>
+        <p className="eyebrow">Workout program</p>
+        <h2>{currentProgramId ? "Change program" : "Assign program"}</h2>
+      </div>
 
       {/* Mode toggle tabs */}
       <div style={{ display: "flex", borderBottom: "1px solid var(--border)", marginBottom: 18, gap: 0 }}>

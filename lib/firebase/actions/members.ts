@@ -3,7 +3,7 @@
 import { randomUUID } from "crypto";
 import { FieldValue } from "firebase-admin/firestore";
 import { requireAuth, requireRole, requireOwner } from "@/lib/auth";
-import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
+import { collectionPaths, gymProfileCollectionKey, PRIMARY_GYM_ID } from "../collections";
 import type { FormActionState } from "@/types/action-state";
 import {
   requireFirebase,
@@ -463,10 +463,7 @@ export async function updateProfileMetrics(
       id: memberId,
       role: "member",
       defaultGymId: profileGymId,
-      fullName,
-      email,
-      phone,
-      updatedAt: now
+      ...profileUpdate
     });
     await mirrorProfileToGym(db, memberId, {
       ...existingProfile,
@@ -659,6 +656,44 @@ export async function bulkToggleMemberAccess(
     return success(`${memberIds.length} member${memberIds.length === 1 ? "" : "s"} ${isActive ? "restored" : "suspended"}.`, user.gymId);
   } catch (error) {
     return failure(error, "Bulk access update failed.");
+  }
+}
+
+// ── Assign trainer (targeted update — does not touch other profile fields) ──
+
+const AssignTrainerSchema = z.object({
+  memberId: ZodHelpers.textRequired("Member"),
+  assignedTrainer: z.string()
+});
+
+export async function assignTrainerToMember(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const user = await requireRole(["admin", "owner"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, AssignTrainerSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { memberId, assignedTrainer } = parsed.data;
+    const gymId = user.gymId ?? PRIMARY_GYM_ID;
+    const db = requireFirebase();
+    const now = new Date().toISOString();
+
+    // Partial update — only touches assignedTrainer; all other profile fields are untouched.
+    await db.collection(collectionPaths.authProfiles).doc(memberId)
+      .update({ assignedTrainer: assignedTrainer.trim(), updatedAt: now });
+
+    await db.collection(collectionPaths.gyms).doc(gymId)
+      .collection(gymProfileCollectionKey("member")).doc(memberId)
+      .update({ assignedTrainer: assignedTrainer.trim(), updatedAt: now });
+
+    const label = assignedTrainer.trim() || "Unassigned";
+    return success(`Trainer updated to ${label}.`);
+  } catch (error) {
+    console.error("Unable to update assigned trainer", error);
+    return failure(error, "Unable to update trainer. Please try again.");
   }
 }
 

@@ -89,7 +89,7 @@ export default async function OwnerDashboard() {
               { label: "Dashboard" }
             ]}
           />
-          <p className="eyebrow">{gym?.name ?? "Gym"} workspace</p>
+          <p className="eyebrow">{gym?.name ?? "Gym"}</p>
           <h1>Dashboard</h1>
         </div>
 
@@ -100,41 +100,40 @@ export default async function OwnerDashboard() {
         />
       </header>
 
+      {/* ── Action Banner for Trainers ──────────────────────────── */}
+      {(isTrainer || isStaff) && unassignedMembers.length > 0 && (
+        <div className="ui-card red" style={{ marginBottom: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "16px" }}>
+          <div>
+            <h2 style={{ color: "#fff", margin: 0, fontSize: "1.2rem" }}>{unassignedMembers.length} Members Need Workouts</h2>
+            <p style={{ color: "rgba(255,255,255,0.8)", margin: "4px 0 0", fontSize: "0.9rem" }}>Tap here to assign them a plan.</p>
+          </div>
+          <Link href="/owner/members?filter=no-plan&sort=oldest" className="button button-primary" style={{ flexShrink: 0 }}>
+            Review Now
+          </Link>
+        </div>
+      )}
+
       {/* ── Stats bar ───────────────────────────────────────────── */}
       <section aria-label="Gym overview" className="odp-stats">
         <div className="odp-stat">
           <strong>{members.length}</strong>
-          <span>Members</span>
+          <span>All Members</span>
         </div>
         <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong>{assignmentRate}%</strong>
-          <span>Workout coverage</span>
+        <div className={unassignedMembers.length > 0 ? "odp-stat odp-stat--urgent" : "odp-stat"}>
+          <strong>{unassignedMembers.length}</strong>
+          <span>Need Workouts</span>
         </div>
         <div className="odp-stat-sep" />
         <div className="odp-stat">
           <strong>{programs.length}</strong>
-          <span>Programs</span>
+          <span>Workout Plans</span>
         </div>
         <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong>{activePTMembers}</strong>
-          <span>On PT</span>
-        </div>
-        <div className="odp-stat-sep" />
-        <div className="odp-stat">
+        <div className={workoutSessions.length > 0 ? "odp-stat odp-stat--active" : "odp-stat"}>
           <strong>{workoutSessions.length}</strong>
-          <span>Active now</span>
+          <span>In Gym Now</span>
         </div>
-        {urgentUnassignedCount > 0 && (
-          <>
-            <div className="odp-stat-sep" />
-            <div className="odp-stat odp-stat--urgent">
-              <strong>{urgentUnassignedCount}</strong>
-              <span>Urgent</span>
-            </div>
-          </>
-        )}
       </section>
 
       {/* ── Content grid ────────────────────────────────────────── */}
@@ -144,7 +143,7 @@ export default async function OwnerDashboard() {
           <section className="list-panel">
             <div className="panel-title">
               <h2>
-                <UsersRound /> Priority queue
+                <UsersRound /> Needs Attention
               </h2>
               <div className="odp-panel-actions">
                 {urgentUnassignedCount > 0 && (
@@ -169,10 +168,13 @@ export default async function OwnerDashboard() {
             )}
           </section>
 
-          <GymFloorLoadMap slots={slots} />
-
-          {/* C10: Attendance-over-time LineChart */}
-          <AttendanceTrendChart data={sessionCounts} />
+          {!isTrainer && !isStaff && (
+            <>
+              <GymFloorLoadMap slots={slots} />
+              {/* C10: Attendance-over-time LineChart */}
+              <AttendanceTrendChart data={sessionCounts} />
+            </>
+          )}
         </div>
 
         {/* ── Side column ─────────────────────────── */}

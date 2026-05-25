@@ -3,7 +3,6 @@
 import type React from "react";
 import type { Exercise, LiftLog, WorkoutExercise } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
-import type { PendingEvent } from "@/lib/stores/workout-store";
 import { getExerciseName } from "@/lib/workout-utils";
 import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
@@ -31,11 +30,7 @@ type WorkoutLiftLogFormProps = {
   selectedExerciseId: string;
   onExerciseChange: (id: string) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  pendingEvent: PendingEvent | null;
-  eventStatus: FormActionState | null;
-  isEventPending: boolean;
-  onConfirm: () => void;
-  onCancelEvent: () => void;
+  isSubmitting: boolean;
   onRetryOfflineSync: () => void;
 };
 
@@ -56,11 +51,7 @@ export function WorkoutLiftLogForm({
   selectedExerciseId,
   onExerciseChange,
   onSubmit,
-  pendingEvent,
-  eventStatus,
-  isEventPending,
-  onConfirm,
-  onCancelEvent,
+  isSubmitting,
   onRetryOfflineSync,
 }: WorkoutLiftLogFormProps) {
   return (
@@ -293,8 +284,8 @@ export function WorkoutLiftLogForm({
           </label>
         </div>
 
-        <button className="button button-primary lift-log-submit" type="submit">
-          Log Set
+        <button className="button button-primary lift-log-submit" type="submit" disabled={isSubmitting}>
+          {isSubmitting ? "Logging..." : "Log Set"}
         </button>
       </form>
 

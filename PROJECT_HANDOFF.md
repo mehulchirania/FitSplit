@@ -3442,3 +3442,59 @@ Admin/owner catalog impact:
 - Predefined plans should show Bro Split, Arnold-style, PPL, upper/lower, PHUL/PHAT, full-body, minimalist, and other split templates in the predefined section.
 - Gym-created programs remain gym-scoped custom plans.
 - Future maintenance should update split strategy in `split-library-source.json` and exercise/video details in `workouts.json`.
+
+---
+
+## Latest Update - 2026-05-25: UI Improvements Backlog
+
+Full UI audit completed. 10 improvements identified, ordered by priority. Items will be implemented one by one in this session.
+
+### UI Improvement Items
+
+| # | Item | Priority | Effort | Status |
+|---|------|----------|--------|--------|
+| UI-1 | Remove lift log confirmation dialog — log immediately, show undo toast | High | Low | ✅ DONE |
+| UI-2 | Remove duplicate History tab from MemberDashboardTabs (4 tabs → 3) | High | Low | ✅ DONE |
+| UI-3 | Owner notifications — show "Clear" button for owners too, not just members | High | Low | ✅ DONE |
+| UI-4 | Fix duplicate icons in mobile bottom nav (owner: two Dumbbell; member: two Activity) | Medium | Low | ✅ DONE |
+| UI-5 | Fix skeleton hardcoded colors — replace `#1a1a2e` fallbacks with `var(--bg-elevated)` / `var(--border)` | Medium | Low | ✅ DONE |
+| UI-6 | Richer profile dropdown — add role-aware quick links (owners: Gym Settings; members: PT History) | Medium | Low | ✅ DONE |
+| UI-7 | Owner stats bar — give "Active now" and "Urgent" visual distinction (colored bg / larger number) | Medium | Medium | ✅ DONE |
+| UI-8 | Replace emoji day-tab status indicators (⏭ 📝) with SVG badges / colored dots | Medium | Medium | ✅ DONE |
+| UI-9 | Input height consistency — standardize all inputs to `min-height: 44px` | Low | Low | ✅ DONE |
+| UI-10 | CSS consolidation — merge overlapping `:root` token definitions across 19 stylesheet files | Low | High | ⏳ Pending (deferred) |
+
+### Root Cause Notes
+- **UI-1**: `handleLiftLog` in `member-workout-console.tsx` sets `pendingEvent` which opens a Radix Dialog before every save. High-frequency action (20–30 times/session) should not require confirmation.
+- **UI-2**: `MemberDashboardTabs` has 4 tabs; Progress tab already renders `MemberHistory` with `id="history"` anchor. History tab is a duplicate. Mobile bottom nav "History" link points to `#history` on the member page — that anchor is sufficient.
+- **UI-3**: `app-topbar.tsx` — `handleClearNotifications` and the clear button are gated behind `role === "member"`. Owners accumulate notifications with no dismiss path.
+- **UI-4**: `mobile-bottom-nav.tsx` — owner nav uses `Dumbbell` for both "Dashboard" and "Programs"; member nav uses `Activity` for both "History" and "Feed".
+- **UI-5**: `components/skeletons.tsx` — inline `style` uses `var(--card-bg, #1a1a2e)` and `var(--border-color, rgba(255,255,255,0.07))` fallbacks that don't match the actual dark theme tokens.
+- **UI-6**: `app-topbar.tsx` profile dropdown has only "View Profile" and "Log Out". No role-aware shortcuts.
+- **UI-7**: `app/owner/page.tsx` `odp-stats` — all stats rendered identically. "Active now" and "Urgent" are time-sensitive but visually indistinguishable from static counts.
+- **UI-8**: `member-workout-console.tsx` day tabs use `⏭` and `📝` emoji — inconsistent with SVG icon system, renders differently across platforms.
+- **UI-9**: Login form inputs use `min-height: 48px` (`05-theme-polish.css`) vs `44px` everywhere else (`03-visual-refresh.css`).
+- **UI-10**: `--brand` token alone is defined 4 times across `00-base-shell.css`, `03-visual-refresh.css`, `05-theme-polish.css`. Last file wins, making token values hard to reason about.
+
+---
+
+## Latest Update - 2026-05-25: Member dashboard repair pass
+
+Patched the current member experience after profile/progress/workout UI drift.
+
+- Member demo login aliases now include `mehulchirania`, `9688227039`, `mehul@example.com`, and the seeded SHG demo members so username/PIN demo login can resolve again.
+- Profile metric updates now write age, height, weight, slots, goals, and medical/injury context into both the root auth profile index and the gym-scoped profile mirror.
+- `EditableMetrics` now re-syncs its local display state when refreshed profile data changes.
+- Moved lift set logging out of the workout side rail and into the Progress tab via `MemberProgressPanel`.
+- Progress now shows the strength chart, log set form, and recent training history together.
+- Macro tracker now supports decrement buttons for water, protein, carbs, and fat.
+- Workout rendering filters missing catalog exercise IDs instead of showing `Unknown exercise`.
+- Exercise video buttons now use neutral tutorial credit text instead of incorrectly labeling every tutorial as DeltaBolic.
+- Weekly workout layout received additional progress/log panel styling so the member page has less side-rail stretching and better alignment.
+
+Verification:
+
+```bash
+npm run typecheck
+npm run build
+```

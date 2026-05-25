@@ -22,13 +22,13 @@
 
 .members-filter-tabs a {
   align-items: center;
-  border-radius: 10px;
+  border-radius: 12px;
   color: var(--text-soft);
   display: inline-flex;
-  font-size: 0.84rem;
+  font-size: 1.05rem;
   font-weight: 700;
-  gap: 6px;
-  padding: 6px 12px;
+  gap: 8px;
+  padding: 10px 16px;
   text-decoration: none;
   transition: background 140ms, color 140ms;
 }
@@ -103,7 +103,7 @@
 
 .mcard-name {
   color: var(--text);
-  font-size: 0.92rem;
+  font-size: 1.15rem;
   font-weight: 760;
 }
 
@@ -118,7 +118,7 @@
 
 .mcard-username {
   color: var(--text-faint);
-  font-size: 0.76rem;
+  font-size: 0.95rem;
   font-weight: 500;
   letter-spacing: 0.01em;
 }
@@ -133,19 +133,18 @@
   overflow: hidden;
 }
 
-.mpd-hero-top {
-  align-items: start;
-  display: grid;
-  gap: 18px;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 340px);
-  padding: 20px 24px 20px;
+/* Single-column hero body — no more awkward two-column split */
+.mpd-hero-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 24px 18px;
 }
 
-.mpd-identity {
+.mpd-hero-identity {
   align-items: flex-start;
   display: flex;
   gap: 16px;
-  margin-top: 14px;
 }
 
 .mpd-avatar {
@@ -155,12 +154,17 @@
   color: var(--brand);
   display: flex;
   flex-shrink: 0;
-  font-size: 1.2rem;
+  font-size: 1.25rem;
   font-weight: 800;
-  height: 52px;
+  height: 60px;
   justify-content: center;
   letter-spacing: 0.02em;
-  width: 52px;
+  width: 60px;
+}
+
+.mpd-hero-name-block {
+  flex: 1;
+  min-width: 0;
 }
 
 .mpd-name-row {
@@ -168,13 +172,13 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .mpd-name {
-  font-size: clamp(1.25rem, 2.2vw, 1.65rem) !important;
+  font-size: clamp(1.3rem, 2.4vw, 1.75rem) !important;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
   line-height: 1.1 !important;
   margin-bottom: 0 !important;
 }
@@ -186,14 +190,35 @@
   width: 11px;
 }
 
-.mpd-meta {
+/* Goal + joined subline */
+.mpd-hero-subline {
+  align-items: center;
+  color: var(--text-soft);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  gap: 6px;
+  margin: 0 0 8px;
+}
+
+.mpd-hero-sep {
+  color: var(--text-faint);
+}
+
+.mpd-hero-dim {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+
+/* Inline contact chips row */
+.mpd-hero-contacts {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 16px;
+  gap: 5px 20px;
 }
 
-.mpd-meta-item {
+.mpd-contact-chip {
   align-items: center;
   color: var(--text-soft);
   display: flex;
@@ -201,80 +226,30 @@
   gap: 5px;
 }
 
-.mpd-meta-item svg {
+.mpd-contact-chip svg {
   color: var(--text-faint);
   flex-shrink: 0;
   height: 13px;
   width: 13px;
 }
 
+.mpd-username-at {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+}
+
 .mpd-username {
   color: var(--brand);
+  font-size: 0.82rem;
   font-weight: 600;
-  font-size: 0.8rem;
-}
-
-.mpd-joined {
-  color: var(--text-faint);
-  font-size: 0.76rem;
-}
-
-.mpd-contact-list {
-  align-self: end;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  display: grid;
-  gap: 0;
-  margin: 0;
-  overflow: hidden;
-}
-
-.mpd-contact-list > div {
-  border-bottom: 1px solid var(--border);
-  display: grid;
-  gap: 4px;
-  padding: 10px 12px;
-}
-
-.mpd-contact-list > div:last-child {
-  border-bottom: none;
-}
-
-.mpd-contact-list dt {
-  color: var(--text-faint);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.07em;
-  margin: 0;
-  text-transform: uppercase;
-}
-
-.mpd-contact-list dd {
-  align-items: center;
-  color: var(--text);
-  display: flex;
-  font-size: 0.83rem;
-  font-weight: 650;
-  gap: 7px;
-  margin: 0;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-
-.mpd-contact-list dd svg {
-  color: var(--text-faint);
-  flex: 0 0 auto;
-  height: 13px;
-  width: 13px;
 }
 
 /* Body metric pills */
 .mpd-metrics {
   background: var(--bg-base);
   border-top: 1px solid var(--border);
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 0;
 }
 
@@ -293,17 +268,17 @@
 .mpd-metric strong {
   color: var(--text);
   display: block;
-  font-size: 1.05rem;
-  font-weight: 760;
+  font-size: 1.35rem;
+  font-weight: 800;
   line-height: 1.1;
-  margin-bottom: 2px;
+  margin-bottom: 4px;
 }
 
 .mpd-metric span {
-  color: var(--text-faint);
-  font-size: 0.72rem;
+  color: var(--text-soft);
+  font-size: 0.85rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
@@ -400,7 +375,7 @@
 
 .mpd-side-stack {
   position: sticky;
-  top: 88px;
+  top: 80px;
 }
 
 .mpd-main-schedule > .panel-title {
@@ -572,15 +547,160 @@
   border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
 }
 
-@media (max-width: 860px) {
-  .mpd-identity {
-    gap: 12px;
-  }
+.mpd-collapsible-chevron {
+  color: var(--text-faint);
+  font-size: 0.8rem;
+  transition: transform 200ms;
+}
 
+.mpd-collapsible-panel[open] .mpd-collapsible-chevron {
+  transform: rotate(180deg);
+}
+
+/* ── Trainer & PT panel ────────────────────────────────────────── */
+
+.tpp-panel {
+  gap: 0;
+}
+
+/* Trainer row */
+.tpp-trainer-row {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  padding: 12px 0 14px;
+}
+
+.tpp-trainer-avatar {
+  align-items: center;
+  background: color-mix(in srgb, var(--brand) 14%, var(--bg-subtle));
+  border-radius: 50%;
+  color: var(--brand);
+  display: flex;
+  flex-shrink: 0;
+  font-size: 0.88rem;
+  font-weight: 800;
+  height: 36px;
+  justify-content: center;
+  width: 36px;
+}
+
+.tpp-trainer-info {
+  display: grid;
+  flex: 1;
+  gap: 2px;
+  min-width: 0;
+}
+
+.tpp-trainer-info span {
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.tpp-trainer-info strong {
+  color: var(--text);
+  font-size: 0.92rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Change trainer form */
+.tpp-edit-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 0 4px;
+}
+
+/* PT section */
+.tpp-pt-section {
+  margin-top: 14px;
+}
+
+.tpp-pt-header {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.tpp-pt-empty {
+  align-items: flex-start;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 0 4px;
+}
+
+.tpp-pt-empty svg {
+  color: var(--text-faint);
+  height: 22px;
+  width: 22px;
+}
+
+.tpp-pt-empty p {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.tpp-notify-note {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  margin: 8px 0 0;
+}
+
+/* ── Program assignment form — override inline-flex inside sidebar ── */
+
+.mpd-side-stack .inline-action-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 0;
+  width: 100%;
+}
+
+/* ── Program assignment form improvements ─────────────────────── */
+
+.assignment-preview {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 5px;
+  margin-top: 4px;
+  padding: 12px 14px;
+}
+
+.assignment-preview strong {
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 760;
+}
+
+.assignment-preview small {
+  color: var(--text-soft);
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.assignment-preview .status-pill {
+  justify-self: start;
+  margin-bottom: 2px;
+}
+
+@media (max-width: 860px) {
   .mpd-avatar {
-    height: 42px;
-    width: 42px;
-    font-size: 1rem;
+    height: 48px;
+    width: 48px;
+    font-size: 1.05rem;
   }
 
   .mpd-metric {
@@ -601,13 +721,23 @@
 }
 
 @media (max-width: 600px) {
-  .mpd-hero-top {
-    grid-template-columns: 1fr;
-    padding: 16px;
+  .mpd-hero-body {
+    padding: 16px 16px 14px;
+    gap: 12px;
   }
 
-  .mpd-meta {
-    gap: 4px 12px;
+  .mpd-hero-identity {
+    gap: 12px;
+  }
+
+  .mpd-avatar {
+    height: 44px;
+    width: 44px;
+    font-size: 1rem;
+  }
+
+  .mpd-hero-contacts {
+    gap: 4px 14px;
   }
 
   .mpd-metrics {
@@ -747,4 +877,20 @@
   }
   .mcard-avatar { height: 34px; width: 34px; }
   .members-filter-bar { flex-direction: column; align-items: flex-start; }
+}
+
+/* ── UI Upgrades for Owner/Trainer (Dumb Proofing) ─────────────── */
+.odp-quick-links .ui-card {
+  min-height: 110px;
+}
+
+.button {
+  min-height: 48px;
+  font-size: 1.05rem;
+  padding: 10px 20px;
+  border-radius: 12px;
+}
+
+.button-primary {
+  font-weight: 800;
 }

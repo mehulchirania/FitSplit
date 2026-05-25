@@ -286,18 +286,16 @@ export function AppTopbar({
                                 </article>
                               ))}
                             </div>
-                            {role === "member" && (
-                              <DropdownMenu.Item asChild>
-                                <button
-                                  className="button button-secondary notification-clear-button"
-                                  disabled={isClearingNotifications}
-                                  onClick={handleClearNotifications}
-                                  type="button"
-                                >
-                                  {isClearingNotifications ? "Clearing..." : "Clear notifications"}
-                                </button>
-                              </DropdownMenu.Item>
-                            )}
+                            <DropdownMenu.Item asChild>
+                              <button
+                                className="button button-secondary notification-clear-button"
+                                disabled={isClearingNotifications}
+                                onClick={handleClearNotifications}
+                                type="button"
+                              >
+                                {isClearingNotifications ? "Clearing..." : "Clear notifications"}
+                              </button>
+                            </DropdownMenu.Item>
                           </>
                         ) : (
                           <p className="notification-empty">
@@ -345,6 +343,16 @@ export function AppTopbar({
                       <DropdownMenu.Item asChild>
                         <Link href="/profile">View Profile</Link>
                       </DropdownMenu.Item>
+                      {role === "owner" && (
+                        <DropdownMenu.Item asChild>
+                          <Link href="/owner">Gym Settings</Link>
+                        </DropdownMenu.Item>
+                      )}
+                      {role === "member" && (
+                        <DropdownMenu.Item asChild>
+                          <Link href="/member/pt-history">PT History</Link>
+                        </DropdownMenu.Item>
+                      )}
                       <DropdownMenu.Item asChild>
                         <button
                           disabled={isLoggingOut}
