@@ -1,45 +1,100 @@
 # FitSplit
 
-FitSplit is a high-fidelity, Firebase-backed gym operations and AI-assisted semi-personal trainer platform. Built to scale, it serves gym workspaces such as Sri Shakthi Hanuman Gym (SHG Gym), Titan Fitness Club, and test environments with robust multi-gym isolation, offline-resilient logging, and deep operational insights.
+FitSplit is a Firebase-backed gym operations and AI-assisted personal training platform. It serves multi-gym workspaces with robust tenant isolation, offline-resilient workout logging, personal training management, and deep operational insights — deployed as a PWA on Firebase App Hosting.
 
 ---
 
 ## ⚡ Tech Stack & Architecture
 
-FitSplit leverages a modern, server-centric, high-performance stack:
-*   **Framework**: Next.js (App Router, React 19, TypeScript)
-*   **Database & Auth**: Cloud Firestore, Firebase Authentication (email/password and 4-digit PIN resolution), and Firebase Storage.
-*   **Server Controls**: Next.js Server Actions with strict Firebase Admin role session verification (2-hour secure cookie limits).
-*   **Client State**: Zustand for fast, lightweight global state in live workout tracking.
-*   **AI Engine**: Official `@google/genai` integration with Gemini Flash (`gemini-flash-latest`).
-*   **PWA Core**: Native manifest, custom service worker, responsive bottom navigation, and offline-resilient local state management powered by Dexie.js (IndexedDB).
-*   **UI/UX Components**: Radix UI for highly accessible headless primitives (styled with Vanilla CSS) and FullCalendar for PT scheduling.
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 15 (App Router, React 19, TypeScript 5.8) |
+| Database | Cloud Firestore (gym-scoped multi-tenant) |
+| Auth | Firebase Authentication — email/password + session cookies |
+| Functions | Firebase Cloud Functions v2 (Node.js 22, `asia-south1`) |
+| Storage | Firebase Storage (logos, exercise media) |
+| Push | Firebase Cloud Messaging (FCM) |
+| AI | Google Gemini (`@google/genai`) |
+| Client State | Zustand (live workout session) |
+| Offline | Dexie.js (IndexedDB — offline lift logging) |
+| Charts | Recharts |
+| Calendar | FullCalendar (PT scheduling) |
+| UI Primitives | Radix UI (Dialog, Dropdown, Popover, Select) |
+| Animations | Framer Motion |
+| Validation | Zod |
+| Testing | Vitest |
+| Deployment | Firebase App Hosting (0–10 instances, 512 MB, 80 concurrency) |
+
+**Architecture pattern:** Next.js Server Components + Server Actions for all data access. No traditional REST API routes. Privileged writes (member creation, program assignment, access control) go through Cloud Functions using the Admin SDK. Middleware enforces role-based routing via session cookies before any page renders.
 
 ---
 
-## ✨ Premium Features & Capabilities
+## ✨ Features
 
-### 🧠 AI Semi-Personal Trainer
-*   **Gemini-Powered Smart Swaps**: Members can log sudden injuries or pain points to dynamically request substitute movements. Gemini evaluates the exercise catalog, matches biomechanical requirements, and returns structured alternatives in real-time, falling back gracefully to robust client-side muscle-group heuristics if needed.
-*   **Macro Nutrition Coach**: Trainers can prescribe precise daily targets (Calories, Protein, Carbs, Fats, Water Liters, and Custom Advice) directly to member profiles. Members track daily progress in a lower wellness section, keeping the first screen focused on the assigned workout and lift logging.
+### 🧠 AI-Assisted Training
+- **Smart Exercise Swaps**: Members report injuries or pain points; Gemini evaluates the exercise catalog biomechanically and returns structured alternatives in real-time, with client-side muscle-group heuristics as fallback.
+- **AI Program Brief**: Gemini-generated workout program summaries tailored to the member's profile and goals.
+- **Custom Plan Builder**: AI-assisted custom program creation for owners and trainers.
+- **Profile AI Summary**: Gemini analysis of a member's lift history and progress trends.
 
-### 📊 Training Operations Command Center
-*   **Gym Floor Traffic Heatmap**: Full-width interactive heatmap displaying real-time member occupancy and equipment stress. The algorithm processes program assignments and preferred member slots to categorize traffic (Quiet 🟢, Moderate 🟡, Crowded 🔴), charts the Top 5 congested exercises in the slot, and offers operational coaching advice to balance the gym floor load.
-*   **Geofenced GPS Check-ins**: Members check in to start their workouts using verified GPS boundaries (gym latitude, longitude, and custom radius constraints), creating high-fidelity geofence and attendance logs in Firestore.
+### 🏋️ Workout & Program Management
+- **Program Library**: FitSplit global library + gym-custom programs. Split types: PPL ×2, PPL + Upper/Lower, Bro Split, Combo ×2, Custom.
+- **Program Assignment**: Assign programs to individual members or bulk-assign across the roster.
+- **Live Workout Console**: Members log sets and reps in real time with day navigation, skip/modify tracking, and week-over-week history.
+- **Exercise Catalog**: Global FitSplit catalog + gym-custom exercises with YouTube video embeds, muscle group tagging, and equipment metadata.
+- **Exercise Requests**: Members request new exercises; owners review and approve/reject.
 
-### 💼 Workspace Management
-*   **Multi-Gym Data Isolation**: Secure multi-tenancy bounds where all reads and mutations (members, custom program builders, catalog requests) are partitioned by the authenticated user's `gymId`.
-*   **Roster & Program Builder**: Multi-day custom workout routines supporting exercise lookup, specific set/reps guidelines, catalog requests for new custom equipment, and instant administrative review.
-*   **Unified Admin Inbox**: Admin command center displaying landing page contact messages, gym workspace locks, and catalog additions.
+### 🤝 Personal Training
+- **PT Plan Booking**: Owners and trainers book PT plans with configurable duration (default 30 days).
+- **Trainer Live Console**: Real-time set/rep logging during active PT sessions, dual-written to the member's lift log history.
+- **PT History**: Members view their full PT session history and trainer-logged sets.
+- **PT Calendar**: FullCalendar-based schedule view for trainers.
+
+### 📊 Progress & Analytics
+- **Lift Log History**: Full set/rep history per exercise with progressive overload charts.
+- **Body Metrics**: Weight and body fat percentage logging with trend charts.
+- **Muscle Radar Chart**: Volume distribution visualization across muscle groups.
+- **Attendance Calendar**: Member check-in/check-out history.
+- **Gym Floor Load Map**: Real-time slot occupancy heatmap — categorizes traffic (Quiet 🟢, Moderate 🟡, Crowded 🔴), surfaces top congested exercises, and provides operational coaching advice.
+- **Owner Reports**: Membership stats, activity feed, and operational summaries.
+
+### 🏢 Gym Operations
+- **Geofenced Attendance**: GPS-verified check-in/check-out with configurable gym radius. Logs geofence status (`inside`, `not_configured`, `location_not_provided`).
+- **Membership Management**: Plan tracking with expiry warnings and automated notifications.
+- **Gym Notice Board**: Owners post rules, tips, reminders, and announcements visible to members.
+- **Macro/Nutrition Targets**: Trainers prescribe daily calorie/macro targets; members track progress in the wellness panel.
+- **Multi-Gym Isolation**: All reads and writes are partitioned by `gymId` — gym-scoped Firestore collections with Firestore security rules enforcing boundaries.
+
+### 🔔 Notifications & Activity
+- **In-App Notifications**: Role-scoped notification center (membership expiry, program assigned, PT booked/started/completed, exercise requests, access changes).
+- **FCM Push Notifications**: Web push for members via Firebase Cloud Messaging.
+- **Activity Feed**: Audit trail of key events for owners and members.
+- **Admin Inbox**: Platform-wide contact messages from the landing page.
+
+### 📱 PWA
+- Installable on iOS and Android.
+- Offline lift logging via IndexedDB (Dexie.js) with service worker.
+- Mobile bottom navigation, scroll reveal animations, session timeout guard.
+
+---
+
+## 👥 User Roles
+
+| Role | Access Scope | Key Capabilities |
+|---|---|---|
+| `admin` | Platform-wide | Manage all gyms, create staff, exercise catalog, global programs, inbox |
+| `owner` | Gym-scoped | Member management, program assignment, PT scheduling, reports, gym settings |
+| `trainer` (staffType) | Gym-scoped | PT schedule, live PT console, assign programs |
+| `member` | Self only | Workout console, lift logging, progress, PT history, body metrics |
 
 ---
 
 ## 🔑 Demo Login Credentials
 
 ### Staff & Admin Logins
-Choose the **Staff** login tab for these accounts:
+Use the **Staff** login tab:
 
-| Role | Username / Email | Password |
+| Role | Username | Password |
 |---|---|---|
 | Admin | `admin` | `password` |
 | Owner (SHG) | `santosh-shg` | `password` |
@@ -49,9 +104,9 @@ Choose the **Staff** login tab for these accounts:
 | Owner (Dummy) | `dummy-gym-owner-1` | `password` |
 
 ### Member Logins
-Choose the **Member** login tab (uses 4-digit PINs):
+Use the **Member** login tab (4-digit PIN):
 
-| Mobile / Email | PIN | Registered Name |
+| Username / Mobile / Email | PIN | Name |
 |---|---|---|
 | `mehulchirania` | `1234` | Mehul Chirania |
 | `9688227039` | `1234` | Mobile Account |
@@ -60,17 +115,17 @@ Choose the **Member** login tab (uses 4-digit PINs):
 
 ---
 
-## 🛠️ Local Setup & Development
+## 🛠️ Local Setup
 
-### 1. Installation & Environment Configuration
-Clone the repository and install packages:
+### 1. Install dependencies
 ```bash
 npm install
 ```
 
-Copy your configuration file `.env.example` to `.env.local` and populate the required Firebase web and admin keys:
+### 2. Configure environment
+Copy `.env.example` to `.env.local` and fill in the values:
 ```env
-# Client Firebase Keys
+# Firebase client keys
 NEXT_PUBLIC_FIREBASE_API_KEY=
 NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=fitsplit-29215.firebaseapp.com
 NEXT_PUBLIC_FIREBASE_PROJECT_ID=fitsplit-29215
@@ -78,61 +133,150 @@ NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=fitsplit-29215.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=766523780087
 NEXT_PUBLIC_FIREBASE_APP_ID=
 
-# Server Firebase Admin Credentials
+# Firebase Admin SDK (server-side)
 FIREBASE_PROJECT_ID=fitsplit-29215
 FIREBASE_CLIENT_EMAIL=
 FIREBASE_PRIVATE_KEY=
 
-# Gemini AI Key
+# Gemini AI
 GEMINI_API_KEY=
+GEMINI_MODEL=gemini-2.0-flash
 ```
 
-### 2. Run the Development Server
+### 3. Run the dev server
 ```bash
 npm run dev
 ```
 
-### 3. Verify Code Quality & Build Stability
-Run static typing diagnostics and verify production bundling:
+### 4. Type-check and build
 ```bash
 npm run typecheck
 npm run build
 ```
 
----
-
-## 🚀 Seeding & Maintenance Scripts
-
-Clean and seed database collections when working locally:
-
+### 5. Run tests
 ```bash
-npm run seed:auth             # Create and update Firebase Auth demo accounts
-npm run seed:demo             # Refresh Firestore with gyms, members, programs, and mock logs
-npm run fix:exercises         # Canonical Title Case cleanup, re-categorize WGER fields, and map videos
-npm run patch:videos          # Backfill catalog video URLs from static workout models
-npm run backfill:member-access # Repairs missing member usernames and creates missing auth profiles
-npm run split:css             # Legacy helper for splitting landing/app CSS selectors
+npm test
 ```
 
-Script layout:
-- `scripts/*.mjs` contains maintained Firebase seed, migration, deploy, and data repair scripts.
-- `scripts/video-utils/*.py` contains older YouTube/workout catalog mapping utilities and their generated unmapped video report.
+---
+
+## 🚀 Scripts
+
+### Seeding & Demo Data
+```bash
+npm run seed:auth          # Create/update Firebase Auth demo accounts
+npm run seed:firebase      # Seed Firestore with base data
+npm run seed:demo          # Full demo seed — gyms, members, programs, mock logs
+```
+
+### Data Migrations
+```bash
+npm run migrate:gym-scoped        # Dry run: migrate root collections → gym-scoped
+npm run migrate:gym-scoped -- --write   # Write: execute the migration
+npm run migrate:tenant-cleanup          # Dry run: rebuild authProfiles, clean root
+npm run migrate:tenant-cleanup -- --write
+```
+
+### Data Fixes & Backfills
+```bash
+npm run backfill:member-access    # Repair missing usernames and auth profiles
+npm run fix:exercises             # Title Case cleanup, re-categorize, map videos
+npm run fix:gym-video-urls        # Fix gym-scoped exercise video URLs
+npm run patch:videos              # Backfill catalog video URLs from workout models
+npm run sync:exercise-videos      # Sync exercise videos from workout definitions
+npm run fetch:channel-videos      # Fetch YouTube channel video metadata
+```
+
+### Deployment
+```bash
+npm run deploy:firebase           # Build + full Firebase deploy
+npm run functions:deploy          # Build + deploy Cloud Functions only
+```
+
+### Utilities
+```bash
+npm run split:css                 # Split CSS selectors (legacy helper)
+```
 
 ---
 
-## 📂 Key Architecture Map
+## 📂 Architecture Map
 
-*   `lib/auth.ts`: Auth guards, server-side session cookies, and login credential resolution.
-*   `lib/firebase/actions/`: Domain-scoped server actions for Firestore mutations, custom program updates, and member onboarding.
-*   `lib/firebase/read-models/`: Domain-scoped query layers, mock fallbacks, and occupancy aggregations.
-*   `components/member-workout-console.tsx`: Core member screen displaying workouts, GPS checks, and swaps.
-*   `components/macro-progress-panel.tsx`: High-end glassmorphic progressive nutrient logging dashboard.
-*   `components/gym-floor-load-map.tsx`: Interactive gym operations equipment congestion heatmap.
-*   `firestore.rules`: Security access rules enforcing role and gym-based boundaries.
+```
+app/
+  admin/          # Platform admin pages
+  owner/          # Gym owner/trainer pages
+  member/         # Member workout pages
+  trainer/        # Trainer PT schedule
+  styles/         # 16 modular CSS files (dark theme)
+
+components/       # ~70 React components (flat)
+  member-workout-console.tsx      # Live workout session UI
+  trainer-live-console.tsx        # PT session trainer UI
+  gym-floor-load-map.tsx          # Real-time slot occupancy heatmap
+  workout-program-gallery.tsx     # Program browser with filtering
+  custom-plan-builder.tsx         # AI-assisted program creation
+  progress-chart.tsx              # Lift history + overload charts
+  muscle-radar-chart.tsx          # Muscle group volume radar
+  attendance-calendar.tsx         # Member attendance history
+  bulk-member-list.tsx            # Bulk select + actions
+  macro-progress-panel.tsx        # Nutrition target tracking
+
+lib/
+  auth.ts                         # Session cookies, login, requireRole()
+  ai.ts                           # Gemini integration
+  offline-db.ts                   # Dexie IndexedDB (offline logging)
+  workout-utils.ts                # Workout calculation helpers
+  stores/workout-store.ts         # Zustand workout session state
+  firebase/
+    actions/                      # Server Actions (mutations)
+    read-models/                  # Server-side Firestore reads
+    client.ts                     # Firebase client SDK init
+    admin.ts                      # Firebase Admin SDK init
+    collections.ts                # Collection path constants
+    functions.ts                  # Cloud Functions callable wrappers
+
+functions/src/index.ts            # All Cloud Functions (~2000+ lines)
+types/domain.ts                   # All domain types
+middleware.ts                     # Route protection + role redirects
+firestore.rules                   # Firestore security rules
+```
+
+### Firestore Structure (gym-first multi-tenant)
+```
+gyms/{gymId}/
+  members/{memberId}          staff/{staffId}
+  exerciseCatalog/{id}        workoutPrograms/{id}
+  programAssignments/{id}     liftLogs/{id}
+  bodyMetricLogs/{id}         dayLogs/{id}
+  workoutSessions/{id}        attendanceRecords/{id}
+  ptSessions/{id}             ptLiftLogs/{id}
+  notifications/{id}          activityEvents/{id}
+  contactMessages/{id}        siteLinks/{id}
+
+authProfiles/{uid}            # Auth/session index (root, lightweight)
+exerciseCatalog/{id}          # FitSplit global library (admin-only writes)
+workoutPrograms/{id}          # FitSplit global library (admin-only writes)
+archives/{id}                 # Soft-delete archive (60-day retention)
+```
+
+See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
+
+---
+
+## 🔒 Security
+
+- **CSP headers**: Strict Content-Security-Policy covering Firebase, Gemini, YouTube, and Google Fonts. `unsafe-eval` only in development.
+- **Security headers**: HSTS (2 years), `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
+- **Firestore rules**: Role-based rules (`isAdmin()`, `isOwnerForGym()`, `isStaffForGym()`, `isGymMember()`). Privileged writes are `allow: false` — must go through Cloud Functions.
+- **Login lockout**: 5 failed attempts triggers a 15-minute lockout, enforced via a Firebase Auth blocking trigger.
+- **Session cookies**: 2-hour secure HttpOnly cookies. Role and gymId stored separately for middleware routing.
 
 ---
 
 ## 📝 Maintenance & Handoff
 
-For comprehensive historical dated updates, architectural logs, or next milestones, please refer directly to **`PROJECT_HANDOFF.md`**.
-This project is jointly developed by **Claude** and **Codex**. Please ensure the handoff log is updated after implementing changes.
+For architectural logs, dated updates, and next milestones, see **`PROJECT_HANDOFF.md`**.
+
+This project is jointly developed by **Claude** and **Codex**. Update the handoff log after implementing significant changes.
