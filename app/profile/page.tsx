@@ -3,6 +3,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart-lazy";
+import { MuscleRadarChart } from "@/components/muscle-radar-chart";
 import { requireAuth } from "@/lib/auth";
 import {
   getBodyMetricLogsForMember,
@@ -279,6 +280,16 @@ export default async function ProfilePage({
 
       <ProfileForm memberId={memberId} profile={profile} trainers={trainers} isReadOnlyTrainer={true} />
 
+
+
+      <BodyWeightLogger initialLogs={bodyMetricLogs} memberId={memberId} />
+
+      <MuscleRadarChart liftLogs={liftLogs} exercises={exercises} />
+
+      <ProgressiveOverloadChart liftLogs={liftLogs} exercises={exercises} />
+
+      <ProfileAiSummary memberId={memberId} />
+
       <section className="list-panel" style={{ marginTop: 16 }}>
         <div className="panel-title">
           <h2>Security</h2>
@@ -310,12 +321,6 @@ export default async function ProfilePage({
           </ConfirmActionForm>
         </div>
       </section>
-
-      <BodyWeightLogger initialLogs={bodyMetricLogs} memberId={memberId} />
-
-      <ProgressiveOverloadChart liftLogs={liftLogs} exercises={exercises} />
-
-      <ProfileAiSummary memberId={memberId} />
     </main>
   );
 }

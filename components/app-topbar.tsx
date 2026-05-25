@@ -4,6 +4,7 @@ import { signOut } from "firebase/auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MainNav } from "@/components/main-nav";
@@ -35,6 +36,8 @@ export function AppTopbar({
 }) {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isTopbarHidden, setIsTopbarHidden] = useState(false);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [visibleNotifications, setVisibleNotifications] = useState(
     notifications.filter((notification) => !notification.readAt)
   );
@@ -195,7 +198,7 @@ export function AppTopbar({
                   {role === "member" && (
                     <>
                       <Link href="/member" onClick={() => setIsDrawerOpen(false)}>Dashboard</Link>
-                      <Link href="/member/history" onClick={() => setIsDrawerOpen(false)}>Workout history</Link>
+                      <Link href="/member#history" onClick={() => setIsDrawerOpen(false)}>Workout history</Link>
                       <Link href="/member/pt-history" onClick={() => setIsDrawerOpen(false)}>PT Plans</Link>
                       <Link href="/member/exercises" onClick={() => setIsDrawerOpen(false)}>Exercise Catalog</Link>
                       <Link href="/profile" onClick={() => setIsDrawerOpen(false)}>My Profile</Link>
@@ -234,7 +237,7 @@ export function AppTopbar({
         <div className="topbar-actions">
           {/* ── Notification bell — member & owner ───────────────── */}
           {(role === "member" || role === "owner") ? (
-            <DropdownMenu.Root>
+            <DropdownMenu.Root open={isNotifOpen} onOpenChange={setIsNotifOpen}>
               <DropdownMenu.Trigger asChild>
                 <button
                   aria-label="Open notifications"
@@ -248,56 +251,69 @@ export function AppTopbar({
                 </button>
               </DropdownMenu.Trigger>
 
-              <DropdownMenu.Portal>
-                <DropdownMenu.Content
-                  align="end"
-                  className="notification-dropdown"
-                  sideOffset={8}
-                >
-                  <div className="notification-dropdown-header">
-                    <div>
-                      <p className="eyebrow">Notifications</p>
-                      <h2>{role === "owner" ? "Gym updates" : "Training updates"}</h2>
-                    </div>
-                  </div>
-                  {visibleNotifications.length > 0 ? (
-                    <>
-                      <div className="notification-dropdown-list">
-                        {visibleNotifications.slice(0, 6).map((notification) => (
-                          <article className="notification-dropdown-item" key={notification.id}>
-                            <span className="notification-dot" />
-                            <div>
-                              <strong>{notification.title}</strong>
-                              <p>{notification.body}</p>
+              <AnimatePresence>
+                {isNotifOpen && (
+                  <DropdownMenu.Portal forceMount>
+                    <DropdownMenu.Content
+                      asChild
+                      forceMount
+                      align="end"
+                      sideOffset={8}
+                    >
+                      <motion.div
+                        className="notification-dropdown"
+                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                        transition={{ duration: 0.15, ease: "easeOut" }}
+                      >
+                        <div className="notification-dropdown-header">
+                          <div>
+                            <p className="eyebrow">Notifications</p>
+                            <h2>{role === "owner" ? "Gym updates" : "Training updates"}</h2>
+                          </div>
+                        </div>
+                        {visibleNotifications.length > 0 ? (
+                          <>
+                            <div className="notification-dropdown-list">
+                              {visibleNotifications.slice(0, 6).map((notification) => (
+                                <article className="notification-dropdown-item" key={notification.id}>
+                                  <span className="notification-dot" />
+                                  <div>
+                                    <strong>{notification.title}</strong>
+                                    <p>{notification.body}</p>
+                                  </div>
+                                </article>
+                              ))}
                             </div>
-                          </article>
-                        ))}
-                      </div>
-                      {role === "member" && (
-                        <DropdownMenu.Item asChild>
-                          <button
-                            className="button button-secondary notification-clear-button"
-                            disabled={isClearingNotifications}
-                            onClick={handleClearNotifications}
-                            type="button"
-                          >
-                            {isClearingNotifications ? "Clearing..." : "Clear notifications"}
-                          </button>
-                        </DropdownMenu.Item>
-                      )}
-                    </>
-                  ) : (
-                    <p className="notification-empty">
-                      {role === "owner" ? "No gym notifications." : "No new training updates."}
-                    </p>
-                  )}
-                </DropdownMenu.Content>
-              </DropdownMenu.Portal>
+                            {role === "member" && (
+                              <DropdownMenu.Item asChild>
+                                <button
+                                  className="button button-secondary notification-clear-button"
+                                  disabled={isClearingNotifications}
+                                  onClick={handleClearNotifications}
+                                  type="button"
+                                >
+                                  {isClearingNotifications ? "Clearing..." : "Clear notifications"}
+                                </button>
+                              </DropdownMenu.Item>
+                            )}
+                          </>
+                        ) : (
+                          <p className="notification-empty">
+                            {role === "owner" ? "No gym notifications." : "No new training updates."}
+                          </p>
+                        )}
+                      </motion.div>
+                    </DropdownMenu.Content>
+                  </DropdownMenu.Portal>
+                )}
+              </AnimatePresence>
             </DropdownMenu.Root>
           ) : null}
 
           {/* ── Profile menu (Radix DropdownMenu) ────────────────── */}
-          <DropdownMenu.Root>
+          <DropdownMenu.Root open={isProfileOpen} onOpenChange={setIsProfileOpen}>
             <DropdownMenu.Trigger asChild>
               <button
                 aria-label="Open profile menu"
@@ -310,26 +326,39 @@ export function AppTopbar({
               </button>
             </DropdownMenu.Trigger>
 
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                align="end"
-                className="profile-dropdown"
-                sideOffset={8}
-              >
-                <DropdownMenu.Item asChild>
-                  <Link href="/profile">View Profile</Link>
-                </DropdownMenu.Item>
-                <DropdownMenu.Item asChild>
-                  <button
-                    disabled={isLoggingOut}
-                    onClick={handleLogout}
-                    type="button"
+            <AnimatePresence>
+              {isProfileOpen && (
+                <DropdownMenu.Portal forceMount>
+                  <DropdownMenu.Content
+                    asChild
+                    forceMount
+                    align="end"
+                    sideOffset={8}
                   >
-                    {isLoggingOut ? "Logging out..." : "Log Out"}
-                  </button>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
+                    <motion.div
+                      className="profile-dropdown"
+                      initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                      transition={{ duration: 0.15, ease: "easeOut" }}
+                    >
+                      <DropdownMenu.Item asChild>
+                        <Link href="/profile">View Profile</Link>
+                      </DropdownMenu.Item>
+                      <DropdownMenu.Item asChild>
+                        <button
+                          disabled={isLoggingOut}
+                          onClick={handleLogout}
+                          type="button"
+                        >
+                          {isLoggingOut ? "Logging out..." : "Log Out"}
+                        </button>
+                      </DropdownMenu.Item>
+                    </motion.div>
+                  </DropdownMenu.Content>
+                </DropdownMenu.Portal>
+              )}
+            </AnimatePresence>
           </DropdownMenu.Root>
         </div>
       </header>

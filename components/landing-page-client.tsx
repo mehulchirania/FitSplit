@@ -20,7 +20,7 @@ import {
   type Variants,
 } from "framer-motion";
 import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
-import { submitContactMessage } from "@/lib/firebase/actions";
+import { submitContactMessage } from "@/lib/firebase/actions/contact";
 import type { FormActionState } from "@/types/action-state";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

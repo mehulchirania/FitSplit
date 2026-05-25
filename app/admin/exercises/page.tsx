@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CloseDetailsButton } from "@/components/close-details-button";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
 import { ExerciseEditForm } from "@/components/exercise-edit-form";
+import { GymSelector } from "@/components/gym-selector";
 import { ChevronDown, Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import {
@@ -85,20 +85,7 @@ export default async function AdminExercisesPage({
             Review and edit exercise definitions, video links, and coaching notes across all gyms.
           </p>
 
-          {/* Gym selector */}
-          {gyms.length > 1 && (
-            <div className="quick-actions" style={{ marginTop: 16 }}>
-              {gyms.map((gym) => (
-                <Link
-                  key={gym.id}
-                  className={`button ${gym.id === selectedGymId ? "button-primary" : "button-secondary"}`}
-                  href={`/admin/exercises?gym=${gym.id}`}
-                >
-                  {gym.name}
-                </Link>
-              ))}
-            </div>
-          )}
+          <GymSelector gyms={gyms} pathname="/admin/exercises" selectedGymId={selectedGymId} />
         </div>
 
         <aside className="summary-panel">

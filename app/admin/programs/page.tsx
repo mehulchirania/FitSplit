@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { GymSelector } from "@/components/gym-selector";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
@@ -25,15 +26,40 @@ export default async function AdminProgramsPage({
   const selectedGymId = gymParam ?? gyms[0]?.id ?? "shg";
   const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
 
-  const [{ exercises }, { programs }, { assignments }, { members }] = await Promise.all([
+  const [
+    { exercises, catalog },
+    { programs },
+    { assignments },
+    { members },
+    allGymProgramData
+  ] = await Promise.all([
     getExerciseCatalog(selectedGymId),
     getWorkoutPrograms(selectedGymId),
     getActiveProgramAssignments(selectedGymId),
-    getMembers(selectedGymId)
+    getMembers(selectedGymId),
+    Promise.all(
+      gyms.map(async (gym) => {
+        const [{ exercises }, { programs }, { assignments }, { members }] = await Promise.all([
+          getExerciseCatalog(gym.id),
+          getWorkoutPrograms(gym.id),
+          getActiveProgramAssignments(gym.id),
+          getMembers(gym.id)
+        ]);
+
+        return {
+          assignments,
+          exercises,
+          gymId: gym.id,
+          gymName: gym.name,
+          members,
+          programs: programs.filter((program) => program.source === "gym")
+        };
+      })
+    )
   ]);
 
   const predefinedCount = programs.filter((p) => p.source !== "gym").length;
-  const customCount = programs.filter((p) => p.source === "gym").length;
+  const customCount = allGymProgramData.reduce((count, group) => count + group.programs.length, 0);
 
   return (
     <main className="page">
@@ -45,20 +71,7 @@ export default async function AdminProgramsPage({
             Review all training plans across gyms. Programs are created by gym owners and assigned to members.
           </p>
 
-          {/* Gym selector */}
-          {gyms.length > 1 && (
-            <div className="quick-actions" style={{ marginTop: 16 }}>
-              {gyms.map((gym) => (
-                <Link
-                  key={gym.id}
-                  className={`button ${gym.id === selectedGymId ? "button-primary" : "button-secondary"}`}
-                  href={`/admin/programs?gym=${gym.id}`}
-                >
-                  {gym.name}
-                </Link>
-              ))}
-            </div>
-          )}
+          <GymSelector gyms={gyms} pathname="/admin/programs" selectedGymId={selectedGymId} />
         </div>
 
         <aside className="summary-panel">
@@ -93,6 +106,8 @@ export default async function AdminProgramsPage({
 
       <WorkoutProgramGallery
         assignments={assignments}
+        catalog={catalog}
+        customGroups={allGymProgramData}
         exercises={exercises}
         members={members}
         programs={programs}

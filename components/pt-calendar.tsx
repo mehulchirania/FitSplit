@@ -3,8 +3,9 @@
 // C11: Replaced FullCalendar (~170 KB) with a lightweight custom month-grid
 // calendar. No external calendar dependency — saves ~170 KB from the bundle.
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { reschedulePTSession } from "@/lib/firebase/actions";
 import type { PTSession } from "@/types/domain";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -32,6 +33,7 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
   const today = new Date();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
+  const [isPending, startTransition] = useTransition();
 
   // Build a map from ISO date → sessions that overlap that day.
   const sessionsByDate = new Map<string, PTSession[]>();
@@ -74,6 +76,27 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
   }
 
   const todayKey = isoDate(today);
+
+  async function handleDrop(e: React.DragEvent, newDateKey: string) {
+    e.preventDefault();
+    const sessionId = e.dataTransfer.getData("text/plain");
+    if (!sessionId) return;
+    
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session || session.status !== "scheduled") return;
+
+    // Retain the original time
+    const oldTime = session.scheduledAt ? session.scheduledAt.split("T")[1] : "06:00:00";
+    
+    const formData = new FormData();
+    formData.set("ptSessionId", sessionId);
+    formData.set("scheduledAt", `${newDateKey}T${oldTime}`);
+
+    startTransition(async () => {
+      await reschedulePTSession(null as any, formData);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="pt-calendar-wrapper" style={{ userSelect: "none" }}>
@@ -166,8 +189,14 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
                 display: "flex",
                 flexDirection: "column",
                 gap: "3px",
-                overflow: "hidden"
+                overflow: "hidden",
+                opacity: isPending ? 0.7 : 1
               }}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+              }}
+              onDrop={(e) => handleDrop(e, dateKey)}
             >
               <span
                 style={{
@@ -193,12 +222,17 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
                         : `/owner/members/${s.memberId}`
                     )
                   }
+                  draggable={s.status === "scheduled"}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData("text/plain", s.id);
+                    e.dataTransfer.effectAllowed = "move";
+                  }}
                   style={{
                     background: `color-mix(in srgb, ${statusColor(s.status)} 18%, transparent)`,
                     border: `1px solid color-mix(in srgb, ${statusColor(s.status)} 35%, transparent)`,
                     borderRadius: "4px",
                     color: statusColor(s.status),
-                    cursor: "pointer",
+                    cursor: s.status === "scheduled" ? "grab" : "pointer",
                     fontSize: "0.65rem",
                     fontWeight: 600,
                     overflow: "hidden",
@@ -206,7 +240,8 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
                     textAlign: "left",
                     textOverflow: "ellipsis",
                     whiteSpace: "nowrap",
-                    width: "100%"
+                    width: "100%",
+                    opacity: isPending ? 0.5 : 1
                   }}
                 >
                   {s.memberName ?? "Member"}

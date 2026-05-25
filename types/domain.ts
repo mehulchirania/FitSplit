@@ -158,6 +158,7 @@ export type WorkoutExercise = {
   durationSeconds?: number;
   restSeconds?: number;
   notes?: string;
+  variationLabel?: string;
 };
 
 export type WorkoutDay = {
@@ -183,6 +184,21 @@ export type WorkoutProgram = {
     | "combo_x2"
     | "custom";
   days: WorkoutDay[];
+  bestFor?: string[];
+  programStyle?: string;
+  selectionHints?: {
+    equipmentDemand: "low" | "medium" | "high";
+    frequency: string;
+    idealFor: string[];
+    recoveryDemand: "low" | "medium" | "high";
+    trainerNotes: string;
+  };
+  tags?: string[];
+  weeklyVariations?: Array<{
+    days: WorkoutDay[];
+    title: string;
+    week: number;
+  }>;
 };
 
 export type ProgramAssignment = {

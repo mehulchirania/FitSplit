@@ -1,25 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import type { ReactNode } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Activity, HeartPulse } from "@/components/icons";
 
-export function MemberDashboardTabs({
-  workoutSection,
-  progressSection,
-  wellnessSection
-}: {
-  workoutSection: React.ReactNode;
-  progressSection: React.ReactNode;
-  wellnessSection: React.ReactNode;
-}) {
-  const [activeTab, setActiveTab] = useState<"workout" | "progress" | "wellness">("workout");
+type MemberDashboardTabsProps = {
+  workoutSection: ReactNode;
+  progressSection: ReactNode;
+  wellnessSection: ReactNode;
+  historySection: ReactNode;
+};
+
+export function MemberDashboardTabs(props: MemberDashboardTabsProps) {
+  const { workoutSection, progressSection, wellnessSection, historySection } = props;
+  const [activeTab, setActiveTab] = useState<"workout" | "progress" | "wellness" | "history">("workout");
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (["workout", "progress", "wellness", "history"].includes(hash)) {
+        setActiveTab(hash as any);
+      }
+    };
+
+    // Initial check
+    handleHashChange();
+
+    // Listen for changes
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
+
+  const handleTabChange = (id: any) => {
+    setActiveTab(id);
+    window.history.replaceState(null, "", `#${id}`);
+  };
 
   const tabs = [
     { id: "workout", label: "Workout", icon: Dumbbell },
     { id: "progress", label: "Progress", icon: Activity },
     { id: "wellness", label: "Wellness", icon: HeartPulse },
-    { id: "history", label: "History", icon: Activity, href: "/member/history" }
+    { id: "history", label: "History", icon: Activity }
   ] as const;
 
   return (
@@ -44,26 +66,13 @@ export function MemberDashboardTabs({
             </>
           );
 
-          if ("href" in tab) {
-            return (
-              <a
-                key={tab.id}
-                href={tab.href}
-                className="md-tab-btn"
-                style={{ textDecoration: "none" }}
-              >
-                {content}
-              </a>
-            );
-          }
-
           return (
             <button
               key={tab.id}
               role="tab"
               aria-selected={isActive}
               className={`md-tab-btn ${isActive ? "active" : ""}`}
-              onClick={() => setActiveTab(tab.id as any)}
+              onClick={() => handleTabChange(tab.id)}
             >
               {content}
             </button>
@@ -78,7 +87,7 @@ export function MemberDashboardTabs({
               key="workout"
               role="tabpanel"
               initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
@@ -90,7 +99,7 @@ export function MemberDashboardTabs({
               key="progress"
               role="tabpanel"
               initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
@@ -102,11 +111,23 @@ export function MemberDashboardTabs({
               key="wellness"
               role="tabpanel"
               initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
+              animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
               {wellnessSection}
+            </motion.div>
+          )}
+          {activeTab === "history" && (
+            <motion.div
+              key="history"
+              role="tabpanel"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0, transitionEnd: { transform: "none" } }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+            >
+              {historySection}
             </motion.div>
           )}
         </AnimatePresence>

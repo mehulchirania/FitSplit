@@ -4,6 +4,7 @@ import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
+import { MemberHistory } from "@/components/member-history";
 import { ProgressChart } from "@/components/progress-chart-lazy";
 import { requireRole } from "@/lib/auth";
 import {
@@ -155,11 +156,11 @@ export default async function MemberDashboard() {
               <strong>{daysTrainedThisWeek}</strong>
               <small>training day{daysTrainedThisWeek === 1 ? "" : "s"}</small>
             </div>
-            <Link href="/member/history" className="md-hero-stat-new md-hero-stat-link-new">
+            <a href="#history" className="md-hero-stat-new md-hero-stat-link-new">
               <span>Lift logs</span>
               <strong>{liftLogs.length}</strong>
               <small>sets saved</small>
-            </Link>
+            </a>
             <div className="md-hero-stat-new">
               <span>Status</span>
               <strong>{program ? "Ready" : "Pending"}</strong>
@@ -281,6 +282,17 @@ export default async function MemberDashboard() {
               <MacroProgressPanel memberId={member.id} target={profile.macroNutritionTarget} />
             </div>
           </section>
+        }
+        historySection={
+          <div className="member-dashboard-section">
+            <div className="panel-title" style={{ marginBottom: "20px" }}>
+              <div>
+                <p className="eyebrow">History</p>
+                <h2>All your logged workouts</h2>
+              </div>
+            </div>
+            <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} />
+          </div>
         }
       />
     </main>

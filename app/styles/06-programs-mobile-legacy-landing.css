@@ -17,6 +17,49 @@
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
 }
 
+.program-gym-groups {
+  display: grid;
+  gap: 16px;
+  padding: 0 20px 20px;
+}
+
+.program-gym-group {
+  background: color-mix(in srgb, var(--bg-subtle) 74%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.program-gym-group-header {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.program-gym-group-header h3,
+.program-gym-group-header p {
+  margin: 0;
+}
+
+.program-gym-group-header h3 {
+  color: var(--text);
+  font-size: 0.95rem;
+  letter-spacing: -0.01em;
+}
+
+.program-gym-group-header p {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  margin-top: 4px;
+}
+
+.program-gym-group .program-grid {
+  padding: 16px;
+}
+
 .program-card.program-card-compact {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
@@ -63,6 +106,68 @@
 .program-day-preview {
   display: grid;
   gap: 8px;
+}
+
+.program-pick-card {
+  background: color-mix(in srgb, var(--brand) 7%, var(--bg-subtle));
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border));
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+}
+
+.program-pick-card span,
+.program-selection-guide span {
+  color: var(--text-faint);
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.program-pick-card strong,
+.program-selection-guide strong {
+  color: var(--text);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.program-pick-card small {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.program-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.program-tag-row span {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 760;
+  padding: 4px 8px;
+}
+
+.program-selection-guide {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 14px 0;
+}
+
+.program-selection-guide div {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  display: grid;
+  gap: 5px;
+  padding: 12px;
 }
 
 .program-day-line {
@@ -357,6 +462,10 @@
   .app-footer-rich {
     grid-template-columns: 1fr;
     margin-bottom: 84px;
+  }
+
+  .program-selection-guide {
+    grid-template-columns: 1fr;
   }
 }
 

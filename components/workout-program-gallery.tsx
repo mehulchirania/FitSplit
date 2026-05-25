@@ -15,8 +15,23 @@ const splitLabels: Record<string, string> = {
   ppl_x2: "PPL x 2",
   ppl_upper_lower: "PPL Upper Lower",
   bro_split: "Bro Split",
-  combo_x2: "Chest+Tricep / Back+Bicep / Legs+Shoulder x2",
+  combo_x2: "Modified Arnold Split x 2",
   custom: "Custom"
+};
+
+type CustomProgramGroup = {
+  assignments: ProgramAssignment[];
+  exercises: Exercise[];
+  gymId: string;
+  gymName: string;
+  members: Member[];
+  programs: WorkoutProgram[];
+};
+
+type ProgramContext = {
+  assignments: ProgramAssignment[];
+  exercises: Exercise[];
+  members: Member[];
 };
 
 function exerciseNameById(exercises: Exercise[]) {
@@ -29,6 +44,10 @@ function trainingDays(program: WorkoutProgram) {
 
 function exerciseCount(program: WorkoutProgram) {
   return program.days.reduce((count, day) => count + day.exercises.length, 0);
+}
+
+function programInsight(program: WorkoutProgram) {
+  return program.selectionHints?.trainerNotes ?? program.bestFor?.slice(0, 2).join(" / ") ?? program.goal;
 }
 
 function dayExerciseNames(day: WorkoutDay, names: Map<string, string>) {
@@ -80,6 +99,21 @@ function ProgramCard({
           <Dumbbell className="program-title-icon" /> {program.title}
         </h2>
         <p>{program.description}</p>
+        <div className="program-pick-card">
+          <span>{program.source === "gym" ? "Gym plan" : "Split guide"}</span>
+          <strong>{programInsight(program)}</strong>
+          <small>
+            {program.selectionHints?.frequency ?? `${program.daysPerWeek} training days`} · {program.difficulty}
+            {program.weeklyVariations?.length ? ` · ${program.weeklyVariations.length}-week rotation` : ""}
+          </small>
+        </div>
+        {program.tags?.length ? (
+          <div className="program-tag-row">
+            {program.tags.slice(0, 4).map((tag) => (
+              <span key={tag}>{tag}</span>
+            ))}
+          </div>
+        ) : null}
         <div className="program-stat-row">
           <span>
             <strong>{activeDays.length}</strong>
@@ -141,17 +175,20 @@ function ProgramCard({
 export function WorkoutProgramGallery({
   assignments,
   catalog = [],
+  customGroups = [],
   exercises,
   members,
   programs
 }: {
   assignments: ProgramAssignment[];
   catalog?: CatalogGroup[];
+  customGroups?: CustomProgramGroup[];
   exercises: Exercise[];
   members: Member[];
   programs: WorkoutProgram[];
 }) {
   const [selectedProgram, setSelectedProgram] = useState<WorkoutProgram | null>(null);
+  const [selectedProgramContext, setSelectedProgramContext] = useState<ProgramContext | null>(null);
   const [editProgram, setEditProgram] = useState<WorkoutProgram | null>(null);
   const [showPredefined, setShowPredefined] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -161,6 +198,20 @@ export function WorkoutProgramGallery({
   const exerciseNames = useMemo(() => exerciseNameById(exercises), [exercises]);
   const predefinedPrograms = programs.filter((p) => p.source !== "gym");
   const customPrograms = programs.filter((p) => p.source === "gym");
+  const visibleCustomGroups = customGroups.filter((group) => group.programs.length > 0);
+  const totalCustomPrograms = visibleCustomGroups.length
+    ? visibleCustomGroups.reduce((count, group) => count + group.programs.length, 0)
+    : customPrograms.length;
+  const deleteProgramPool = visibleCustomGroups.length
+    ? visibleCustomGroups.flatMap((group) => group.programs)
+    : customPrograms;
+  const activeContext = selectedProgramContext ?? { assignments, exercises, members };
+
+  function viewProgram(program: WorkoutProgram, context?: ProgramContext) {
+    setSelectedProgram(program);
+    setSelectedProgramContext(context ?? null);
+    setEditProgram(null);
+  }
 
   function handleDelete(programId: string, programTitle: string) {
     startDelete(async () => {
@@ -185,10 +236,10 @@ export function WorkoutProgramGallery({
         <div className="panel-title">
           <div>
             <h2>Custom gym plans</h2>
-            <p className="member-meta">Programs created by this gym — edit or delete them at any time.</p>
+            <p className="member-meta">Programs created by gyms, grouped by workspace so defaults never mix with custom plans.</p>
           </div>
           <span className="status-pill status-neutral">
-            {customPrograms.length} plan{customPrograms.length === 1 ? "" : "s"}
+            {totalCustomPrograms} plan{totalCustomPrograms === 1 ? "" : "s"}
           </span>
         </div>
         {deleteStatus && (
@@ -196,7 +247,43 @@ export function WorkoutProgramGallery({
             {deleteStatus}
           </p>
         )}
-        {customPrograms.length ? (
+        {visibleCustomGroups.length ? (
+          <div className="program-gym-groups">
+            {visibleCustomGroups.map((group) => {
+              const groupExerciseNames = exerciseNameById(group.exercises);
+              const groupContext = {
+                assignments: group.assignments,
+                exercises: group.exercises,
+                members: group.members
+              };
+
+              return (
+                <section className="program-gym-group" key={group.gymId}>
+                  <div className="program-gym-group-header">
+                    <div>
+                      <h3>{group.gymName}</h3>
+                      <p>{group.programs.length} custom plan{group.programs.length === 1 ? "" : "s"}</p>
+                    </div>
+                  </div>
+                  <div className="program-grid program-grid-compact">
+                    {group.programs.map((program) => (
+                      <ProgramCard
+                        assignedNames={assignmentNames(program, group.assignments, group.members)}
+                        exerciseNames={groupExerciseNames}
+                        isCustom
+                        key={`${group.gymId}-${program.id}`}
+                        onDelete={() => setConfirmDeleteId(program.id)}
+                        onEdit={() => { setEditProgram(program); setSelectedProgram(null); setSelectedProgramContext(null); }}
+                        onView={() => viewProgram(program, groupContext)}
+                        program={program}
+                      />
+                    ))}
+                  </div>
+                </section>
+              );
+            })}
+          </div>
+        ) : customPrograms.length ? (
           <div className="program-grid program-grid-compact">
             {customPrograms.map((program) => (
               <ProgramCard
@@ -205,15 +292,15 @@ export function WorkoutProgramGallery({
                 isCustom
                 key={program.id}
                 onDelete={() => setConfirmDeleteId(program.id)}
-                onEdit={() => { setEditProgram(program); setSelectedProgram(null); }}
-                onView={() => { setSelectedProgram(program); setEditProgram(null); }}
+                onEdit={() => { setEditProgram(program); setSelectedProgram(null); setSelectedProgramContext(null); }}
+                onView={() => viewProgram(program)}
                 program={program}
               />
             ))}
           </div>
         ) : (
           <div className="empty-state">
-            <p>No custom plans saved yet. Use the builder below to create your first gym plan.</p>
+            <p>No gym-created custom plans saved yet. Owners can create gym-specific plans from their programs page.</p>
           </div>
         )}
       </section>
@@ -226,7 +313,7 @@ export function WorkoutProgramGallery({
         <div className="panel-title">
           <div>
             <h2>Predefined workout plans</h2>
-            <p className="member-meta">Built-in splits from the FitSplit catalog — assign to members but cannot be edited.</p>
+            <p className="member-meta">Built-in FitSplit splits such as PPL, Bro Split, and Arnold Split. They can be assigned, but not edited here.</p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span className="status-pill status-neutral">{predefinedPrograms.length} plans</span>
@@ -248,7 +335,7 @@ export function WorkoutProgramGallery({
                 exerciseNames={exerciseNames}
                 isCustom={false}
                 key={program.id}
-                onView={() => { setSelectedProgram(program); setEditProgram(null); }}
+                onView={() => viewProgram(program)}
                 program={program}
               />
             ))}
@@ -276,20 +363,40 @@ export function WorkoutProgramGallery({
                 <h2>{selectedProgram.title}</h2>
                 <p className="member-meta">
                   {trainingDays(selectedProgram).length} training days · {exerciseCount(selectedProgram)} exercises ·{" "}
-                  {assignmentNames(selectedProgram, assignments, members).length} assigned members
+                  {assignmentNames(selectedProgram, activeContext.assignments, activeContext.members).length} assigned members
                 </p>
               </div>
               <button
                 aria-label="Close program"
                 className="icon-button neutral-icon-button"
-                onClick={() => setSelectedProgram(null)}
+                onClick={() => { setSelectedProgram(null); setSelectedProgramContext(null); }}
                 type="button"
               >
                 <X />
               </button>
             </div>
             <p>{selectedProgram.description}</p>
-            <WeeklyProgramSchedule exercises={exercises} program={selectedProgram} />
+            {selectedProgram.bestFor?.length || selectedProgram.selectionHints ? (
+              <div className="program-selection-guide">
+                <div>
+                  <span>Best for</span>
+                  <strong>{selectedProgram.bestFor?.join(" / ") ?? selectedProgram.goal}</strong>
+                </div>
+                <div>
+                  <span>Training rhythm</span>
+                  <strong>{selectedProgram.selectionHints?.frequency ?? `${selectedProgram.daysPerWeek} days per week`}</strong>
+                </div>
+                <div>
+                  <span>Weekly variety</span>
+                  <strong>
+                    {selectedProgram.weeklyVariations?.length
+                      ? `${selectedProgram.weeklyVariations.length} rotating exercise weeks`
+                      : "Fixed weekly schedule"}
+                  </strong>
+                </div>
+              </div>
+            ) : null}
+            <WeeklyProgramSchedule exercises={activeContext.exercises} program={selectedProgram} />
           </div>
         </div>
       ) : null}
@@ -338,7 +445,7 @@ export function WorkoutProgramGallery({
                 className="button button-danger"
                 disabled={isDeleting}
                 onClick={() => {
-                  const program = customPrograms.find((p) => p.id === confirmDeleteId);
+                  const program = deleteProgramPool.find((p) => p.id === confirmDeleteId);
                   if (program) handleDelete(program.id, program.title);
                 }}
                 type="button"

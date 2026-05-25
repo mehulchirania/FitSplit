@@ -1,5 +1,6 @@
 import workoutsData from "./workouts.json";
 import { getExerciseThumbnail } from "./exercise-thumbnails";
+import { splitLibraryPrograms } from "./split-library";
 import type {
   AttendanceRecord,
   Exercise,
@@ -9,7 +10,6 @@ import type {
   MuscleGroup,
   Notification,
   ProgramAssignment,
-  WorkoutExercise,
   WorkoutProgram,
   WorkoutSession
 } from "@/types/domain";
@@ -395,58 +395,7 @@ export const exerciseCatalogByMuscle = muscleGroups.map((muscleGroup) => ({
   exercises: exercises.filter((exerciseItem) => exerciseItem.muscleGroup === muscleGroup)
 }));
 
-function splitTypeFor(split: RawSplit): WorkoutProgram["splitType"] {
-  if (split.is_custom) {
-    return "custom";
-  }
-
-  if (split.split_id === "split_01") {
-    return "ppl_x2";
-  }
-
-  if (split.split_id === "split_02") {
-    return "ppl_upper_lower";
-  }
-
-  if (split.split_id === "split_03") {
-    return "bro_split";
-  }
-
-  return "combo_x2";
-}
-
-function workoutExercise(workout: RawSplit["schedule"][number]["workouts"][number]): WorkoutExercise {
-  return {
-    exerciseId: workout.exercise_id,
-    sets: workout.sets || undefined,
-    reps: workout.reps || undefined,
-    restSeconds: workout.exercise_id ? 75 : undefined
-  };
-}
-
-export const programs: WorkoutProgram[] = workoutSource.training_splits.map((split) => {
-  const trainingDays = split.schedule.filter((day) => day.workouts.length > 0);
-
-  return {
-    id: split.split_id,
-    title: split.name,
-    description: split.description,
-    goal: split.is_custom ? "Owner-selected custom routine" : "Structured hypertrophy training",
-    difficulty: split.split_id === "split_04" ? "advanced" : "intermediate",
-    daysPerWeek: trainingDays.length,
-    source: "predefined",
-    splitType: splitTypeFor(split),
-    days: split.schedule.map((day) => ({
-      id: `${split.split_id}-day-${day.day}`,
-      title: day.title,
-      dayNumber: day.day,
-      focus: day.workouts.length ? day.title : "Rest and recovery",
-      exercises: day.workouts
-        .filter((workout) => workout.exercise_id)
-        .map((workout) => workoutExercise(workout))
-    }))
-  };
-});
+export const programs: WorkoutProgram[] = splitLibraryPrograms;
 
 export const assignments: ProgramAssignment[] = [
   {

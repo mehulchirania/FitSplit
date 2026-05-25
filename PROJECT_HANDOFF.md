@@ -3425,3 +3425,20 @@ Scheduled function:
 ```bash
 npm run functions:build
 ```
+
+## Latest Update - 2026-05-25: Predefined split library architecture
+
+Added a maintainable split strategy layer for predefined workout programs.
+
+- Raw split taxonomy now lives in `lib/split-library-source.json`, copied from the generated `splits.json`.
+- `lib/split-library.ts` converts that taxonomy into assignable `WorkoutProgram` records.
+- `workouts.json` remains the exercise catalog/video source of truth.
+- Predefined split programs now include selection metadata: best-for guidance, tags, training frequency, recovery/equipment demand, and trainer notes.
+- Each predefined split gets a four-week exercise rotation so the same split pattern can provide weekly exercise variety without becoming a custom gym plan.
+- `getWorkoutPrograms` applies the current weekly variation for predefined plans while preserving gym-specific custom plans separately.
+
+Admin/owner catalog impact:
+
+- Predefined plans should show Bro Split, Arnold-style, PPL, upper/lower, PHUL/PHAT, full-body, minimalist, and other split templates in the predefined section.
+- Gym-created programs remain gym-scoped custom plans.
+- Future maintenance should update split strategy in `split-library-source.json` and exercise/video details in `workouts.json`.

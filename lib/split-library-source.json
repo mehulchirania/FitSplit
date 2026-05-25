@@ -1,0 +1,474 @@
+{
+  "beginner": {
+    "full_body": {
+      "name": "Full Body Workout",
+      "description": "Train the entire body every session, best for beginners and 2–4 days/week.",
+      "workouts": [
+        "Squat",
+        "Leg Press",
+        "Romanian Deadlift",
+        "Bench Press",
+        "Incline Dumbbell Press",
+        "Push-Up",
+        "Lat Pulldown",
+        "Seated Cable Row",
+        "Dumbbell Shoulder Press",
+        "Lateral Raise",
+        "Biceps Curl",
+        "Triceps Pushdown",
+        "Plank",
+        "Crunches",
+        "Calf Raise"
+      ]
+    },
+    "upper_lower": {
+      "name": "Upper Lower Split",
+      "description": "Upper body and lower body trained on separate days with good recovery.",
+      "workouts": {
+        "upper": [
+          "Bench Press",
+          "Incline Dumbbell Press",
+          "Machine Chest Press",
+          "Lat Pulldown",
+          "Seated Cable Row",
+          "One-Arm Dumbbell Row",
+          "Shoulder Press",
+          "Lateral Raise",
+          "Rear Delt Fly",
+          "Biceps Curl",
+          "Hammer Curl",
+          "Triceps Pushdown",
+          "Overhead Triceps Extension"
+        ],
+        "lower": [
+          "Squat",
+          "Leg Press",
+          "Lunges",
+          "Romanian Deadlift",
+          "Leg Extension",
+          "Leg Curl",
+          "Hip Thrust",
+          "Glute Bridge",
+          "Standing Calf Raise",
+          "Seated Calf Raise",
+          "Plank",
+          "Hanging Knee Raise"
+        ]
+      }
+    },
+    "minimalist_split": {
+      "name": "Minimalist Split",
+      "description": "Low-volume routine focused on essential compound movements.",
+      "workouts": [
+        "Squat",
+        "Deadlift",
+        "Bench Press",
+        "Overhead Press",
+        "Barbell Row",
+        "Lat Pulldown",
+        "Pull-Up",
+        "Dips",
+        "Push-Up",
+        "Plank",
+        "Farmer Walk"
+      ]
+    }
+  },
+  "intermediate": {
+    "push_pull_legs": {
+      "name": "Push Pull Legs",
+      "description": "Push, pull, and leg muscles trained separately; very popular for muscle growth.",
+      "workouts": {
+        "push": [
+          "Bench Press",
+          "Incline Bench Press",
+          "Dumbbell Press",
+          "Machine Chest Press",
+          "Cable Fly",
+          "Pec Deck Fly",
+          "Overhead Press",
+          "Dumbbell Shoulder Press",
+          "Lateral Raise",
+          "Front Raise",
+          "Dips",
+          "Close-Grip Bench Press",
+          "Triceps Pushdown",
+          "Overhead Triceps Extension",
+          "Skull Crushers"
+        ],
+        "pull": [
+          "Deadlift",
+          "Pull-Up",
+          "Chin-Up",
+          "Lat Pulldown",
+          "Barbell Row",
+          "Seated Cable Row",
+          "T-Bar Row",
+          "One-Arm Dumbbell Row",
+          "Face Pull",
+          "Rear Delt Fly",
+          "Shrugs",
+          "Barbell Curl",
+          "Dumbbell Curl",
+          "Hammer Curl",
+          "Preacher Curl"
+        ],
+        "legs": [
+          "Squat",
+          "Front Squat",
+          "Leg Press",
+          "Hack Squat",
+          "Lunges",
+          "Bulgarian Split Squat",
+          "Romanian Deadlift",
+          "Stiff-Leg Deadlift",
+          "Leg Extension",
+          "Leg Curl",
+          "Hip Thrust",
+          "Glute Bridge",
+          "Standing Calf Raise",
+          "Seated Calf Raise",
+          "Hanging Leg Raise"
+        ]
+      }
+    },
+    "bro_split": {
+      "name": "Bro Split",
+      "description": "One major muscle group per day, common in bodybuilding.",
+      "workouts": {
+        "chest": [
+          "Bench Press",
+          "Incline Bench Press",
+          "Decline Bench Press",
+          "Dumbbell Press",
+          "Incline Dumbbell Press",
+          "Machine Chest Press",
+          "Cable Fly",
+          "Pec Deck Fly",
+          "Push-Up",
+          "Dips"
+        ],
+        "back": [
+          "Deadlift",
+          "Pull-Up",
+          "Chin-Up",
+          "Lat Pulldown",
+          "Barbell Row",
+          "T-Bar Row",
+          "Seated Cable Row",
+          "One-Arm Dumbbell Row",
+          "Straight-Arm Pulldown",
+          "Face Pull",
+          "Shrugs"
+        ],
+        "shoulders": [
+          "Overhead Press",
+          "Dumbbell Shoulder Press",
+          "Arnold Press",
+          "Lateral Raise",
+          "Cable Lateral Raise",
+          "Front Raise",
+          "Rear Delt Fly",
+          "Face Pull",
+          "Upright Row",
+          "Shrugs"
+        ],
+        "arms": [
+          "Barbell Curl",
+          "Dumbbell Curl",
+          "Hammer Curl",
+          "Preacher Curl",
+          "Concentration Curl",
+          "Cable Curl",
+          "Close-Grip Bench Press",
+          "Triceps Pushdown",
+          "Overhead Triceps Extension",
+          "Skull Crushers",
+          "Dips"
+        ],
+        "legs": [
+          "Squat",
+          "Front Squat",
+          "Leg Press",
+          "Hack Squat",
+          "Lunges",
+          "Bulgarian Split Squat",
+          "Romanian Deadlift",
+          "Leg Extension",
+          "Leg Curl",
+          "Hip Thrust",
+          "Standing Calf Raise",
+          "Seated Calf Raise"
+        ]
+      }
+    },
+    "ppl_upper_lower": {
+      "name": "Push Pull Legs Upper Lower",
+      "description": "Hybrid split combining PPL with upper/lower days for higher weekly frequency.",
+      "workouts": {
+        "push": [
+          "Bench Press",
+          "Incline Dumbbell Press",
+          "Overhead Press",
+          "Lateral Raise",
+          "Cable Fly",
+          "Triceps Pushdown",
+          "Dips"
+        ],
+        "pull": [
+          "Pull-Up",
+          "Lat Pulldown",
+          "Barbell Row",
+          "Seated Cable Row",
+          "Face Pull",
+          "Rear Delt Fly",
+          "Barbell Curl",
+          "Hammer Curl"
+        ],
+        "legs": [
+          "Squat",
+          "Leg Press",
+          "Romanian Deadlift",
+          "Leg Extension",
+          "Leg Curl",
+          "Calf Raise"
+        ],
+        "upper": [
+          "Bench Press",
+          "Incline Press",
+          "Lat Pulldown",
+          "Seated Row",
+          "Shoulder Press",
+          "Lateral Raise",
+          "Biceps Curl",
+          "Triceps Extension"
+        ],
+        "lower": [
+          "Deadlift",
+          "Front Squat",
+          "Bulgarian Split Squat",
+          "Hip Thrust",
+          "Leg Curl",
+          "Calf Raise",
+          "Plank"
+        ]
+      }
+    },
+    "phul": {
+      "name": "PHUL",
+      "description": "Power Hypertrophy Upper Lower split combining strength and muscle-building days.",
+      "workouts": {
+        "upper_power": [
+          "Bench Press",
+          "Barbell Row",
+          "Overhead Press",
+          "Weighted Pull-Up",
+          "Close-Grip Bench Press",
+          "Barbell Curl"
+        ],
+        "lower_power": [
+          "Squat",
+          "Deadlift",
+          "Leg Press",
+          "Romanian Deadlift",
+          "Standing Calf Raise"
+        ],
+        "upper_hypertrophy": [
+          "Incline Dumbbell Press",
+          "Cable Fly",
+          "Lat Pulldown",
+          "Seated Cable Row",
+          "Lateral Raise",
+          "Rear Delt Fly",
+          "Dumbbell Curl",
+          "Triceps Pushdown"
+        ],
+        "lower_hypertrophy": [
+          "Front Squat",
+          "Hack Squat",
+          "Bulgarian Split Squat",
+          "Leg Extension",
+          "Leg Curl",
+          "Hip Thrust",
+          "Seated Calf Raise"
+        ]
+      }
+    }
+  },
+  "advanced": {
+    "arnold_split": {
+      "name": "Arnold Split",
+      "description": "High-volume split: chest/back, shoulders/arms, and legs.",
+      "workouts": {
+        "chest_back": [
+          "Bench Press",
+          "Incline Bench Press",
+          "Dumbbell Fly",
+          "Cable Fly",
+          "Pull-Up",
+          "Lat Pulldown",
+          "Barbell Row",
+          "T-Bar Row",
+          "Seated Cable Row",
+          "Deadlift"
+        ],
+        "shoulders_arms": [
+          "Overhead Press",
+          "Arnold Press",
+          "Lateral Raise",
+          "Rear Delt Fly",
+          "Upright Row",
+          "Barbell Curl",
+          "Incline Dumbbell Curl",
+          "Hammer Curl",
+          "Close-Grip Bench Press",
+          "Triceps Pushdown",
+          "Skull Crushers",
+          "Overhead Triceps Extension"
+        ],
+        "legs": [
+          "Squat",
+          "Front Squat",
+          "Leg Press",
+          "Hack Squat",
+          "Walking Lunges",
+          "Romanian Deadlift",
+          "Leg Extension",
+          "Leg Curl",
+          "Hip Thrust",
+          "Standing Calf Raise",
+          "Seated Calf Raise"
+        ]
+      }
+    },
+    "phat": {
+      "name": "PHAT",
+      "description": "Advanced high-volume power and hypertrophy split.",
+      "workouts": {
+        "upper_power": [
+          "Bench Press",
+          "Barbell Row",
+          "Weighted Pull-Up",
+          "Overhead Press",
+          "Close-Grip Bench Press",
+          "Barbell Curl"
+        ],
+        "lower_power": [
+          "Squat",
+          "Deadlift",
+          "Leg Press",
+          "Romanian Deadlift",
+          "Calf Raise"
+        ],
+        "back_shoulders_hypertrophy": [
+          "Lat Pulldown",
+          "Seated Cable Row",
+          "T-Bar Row",
+          "Face Pull",
+          "Dumbbell Shoulder Press",
+          "Lateral Raise",
+          "Rear Delt Fly",
+          "Shrugs"
+        ],
+        "chest_arms_hypertrophy": [
+          "Incline Dumbbell Press",
+          "Machine Chest Press",
+          "Cable Fly",
+          "Pec Deck Fly",
+          "Preacher Curl",
+          "Hammer Curl",
+          "Triceps Pushdown",
+          "Skull Crushers"
+        ],
+        "legs_hypertrophy": [
+          "Front Squat",
+          "Hack Squat",
+          "Bulgarian Split Squat",
+          "Leg Extension",
+          "Leg Curl",
+          "Hip Thrust",
+          "Standing Calf Raise",
+          "Seated Calf Raise"
+        ]
+      }
+    },
+    "conjugate_method": {
+      "name": "Conjugate Method",
+      "description": "Advanced strength split using max effort and dynamic effort days.",
+      "workouts": {
+        "max_effort_upper": [
+          "Max Bench Press Variation",
+          "Close-Grip Bench Press",
+          "Floor Press",
+          "Board Press",
+          "Barbell Row",
+          "Pull-Up",
+          "Triceps Extension",
+          "Face Pull"
+        ],
+        "max_effort_lower": [
+          "Max Squat Variation",
+          "Max Deadlift Variation",
+          "Box Squat",
+          "Good Morning",
+          "Romanian Deadlift",
+          "Glute Ham Raise",
+          "Reverse Hyper",
+          "Weighted Abs"
+        ],
+        "dynamic_effort_upper": [
+          "Speed Bench Press",
+          "Paused Bench Press",
+          "Dumbbell Press",
+          "Lat Pulldown",
+          "Seated Row",
+          "Lateral Raise",
+          "Triceps Pushdown"
+        ],
+        "dynamic_effort_lower": [
+          "Speed Box Squat",
+          "Speed Deadlift",
+          "Front Squat",
+          "Hip Thrust",
+          "Leg Curl",
+          "Calf Raise",
+          "Core Work"
+        ]
+      }
+    },
+    "daily_undulating_periodization": {
+      "name": "Daily Undulating Periodization",
+      "description": "Changes rep ranges and intensity across the week for advanced progression.",
+      "workouts": {
+        "strength_day": [
+          "Squat",
+          "Bench Press",
+          "Deadlift",
+          "Overhead Press",
+          "Barbell Row",
+          "Weighted Pull-Up"
+        ],
+        "hypertrophy_day": [
+          "Incline Dumbbell Press",
+          "Lat Pulldown",
+          "Leg Press",
+          "Romanian Deadlift",
+          "Lateral Raise",
+          "Cable Row",
+          "Biceps Curl",
+          "Triceps Pushdown"
+        ],
+        "endurance_volume_day": [
+          "Goblet Squat",
+          "Push-Up",
+          "Walking Lunges",
+          "Seated Row",
+          "Dumbbell Shoulder Press",
+          "Leg Extension",
+          "Leg Curl",
+          "Plank"
+        ]
+      }
+    }
+  }
+}

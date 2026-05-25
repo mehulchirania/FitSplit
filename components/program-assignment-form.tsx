@@ -88,7 +88,7 @@ function PickPlanForm({
             <optgroup label="Predefined plans">
               {predefined.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.title} — {p.days.length} sessions
+                  {p.title} - {p.daysPerWeek} days - {p.difficulty}
                 </option>
               ))}
             </optgroup>
@@ -97,7 +97,7 @@ function PickPlanForm({
             <optgroup label="Saved gym plans">
               {gym.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.title} — {p.days.length} sessions
+                  {p.title} - {p.daysPerWeek} days
                 </option>
               ))}
             </optgroup>
@@ -111,8 +111,17 @@ function PickPlanForm({
           </span>
           <strong>{selected.title}</strong>
           <small>
-            {selected.goal} · {selected.days.length} weekly sessions · {selected.difficulty}
+            {selected.goal} - {selected.daysPerWeek} weekly sessions - {selected.difficulty}
           </small>
+          {selected.bestFor?.length ? (
+            <small>Best for: {selected.bestFor.slice(0, 3).join(" / ")}</small>
+          ) : null}
+          {selected.selectionHints ? (
+            <small>{selected.selectionHints.trainerNotes}</small>
+          ) : null}
+          {selected.weeklyVariations?.length ? (
+            <small>{selected.weeklyVariations.length}-week exercise rotation included for variety.</small>
+          ) : null}
           <small>
             {trainingDays.slice(0, 3).map((d) => d.title).join(" / ")}
             {trainingDays.length > 3 ? " / ..." : ""}

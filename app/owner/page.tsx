@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { OwnerQuickLinks } from "@/components/owner-quick-links";
 import { Activity, Bell, Calendar, Dumbbell, UsersRound } from "@/components/icons";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
@@ -92,42 +93,11 @@ export default async function OwnerDashboard() {
           <h1>Dashboard</h1>
         </div>
 
-        <nav aria-label="Quick actions" className="ui-cards odp-quick-links">
-          <Link
-            className={unassignedMembers.length > 0 ? "ui-card red odp-ql-link is-urgent" : "ui-card blue odp-ql-link"}
-            href="/owner/members?filter=no-plan&sort=oldest"
-          >
-            <p className="tip"><Dumbbell /></p>
-            <p className="second-text">{isTrainer || isStaff ? "View members" : "Assign workout"}</p>
-            {unassignedMembers.length > 0 && (
-              <em className="odp-ql-badge">{unassignedMembers.length}</em>
-            )}
-          </Link>
-          <Link className="ui-card green odp-ql-link" href="/owner/training?book=1">
-            <p className="tip"><Calendar /></p>
-            <p className="second-text">Assign PT</p>
-          </Link>
-          <Link className="ui-card purple odp-ql-link" href="/owner/members">
-            <p className="tip"><UsersRound /></p>
-            <p className="second-text">Members</p>
-          </Link>
-          <Link className="ui-card blue odp-ql-link" href="/owner/programs">
-            <p className="tip"><Activity /></p>
-            <p className="second-text">Programs</p>
-          </Link>
-          {!isTrainer && !isStaff && (
-            <Link className="ui-card green odp-ql-link" href="/owner/exercises">
-              <p className="tip"><Dumbbell /></p>
-              <p className="second-text">Exercises</p>
-            </Link>
-          )}
-          {!isTrainer && !isStaff && (
-            <Link className="ui-card purple odp-ql-link" href="/owner/reports">
-              <p className="tip"><Activity /></p>
-              <p className="second-text">Reports</p>
-            </Link>
-          )}
-        </nav>
+        <OwnerQuickLinks 
+          unassignedMembersCount={unassignedMembers.length} 
+          isTrainer={isTrainer} 
+          isStaff={isStaff} 
+        />
       </header>
 
       {/* ── Stats bar ───────────────────────────────────────────── */}

@@ -777,6 +777,44 @@
   margin: 0;
 }
 
+.gym-selector {
+  align-items: flex-start;
+  display: inline-grid;
+  gap: 6px;
+  margin-top: 16px;
+  min-width: min(100%, 320px);
+}
+
+.gym-selector span {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.gym-selector select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--text-soft) 50%) right 16px center / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--text-soft) 50%, transparent 50%) right 11px center / 6px 6px no-repeat,
+    var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 9px 34px 9px 12px;
+}
+
+.gym-selector select:focus-visible {
+  border-color: var(--brand);
+  outline: 2px solid color-mix(in srgb, var(--brand) 32%, transparent);
+  outline-offset: 2px;
+}
+
 /* ── Muscle-group collapsible panels inside catalog ───────────────────────── */
 .catalog-grid {
   display: flex;

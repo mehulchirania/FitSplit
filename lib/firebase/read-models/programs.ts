@@ -6,6 +6,7 @@ import {
   assignments as mockAssignments,
   programs as mockPrograms
 } from "@/lib/mock-data";
+import { applyCurrentWeeklyVariation } from "@/lib/split-library";
 import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection, gymTag } from "./shared";
@@ -18,7 +19,7 @@ export async function getWorkoutProgramsUncached(gymId?: string): Promise<{
   const predefinedPrograms: WorkoutProgram[] = mockPrograms
     .filter((program) => program.days.some((day) => day.exercises.length > 0))
     .map((program) => ({
-      ...program,
+      ...applyCurrentWeeklyVariation(program),
       source: "predefined"
     }));
 
@@ -45,25 +46,68 @@ export async function getWorkoutProgramsUncached(gymId?: string): Promise<{
   }
 
   const predefinedProgramIds = new Set(predefinedPrograms.map((program) => program.id));
-  const gymPrograms: WorkoutProgram[] = snapshot.docs
-    .filter((doc) => {
-      const data = doc.data();
-      return !(data.mirroredFromRootCollection === true && data.scope !== "custom" && predefinedProgramIds.has(doc.id));
-    })
+  const predefinedSplitTypes = new Set(
+    predefinedPrograms
+      .filter((program) => program.splitType !== "custom")
+      .map((program) => program.splitType)
+  );
+  const predefinedTitles = new Set(predefinedPrograms.map((program) => normalizeProgramTitle(program.title)));
+  const gymProgramEntries = snapshot.docs
     .map((doc) => {
       const data = doc.data();
-      return {
+      const splitType = String(data.splitType ?? "custom") as WorkoutProgram["splitType"];
+      const title = String(data.title ?? "Stored program");
+      const scope = String(data.scope ?? "");
+      const source = String(data.source ?? "");
+      const storedGymId = String(data.gymId ?? "");
+      const isPredefinedDoc =
+        predefinedProgramIds.has(doc.id) ||
+        scope === "default" ||
+        source === "predefined" ||
+        storedGymId === "global" ||
+        (splitType !== "custom" && predefinedSplitTypes.has(splitType)) ||
+        predefinedTitles.has(normalizeProgramTitle(title));
+      const isCustomDoc =
+        scope === "custom" ||
+        source === "custom" ||
+        source === "gym" ||
+        data.isCustom === true ||
+        (splitType === "custom" && !isPredefinedDoc);
+
+      if (!isCustomDoc || isPredefinedDoc) {
+        return null;
+      }
+
+      const program: WorkoutProgram = {
         id: doc.id,
-        title: String(data.title ?? "Stored program"),
+        title,
         description: String(data.description ?? ""),
         goal: String(data.goal ?? "Structured training"),
         difficulty: String(data.difficulty ?? "intermediate") as Difficulty,
         daysPerWeek: Number(data.daysPerWeek ?? 1),
         source: "gym" as const,
-        splitType: String(data.splitType ?? "custom") as WorkoutProgram["splitType"],
+        splitType,
         days: Array.isArray(data.days) ? data.days : []
       };
+
+      return {
+        migrated: data.mirroredFromRootCollection === true || Boolean(data.migratedFromRootPath),
+        program
+      };
     })
+    .filter((entry): entry is { migrated: boolean; program: WorkoutProgram } => Boolean(entry));
+
+  const gymProgramsBySignature = new Map<string, { migrated: boolean; program: WorkoutProgram }>();
+  gymProgramEntries.forEach((entry) => {
+    const key = `${normalizeProgramTitle(entry.program.title)}:${entry.program.daysPerWeek}:${entry.program.splitType}:${programDaySignature(entry.program)}`;
+    const existing = gymProgramsBySignature.get(key);
+    if (!existing || (existing.migrated && !entry.migrated)) {
+      gymProgramsBySignature.set(key, entry);
+    }
+  });
+
+  const gymPrograms: WorkoutProgram[] = Array.from(gymProgramsBySignature.values())
+    .map((entry) => entry.program)
     .sort((left, right) => left.title.localeCompare(right.title));
 
   const programsById = new Map<string, WorkoutProgram>();
@@ -90,6 +134,16 @@ export async function getWorkoutPrograms(gymId?: string) {
 }
 
 const getWorkoutProgramsRequestCached = cache(getWorkoutProgramsUncached);
+
+function normalizeProgramTitle(title: string) {
+  return title.toLowerCase().trim().replace(/\s+/g, " ");
+}
+
+function programDaySignature(program: WorkoutProgram) {
+  return program.days
+    .map((day) => `${normalizeProgramTitle(day.title)}:${day.exercises.map((item) => item.exerciseId).join(",")}`)
+    .join("|");
+}
 
 export const getProgramAssignmentForMember = cache(async function getProgramAssignmentForMember(memberId: string, gymId?: string): Promise<{
   assignment: ProgramAssignment | null;

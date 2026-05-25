@@ -28,7 +28,7 @@ function linksForRole(role: Role) {
 
   return [
     { href: "/member", label: "Workout", icon: Dumbbell },
-    { href: "/member/history", label: "History", icon: Activity },
+    { href: "/member#history", label: "History", icon: Activity },
     { href: "/member/pt-history", label: "PT", icon: Calendar },
     { href: "/activity", label: "Feed", icon: Activity },
     { href: "/profile", label: "Profile", icon: UserRound }

@@ -3,8 +3,9 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { getExerciseName } from "@/lib/workout-utils";
-import type { ProgramDay, Exercise, LiftLog, ProgramAssignment } from "@/types/domain";
+import type { WorkoutDay, Exercise, LiftLog, ProgramAssignment } from "@/types/domain";
 
 export function FocusedDayView({
   day,
@@ -13,7 +14,7 @@ export function FocusedDayView({
   assignment,
   programTitle
 }: {
-  day: ProgramDay;
+  day: WorkoutDay;
   exercises: Exercise[];
   liftLogs: LiftLog[];
   assignment: ProgramAssignment | null;
@@ -21,6 +22,7 @@ export function FocusedDayView({
 }) {
   const router = useRouter();
   const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
 
   if (day.exercises.length === 0) {
     return (
@@ -65,50 +67,69 @@ export function FocusedDayView({
 
   const isPR = lastLog && pr === lastLog.weight;
 
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-      <div className="focus-exercise-card">
-        <span className="focus-ex-number">
-          Exercise {activeIndex + 1} of {day.exercises.length}
-        </span>
-        
-        <h2 style={{ margin: "16px 0 0", fontSize: "1.8rem", fontWeight: 800 }}>
-          {name}
-        </h2>
-        
-        <div className="focus-ex-target">
-          {ex.sets ? `${ex.sets}` : "—"}
-          <span style={{ fontSize: "1.4rem", color: "var(--text-faint)", margin: "0 8px" }}>×</span>
-          {ex.reps ? `${ex.reps}` : "—"}
-        </div>
-        
-        {ex.notes && (
-          <p style={{ margin: "12px 0 0", color: "var(--text-soft)", fontSize: "1rem" }}>
-            {ex.notes}
-          </p>
-        )}
+  const handleNext = () => {
+    setDirection(1);
+    setActiveIndex(activeIndex + 1);
+  };
 
-        <div className="focus-ex-last" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid var(--border)", width: "100%", maxWidth: "240px" }}>
-          <p style={{ margin: "0 0 6px", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-faint)", fontWeight: 700 }}>
-            Last time
-          </p>
-          {lastLog ? (
-            <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
-              {lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}
-              {isPR && <span className="pr-chip" style={{ marginLeft: 8 }}>PR</span>}
+  const handlePrev = () => {
+    setDirection(-1);
+    setActiveIndex(activeIndex - 1);
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px", overflow: "hidden" }}>
+      <AnimatePresence mode="wait" initial={false}>
+        <motion.div
+          key={activeIndex}
+          className="focus-exercise-card"
+          initial={{ opacity: 0, x: direction * 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: direction * -50 }}
+          transition={{ duration: 0.25, ease: "easeOut" }}
+        >
+          <span className="focus-ex-number">
+            Exercise {activeIndex + 1} of {day.exercises.length}
+          </span>
+          
+          <h2 style={{ margin: "16px 0 0", fontSize: "1.8rem", fontWeight: 800 }}>
+            {name}
+          </h2>
+          
+          <div className="focus-ex-target">
+            {ex.sets ? `${ex.sets}` : "—"}
+            <span style={{ fontSize: "1.4rem", color: "var(--text-faint)", margin: "0 8px" }}>×</span>
+            {ex.reps ? `${ex.reps}` : "—"}
+          </div>
+          
+          {ex.notes && (
+            <p style={{ margin: "12px 0 0", color: "var(--text-soft)", fontSize: "1rem" }}>
+              {ex.notes}
             </p>
-          ) : (
-            <p style={{ margin: 0, color: "var(--text-soft)" }}>No prior logs</p>
           )}
-        </div>
-      </div>
+
+          <div className="focus-ex-last" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid var(--border)", width: "100%", maxWidth: "240px" }}>
+            <p style={{ margin: "0 0 6px", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-faint)", fontWeight: 700 }}>
+              Last time
+            </p>
+            {lastLog ? (
+              <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
+                {lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}
+                {isPR && <span className="pr-chip" style={{ marginLeft: 8 }}>PR</span>}
+              </p>
+            ) : (
+              <p style={{ margin: 0, color: "var(--text-soft)" }}>No prior logs</p>
+            )}
+          </div>
+        </motion.div>
+      </AnimatePresence>
 
       <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
         {activeIndex > 0 && (
           <button 
             type="button" 
             className="button button-secondary"
-            onClick={() => setActiveIndex(activeIndex - 1)}
+            onClick={handlePrev}
           >
             Previous
           </button>
@@ -117,7 +138,7 @@ export function FocusedDayView({
           type="button" 
           className="button button-primary"
           style={{ minWidth: "160px", justifyContent: "center" }}
-          onClick={() => setActiveIndex(activeIndex + 1)}
+          onClick={handleNext}
         >
           {activeIndex === day.exercises.length - 1 ? "Finish workout" : "Mark done"}
         </button>
@@ -132,7 +153,8 @@ export function FocusedDayView({
               flex: 1,
               maxWidth: "32px",
               borderRadius: "2px",
-              background: i <= activeIndex ? "var(--brand)" : "var(--bg-subtle)"
+              background: i <= activeIndex ? "var(--brand)" : "var(--bg-subtle)",
+              transition: "background 0.3s ease"
             }}
           />
         ))}
