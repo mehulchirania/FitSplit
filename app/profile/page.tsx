@@ -5,6 +5,7 @@ import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart-lazy";
 import { MuscleRadarChart } from "@/components/muscle-radar-chart";
 import { requireAuth } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getBodyMetricLogsForMember,
   getProfileMetrics,
@@ -216,7 +217,7 @@ export default async function ProfilePage({
   }
 
   if (currentUser.role === "owner") {
-    const { gym } = await getGymDetail(currentUser.gymId);
+    const { gym } = await getGymDetail(currentUser.gymId ?? PRIMARY_GYM_ID);
     return (
       <main className="page">
         <section className="dashboard-header compact-header">

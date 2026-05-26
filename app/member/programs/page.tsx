@@ -1,6 +1,7 @@
 import { BackButton } from "@/components/back-button";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getExerciseCatalog,
   getGymDetail,
@@ -11,10 +12,11 @@ export const dynamic = "force-dynamic";
 
 export default async function MemberProgramsPage() {
   const currentUser = await requireRole(["member"]);
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const [{ programs }, { exercises }, { gym }] = await Promise.all([
-    getWorkoutPrograms(currentUser.gymId),
-    getExerciseCatalog(currentUser.gymId),
-    getGymDetail(currentUser.gymId)
+    getWorkoutPrograms(gymId),
+    getExerciseCatalog(gymId),
+    getGymDetail(gymId)
   ]);
 
   return (

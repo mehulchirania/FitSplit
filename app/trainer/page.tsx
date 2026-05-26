@@ -4,6 +4,7 @@ import { Calendar, UsersRound } from "@/components/icons";
 import { PTSessionActions } from "@/components/pt-session-actions";
 import { PTBookingForm } from "@/components/pt-booking-form";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getExerciseCatalog,
   getMembers,
@@ -47,7 +48,7 @@ export default async function TrainerDashboardPage({
 }) {
   const currentUser = await requireRole(["owner"]);
   const { book } = await searchParams;
-  const gymId = currentUser.gymId;
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const trainerId = currentUser.uid;
 
   const [mySessions, { members }, trainers, { exercises }] = await Promise.all([

@@ -18,8 +18,8 @@ export function MemberDashboardTabs(props: MemberDashboardTabsProps) {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace("#", "");
-      if (["workout", "progress", "wellness"].includes(hash)) {
-        setActiveTab(hash as any);
+      if (hash === "workout" || hash === "progress" || hash === "wellness") {
+        setActiveTab(hash);
       }
     };
 
@@ -31,7 +31,7 @@ export function MemberDashboardTabs(props: MemberDashboardTabsProps) {
     return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
-  const handleTabChange = (id: any) => {
+  const handleTabChange = (id: "workout" | "progress" | "wellness") => {
     setActiveTab(id);
     window.history.replaceState(null, "", `#${id}`);
   };

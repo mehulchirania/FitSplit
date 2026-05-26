@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { requireAuth } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { getActivityEvents } from "@/lib/firebase/read-models";
 import type { ActivityEvent } from "@/types/domain";
 
@@ -23,8 +24,8 @@ export default async function ActivityPage() {
           getActivityEvents("member", currentUser.memberId ?? currentUser.uid, currentUser.gymId)
         ])
       : await Promise.all([
-          getActivityEvents("owner", undefined, currentUser.gymId),
-          getActivityEvents("member", undefined, currentUser.gymId)
+          getActivityEvents("owner", undefined, currentUser.gymId ?? PRIMARY_GYM_ID),
+          getActivityEvents("member", undefined, currentUser.gymId ?? PRIMARY_GYM_ID)
         ]);
   const events = [...ownerEvents, ...memberEvents].sort((left, right) =>
     right.createdAt.localeCompare(left.createdAt)

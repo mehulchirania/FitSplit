@@ -4,6 +4,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { BulkMemberList } from "@/components/bulk-member-list";
 import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { getActiveProgramAssignments, getMembers, getWorkoutPrograms } from "@/lib/firebase/read-models";
 
 
@@ -42,10 +43,11 @@ export default async function MembersPage({
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
 
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const [{ members }, { assignments }, { programs }] = await Promise.all([
-    getMembers(currentUser.gymId),
-    getActiveProgramAssignments(currentUser.gymId),
-    getWorkoutPrograms(currentUser.gymId)
+    getMembers(gymId),
+    getActiveProgramAssignments(gymId),
+    getWorkoutPrograms(gymId)
   ]);
 
   const { sort: rawSort = "name", filter: rawFilter = "all" } = await searchParams;

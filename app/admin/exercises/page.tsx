@@ -7,6 +7,7 @@ import { ExerciseEditForm } from "@/components/exercise-edit-form";
 import { GymSelector } from "@/components/gym-selector";
 import { ChevronDown, Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   approveCatalogExerciseRequest,
   createCatalogExercise,
@@ -36,7 +37,7 @@ export default async function AdminExercisesPage({
 
   const { gym: gymParam } = await searchParams;
   const { gyms } = await getGymWorkspaces();
-  const selectedGymId = gymParam ?? gyms[0]?.id ?? "shg";
+  const selectedGymId = gymParam ?? gyms[0]?.id ?? PRIMARY_GYM_ID;
   const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
 
   const [

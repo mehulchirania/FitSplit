@@ -6,6 +6,8 @@ import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
 import { MemberHistory } from "@/components/member-history";
 import { MemberProgressPanel } from "@/components/member-progress-panel";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
+import type { Member } from "@/types/domain";
 import {
   getActiveWorkoutSessions,
   getDayLogsForMember,
@@ -37,6 +39,7 @@ function getGreeting() {
 export default async function MemberDashboard() {
   const currentUser = await requireRole(["member"]);
   const currentMemberId = currentUser.memberId ?? currentUser.uid;
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const todayDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
 
   const [
@@ -51,14 +54,14 @@ export default async function MemberDashboard() {
     { macroLog: initialMacroLog }
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
-    getProgramAssignmentForMember(currentMemberId, currentUser.gymId),
-    getWorkoutPrograms(currentUser.gymId),
-    getLiftLogsForMember(currentMemberId, currentUser.gymId),
-    getExerciseCatalog(currentUser.gymId),
-    getActiveWorkoutSessions(currentUser.gymId),
-    getGymDetail(currentUser.gymId),
-    getDayLogsForMember(currentMemberId, currentUser.gymId),
-    getMacroLogForMember(currentMemberId, currentUser.gymId, todayDate)
+    getProgramAssignmentForMember(currentMemberId, gymId),
+    getWorkoutPrograms(gymId),
+    getLiftLogsForMember(currentMemberId, gymId),
+    getExerciseCatalog(gymId),
+    getActiveWorkoutSessions(gymId),
+    getGymDetail(gymId),
+    getDayLogsForMember(currentMemberId, gymId),
+    getMacroLogForMember(currentMemberId, gymId, todayDate)
   ]);
 
   if (!member) return null;
@@ -217,7 +220,7 @@ export default async function MemberDashboard() {
             {program ? (
               <MemberWorkoutConsole
                 exercises={exercises}
-                gymId={currentUser.gymId ?? ""}
+                gymId={gymId}
                 initialActiveSessionCount={sessions.length}
                 initialDayLogs={dayLogs}
                 initialInjuryNote={profile.injuryNotes}
@@ -296,11 +299,11 @@ export default async function MemberDashboard() {
               <div className="member-metrics-card">
                 <h3>Profile metrics</h3>
                 <p>Keep these updated so your trainer has useful context.</p>
-                <EditableMetrics member={memberWithProfile as any} />
+                <EditableMetrics member={memberWithProfile as Member} />
               </div>
               <MacroProgressPanel
                 memberId={member.id}
-                gymId={currentUser.gymId}
+                gymId={gymId}
                 date={todayDate}
                 target={profile.macroNutritionTarget}
                 initialActual={initialMacroLog ?? undefined}

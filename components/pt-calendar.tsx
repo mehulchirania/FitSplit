@@ -6,6 +6,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { reschedulePTSession } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
 import type { PTSession } from "@/types/domain";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -93,7 +94,7 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
     formData.set("scheduledAt", `${newDateKey}T${oldTime}`);
 
     startTransition(async () => {
-      await reschedulePTSession(null as any, formData);
+      await reschedulePTSession(initialFormActionState, formData);
       router.refresh();
     });
   }

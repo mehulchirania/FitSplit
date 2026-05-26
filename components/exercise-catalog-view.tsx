@@ -369,43 +369,26 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
             }}
           />
 
-          <Dialog.Root open={addOpen} onOpenChange={setAddOpen}>
-            <Dialog.Trigger asChild>
-              <button
-                className="button button-primary"
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "6px",
-                  padding: "0 14px",
-                  height: "34px",
-                  fontSize: "0.82rem",
-                  whiteSpace: "nowrap",
-                }}
-                type="button"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                Add Custom Exercise
-              </button>
-            </Dialog.Trigger>
-            <Dialog.Portal>
-              <Dialog.Overlay className="profile-modal-backdrop" />
-              <Dialog.Content className="profile-modal">
-                <div className="profile-modal-header" style={{ marginBottom: "16px" }}>
-                  <Dialog.Title className="profile-modal-title">Add Custom Exercise</Dialog.Title>
-                  <Dialog.Close className="icon-button neutral-icon-button" aria-label="Close">
-                    <X />
-                  </Dialog.Close>
-                </div>
-                <div style={{ maxHeight: "70vh", overflowY: "auto", paddingRight: "8px" }}>
-                  <ExerciseEditForm action={createAction} isCreate isOwner />
-                </div>
-              </Dialog.Content>
-            </Dialog.Portal>
-          </Dialog.Root>
+          <button
+            className="button button-primary"
+            type="button"
+            onClick={() => setAddOpen(true)}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+              padding: "0 14px",
+              height: "34px",
+              fontSize: "0.82rem",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            Add Custom Exercise
+          </button>
         </div>
 
         {/* Row 2: filter selects — each in its own fixed-width grid cell */}

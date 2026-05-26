@@ -2,6 +2,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getActiveProgramAssignments,
   getExerciseCatalog,
@@ -13,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ProgramsPage() {
   const currentUser = await requireRole(["admin", "owner"]);
-  const gymId = currentUser.gymId;
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [{ catalog, exercises }, { programs }, { assignments }, { members }] = await Promise.all([
     getExerciseCatalog(gymId),

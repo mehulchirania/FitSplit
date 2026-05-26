@@ -11,6 +11,7 @@ import { ProgramAssignmentForm } from "@/components/program-assignment-form";
 import { TrainerPtPanel } from "@/components/trainer-pt-panel";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { updateCoachNote } from "@/lib/firebase/actions";
 import {
   getExerciseCatalog,
@@ -46,6 +47,7 @@ export default async function MemberDetailPage({
   const currentUser = await requireRole(["admin", "owner"]);
   const { memberId } = await params;
 
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const [
     { member },
     { assignment },
@@ -58,12 +60,12 @@ export default async function MemberDetailPage({
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId),
-    getWorkoutPrograms(currentUser.gymId),
-    getExerciseCatalog(currentUser.gymId),
+    getWorkoutPrograms(gymId),
+    getExerciseCatalog(gymId),
     getProfileMetrics(memberId),
-    getLiftLogsForMember(memberId),
-    getTrainersForGym(currentUser.gymId),
-    getPTSessionsForMember(currentUser.gymId, memberId)
+    getLiftLogsForMember(memberId, gymId),
+    getTrainersForGym(gymId),
+    getPTSessionsForMember(gymId, memberId)
   ]);
 
   if (!member) notFound();

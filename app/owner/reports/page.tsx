@@ -1,5 +1,6 @@
 import { Breadcrumb } from "@/components/breadcrumb";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { AttendanceTrendChart } from "@/components/attendance-trend-chart-lazy";
 import {
   getActiveProgramAssignments,
@@ -16,7 +17,7 @@ export const dynamic = "force-dynamic";
 
 export default async function OwnerReportsPage() {
   const currentUser = await requireRole(["admin", "owner"]);
-  const gymId = currentUser.gymId;
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [
     { members },

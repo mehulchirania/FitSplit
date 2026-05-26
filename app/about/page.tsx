@@ -4,12 +4,13 @@ import { Activity, Mail, Dumbbell } from "@/components/icons";
 import { requireAuth } from "@/lib/auth";
 import { submitContactMessage } from "@/lib/firebase/actions";
 import { getGymDetail } from "@/lib/firebase/read-models";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 
 export const dynamic = "force-dynamic";
 
 export default async function AboutPage() {
   const currentUser = await requireAuth();
-  const { gym } = await getGymDetail(currentUser.gymId);
+  const { gym } = await getGymDetail(currentUser.gymId ?? PRIMARY_GYM_ID);
 
   const socialLinks = [
     gym?.instagram ? { label: "Instagram", mark: "IG", href: gym.instagram.startsWith("http") ? gym.instagram : `https://instagram.com/${gym.instagram.replace(/^@/, "")}` } : null,

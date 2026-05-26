@@ -6,6 +6,7 @@ import {
   getPTLiftLogsForSession,
   getPTSessionsForMember
 } from "@/lib/firebase/read-models";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import type { PTSession } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,7 @@ function formatTime(iso: string) {
 export default async function MemberPTHistoryPage() {
   const currentUser = await requireRole(["member"]);
   const memberId = currentUser.memberId ?? currentUser.uid;
-  const gymId = currentUser.gymId;
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const sessions = await getPTSessionsForMember(gymId, memberId);
 

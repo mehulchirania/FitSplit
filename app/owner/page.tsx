@@ -8,6 +8,7 @@ import { GymNoticeManager } from "@/components/gym-notice-manager";
 import { GymFloorLoadMap } from "@/components/gym-floor-load-map-lazy";
 import { AttendanceTrendChart } from "@/components/attendance-trend-chart-lazy";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getActiveProgramAssignments,
   getActiveWorkoutSessions,
@@ -32,7 +33,7 @@ export default async function OwnerDashboard() {
   const currentUser = await requireRole(["admin", "owner"]);
   const isTrainer = currentUser.role === "owner" && currentUser.staffType === "trainer";
   const isStaff = currentUser.role === "owner" && currentUser.staffType === "staff";
-  const gymId = currentUser.gymId;
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [
     { members },

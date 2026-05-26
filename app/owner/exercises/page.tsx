@@ -1,6 +1,7 @@
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ExerciseCatalogView } from "@/components/exercise-catalog-view";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { createCatalogExercise } from "@/lib/firebase/actions";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
 
@@ -9,7 +10,7 @@ export const dynamic = "force-dynamic";
 export default async function ExerciseCatalogPage() {
   const currentUser = await requireRole(["admin", "owner"]);
   const { exercises, catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(
-    currentUser.gymId
+    currentUser.gymId ?? PRIMARY_GYM_ID
   );
 
   const predefined = exercises.filter((e) => e.source !== "custom");

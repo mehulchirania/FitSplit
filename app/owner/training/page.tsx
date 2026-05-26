@@ -5,6 +5,7 @@ import { PTBookingForm } from "@/components/pt-booking-form";
 import { PTCalendarDynamic } from "@/components/pt-calendar-dynamic";
 import { PTSessionActions } from "@/components/pt-session-actions";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getAllPTSessionsForGym,
   getExerciseCatalog,
@@ -65,8 +66,8 @@ export default async function OwnerTrainingPage({
   const { status, trainerId, memberId, gym: gymParam, view } = await searchParams;
   const { gyms } = currentUser.role === "admin" ? await getGymWorkspaces() : { gyms: [] };
   const gymId = currentUser.role === "admin"
-    ? (gymParam ?? currentUser.gymId ?? gyms[0]?.id ?? "shg")
-    : (currentUser.gymId ?? "shg");
+    ? (gymParam ?? currentUser.gymId ?? gyms[0]?.id ?? PRIMARY_GYM_ID)
+    : (currentUser.gymId ?? PRIMARY_GYM_ID);
   const selectedGym = gyms.find((gym) => gym.id === gymId);
 
   const [sessions, { members }, trainers, { exercises }] = await Promise.all([
