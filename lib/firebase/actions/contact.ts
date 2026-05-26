@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -108,7 +109,7 @@ export async function submitContactMessage(
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
-    return success("Message sent. We will get back to you soon.", gymId);
+    return success("Message sent. We will get back to you soon.", gymId, ["contact", "notifications"]);
   } catch (error) {
     console.error("Unable to submit contact message", error);
     return failure(error, "Unable to send message. Please try again.");
@@ -164,7 +165,7 @@ export async function markContactMessageRead(
       )
     );
 
-    return success("Message marked as read.");
+    return success("Message marked as read.", undefined, ["contact", "notifications"]);
   } catch (error) {
     return failure(error, "Unable to update message.");
   }

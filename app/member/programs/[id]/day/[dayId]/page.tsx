@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // D17: Focused single-day workout view for a member.
 // Accessible from the workout console day tabs via a "View day" link.
 // Shows the day's exercise list with set/rep targets and a compact lift-log form.

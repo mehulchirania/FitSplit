@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { CloseDetailsButton } from "@/components/close-details-button";

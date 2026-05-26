@@ -59,6 +59,32 @@ export async function getMembers(gymId?: string) {
 
 const getMembersRequestCached = cache(getMembersUncached);
 
+async function resolveMemberUsername(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  memberId: string,
+  data: Record<string, unknown>
+) {
+  const directUsername =
+    String(data.username ?? "").trim() ||
+    String(data.phone ?? "").trim() ||
+    String(data.email ?? "").trim();
+
+  if (directUsername) return directUsername;
+
+  try {
+    const authProfile = await db.collection(collectionPaths.authProfiles).doc(memberId).get();
+    const authData = authProfile.data() ?? {};
+    return (
+      String(authData.username ?? "").trim() ||
+      String(authData.phone ?? "").trim() ||
+      String(authData.email ?? "").trim() ||
+      undefined
+    );
+  } catch {
+    return undefined;
+  }
+}
+
 export const getMemberDetail = cache(async function getMemberDetail(memberId: string): Promise<{
   member: Member | null;
   isPersisted: boolean;
@@ -107,11 +133,7 @@ async function getMemberDetailUncached(memberId: string): Promise<{
   }
 
   const memberName = String(data.fullName ?? "");
-  const username =
-    String(data.username ?? "").trim() ||
-    String(data.phone ?? "").trim() ||
-    String(data.email ?? "").trim() ||
-    undefined;
+  const username = await resolveMemberUsername(db, memberId, data);
   const member: Member = {
     id: profileDoc.id,
     fullName: memberName,
@@ -262,7 +284,7 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     avatarInitials: String(data.avatarInitials ?? "MB"),
     goal: String(data.goal ?? ""),
     isActive: data.isActive !== false,
-    username: String(data.username ?? "").trim() || undefined,
+    username: await resolveMemberUsername(getFirebaseAdminServices().db, memberId, data),
     age: data.age ? Number(data.age) : undefined,
     heightCm: data.heightCm ? Number(data.heightCm) : undefined,
     weightKg: data.weightKg ? Number(data.weightKg) : undefined

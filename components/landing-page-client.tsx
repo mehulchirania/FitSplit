@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { FirebaseError } from "firebase/app";
@@ -275,7 +277,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     e.preventDefault();
     setError(""); setMessage("");
     const u = username.trim(), p = password.trim();
-    if (!u) { setError(isMember ? "Enter your mobile number or username." : "Enter your mobile number."); return; }
+    if (!u) { setError(isMember ? "Enter your mobile number or username." : "Enter your username."); return; }
     if (isMember && !/^\d{4}$/.test(p)) { setError("PIN must be exactly 4 numeric digits."); return; }
     if (!isMember && !p) { setError("Enter your password."); return; }
 
@@ -297,7 +299,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   function onForgot() {
     setError(""); setMessage("");
     const u = username.trim();
-    if (!u) { setError(isMember ? "Enter your mobile number or username first." : "Enter your mobile number first."); return; }
+    if (!u) { setError(isMember ? "Enter your mobile number or username first." : "Enter your username first."); return; }
     const msg = isMember
       ? "A reset request will be sent to the gym owner. Contact them for your new PIN."
       : "A reset request will be sent to the gym owner and admin.";
@@ -345,7 +347,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             </div>
 
             <h2 className="lp-modal-title">Access your workspace</h2>
-            <p className="lp-modal-sub">Members use mobile number/username + PIN. Staff use mobile number + password.</p>
+            <p className="lp-modal-sub">Members use mobile number/username + PIN. Staff use username + password.</p>
 
             {/* Tabs */}
             <div className="lp-tabs" role="tablist" aria-label="Login type">
@@ -378,7 +380,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); formRef.current?.requestSubmit(); } }}
             >
               <label className="lp-field">
-                <span>{isMember ? "Mobile number or username" : "Mobile number"}</span>
+                <span>{isMember ? "Mobile number or username" : "Username"}</span>
                 <input
                   type="text"
                   autoComplete="username"

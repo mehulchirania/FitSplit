@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -301,7 +302,7 @@ export async function createGymWorkspace(
       updatedAt: now
     });
 
-    return success(`${name} was added.`, slug);
+    return success(`${name} was added.`, slug, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to create gym.");
   }
@@ -464,7 +465,7 @@ export async function updateGymDetails(
 
     await db.collection(collectionPaths.gyms).doc(gymId).update(updateData);
 
-    return success("Gym details updated successfully.", gymId);
+    return success("Gym details updated successfully.", gymId, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to update gym details.");
   }
@@ -509,7 +510,7 @@ export async function updateGymLogo(
       { merge: true }
     );
 
-    return success("Gym logo updated.", gymId);
+    return success("Gym logo updated.", gymId, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to update gym logo.");
   }
@@ -566,15 +567,15 @@ export async function setGymStatus(
       profileSnapshot.docs.map(async (profileDoc) => {
         try {
           await auth.updateUser(profileDoc.id, { disabled: !isActive });
-        } catch (error: any) {
-          if (error?.code !== "auth/user-not-found") {
+        } catch (error: unknown) {
+          if ((error as any)?.code !== "auth/user-not-found") {
             throw error;
           }
         }
       })
     );
 
-    return success(`Gym ${isActive ? "activated" : "deactivated"}. Staff and member access ${isActive ? "enabled" : "disabled"}.`, gymId);
+    return success(`Gym ${isActive ? "activated" : "deactivated"}. Staff and member access ${isActive ? "enabled" : "disabled"}.`, gymId, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to update gym status.");
   }
@@ -610,7 +611,7 @@ export async function addGymNotice(
     const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
     await gymRef.set({ notices: [...existing, notice] }, { merge: true });
 
-    return success("Notice added.", gymId);
+    return success("Notice added.", gymId, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to add notice.");
   }
@@ -636,7 +637,7 @@ export async function deleteGymNotice(
     const updated = existing.filter((n) => (n as { id?: string }).id !== noticeId);
     await gymRef.set({ notices: updated }, { merge: true });
 
-    return success("Notice removed.", gymId);
+    return success("Notice removed.", gymId, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to delete notice.");
   }

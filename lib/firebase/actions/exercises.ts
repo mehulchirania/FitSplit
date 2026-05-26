@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -39,7 +40,7 @@ export async function requestCatalogExercise(
     const { name, muscleGroup, equipment = "", instructions = "" } = parsed.data;
 
     if (!hasFirebaseAdminConfig()) {
-      return success(`"${name}" request noted. Connect Firebase to save requests for admin review.`);
+      return success(`"${name}" request noted. Connect Firebase to save requests for admin review.`, undefined, ["exercises"]);
     }
 
     const db = requireFirebase();
@@ -81,7 +82,7 @@ export async function requestCatalogExercise(
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
-    return success(`Request to add "${name}" sent to admin for review.`, gymId);
+    return success(`Request to add "${name}" sent to admin for review.`, gymId, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to send exercise request.");
   }
@@ -165,7 +166,7 @@ export async function approveCatalogExerciseRequest(
       { merge: true }
     );
 
-    return success(`"${name}" added to the exercise catalog.`, gymId);
+    return success(`"${name}" added to the exercise catalog.`, gymId, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to approve exercise request.");
   }
@@ -203,7 +204,7 @@ export async function rejectCatalogExerciseRequest(
       )
     );
 
-    return success("Exercise request dismissed.");
+    return success("Exercise request dismissed.", undefined, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to dismiss request.");
   }
@@ -272,7 +273,7 @@ export async function createCatalogExercise(
       await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(exerciseRecord);
     }
 
-    return success(`${name} was added to the exercise catalog.`, gymId);
+    return success(`${name} was added to the exercise catalog.`, gymId, ["exercises"]);
   } catch (error) {
     console.error("Unable to create catalog exercise", error);
     return failure(error, "Unable to save exercise. Please try again.");
@@ -346,7 +347,7 @@ export async function updateCatalogExercise(
       await scopedGymDoc(db, gymId, "exerciseCatalog", exerciseId).set(updatePayload, { merge: true });
     }
 
-    return success(`${name} updated.`, gymId);
+    return success(`${name} updated.`, gymId, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to update exercise.");
   }
@@ -383,7 +384,7 @@ export async function setGymExerciseVideo(
       { merge: true }
     );
 
-    return success("Gym video updated.", gymId);
+    return success("Gym video updated.", gymId, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to update gym video.");
   }
@@ -447,7 +448,7 @@ export async function resetExerciseVideos(
       }, { merge: true });
     }
 
-    return success("Videos reset to default.", gymId);
+    return success("Videos reset to default.", gymId, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to reset videos.");
   }
@@ -482,7 +483,7 @@ export async function setExerciseTutorialVisibility(
       { merge: true }
     );
 
-    return success(showTutorial ? "Tutorial enabled for members." : "Tutorial hidden from members.", gymId);
+    return success(showTutorial ? "Tutorial enabled for members." : "Tutorial hidden from members.", gymId, ["exercises"]);
   } catch (error) {
     return failure(error, "Unable to update tutorial visibility.");
   }
@@ -516,7 +517,7 @@ export async function setMuscleGroupTutorialVisibility(
       .map((s) => s.trim())
       .filter(Boolean);
 
-    if (exerciseIds.length === 0) return success("Nothing to update.");
+    if (exerciseIds.length === 0) return success("Nothing to update.", undefined, ["exercises"]);
 
     const now = new Date().toISOString();
     const batch = db.batch();

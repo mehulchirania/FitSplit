@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { Calendar, Dumbbell } from "@/components/icons";

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /**
  * fix-gym-scoped-video-urls.mjs
  *

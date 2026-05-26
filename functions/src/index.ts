@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // runtime: nodejs22 — upgraded from nodejs20 on 2026-05-24
 import { randomUUID } from "node:crypto";
 import { initializeApp } from "firebase-admin/app";

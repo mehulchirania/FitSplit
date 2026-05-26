@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -116,7 +117,7 @@ export async function bookPTSession(
       "/member/pt-history"
     );
 
-    return success(`PT plan assigned. Plan ID: ${sessionId}`, gymId);
+    return success(`PT plan assigned. Plan ID: ${sessionId}`, gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
     console.error("Unable to book PT plan", error);
     return failure(error, "Could not assign PT plan. Please try again.");
@@ -164,7 +165,7 @@ export async function startPTSession(
     await rootRef.update(patch);
     await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
 
-    return success("Session started.", gymId);
+    return success("Session started.", gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
     console.error("Unable to start PT session", error);
     return failure(error, "Could not start session. Please try again.");
@@ -267,7 +268,7 @@ export async function logPTLiftSet(
     await db.collection(collectionPaths.liftLogs).doc(logId).set(liftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "liftLogs", logId, liftLogRecord);
 
-    return success("Lift logged.", gymId);
+    return success("Lift logged.", gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
     console.error("Unable to log PT lift set", error);
     return failure(error, "Could not log lift. Please try again.");
@@ -335,7 +336,7 @@ export async function completePTSession(
       "/member/pt-history"
     );
 
-    return success("Session completed.", gymId);
+    return success("Session completed.", gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
     console.error("Unable to complete PT session", error);
     return failure(error, "Could not complete session. Please try again.");
@@ -402,7 +403,7 @@ export async function cancelPTSession(
     await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
 
-    return success("Session cancelled.", gymId);
+    return success("Session cancelled.", gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
     console.error("Unable to cancel PT session", error);
     return failure(error, "Could not cancel session. Please try again.");
@@ -497,7 +498,7 @@ export async function reschedulePTSession(
     await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
 
-    return success("Session rescheduled.", gymId);
+    return success("Session rescheduled.", gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
     console.error("Unable to reschedule PT session", error);
     return failure(error, "Could not reschedule session. Please try again.");

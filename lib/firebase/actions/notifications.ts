@@ -21,7 +21,7 @@ export async function clearUserNotifications(notificationIds: string[]): Promise
       .slice(0, 20);
 
     if (scopedIds.length === 0) {
-      return success("No notifications to clear.");
+      return success("No notifications to clear.", undefined, ["notifications"]);
     }
 
     const now = new Date().toISOString();
@@ -50,7 +50,7 @@ export async function clearUserNotifications(notificationIds: string[]): Promise
 
     await batch.commit();
 
-    return success("Notifications cleared.", currentUser.gymId);
+    return success("Notifications cleared.", currentUser.gymId, ["notifications"]);
   } catch (error) {
     console.error("Unable to clear notifications", error);
     return failure(error, "Unable to clear notifications.");
@@ -82,7 +82,7 @@ export async function saveFcmToken(
       { fcmToken: token, fcmTokenUpdatedAt: new Date().toISOString() },
       { merge: true }
     );
-    return success("Push notifications enabled.");
+    return success("Push notifications enabled.", undefined, ["notifications"]);
   } catch (error) {
     console.error("Unable to save FCM token", error);
     return failure(error, "Could not enable push notifications.");

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { OwnerQuickLinks } from "@/components/owner-quick-links";
-import { Activity, Bell, Calendar, Dumbbell, UsersRound } from "@/components/icons";
+import { Bell, UsersRound } from "@/components/icons";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { MemberRow } from "@/components/member-row";
 import { NotificationList } from "@/components/notification-list";
@@ -12,8 +12,6 @@ import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
   getActiveProgramAssignments,
   getActiveWorkoutSessions,
-  getAllPTSessionsForGym,
-  getExerciseCatalog,
   getGymDetail,
   getMembers,
   getOwnerNotifications,
@@ -38,32 +36,26 @@ export default async function OwnerDashboard() {
   const [
     { members },
     { notifications: ownerNotifications },
-    { exercises },
     { programs },
     { gym },
     { sessions: workoutSessions },
     { assignments },
     { slots },
-    ptPlans,
     sessionCounts
   ] = await Promise.all([
     getMembers(gymId),
     getOwnerNotifications(gymId),
-    getExerciseCatalog(gymId),
     getWorkoutPrograms(gymId),
     getGymDetail(gymId),
     getActiveWorkoutSessions(gymId),
     getActiveProgramAssignments(gymId),
     getGymFloorLoadMap(gymId),
-    getAllPTSessionsForGym(gymId),
     getRecentSessionCounts(gymId)
   ]);
 
   const assignedMemberIds = new Set(assignments.map((a) => a.memberId));
   const unassignedMembers = members.filter((m) => !assignedMemberIds.has(m.id));
-  const assignmentRate = members.length
-    ? Math.round(((members.length - unassignedMembers.length) / members.length) * 100)
-    : 0;
+
 
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -74,10 +66,7 @@ export default async function OwnerDashboard() {
     (m) => getJoinedDate(m.joinedAt) < sevenDaysAgo
   ).length;
 
-  const currentPTPlans = ptPlans.filter(
-    (p) => p.status === "scheduled" || p.status === "active"
-  );
-  const activePTMembers = new Set(currentPTPlans.map((p) => p.memberId)).size;
+
 
   return (
     <main className="page odp">

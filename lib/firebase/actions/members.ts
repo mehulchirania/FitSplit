@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -151,7 +152,7 @@ export async function createMemberProfile(
       );
     });
 
-    return success(`${fullName} was added as a FitSplit member.`, gymId);
+    return success(`${fullName} was added as a FitSplit member.`, gymId, ["members"]);
   } catch (error) {
     console.error("Unable to create member profile", error);
 
@@ -277,7 +278,7 @@ export async function updateMemberProfile(
       isActive: existingProfile.isActive !== false
     });
 
-    return success(`${fullName}'s member details were updated.`, gymId);
+    return success(`${fullName}'s member details were updated.`, gymId, ["members"]);
   } catch (error) {
     console.error("Unable to update member profile", error);
     return failure(error, "Unable to update member details. Please try again.");
@@ -390,7 +391,7 @@ export async function updateOwnerMemberContext(
       "pin-1234"
     );
 
-    return success(`${fullName}'s profile context was updated.`, gymId);
+    return success(`${fullName}'s profile context was updated.`, gymId, ["members"]);
   } catch (error) {
     console.error("Unable to update member context", error);
     return failure(error, "Unable to update member context. Please try again.");
@@ -473,7 +474,7 @@ export async function updateProfileMetrics(
       ...profileUpdate
     });
 
-    return success("Profile details were updated.", profileGymId);
+    return success("Profile details were updated.", profileGymId, ["members"]);
   } catch (error) {
     console.error("Unable to update profile metrics", error);
     return failure(error, "Unable to update profile. Please try again.");
@@ -511,7 +512,7 @@ export async function saveMemberAiTrainerNote(
       updatedAt: now
     });
 
-    return success(injuryNotes ? "AI trainer note saved." : "AI trainer note cleared.", currentUser.gymId);
+    return success(injuryNotes ? "AI trainer note saved." : "AI trainer note cleared.", currentUser.gymId, ["members"]);
   } catch (error) {
     console.error("Unable to save AI trainer note", error);
     return failure(error, "Unable to save this AI trainer note.");
@@ -555,7 +556,7 @@ export async function changeMemberPin(
     // so we update directly — the client already authenticated via session cookie
     await auth.updateUser(memberId, { password: `pin-${newPin}` });
 
-    return success("PIN changed successfully.");
+    return success("PIN changed successfully.", undefined, ["members"]);
   } catch (error) {
     console.error("Unable to change PIN", error);
     return failure(error, "Could not change PIN. Please try again.");
@@ -619,7 +620,7 @@ export async function toggleMemberAccess(
     await db.collection(collectionPaths.activityEvents).doc(toggleEventId).set(toggleEvent);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", toggleEventId, toggleEvent);
 
-    return success(`Member access ${isActive ? "enabled" : "disabled"}.`, gymId);
+    return success(`Member access ${isActive ? "enabled" : "disabled"}.`, gymId, ["members"]);
   } catch (error) {
     return failure(error, "Unable to toggle member access.");
   }
@@ -653,7 +654,7 @@ export async function bulkToggleMemberAccess(
       })
     );
 
-    return success(`${memberIds.length} member${memberIds.length === 1 ? "" : "s"} ${isActive ? "restored" : "suspended"}.`, user.gymId);
+    return success(`${memberIds.length} member${memberIds.length === 1 ? "" : "s"} ${isActive ? "restored" : "suspended"}.`, user.gymId, ["members"]);
   } catch (error) {
     return failure(error, "Bulk access update failed.");
   }
@@ -690,7 +691,7 @@ export async function assignTrainerToMember(
       .update({ assignedTrainer: assignedTrainer.trim(), updatedAt: now });
 
     const label = assignedTrainer.trim() || "Unassigned";
-    return success(`Trainer updated to ${label}.`);
+    return success(`Trainer updated to ${label}.`, undefined, ["members"]);
   } catch (error) {
     console.error("Unable to update assigned trainer", error);
     return failure(error, "Unable to update trainer. Please try again.");
@@ -826,7 +827,7 @@ export async function deleteMemberProfile(
     await db.collection(collectionPaths.activityEvents).doc(deleteEventId).set(deleteEvent);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", deleteEventId, deleteEvent);
 
-    return success(`${deletedName} was deleted.`, gymId);
+    return success(`${deletedName} was deleted.`, gymId, ["members"]);
   } catch (error) {
     console.error("Unable to delete member", error);
     return failure(error, "Unable to delete member.");

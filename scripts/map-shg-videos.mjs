@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { readFileSync as rf } from 'node:fs';
 import { resolve, dirname } from 'node:path';

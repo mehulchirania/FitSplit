@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -70,7 +71,7 @@ export async function logLiftSet(
     assertCanManageMember(currentUser, memberId);
 
     if (!hasFirebaseAdminConfig()) {
-      return success("Lift entry was logged (local mode).");
+      return success("Lift entry was logged (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
     const db = requireFirebase();
     const liftLogId = randomUUID();
@@ -95,7 +96,7 @@ export async function logLiftSet(
     await db.collection(collectionPaths.liftLogs).doc(liftLogId).set(liftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord);
 
-    return success("Lift entry was logged.", gymId);
+    return success("Lift entry was logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to log lift set", error);
     return failure(error, "Unable to log lift. Please try again.");
@@ -136,7 +137,7 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
 
     await batch.commit();
 
-    return success(`${logs.length} offline lift(s) synced.`, currentUser.gymId);
+    return success(`${logs.length} offline lift(s) synced.`, currentUser.gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to sync offline lifts", error);
     return failure(error, "Unable to sync offline lifts.");
@@ -169,7 +170,7 @@ export async function logBodyWeight(
     const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
     if (!hasFirebaseAdminConfig()) {
-      return success(`Weight ${weightKg} kg logged.`);
+      return success(`Weight ${weightKg} kg logged.`, undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
 
     const db = requireFirebase();
@@ -200,7 +201,7 @@ export async function logBodyWeight(
       // best-effort; chart still works from the dedicated collection
     }
 
-    return success(`Weight ${weightKg} kg logged.`, gymId);
+    return success(`Weight ${weightKg} kg logged.`, gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to log body weight", error);
     return failure(error, "Could not log weight. Please try again.");
@@ -245,7 +246,7 @@ export async function updateCoachNote(
       ...noteUpdate
     });
 
-    return success(rawNote ? "Coach note updated." : "Coach note cleared.", currentUser.gymId);
+    return success(rawNote ? "Coach note updated." : "Coach note cleared.", currentUser.gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to update coach note", error);
     return failure(error, "Could not save coach note.");
@@ -308,7 +309,7 @@ export async function logDayStatus(
     );
     await mirrorGymScopedRecord(db, gymId, "dayLogs", docId, dayLogRecord);
 
-    return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.", gymId);
+    return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to log day status", error);
     return failure(error, "Could not save. Please try again.");
@@ -344,7 +345,7 @@ export async function clearDayLog(
     await db.collection(collectionPaths.dayLogs).doc(docId).delete();
     await scopedGymDoc(db, currentUser.gymId ?? PRIMARY_GYM_ID, "dayLogs", docId).delete();
 
-    return success("Day log cleared.", currentUser.gymId);
+    return success("Day log cleared.", currentUser.gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to clear day log", error);
     return failure(error, "Could not clear. Please try again.");
@@ -376,7 +377,7 @@ export async function saveMacroLog(
     assertCanManageMember(currentUser, memberId);
 
     if (!hasFirebaseAdminConfig()) {
-      return success("Macro log saved (local mode).");
+      return success("Macro log saved (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
 
     const db = requireFirebase();
@@ -399,7 +400,7 @@ export async function saveMacroLog(
     await db.collection(collectionPaths.macroLogs).doc(docId).set(macroRecord, { merge: true });
     await mirrorGymScopedRecord(db, gymId, "macroLogs", docId, macroRecord);
 
-    return success("Macros saved.", gymId);
+    return success("Macros saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     return failure(error, "Could not save macro log.");
   }
@@ -432,7 +433,7 @@ export async function startWorkoutSession(
 
     if (!hasFirebaseAdminConfig()) {
       // Mock mode — just confirm success locally
-      return success("Workout session was started (local mode).");
+      return success("Workout session was started (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
     const db = requireFirebase();
     
@@ -485,7 +486,7 @@ export async function startWorkoutSession(
     );
     await mirrorGymScopedRecord(db, gymId, "attendanceRecords", sessionId, attendanceRecord);
 
-    return success("Workout session was started.", gymId);
+    return success("Workout session was started.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to start workout session", error);
     return failure(error, "Unable to start workout. Please try again.");
@@ -508,7 +509,7 @@ export async function endWorkoutSession(
     if (!parsed.success) return parsed.state;
 
     if (!hasFirebaseAdminConfig()) {
-      return success("Workout session was ended (local mode).");
+      return success("Workout session was ended (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
     const db = requireFirebase();
     const { sessionId, memberId } = parsed.data;
@@ -556,7 +557,7 @@ export async function endWorkoutSession(
       // non-fatal — attendance tracking is supplementary
     }
 
-    return success("Workout session was ended.", gymId);
+    return success("Workout session was ended.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to end workout session", error);
     return failure(error, "Unable to end workout. Please try again.");

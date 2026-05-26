@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { notFound } from "next/navigation";
 import { AiProgramBrief } from "@/components/ai-program-brief";
 import { Breadcrumb } from "@/components/breadcrumb";

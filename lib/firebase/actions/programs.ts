@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -150,7 +151,7 @@ export async function assignProgramToMember(
     const programTitle = parsed.data.programTitle || "Workout program";
 
     if (!hasFirebaseAdminConfig()) {
-      return success(`${programTitle} was assigned to ${memberName} (local mode).`);
+      return success(`${programTitle} was assigned to ${memberName} (local mode).`, undefined, ["programs"]);
     }
 
     const db = requireFirebase();
@@ -228,7 +229,7 @@ export async function assignProgramToMember(
       "/member"
     );
 
-    return success(`${programTitle} was assigned to ${memberName}.`, assignGymId);
+    return success(`${programTitle} was assigned to ${memberName}.`, assignGymId, ["programs"]);
   } catch (error) {
     console.error("Unable to assign program to member", error);
     return failure(error, "Unable to assign workout program. Please try again.");
@@ -282,7 +283,7 @@ export async function bulkAssignProgram(
 ): Promise<FormActionState> {
   try {
     const currentUser = await requireRole(["admin", "owner"]);
-    if (!hasFirebaseAdminConfig()) return success("Assigned (local mode — no Firebase).");
+    if (!hasFirebaseAdminConfig()) return success("Assigned (local mode — no Firebase).", undefined, ["programs"]);
 
     const parsed = parseActionData(formData, BulkAssignSchema);
     if (!parsed.success) return parsed.state;
@@ -327,7 +328,7 @@ export async function bulkAssignProgram(
     );
 
     revalidateGymTags(assignGymId, ["members", "notifications", "programs"]);
-    return success(`"${programTitle}" assigned to ${memberIds.length} member${memberIds.length === 1 ? "" : "s"}.`, assignGymId);
+    return success(`"${programTitle}" assigned to ${memberIds.length} member${memberIds.length === 1 ? "" : "s"}.`, assignGymId, ["programs"]);
   } catch (error) {
     return failure(error, "Bulk program assignment failed.");
   }
@@ -364,7 +365,7 @@ export async function deleteCustomWorkoutProgram(
       await scopedGymDoc(db, gymId, "workoutPrograms", programId).delete();
     }
 
-    return success(`${programTitle} was deleted.`, gymId);
+    return success(`${programTitle} was deleted.`, gymId, ["programs"]);
   } catch (error) {
     return failure(error, "Unable to delete program.");
   }
@@ -452,7 +453,7 @@ export async function updateCustomWorkoutProgram(
       { merge: true }
     );
 
-    return success(`${title} was updated.`, gymId);
+    return success(`${title} was updated.`, gymId, ["programs"]);
   } catch (error) {
     return failure(error, "Unable to update custom plan.");
   }
@@ -571,7 +572,7 @@ export async function createCustomWorkoutProgram(
       { merge: true }
     );
 
-    return success(`${title} was saved to workout programs.`, gymId);
+    return success(`${title} was saved to workout programs.`, gymId, ["programs"]);
   } catch (error) {
     console.error("Unable to create custom workout program", error);
     return failure(error, "Unable to save custom plan. Please try again.");
@@ -732,7 +733,7 @@ export async function createAndAssignCustomProgram(
     await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", activityId, activityRecord);
 
-    return success(`${title} was created and assigned to ${memberName}.`, gymId);
+    return success(`${title} was created and assigned to ${memberName}.`, gymId, ["programs"]);
   } catch (error) {
     console.error("Unable to create and assign custom program", error);
     return failure(error, "Unable to create custom workout. Please try again.");

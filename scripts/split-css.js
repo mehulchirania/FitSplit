@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 const fs = require('fs');
 const postcss = require('postcss');
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -75,7 +76,7 @@ export async function changeStaffPassword(
       console.warn("Could not clear mustChangePassword flag:", e);
     }
 
-    return success("Password changed successfully.");
+    return success("Password changed successfully.", undefined, ["staff"]);
   } catch (error) {
     console.error("Unable to change password", error);
     return failure(error, "Could not change password. Please try again.");
@@ -157,7 +158,7 @@ export async function createOwnerProfile(
       console.warn("Failed to write audit event for createOwnerProfile:", e);
     }
 
-    return success(`${fullName} was added as gym ${normalizedStaffType}.`, gymId);
+    return success(`${fullName} was added as gym ${normalizedStaffType}.`, gymId, ["staff"]);
   } catch (error) {
     return failure(error, "Unable to create gym staff profile.");
   }
@@ -194,13 +195,13 @@ export async function deleteGymStaffProfile(
 
     try {
       await auth.deleteUser(userId);
-    } catch (error: any) {
-      if (error?.code !== "auth/user-not-found") {
+    } catch (error: unknown) {
+      if ((error as any)?.code !== "auth/user-not-found") {
         throw error;
       }
     }
 
-    return success("Gym staff access was deleted.");
+    return success("Gym staff access was deleted.", undefined, ["staff"]);
   } catch (error) {
     return failure(error, "Unable to delete gym staff.");
   }
@@ -235,7 +236,7 @@ export async function changeAdminEmail(
       { email: newEmail, updatedAt: now },
       { merge: true }
     );
-    return success("Email updated. Log in again with your new email.");
+    return success("Email updated. Log in again with your new email.", undefined, ["staff"]);
   } catch (error) {
     return failure(error, "Unable to change email.");
   }
@@ -272,7 +273,7 @@ export async function updateAdminDisplayName(
       { fullName: displayName, avatarInitials: initials, updatedAt: now },
       { merge: true }
     );
-    return success("Display name updated.");
+    return success("Display name updated.", undefined, ["staff"]);
   } catch (error) {
     return failure(error, "Unable to update display name.");
   }
@@ -337,8 +338,8 @@ export async function resetPassword(
         newPassword,
         true
       );
-    } catch (error: any) {
-      if (role !== "member" || error?.code !== "auth/email-already-exists") {
+    } catch (error: unknown) {
+      if (role !== "member" || (error as any)?.code !== "auth/email-already-exists") {
         throw error;
       }
 
@@ -388,7 +389,7 @@ export async function resetPassword(
       console.warn("Failed to write audit event for resetPassword:", e);
     }
 
-    return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.", gymId);
+    return success(isPinReset ? `PIN reset for ${username}.` : "Password reset successfully.", gymId, ["staff"]);
   } catch (error) {
     console.error("Unable to reset password", error);
     return failure(error, "Could not reset access code.");

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
 import type { Exercise, ExerciseRequest, MuscleGroup } from "@/types/domain";

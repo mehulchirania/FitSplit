@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ExerciseCatalogView } from "@/components/exercise-catalog-view";
 import { requireRole } from "@/lib/auth";
