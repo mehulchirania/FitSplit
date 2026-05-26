@@ -49,7 +49,9 @@ const LogDayStatusSchema = z.object({
   weekStart: ZodHelpers.textRequired("Week start"),
   status: z.enum(["skipped", "modified"]),
   skipReason: z.string().optional(),
-  note: z.string().max(400).optional()
+  note: z.string().max(400).optional(),
+  /** Comma-separated exercise IDs to surface as makeup suggestions */
+  makeupExerciseIds: z.string().optional()
 });
 
 export async function logLiftSet(
@@ -273,7 +275,8 @@ export async function logDayStatus(
     if (!parsed.success) return parsed.state;
 
     const {
-      memberId: rawMember, dayId, weekStart, status: rawStatus, skipReason: rawReason, note: rawNote = ""
+      memberId: rawMember, dayId, weekStart, status: rawStatus, skipReason: rawReason, note: rawNote = "",
+      makeupExerciseIds: rawMakeupIds = ""
     } = parsed.data;
 
     const memberId = rawMember.trim() || currentUser.memberId || currentUser.uid;
@@ -283,6 +286,11 @@ export async function logDayStatus(
 
     if (!memberId) throw new Error("Member ID is required.");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) throw new Error("Invalid week start date.");
+
+    // Parse makeup exercise IDs (comma-separated) — only set on skips
+    const makeupExerciseIds = status === "skipped" && rawMakeupIds.trim()
+      ? rawMakeupIds.split(",").map(s => s.trim()).filter(Boolean)
+      : null;
 
     const db = requireFirebase();
     const now = new Date().toISOString();
@@ -299,6 +307,7 @@ export async function logDayStatus(
       status,
       skipReason: skipReason ?? null,
       note: rawNote || null,
+      ...(makeupExerciseIds ? { makeupExerciseIds, makeupStatus: "pending" } : {}),
       loggedAt: now,
       updatedAt: now
     };
@@ -406,6 +415,42 @@ export async function saveMacroLog(
   }
 }
 
+/**
+ * Update the makeup status for a skipped day.
+ * Called when the member taps "Add to next session" (→ "added") or "Dismiss" (→ "dismissed").
+ */
+export async function updateMakeupStatus(
+  dayLogId: string,
+  status: "added" | "dismissed",
+  targetDayId?: string
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+
+    if (!hasFirebaseAdminConfig()) {
+      return success("Makeup status updated (local mode).", undefined, ["day-logs"]);
+    }
+
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+
+    const update: Record<string, string | null> = {
+      makeupStatus: status,
+      updatedAt: now,
+      ...(targetDayId ? { makeupTargetDayId: targetDayId } : {})
+    };
+
+    await db.collection(collectionPaths.dayLogs).doc(dayLogId).set(update, { merge: true });
+    await db.collection(`gyms/${gymId}/dayLogs`).doc(dayLogId).set(update, { merge: true });
+
+    return success("Makeup preference saved.", gymId, ["day-logs"]);
+  } catch (error) {
+    console.error("Unable to update makeup status", error);
+    return failure(error, "Could not save makeup preference.");
+  }
+}
+
 // ── Workout sessions ──────────────────────────────────────────────────────────
 
 const SessionSchema = z.object({
@@ -414,7 +459,10 @@ const SessionSchema = z.object({
   latitude: z.coerce.number().optional(),
   longitude: z.coerce.number().optional(),
   deviceInfo: z.string().optional(),
-  targetGymId: z.string().optional()
+  targetGymId: z.string().optional(),
+  programDayId: z.string().optional(),
+  programId: z.string().optional(),
+  dayTitle: z.string().optional()
 });
 
 export async function startWorkoutSession(
@@ -427,7 +475,12 @@ export async function startWorkoutSession(
     const parsed = parseActionData(formData, SessionSchema);
     if (!parsed.success) return parsed.state;
 
-    const { memberId, sessionId, latitude = Number.NaN, longitude = Number.NaN, deviceInfo: rawDevice = "", targetGymId: rawTarget = "" } = parsed.data;
+    const {
+      memberId, sessionId,
+      latitude = Number.NaN, longitude = Number.NaN,
+      deviceInfo: rawDevice = "", targetGymId: rawTarget = "",
+      programDayId, programId, dayTitle
+    } = parsed.data;
 
     assertCanManageMember(currentUser, memberId);
 
@@ -436,7 +489,7 @@ export async function startWorkoutSession(
       return success("Workout session was started (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
     const db = requireFirebase();
-    
+
     const deviceInfo = rawDevice.slice(0, 500);
     const targetGymId = rawTarget.trim();
     const gymId = currentUser.role === "admin"
@@ -459,7 +512,10 @@ export async function startWorkoutSession(
         },
         startedAt: now,
         status: "active",
-        updatedAt: now
+        updatedAt: now,
+        ...(programDayId ? { programDayId } : {}),
+        ...(programId ? { programId } : {}),
+        ...(dayTitle ? { dayTitle } : {})
       };
     await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
       sessionRecord,

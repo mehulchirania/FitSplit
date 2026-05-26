@@ -25,6 +25,7 @@ import {
   getDayMuscleTargets
 } from "@/lib/workout-utils";
 import { WorkoutLiftLogForm } from "@/components/workout-lift-log-form";
+import { WorkoutMakeupCard } from "@/components/workout-makeup-card";
 
 export function MemberWorkoutConsole({
   exercises,
@@ -343,14 +344,44 @@ export function MemberWorkoutConsole({
     if (!selectedDay) return;
     if (skipMode === "skip" && !skipReason) return;
     setIsDayLogging(true);
+
+    const isSkip = skipMode === "skip";
+
+    // Compute top-3 makeup exercises from the skipped day (primary muscle group first)
+    const makeupExerciseIds: string[] = [];
+    if (isSkip && selectedDay.exercises.length) {
+      // Count exercises by muscle group to find the dominant group
+      const groupCounts = new Map<string, string[]>();
+      for (const we of selectedDay.exercises) {
+        const ex = exerciseById.get(we.exerciseId);
+        if (!ex) continue;
+        const ids = groupCounts.get(ex.muscleGroup) ?? [];
+        ids.push(we.exerciseId);
+        groupCounts.set(ex.muscleGroup, ids);
+      }
+      // Sort groups by size (most exercises = primary group)
+      const sorted = [...groupCounts.entries()].sort((a, b) => b[1].length - a[1].length);
+      for (const [, ids] of sorted) {
+        for (const id of ids) {
+          if (makeupExerciseIds.length >= 3) break;
+          makeupExerciseIds.push(id);
+        }
+        if (makeupExerciseIds.length >= 3) break;
+      }
+    }
+
     const formData = new FormData();
     formData.set("memberId", memberId);
     formData.set("programId", program.id);
     formData.set("dayId", selectedDay.id);
     formData.set("weekStart", weekStart);
-    formData.set("status", skipMode === "other" ? "modified" : "skipped");
-    if (skipMode === "skip" && skipReason) formData.set("skipReason", skipReason);
+    formData.set("status", isSkip ? "skipped" : "modified");
+    if (isSkip && skipReason) formData.set("skipReason", skipReason);
     if (skipNote.trim()) formData.set("note", skipNote.trim());
+    if (isSkip && makeupExerciseIds.length) {
+      formData.set("makeupExerciseIds", makeupExerciseIds.join(","));
+    }
+
     const result = await logDayStatus(initialFormActionState, formData);
     setIsDayLogging(false);
     setDayLogStatus(result);
@@ -363,10 +394,12 @@ export function MemberWorkoutConsole({
         programId: program.id,
         dayId: selectedDay.id,
         weekStart,
-        status: skipMode === "other" ? "modified" : "skipped",
-        skipReason: skipMode === "skip" && skipReason ? skipReason : undefined,
+        status: isSkip ? "skipped" : "modified",
+        skipReason: isSkip && skipReason ? skipReason : undefined,
         note: skipNote.trim() || undefined,
-        loggedAt: new Date().toISOString()
+        loggedAt: new Date().toISOString(),
+        makeupExerciseIds: isSkip && makeupExerciseIds.length ? makeupExerciseIds : undefined,
+        makeupStatus: isSkip && makeupExerciseIds.length ? "pending" : undefined
       };
       setDayLogs((prev) => {
         const filtered = prev.filter((dl) => !(dl.dayId === selectedDay.id && dl.weekStart === weekStart));
@@ -376,6 +409,12 @@ export function MemberWorkoutConsole({
       setSkipReason("");
       setSkipNote("");
     }
+  }
+
+  function handleMakeupUpdate(updated: DayLog) {
+    setDayLogs((prev) =>
+      prev.map((dl) => (dl.id === updated.id ? updated : dl))
+    );
   }
 
   async function removeDayLog() {
@@ -632,6 +671,7 @@ export function MemberWorkoutConsole({
                 <div className="day-log-section">
                   {currentDayLog ? (
                     // Already have a log — show the status and an undo button
+                    <>
                     <div className={`day-log-status day-log-status--${currentDayLog.status}`}>
                       <div className="day-log-status-body">
                         <span className="day-log-status-icon">
@@ -657,6 +697,14 @@ export function MemberWorkoutConsole({
                         Undo
                       </button>
                     </div>
+                    {currentDayLog.status === "skipped" && currentDayLog.makeupStatus === "pending" && (
+                      <WorkoutMakeupCard
+                        dayLog={currentDayLog}
+                        exercises={exercises}
+                        onUpdate={handleMakeupUpdate}
+                      />
+                    )}</>
+
                   ) : skipMode === "none" ? (
                     // Default — offer skip or "did something else"
                     <div className="day-log-actions">

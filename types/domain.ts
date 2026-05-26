@@ -336,6 +336,10 @@ export type WorkoutSession = {
   startedAt: string;
   endedAt?: string;
   status: "active" | "completed";
+  /** Links the session to a specific program day for calendar display */
+  programDayId?: string;
+  programId?: string;
+  dayTitle?: string;
 };
 
 export type AttendanceRecord = {
@@ -366,6 +370,9 @@ export type ContactMessage = {
 
 export type SkipReason = "rest" | "no_time" | "equipment" | "sick" | "other";
 
+/** Tracks whether the member has acted on the makeup suggestion for a skipped day */
+export type MakeupStatus = "pending" | "added" | "dismissed";
+
 /**
  * Records when a member intentionally deviates from their planned day for a
  * given week. Two statuses:
@@ -388,6 +395,12 @@ export type DayLog = {
   /** Free-text note — what they did instead, or extra context for the skip */
   note?: string;
   loggedAt: string;
+  /** Top exercises from the skipped day that should be made up */
+  makeupExerciseIds?: string[];
+  /** Whether the member has acted on the makeup prompt */
+  makeupStatus?: MakeupStatus;
+  /** Day ID the member chose to fold the makeup exercises into (optional) */
+  makeupTargetDayId?: string;
 };
 
 // ─── Personal Training ────────────────────────────────────────────────────────

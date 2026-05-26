@@ -1,0 +1,963 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   16-ux-improvements.css — Comprehensive UX polish pass
+   Fixes: missing tokens, broken classes, light-mode stat cards,
+   focus rings, mobile nav, empty states, skip flow, session bar, and more.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1. Missing design tokens ─────────────────────────────────────────────── */
+
+:root {
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --danger-strong: #b91c1c;
+  --brand-border: color-mix(in srgb, var(--brand) 30%, var(--border));
+  --surface-raised: var(--bg-elevated);
+  --input-bg: color-mix(in srgb, var(--bg-elevated) 80%, var(--bg-subtle));
+  --input-border: var(--border-strong);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--brand) 28%, transparent);
+}
+
+html[data-theme="dark"] {
+  --success: #22c55e;
+  --success-soft: rgba(34, 197, 94, 0.12);
+  --danger-strong: #f87171;
+  --input-bg: rgba(255, 255, 255, 0.05);
+  --input-border: rgba(255, 255, 255, 0.12);
+  --ring: 0 0 0 3px color-mix(in srgb, var(--brand) 30%, transparent);
+}
+
+/* ── 2. Missing button utility classes ───────────────────────────────────── */
+
+.button-ghost {
+  align-items: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 760;
+  gap: 6px;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 15px;
+  transition: background var(--fast), border-color var(--fast), color var(--fast), transform var(--fast);
+}
+
+.button-ghost:hover:not(:disabled) {
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
+.button-ghost:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Missing .button-link — inline text-button */
+.button-link {
+  background: none;
+  border: none;
+  color: var(--brand);
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 600;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: opacity var(--fast);
+}
+
+.button-link:hover:not(:disabled) {
+  opacity: 0.75;
+}
+
+.button-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+/* ── 3. Universal focus-visible ring ─────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+
+/* Inputs, selects, textareas get a softer glow-ring instead */
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  border-color: var(--brand) !important;
+  box-shadow: var(--ring) !important;
+  outline: none !important;
+}
+
+/* Login form inputs — visible focus */
+.login-form input:focus {
+  background: var(--input-bg);
+  border-color: var(--brand) !important;
+  box-shadow: var(--ring);
+  outline: none;
+}
+
+html[data-theme="light"] .login-form input:focus {
+  background: #ffffff;
+}
+
+/* ── 4. Button: consistent disabled state ───────────────────────────────── */
+
+.button:disabled,
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ── 5. Landing page — mobile nav fix ────────────────────────────────────── */
+
+@media (max-width: 780px) {
+  .landing-nav {
+    border-radius: 22px;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 12px;
+    position: fixed;
+    top: 10px;
+  }
+
+  .landing-nav-links {
+    flex: 1 1 100%;
+    gap: 4px;
+    justify-content: stretch;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .landing-nav-links::-webkit-scrollbar {
+    display: none;
+  }
+
+  .landing-nav-links a {
+    flex: 1;
+    font-size: 0.78rem;
+    min-height: 36px;
+    padding: 8px 10px;
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+
+/* ── 6. Landing page — section & feature card polish ─────────────────────── */
+
+/* Feature card icons — bigger, in a pill */
+.landing-feature-grid article::before {
+  display: none;
+}
+
+/* Animated gradient on the CTA row */
+.landing-final-cta {
+  background: linear-gradient(135deg,
+    rgb(255 255 255 / 0.10) 0%,
+    rgb(125 211 252 / 0.07) 50%,
+    rgb(255 255 255 / 0.06) 100%) !important;
+}
+
+/* Proof stat numbers — larger on desktop */
+@media (min-width: 860px) {
+  .landing-proof strong {
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    letter-spacing: -0.03em;
+  }
+}
+
+/* Step numbers — more visible */
+.landing-flow-grid .step-number,
+.steps-grid .step-n {
+  color: rgb(255 255 255 / 0.18);
+  font-size: clamp(3rem, 7vw, 5rem);
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+/* ── 7. App topbar — active link indicator ───────────────────────────────── */
+
+.topnav a[aria-current="page"],
+.topnav a.is-active {
+  background: var(--brand) !important;
+  border-color: transparent !important;
+  color: var(--bg) !important;
+}
+
+/* ── 8. Member dashboard — fix stat cards for light/dark themes ───────────── */
+
+/* Override the hardcoded dark rgba values */
+.md-hero-stat-new {
+  background: color-mix(in srgb, var(--bg-subtle) 70%, transparent) !important;
+  border: 1px solid var(--border) !important;
+}
+
+html[data-theme="dark"] .md-hero-stat-new {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.md-hero-stat-new:hover {
+  background: color-mix(in srgb, var(--bg-subtle) 100%, transparent) !important;
+  border-color: var(--brand-border) !important;
+}
+
+html[data-theme="dark"] .md-hero-stat-new:hover {
+  background: rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Stat values — inherit theme text properly */
+.md-hero-stat-new strong {
+  color: var(--text) !important;
+}
+
+.md-hero-stat-new span {
+  color: var(--text-faint) !important;
+}
+
+.md-hero-stat-new small {
+  color: var(--text-soft) !important;
+}
+
+/* ── 9. Member hero — light theme adaptation ────────────────────────────── */
+
+.md-hero-new {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--bg-elevated) 95%, var(--brand) 5%),
+    var(--bg-elevated)) !important;
+  border-color: var(--border) !important;
+}
+
+html[data-theme="dark"] .md-hero-new {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--bg-elevated) 90%, var(--brand) 10%),
+    var(--bg-elevated)) !important;
+}
+
+/* ── 10. Workout day tabs — better mobile active indicator ───────────────── */
+
+@media (max-width: 640px) {
+  .md-tab-btn.active {
+    color: var(--brand) !important;
+    position: relative;
+  }
+
+  .md-tab-btn.active::after {
+    background: var(--brand);
+    border-radius: 999px;
+    bottom: -2px;
+    content: "";
+    height: 3px;
+    left: 50%;
+    position: absolute;
+    transform: translateX(-50%);
+    width: 24px;
+  }
+
+  /* Distinct icons for active tab */
+  .md-tab-btn.active .md-tab-icon {
+    color: var(--brand);
+    opacity: 1 !important;
+  }
+}
+
+/* ── 11. Workout session bar — more prominent when active ────────────────── */
+
+.workout-session-bar {
+  align-items: center;
+  animation: session-pulse 3s ease-in-out infinite;
+  background: color-mix(in srgb, var(--success) 10%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border));
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 10px 16px;
+}
+
+@keyframes session-pulse {
+  0%, 100% { border-color: color-mix(in srgb, var(--success) 30%, var(--border)); }
+  50%       { border-color: color-mix(in srgb, var(--success) 60%, var(--border)); }
+}
+
+.session-elapsed {
+  align-items: center;
+  color: var(--success);
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 700;
+  gap: 6px;
+  letter-spacing: 0.02em;
+}
+
+/* ── 12. Day-log section — visual polish ─────────────────────────────────── */
+
+.day-log-section {
+  border-radius: 0 0 14px 14px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+  padding: 14px 0 4px;
+}
+
+.day-log-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.day-log-actions-label {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-weight: 500;
+  margin-right: 2px;
+  width: 100%;
+}
+
+.day-log-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  color: var(--text-soft);
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  transition: background var(--fast), border-color var(--fast), color var(--fast);
+}
+
+.day-log-btn:hover {
+  background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
+  border-color: var(--brand-border);
+  color: var(--text);
+}
+
+/* Skip reason chips — bigger touch targets */
+.day-log-chip {
+  min-height: 36px;
+  padding: 7px 14px;
+}
+
+.day-log-chip.is-selected {
+  font-weight: 700;
+}
+
+/* Skipped status banner */
+.day-log-status--skipped {
+  background: color-mix(in srgb, var(--text-faint) 6%, var(--bg-subtle));
+}
+
+/* Modified status banner */
+.day-log-status--modified {
+  background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--brand) 22%, var(--border));
+}
+
+/* ── 13. Selected workout day card — breathing room ─────────────────────── */
+
+.selected-workout-day {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: clamp(14px, 3vw, 22px);
+}
+
+/* ── 14. Member progress history card — spacing ──────────────────────────── */
+
+.member-progress-history-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  padding-bottom: 20px;
+}
+
+/* ── 15. Empty state — improved design ───────────────────────────────────── */
+
+.md-empty {
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.md-empty-icon {
+  align-items: center;
+  background: var(--bg-subtle);
+  border-radius: 16px;
+  color: var(--text-faint);
+  display: flex;
+  height: 72px;
+  justify-content: center;
+  margin-bottom: 8px;
+  width: 72px;
+}
+
+.md-empty h2 {
+  color: var(--text);
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.md-empty p {
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 320px;
+}
+
+.md-empty-link {
+  background: var(--brand);
+  border-radius: 999px;
+  color: var(--bg);
+  font-size: 0.88rem;
+  font-weight: 700;
+  margin-top: 4px;
+  padding: 9px 20px;
+  text-decoration: none;
+  transition: opacity var(--fast);
+}
+
+.md-empty-link:hover {
+  opacity: 0.85;
+}
+
+.md-empty-link.muted {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--text-soft);
+  margin-top: 0;
+}
+
+/* ── 16. Workout mode toggle — better visual ─────────────────────────────── */
+
+.workout-mode-toggle {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  padding: 4px;
+}
+
+.workout-mode-toggle button {
+  background: transparent;
+  border: none;
+  border-radius: 9px;
+  color: var(--text-soft);
+  cursor: pointer;
+  flex: 1;
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-height: 34px;
+  padding: 6px 10px;
+  transition: background var(--fast), color var(--fast);
+}
+
+.workout-mode-toggle button.is-selected {
+  background: var(--bg-elevated);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  color: var(--text);
+}
+
+.workout-mode-toggle button:hover:not(.is-selected) {
+  color: var(--text);
+}
+
+/* ── 17. Injury / AI trainer card — cleaner look ─────────────────────────── */
+
+.injury-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+
+.injury-card label > textarea {
+  margin-top: 8px;
+  min-height: 80px;
+}
+
+/* ── 18. Owner member row — better hover + density ───────────────────────── */
+
+.member-row:hover {
+  background: color-mix(in srgb, var(--brand) 3%, var(--bg-elevated));
+}
+
+/* ── 19. Panel title — consistent cross-page ─────────────────────────────── */
+
+.panel-title {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-bottom: 0;
+  padding: 16px 20px;
+}
+
+.panel-title h2 {
+  align-items: center;
+  display: flex;
+  font-size: 0.95rem;
+  font-weight: 800;
+  gap: 8px;
+  letter-spacing: 0;
+  margin: 0;
+}
+
+/* ── 20. Status pills — add the missing success variant ──────────────────── */
+
+.status-success {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+/* ── 21. Custom scrollbar — thin and themed ──────────────────────────────── */
+
+@media (hover: hover) {
+  ::-webkit-scrollbar {
+    height: 4px;
+    width: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-faint);
+  }
+}
+
+/* Firefox */
+* {
+  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-width: thin;
+}
+
+/* ── 22. Skip-day status icon badge size ─────────────────────────────────── */
+
+.day-tab-status-icon {
+  align-items: center;
+  display: inline-flex;
+  height: 14px;
+  justify-content: center;
+  width: 14px;
+}
+
+.day-tab-status-icon svg {
+  height: 12px;
+  width: 12px;
+}
+
+/* ── 23. Workout calendar — light theme calendar cells ───────────────────── */
+
+html[data-theme="light"] .cal-cell {
+  background: #ffffff;
+}
+
+html[data-theme="light"] .cal-cell:hover:not(:disabled) {
+  background: var(--bg-subtle);
+}
+
+/* ── 24. Smooth page transitions ─────────────────────────────────────────── */
+
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.md-page,
+.page,
+.home {
+  animation: page-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── 25. Login card — focus-in input borders ─────────────────────────────── */
+
+.login-form input:focus {
+  border-color: var(--brand) !important;
+  box-shadow: var(--ring);
+  outline: none;
+}
+
+html[data-theme="light"] .login-form input:focus {
+  background: #ffffff;
+  border-color: var(--brand) !important;
+}
+
+/* Login submit button — full width + height */
+.login-submit {
+  font-size: 1rem;
+  letter-spacing: 0.01em;
+  min-height: 52px;
+}
+
+/* ── 26. Coach note banner — distinct brand line ──────────────────────────── */
+
+.member-dashboard-section [aria-label="Note from your trainer"] {
+  position: relative;
+}
+
+.member-dashboard-section [aria-label="Note from your trainer"]::before {
+  background: var(--brand);
+  border-radius: 999px 0 0 999px;
+  content: "";
+  height: calc(100% - 28px);
+  left: 0;
+  position: absolute;
+  top: 14px;
+  width: 3px;
+}
+
+/* ── 27. Gym notice board — improved card style ───────────────────────────── */
+
+/* ── 28. Lift log success indicator ──────────────────────────────────────── */
+
+.log-success-flash {
+  animation: success-flash 3s ease forwards;
+}
+
+@keyframes success-flash {
+  0%   { background: color-mix(in srgb, var(--success) 15%, var(--bg-elevated)); }
+  70%  { background: color-mix(in srgb, var(--success) 10%, var(--bg-elevated)); }
+  100% { background: var(--bg-elevated); }
+}
+
+/* ── 29. Member training layout — sidebar sticky ─────────────────────────── */
+
+@media (min-width: 900px) {
+  .member-workout-side {
+    position: sticky;
+    top: calc(72px + 16px);
+    max-height: calc(100dvh - 120px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+}
+
+/* ── 30. AI modification panel — better styling ──────────────────────────── */
+
+.ai-modification-panel {
+  background: color-mix(in srgb, var(--brand-soft) 60%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border));
+  border-radius: var(--radius);
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+}
+
+.ai-modification-panel .eyebrow {
+  margin-bottom: 0;
+}
+
+/* ── 31. Form inputs — global consistent look ─────────────────────────────── */
+
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="number"],
+input[type="password"],
+input[type="search"],
+select,
+textarea {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-size: 0.92rem;
+  min-height: 42px;
+  padding: 10px 12px;
+  transition: border-color var(--fast), box-shadow var(--fast);
+  width: 100%;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="tel"]:focus,
+input[type="number"]:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--brand);
+  box-shadow: var(--ring);
+  outline: none;
+}
+
+/* Don't override the specialty login form inputs */
+.login-form input {
+  background: unset;
+  border: unset;
+  border-radius: 14px;
+  min-height: 44px;
+  padding: 12px 14px;
+}
+
+/* ── 32. Member workout console — exercise eyebrow text spacing ───────────── */
+
+.selected-workout-day > .eyebrow {
+  margin-bottom: 4px;
+}
+
+.selected-workout-day > p:first-of-type {
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+}
+
+/* ── 33. Day muscle targets pill row ──────────────────────────────────────── */
+
+.day-muscle-targets {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  gap: 6px 14px;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+}
+
+.day-muscle-targets span {
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.day-muscle-targets span:first-child {
+  color: var(--text);
+}
+
+/* ── 34. Owner pages — stat cards grid improvement ───────────────────────── */
+
+.stats-grid .stat-card {
+  transition: transform var(--spring), border-color var(--medium), box-shadow var(--medium);
+}
+
+/* ── 35. Mobile — better touch targets for all buttons ───────────────────── */
+
+@media (max-width: 640px) {
+  .button,
+  button.button {
+    min-height: 44px;
+  }
+
+  .day-log-btn,
+  .day-log-chip {
+    min-height: 40px;
+  }
+
+  .topbar {
+    min-height: 54px;
+  }
+}
+
+/* ── 36. Topbar — tighter on mobile ──────────────────────────────────────── */
+
+@media (max-width: 540px) {
+  .topbar {
+    margin: 8px auto 0;
+    top: 8px;
+    width: calc(100% - 16px);
+  }
+}
+
+/* ── 37. Reduce motion — respect preference ──────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── 38. Calendar dot colors — ensure visibility in both themes ───────────── */
+
+html[data-theme="light"] .cal-dot--trained  { background: #16a34a; }
+html[data-theme="light"] .cal-dot--skipped  { background: #dc2626; }
+html[data-theme="light"] .cal-dot--makeup   { background: #d97706; }
+
+html[data-theme="dark"] .cal-dot--trained   { background: #22c55e; }
+html[data-theme="dark"] .cal-dot--skipped   { background: #ef4444; }
+html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
+
+/* ── 39. Landing page — hero buttons spacing ─────────────────────────────── */
+
+.landing-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+/* ── 40. Owner workout day view — keep consistent with member ─────────────── */
+
+.mpd-main-schedule .selected-workout-day {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+/* ── 41. Member tab list — light mode & sticky fix ───────────────────────── */
+
+/* Fix barely-visible border in light and dark themes */
+.md-tab-list {
+  border-color: var(--border) !important;
+}
+
+/* On desktop the tab list shouldn't sit behind/over the topbar */
+@media (min-width: 641px) {
+  .md-tab-list {
+    top: calc(72px + 16px) !important;
+  }
+}
+
+/* Light mode: fully opaque background so text stays readable */
+html[data-theme="light"] .md-tab-list {
+  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* ── 42. Progress history card — inner panel title flush ─────────────────── */
+
+.member-progress-history-card > .panel-title {
+  margin: 0;
+}
+
+.member-progress-history-card > [id="history"] {
+  scroll-margin-top: calc(72px + 80px);
+}
+
+/* ── 43. Breadcrumb — visible separator ──────────────────────────────────── */
+
+.breadcrumb {
+  align-items: center;
+  color: var(--text-faint);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  font-weight: 600;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.breadcrumb-sep {
+  color: var(--border-strong);
+}
+
+.breadcrumb a {
+  color: var(--text-soft);
+  transition: color var(--fast);
+}
+
+.breadcrumb a:hover {
+  color: var(--text);
+}
+
+/* ── 44. Owner section cards — consistent look ───────────────────────────── */
+
+.odp-section-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+}
+
+/* Notifications side panel */
+.odp-side .notification-list {
+  max-height: 520px;
+  overflow-y: auto;
+}
+
+/* ── 45. Activity feed — entry spacing ───────────────────────────────────── */
+
+.activity-feed-entry {
+  border-bottom: 1px solid var(--border);
+  padding: 14px 20px;
+  transition: background var(--fast);
+}
+
+.activity-feed-entry:last-child {
+  border-bottom: none;
+}
+
+.activity-feed-entry:hover {
+  background: var(--bg-subtle);
+}
+
+/* ── 46. Profile page form panels ─────────────────────────────────────────── */
+
+.form-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+}
+
+.form-panel + .form-panel {
+  margin-top: 16px;
+}
+
+.list-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+/* ── 47. Body weight logger — chart background ───────────────────────────── */
+
+.bwl-chart {
+  background: var(--bg-subtle) !important;
+  border-color: var(--border) !important;
+}
+
+/* ── 48. Lift log table — zebra striping ─────────────────────────────────── */
+
+.lift-log-table > div:nth-child(even) {
+  background: color-mix(in srgb, var(--bg-subtle) 60%, transparent);
+}
+
+/* ── 49. Member hero — badges light mode fix ────────────────────────────── */
+
+html[data-theme="light"] .md-badge-new {
+  background: color-mix(in srgb, var(--bg-subtle) 90%, transparent);
+  border-color: var(--border);
+  color: var(--text-soft);
+}
+
+html[data-theme="light"] .md-badge-accent-new {
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 30%, transparent);
+  color: var(--brand-strong);
+}
+
+/* ── 50. Member hero blurred bg circle — light mode mute ────────────────── */
+
+html[data-theme="light"] .md-hero-new::before {
+  opacity: 0.07 !important;
+}

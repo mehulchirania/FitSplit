@@ -30,6 +30,7 @@ import "./styles/12-member-dashboard-new.css";
 import "./styles/13-skeletons.css";
 import "./styles/14-radix-overrides.css";
 import "./styles/15-ui-upgrades.css";
+import "./styles/16-ux-improvements.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });

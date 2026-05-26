@@ -5,6 +5,7 @@ import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
 import { MemberHistory } from "@/components/member-history";
 import { MemberProgressPanel } from "@/components/member-progress-panel";
+import { WorkoutCalendar } from "@/components/workout-calendar";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import type { Member } from "@/types/domain";
@@ -283,6 +284,16 @@ export default async function MemberDashboard() {
                 </div>
               </div>
               <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} />
+            </div>
+
+            <div className="member-progress-history-card">
+              <div className="panel-title" style={{ marginBottom: "20px" }}>
+                <div>
+                  <p className="eyebrow">Calendar</p>
+                  <h2>Training calendar</h2>
+                </div>
+              </div>
+              <WorkoutCalendar liftLogs={liftLogs} dayLogs={dayLogs} />
             </div>
           </div>
         }
