@@ -31,6 +31,7 @@ export function LoginForm() {
   const [mode, setMode] = useState<LoginMode>("member");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(true);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -89,6 +90,7 @@ export function LoginForm() {
         formData.set("username", cleanUsername);
         formData.set("password", cleanPassword);
         formData.set("mode", mode);
+        formData.set("rememberMe", String(rememberMe));
         const session = await loginWithCredentials(formData);
 
         if (session.status !== "success") {
@@ -98,6 +100,7 @@ export function LoginForm() {
 
         window.scrollTo(0, 0);
         window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
+        window.localStorage.setItem("fitsplit-remember-me", String(rememberMe));
         window.location.replace(session.redirectUrl);
       } catch (caughtError) {
         setError(authErrorMessage(caughtError));
@@ -232,6 +235,15 @@ export function LoginForm() {
               type={isMember ? "password" : "password"}
               value={password}
             />
+          </label>
+
+          <label className="login-remember-me">
+            <input
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              type="checkbox"
+            />
+            <span>Remember me on this device</span>
           </label>
 
           {error ? <div className="login-message error">{error}</div> : null}

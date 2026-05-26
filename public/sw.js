@@ -1,11 +1,11 @@
-const CACHE_NAME = "fitsplit-pwa-v8";
+const CACHE_NAME = "fitsplit-pwa-v9";
 const APP_SHELL = [
-  "/manifest.json",
+  "/manifest.json?v=11",
   "/new_logo.png",
-  "/icon-512.png",
-  "/android-chrome-192x192.png",
-  "/favicon-32x32.png",
-  "/apple-touch-icon.png"
+  "/icon-512.png?v=11",
+  "/android-chrome-192x192.png?v=11",
+  "/favicon-32x32.png?v=11",
+  "/apple-touch-icon.png?v=11"
 ];
 
 self.addEventListener("install", (event) => {

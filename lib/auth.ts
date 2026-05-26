@@ -16,7 +16,8 @@ const legacyCookieNames = [
   "fitsplit-member-id",
   "fitsplit-gym-id"
 ] as const;
-const sessionExpiresIn = 1000 * 60 * 60 * 2;
+const SESSION_SHORT_MS = 1000 * 60 * 60 * 2;        // 2 h  — default (no remember me)
+const SESSION_LONG_MS  = 1000 * 60 * 60 * 24 * 14; // 14 d — remember me (Firebase max)
 
 type ProfileRecord = {
   id: string;
@@ -414,9 +415,10 @@ async function resolveProfileForIdentifier(identifier: string) {
   return null;
 }
 
-async function setSessionCompatibilityCookies(user: AuthenticatedUser) {
+async function setSessionCompatibilityCookies(user: AuthenticatedUser, rememberMe = false) {
   const cookieStore = await cookies();
-  const options = cookieOptions(Math.floor(sessionExpiresIn / 1000));
+  const expiresIn = rememberMe ? SESSION_LONG_MS : SESSION_SHORT_MS;
+  const options = cookieOptions(Math.floor(expiresIn / 1000));
 
   cookieStore.set("fitsplit-role", user.role, options);
   cookieStore.set("fitsplit-username", user.phone || user.email || user.uid, options);
@@ -662,7 +664,8 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
 export async function createLocalDemoSession(
   identifier: string,
   password: string,
-  expectedRole?: "member" | "staff"
+  expectedRole?: "member" | "staff",
+  rememberMe = false
 ) {
   const demoLogin = findDemoLogin(identifier);
 
@@ -688,7 +691,7 @@ export async function createLocalDemoSession(
   await clearAuthCookies();
 
   const user = authUserFromDemo(demoLogin);
-  await setSessionCompatibilityCookies(user);
+  await setSessionCompatibilityCookies(user, rememberMe);
 
   return {
     status: "success" as const,
@@ -710,6 +713,7 @@ async function _loginWithCredentials(formData: FormData) {
   const identifier = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "").trim();
   const mode = String(formData.get("mode") ?? "member") as "member" | "staff";
+  const rememberMe = formData.get("rememberMe") === "true";
 
   if (!identifier || !password) {
     return { status: "error" as const, message: "Enter your login details." };
@@ -747,13 +751,13 @@ async function _loginWithCredentials(formData: FormData) {
         );
         if (resp.ok) {
           const payload = (await resp.json()) as { idToken?: string };
-          if (payload.idToken) return createSession(payload.idToken);
+          if (payload.idToken) return createSession(payload.idToken, rememberMe);
         }
       }
     }
 
     // No Firebase Admin or Firebase Auth sign-in failed — use compatibility cookies.
-    return createLocalDemoSession(identifier, password, mode);
+    return createLocalDemoSession(identifier, password, mode, rememberMe);
   }
 
   // D2: Check identifier-based lockout BEFORE resolving to an email, so
@@ -831,10 +835,10 @@ async function _loginWithCredentials(formData: FormData) {
   try { await clearLoginAttempts(resolved.email); } catch {}
   try { await clearIdentifierAttempts(identifier); } catch {}
 
-  return createSession(payload.idToken);
+  return createSession(payload.idToken, rememberMe);
 }
 
-export async function createSession(idToken: string) {
+export async function createSession(idToken: string, rememberMe = false) {
   if (!hasFirebaseAdminConfig()) {
     return { status: "error" as const, message: "Firebase Admin is not configured on the server yet." };
   }
@@ -851,14 +855,13 @@ export async function createSession(idToken: string) {
       return { status: "error" as const, message: "Your FitSplit profile is inactive or missing." };
     }
 
-    const sessionCookie = await auth.createSessionCookie(idToken, {
-      expiresIn: sessionExpiresIn
-    });
+    const expiresIn = rememberMe ? SESSION_LONG_MS : SESSION_SHORT_MS;
+    const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
     const cookieStore = await cookies();
-    cookieStore.set(sessionCookieName, sessionCookie, cookieOptions(Math.floor(sessionExpiresIn / 1000)));
+    cookieStore.set(sessionCookieName, sessionCookie, cookieOptions(Math.floor(expiresIn / 1000)));
 
     const user = authUserFromProfile(profile);
-    await setSessionCompatibilityCookies(user);
+    await setSessionCompatibilityCookies(user, rememberMe);
 
     return {
       status: "success" as const,

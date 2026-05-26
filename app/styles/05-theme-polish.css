@@ -933,6 +933,26 @@ html[data-theme="light"] .login-form input {
   width: 100%;
 }
 
+.login-remember-me {
+  align-items: center;
+  color: var(--text-soft);
+  cursor: pointer;
+  display: flex !important;
+  font-size: 0.86rem;
+  font-weight: 600;
+  gap: 10px;
+}
+
+.login-remember-me input[type="checkbox"] {
+  accent-color: var(--brand);
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 18px;
+  min-height: unset;
+  width: 18px;
+}
+
 .login-link-button {
   background: transparent;
   border: 0;

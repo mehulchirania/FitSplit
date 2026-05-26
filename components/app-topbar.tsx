@@ -85,6 +85,7 @@ export function AppTopbar({
       }
 
       window.localStorage.removeItem("fitsplit-session-start");
+      window.localStorage.removeItem("fitsplit-remember-me");
       await logoutUser();
     });
   }

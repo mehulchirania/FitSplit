@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
 
 const sessionStartKey = "fitsplit-session-start";
+const rememberMeKey   = "fitsplit-remember-me";
 const twoHoursMs = 2 * 60 * 60 * 1000;
 const warningThresholdMs = 5 * 60 * 1000;
 
@@ -16,7 +17,13 @@ export function SessionTimeout({ isAuthenticated }: { isAuthenticated: boolean }
   useEffect(() => {
     if (!isAuthenticated) {
       window.localStorage.removeItem(sessionStartKey);
+      window.localStorage.removeItem(rememberMeKey);
       setShowWarning(false);
+      return;
+    }
+
+    // "Remember me" sessions don't expire client-side — the cookie handles it.
+    if (window.localStorage.getItem(rememberMeKey) === "true") {
       return;
     }
 
@@ -47,6 +54,7 @@ export function SessionTimeout({ isAuthenticated }: { isAuthenticated: boolean }
 
     const logoutId = window.setTimeout(async () => {
       window.localStorage.removeItem(sessionStartKey);
+      window.localStorage.removeItem(rememberMeKey);
       setShowWarning(false);
       await logoutUser();
       router.replace("/");
