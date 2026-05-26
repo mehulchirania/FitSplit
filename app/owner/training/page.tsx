@@ -61,10 +61,11 @@ function formatPlanDuration(session: PTSession) {
 export default async function OwnerTrainingPage({
   searchParams
 }: {
-  searchParams: Promise<{ status?: string; trainerId?: string; memberId?: string; gym?: string; view?: string }>;
+  searchParams: Promise<{ status?: string; trainerId?: string; memberId?: string; gym?: string; view?: string; book?: string }>;
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
-  const { status, trainerId, memberId, gym: gymParam, view } = await searchParams;
+  const { status, trainerId, memberId, gym: gymParam, view, book } = await searchParams;
+  const isBookingMode = book === "1" || book === "true";
   const { gyms } = currentUser.role === "admin" ? await getGymWorkspaces() : { gyms: [] };
   const gymId = currentUser.role === "admin"
     ? (gymParam ?? currentUser.gymId ?? gyms[0]?.id ?? PRIMARY_GYM_ID)
@@ -83,6 +84,8 @@ export default async function OwnerTrainingPage({
     (acc, s) => { acc[s.status] = (acc[s.status] ?? 0) + 1; return acc; },
     {}
   );
+  const activePtPlanCount = (counts.scheduled ?? 0) + (counts.active ?? 0);
+  const plansWithExercises = sessions.filter((s) => s.plannedExercises?.length).length;
 
   const activeFilter = (status ?? "all") as StatusFilter;
   let filtered = sessions;
@@ -103,16 +106,28 @@ export default async function OwnerTrainingPage({
   const preselectedTrainer = trainerId ? trainers.find((t) => t.id === trainerId) : null;
 
   return (
-    <main className="page">
+    <main className={`page pt-page${isBookingMode ? " pt-page--booking" : ""}`}>
 
       {/* ── Page header ── */}
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
+      <section className="pt-command-hero">
+        <div className="pt-command-copy">
           <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Training" }]} />
-          <h1>Personal Training</h1>
-          <p>Assign PT plans to members and track sessions across your gym.</p>
+          <p className="eyebrow">Personal training</p>
+          <h1>{isBookingMode ? "Assign a PT monthly plan" : "Personal Training"}</h1>
+          <p>
+            Create trainer-led PT plans with member, trainer, duration, and exercises in one flow.
+            These plans stay separate from regular workout assignments.
+          </p>
+          <div className="pt-command-actions">
+            <Link className="button button-primary" href="/owner/training?book=1">
+              Assign PT plan
+            </Link>
+            <Link className="button button-secondary" href="/owner/training">
+              View all plans
+            </Link>
+          </div>
           {currentUser.role === "admin" && gyms.length > 0 && (
-            <div className="quick-actions" style={{ marginTop: 12 }}>
+            <div className="pt-admin-gym-switcher" aria-label="Select gym">
               {gyms.map((gym) => (
                 <Link
                   key={gym.id}
@@ -126,21 +141,27 @@ export default async function OwnerTrainingPage({
           )}
         </div>
 
-        <aside className="pt-hero-stats">
-          <article className="pt-stat-card">
+        <aside className="pt-command-panel" aria-label="PT overview">
+          <article className="pt-command-stat">
             <Calendar />
-            <strong>{(counts.scheduled ?? 0) + (counts.active ?? 0)}</strong>
-            <span>Active PT plans</span>
+            <div>
+              <strong>{activePtPlanCount}</strong>
+              <span>Active monthly plans</span>
+            </div>
           </article>
-          <article className="pt-stat-card">
+          <article className="pt-command-stat">
             <Dumbbell />
-            <strong>{sessions.filter((s) => s.plannedExercises?.length).length}</strong>
-            <span>With exercises</span>
+            <div>
+              <strong>{plansWithExercises}</strong>
+              <span>Plans with exercises</span>
+            </div>
           </article>
-          <article className="pt-stat-card">
+          <article className="pt-command-stat">
             <UsersRound />
-            <strong>{trainers.length}</strong>
-            <span>Trainers</span>
+            <div>
+              <strong>{trainers.length}</strong>
+              <span>Available trainers</span>
+            </div>
           </article>
         </aside>
       </section>
@@ -150,27 +171,35 @@ export default async function OwnerTrainingPage({
       )}
 
       {/* ── 2-column workspace ── */}
-      <div className="pt-workspace-grid">
+      <div className={`pt-workspace-grid${isBookingMode ? " pt-workspace-grid--booking" : ""}`}>
 
         {/* Left: booking form (always visible) */}
         <section className="pt-book-col">
-          <div className="list-panel" style={{ padding: 0 }}>
-            <div className="panel-title" style={{ padding: "16px 20px 14px", borderBottom: "1px solid var(--border)" }}>
+          <div className="list-panel pt-booking-card">
+            <div className="panel-title pt-booking-card-title">
               <div>
                 <p className="eyebrow">New assignment</p>
-                <h2 style={{ display: "flex", alignItems: "center", gap: 8, margin: 0 }}>
+                <h2>
                   <Calendar />
                   Assign PT plan
                 </h2>
               </div>
               {preselectedMember && (
-                <span className="status-pill status-active" style={{ fontSize: "0.78rem" }}>
+                <span className="status-pill status-active">
                   For {preselectedMember.fullName}
                 </span>
               )}
             </div>
 
-            <div style={{ padding: "0 0 0 0" }}>
+            <div className="pt-booking-intro">
+              <span className="status-pill status-neutral">Monthly plan</span>
+              <h3>Plan setup</h3>
+              <p>
+                Default duration is 30 days. Add exercises here for PT only; regular workout plans are not overwritten.
+              </p>
+            </div>
+
+            <div className="pt-booking-card-body">
               <PTBookingForm
                 gymId={gymId}
                 exercises={exercises}

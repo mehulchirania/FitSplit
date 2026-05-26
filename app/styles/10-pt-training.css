@@ -182,6 +182,11 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
   justify-content: center;
 }
 
+.pt-booking-form .button svg {
+  height: 16px;
+  width: 16px;
+}
+
 .pt-planned-list {
   display: grid;
   gap: 8px;
@@ -246,6 +251,110 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
 
 /* ── Training page 2-column workspace ───────────────────────────────────── */
 
+/* PT command header */
+
+.pt-command-hero {
+  align-items: stretch;
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 410px);
+  margin: 0 auto;
+  max-width: var(--page-max-width, 1220px);
+  padding: 28px clamp(18px, 4vw, 56px) 0;
+}
+
+.pt-command-copy {
+  background:
+    radial-gradient(circle at 0 0, color-mix(in srgb, var(--brand) 12%, transparent), transparent 36%),
+    var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow-soft);
+  min-width: 0;
+  padding: clamp(22px, 4vw, 34px);
+}
+
+.pt-command-copy h1 {
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  letter-spacing: -0.05em;
+  line-height: 0.96;
+  margin: 8px 0 12px;
+}
+
+.pt-command-copy > p:not(.eyebrow) {
+  color: var(--text-soft);
+  font-size: clamp(0.98rem, 1.4vw, 1.08rem);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 720px;
+}
+
+.pt-command-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.pt-command-actions .button {
+  font-size: 0.9rem;
+  min-height: 42px;
+  padding: 9px 16px;
+}
+
+.pt-admin-gym-switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.pt-admin-gym-switcher .button {
+  font-size: 0.82rem;
+  min-height: 38px;
+  padding: 7px 12px;
+}
+
+.pt-command-panel {
+  align-content: stretch;
+  display: grid;
+  gap: 10px;
+}
+
+.pt-command-stat {
+  align-items: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  display: flex;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+}
+
+.pt-command-stat svg,
+.pt-booking-card-title svg {
+  color: var(--brand);
+  flex: 0 0 auto;
+  height: 18px;
+  width: 18px;
+}
+
+.pt-command-stat strong {
+  color: var(--text);
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1;
+}
+
+.pt-command-stat span {
+  color: var(--text-soft);
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.3;
+  margin-top: 4px;
+}
+
 .pt-workspace-grid {
   align-items: start;
   display: grid;
@@ -254,6 +363,10 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
   margin: 20px auto 0;
   max-width: var(--page-max-width, 1220px);
   padding: 0 clamp(18px, 4vw, 56px) 40px;
+}
+
+.pt-workspace-grid--booking {
+  grid-template-columns: 1fr;
 }
 
 .pt-book-col,
@@ -266,6 +379,75 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
 .pt-sessions-col {
   position: sticky;
   top: 80px;
+}
+
+.pt-page--booking .pt-sessions-col {
+  position: static;
+}
+
+.pt-booking-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.pt-booking-card-title {
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 17px 20px 15px;
+}
+
+.pt-booking-card-title h2 {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  margin: 0;
+}
+
+.pt-booking-card-title .status-pill {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+}
+
+.pt-booking-intro {
+  align-items: start;
+  background: color-mix(in srgb, var(--brand) 5%, transparent);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  gap: 7px;
+  padding: 18px 20px;
+}
+
+.pt-booking-intro .status-pill {
+  justify-self: start;
+}
+
+.pt-booking-intro h3 {
+  font-size: 1.05rem;
+  margin: 0;
+}
+
+.pt-booking-intro p {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  line-height: 1.55;
+  margin: 0;
+  max-width: 720px;
+}
+
+.pt-booking-card-body {
+  min-width: 0;
+}
+
+.pt-page--booking .pt-booking-form {
+  border-top: 0;
+}
+
+.pt-sessions-col .list-panel svg {
+  max-height: 28px;
+  max-width: 28px;
 }
 
 /* ── Filter group (trainer pills) ────────────────────────────────────────── */
@@ -349,7 +531,12 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
 /* ── Training page responsive ────────────────────────────────────────────── */
 
 @media (max-width: 960px) {
+  .pt-command-hero,
   .pt-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pt-workspace-grid--booking {
     grid-template-columns: 1fr;
   }
 
@@ -757,6 +944,29 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
 }
 
 @media (max-width: 760px) {
+  .pt-command-hero {
+    gap: 14px;
+    padding-top: 18px;
+  }
+
+  .pt-command-copy {
+    border-radius: 18px;
+    padding: 20px;
+  }
+
+  .pt-command-actions {
+    flex-direction: column;
+  }
+
+  .pt-command-actions .button {
+    justify-content: center;
+    width: 100%;
+  }
+
+  .pt-command-panel {
+    grid-template-columns: 1fr;
+  }
+
   .pt-hero-stats,
   .pt-assignment-grid,
   .pt-exercise-picker,

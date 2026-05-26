@@ -15,7 +15,6 @@ import {
   getGymDetail,
   getMembers,
   getOwnerNotifications,
-  getWorkoutPrograms,
   getGymFloorLoadMap,
   getRecentSessionCounts
 } from "@/lib/firebase/read-models";
@@ -36,7 +35,6 @@ export default async function OwnerDashboard() {
   const [
     { members },
     { notifications: ownerNotifications },
-    { programs },
     { gym },
     { sessions: workoutSessions },
     { assignments },
@@ -45,7 +43,6 @@ export default async function OwnerDashboard() {
   ] = await Promise.all([
     getMembers(gymId),
     getOwnerNotifications(gymId),
-    getWorkoutPrograms(gymId),
     getGymDetail(gymId),
     getActiveWorkoutSessions(gymId),
     getActiveProgramAssignments(gymId),
@@ -116,8 +113,8 @@ export default async function OwnerDashboard() {
         </div>
         <div className="odp-stat-sep" />
         <div className="odp-stat">
-          <strong>{programs.length}</strong>
-          <span>Workout Plans</span>
+          <strong>{assignedMemberIds.size}</strong>
+          <span>Covered Members</span>
         </div>
         <div className="odp-stat-sep" />
         <div className={workoutSessions.length > 0 ? "odp-stat odp-stat--active" : "odp-stat"}>

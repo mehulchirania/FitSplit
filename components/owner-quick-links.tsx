@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { Activity, Calendar, Dumbbell, UsersRound } from "@/components/icons";
+import { Activity, Calendar, Dumbbell } from "@/components/icons";
 
 const MotionLink = motion(Link as any);
 
@@ -17,7 +17,7 @@ export function OwnerQuickLinks({
   isStaff: boolean;
 }) {
   return (
-    <nav aria-label="Quick actions" className="ui-cards odp-quick-links">
+    <nav aria-label="Dashboard actions" className="ui-cards odp-quick-links">
       <MotionLink
         layout
         className={unassignedMembersCount > 0 ? "ui-card red odp-ql-link is-urgent" : "ui-card green odp-ql-link"}
@@ -32,25 +32,8 @@ export function OwnerQuickLinks({
       
       <MotionLink layout className="ui-card green odp-ql-link" href="/owner/training?book=1">
         <p className="tip"><Calendar /></p>
-        <p className="second-text">Add Personal Training</p>
+        <p className="second-text">Assign PT Plan</p>
       </MotionLink>
-      
-      <MotionLink layout className="ui-card purple odp-ql-link" href="/owner/members">
-        <p className="tip"><UsersRound /></p>
-        <p className="second-text">All Members</p>
-      </MotionLink>
-      
-      <MotionLink layout className="ui-card blue odp-ql-link" href="/owner/programs">
-        <p className="tip"><Activity /></p>
-        <p className="second-text">Workout Plans</p>
-      </MotionLink>
-      
-      {!isTrainer && !isStaff && (
-        <MotionLink layout className="ui-card orange odp-ql-link" href="/owner/exercises">
-          <p className="tip"><Dumbbell /></p>
-          <p className="second-text">Exercises</p>
-        </MotionLink>
-      )}
       
       {!isTrainer && !isStaff && (
         <MotionLink layout className="ui-card gray odp-ql-link" href="/owner/reports">

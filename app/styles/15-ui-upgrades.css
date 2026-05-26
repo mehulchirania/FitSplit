@@ -47,7 +47,7 @@ html[data-theme="dark"] .status-active {
   display: grid;
   gap: 8px;
   grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
-  min-width: min(100%, 440px);
+  min-width: min(100%, 320px);
   padding-bottom: 0;
 }
 
@@ -75,6 +75,10 @@ html[data-theme="dark"] .status-active {
     transform var(--spring),
     background-color var(--medium);
   white-space: normal;
+}
+
+.odp-quick-links .ui-card.odp-ql-link {
+  min-height: 76px;
 }
 
 .odp-ql-link svg {
