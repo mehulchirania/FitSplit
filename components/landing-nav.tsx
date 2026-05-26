@@ -90,8 +90,8 @@ export function LandingNav() {
       <nav className={`landing-nav ${isHidden ? "landing-nav-hidden" : ""}`} aria-label="FitSplit landing navigation">
       <a className="landing-nav-brand" href="#top" aria-label="FitSplit home">
         <span className="theme-logo" aria-hidden="true">
-          <img alt="" className="theme-logo-dark" src="/fitsplit-logo-dark.png" />
-          <img alt="" className="theme-logo-light" src="/fitsplit-logo-light.png" />
+          <img alt="" className="theme-logo-dark" src="/new_logo.png" />
+          <img alt="" className="theme-logo-light" src="/new_logo.png" />
         </span>
         <span>FitSplit</span>
       </a>

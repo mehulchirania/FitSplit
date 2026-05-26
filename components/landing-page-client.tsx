@@ -338,7 +338,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             {/* Header */}
             <div className="lp-modal-hdr">
               <div className="lp-modal-brand">
-                <img src="/fitsplit-logo-dark.png" alt="FitSplit" width="22" height="22" />
+                <img src="/new_logo.png" alt="FitSplit" width="52" height="22" />
                 <span>FitSplit</span>
               </div>
               <button className="lp-modal-x" onClick={onClose} aria-label="Close login" type="button">
@@ -470,7 +470,7 @@ export function LandingPageClient() {
       <header className={`lp-nav${scrolled ? " lp-nav-scrolled" : ""}`}>
         <div className="lp-nav-inner">
           <a href="#top" className="lp-brand" aria-label="FitSplit home">
-            <img src="/fitsplit-logo-dark.png" alt="" width="26" height="26" />
+            <img src="/new_logo.png" alt="" width="60" height="24" />
             <span>FitSplit</span>
           </a>
 
@@ -830,7 +830,7 @@ export function LandingPageClient() {
             {/* Brand col */}
             <div className="lp-footer-brand">
               <div className="lp-brand">
-                <img src="/fitsplit-logo-dark.png" alt="FitSplit logo" width="22" height="22" loading="lazy" decoding="async" />
+                <img src="/new_logo.png" alt="FitSplit logo" width="52" height="22" loading="lazy" decoding="async" />
                 <span>FitSplit</span>
               </div>
               <p>Workout delivery and trainer coordination for focused fitness teams.</p>

@@ -214,16 +214,16 @@ export function AppTopbar({
             {gymLogoUrl && role !== "admin" ? (
               <span className="gym-brand-lockup" aria-label={`FitSplit x ${gymName ?? "gym"}`}>
                 <span className="theme-logo brand-icon-wrap" aria-hidden="true">
-                  <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
-                  <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
+                  <img alt="" className="brand-icon theme-logo-dark" src="/new_logo.png" />
+                  <img alt="" className="brand-icon theme-logo-light" src="/new_logo.png" />
                 </span>
                 <span className="gym-brand-x" aria-hidden="true">x</span>
                 <img alt={`${gymName ?? "Gym"} logo`} className="gym-brand-logo" src={gymLogoUrl} />
               </span>
             ) : (
               <span className="theme-logo brand-icon-wrap" aria-hidden="true">
-                <img alt="" className="brand-icon theme-logo-dark" src="/fitsplit-logo-dark.png" />
-                <img alt="" className="brand-icon theme-logo-light" src="/fitsplit-logo-light.png" />
+                <img alt="" className="brand-icon theme-logo-dark" src="/new_logo.png" />
+                <img alt="" className="brand-icon theme-logo-light" src="/new_logo.png" />
               </span>
             )}
             <strong className={gymLogoUrl && role !== "admin" ? "brand-wordmark brand-wordmark--with-gym" : "brand-wordmark"}>

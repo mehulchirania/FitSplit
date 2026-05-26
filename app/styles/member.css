@@ -25,21 +25,21 @@
 .theme-logo.brand-icon-wrap,
 .brand-icon-wrap {
   display: inline-grid !important;
-  flex: 0 0 48px;
-  height: 48px !important;
+  flex: 0 0 94px;
+  height: 40px !important;
   overflow: hidden;
-  width: 48px !important;
+  width: 94px !important;
 }
 
 .theme-logo.brand-icon-wrap img,
 .brand-icon {
   display: block !important;
   grid-area: 1 / 1;
-  height: 48px !important;
-  max-height: 48px !important;
-  max-width: 48px !important;
-  object-fit: cover;
-  width: 48px !important;
+  height: 40px !important;
+  max-height: 40px !important;
+  max-width: 94px !important;
+  object-fit: contain;
+  width: 94px !important;
 }
 
 .gym-brand-logo {
@@ -865,17 +865,17 @@
 
   .theme-logo.brand-icon-wrap,
   .brand-icon-wrap {
-    flex-basis: 40px;
-    height: 40px !important;
-    width: 40px !important;
+    flex-basis: 70px;
+    height: 30px !important;
+    width: 70px !important;
   }
 
   .theme-logo.brand-icon-wrap img,
   .brand-icon {
-    height: 40px !important;
-    max-height: 40px !important;
-    max-width: 40px !important;
-    width: 40px !important;
+    height: 30px !important;
+    max-height: 30px !important;
+    max-width: 70px !important;
+    width: 70px !important;
   }
 
   .gym-brand-logo {

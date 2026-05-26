@@ -37,13 +37,13 @@ const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display
 export const metadata: Metadata = {
   title: "FitSplit",
   description: "Workout programming and gym operations for focused fitness teams.",
-  manifest: "/manifest.json?v=7",
+  manifest: "/manifest.json?v=10",
   icons: {
     icon: [
-      { url: "/favicon-32x32.png?v=7", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png?v=7", sizes: "16x16", type: "image/png" }
+      { url: "/favicon-32x32.png?v=10", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png?v=10", sizes: "16x16", type: "image/png" }
     ],
-    apple: "/apple-touch-icon.png?v=7"
+    apple: "/apple-touch-icon.png?v=10"
   }
 };
 
@@ -103,11 +103,11 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="FitSplit" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="manifest" href="/manifest.json?v=7" />
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=7" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=7" />
-        <link rel="shortcut icon" href="/favicon-32x32.png?v=7" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=7" />
+        <link rel="manifest" href="/manifest.json?v=10" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=10" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=10" />
+        <link rel="shortcut icon" href="/favicon-32x32.png?v=10" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=10" />
         <script
           dangerouslySetInnerHTML={{
             __html: `

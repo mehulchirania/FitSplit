@@ -251,20 +251,20 @@ html[data-theme="light"] .theme-logo-light {
 }
 
 .brand-icon-wrap {
-  border-radius: 10px;
-  height: 48px;
+  border-radius: 12px;
+  height: 40px;
   overflow: hidden;
-  width: 48px;
+  width: 94px;
 }
 
 .brand-icon {
   border: none !important;
-  border-radius: 10px;
+  border-radius: 12px;
   box-shadow: 0 8px 22px color-mix(in srgb, var(--brand) 18%, transparent);
   display: block;
-  height: 36px;
-  object-fit: cover;
-  width: 36px;
+  height: 40px;
+  object-fit: contain;
+  width: 94px;
 }
 
 .brand-mark,

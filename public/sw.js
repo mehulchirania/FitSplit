@@ -1,6 +1,7 @@
-const CACHE_NAME = "fitsplit-pwa-v6";
+const CACHE_NAME = "fitsplit-pwa-v8";
 const APP_SHELL = [
   "/manifest.json",
+  "/new_logo.png",
   "/icon-512.png",
   "/android-chrome-192x192.png",
   "/favicon-32x32.png",

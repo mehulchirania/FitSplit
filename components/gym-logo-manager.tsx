@@ -144,7 +144,7 @@ export function GymLogoManager({
 
       <div className="gym-logo-current">
         <div className="gym-brand-preview">
-          <img alt="FitSplit logo" src="/fitsplit-logo-dark.png" />
+          <img alt="FitSplit logo" src="/new_logo.png" />
           <span>x</span>
           {logoDataUrl ? (
             <img alt={`${gymName} cropped preview`} src={logoDataUrl} />
