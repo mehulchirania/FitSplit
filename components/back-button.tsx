@@ -8,7 +8,8 @@ import type { Role } from "@/types/domain";
 const roleHomes: Record<Role, string> = {
   admin: "/admin",
   member: "/member",
-  owner: "/owner"
+  owner: "/owner",
+  trainer: "/trainer"
 };
 
 function getParentPath(pathname: string, role?: Role) {

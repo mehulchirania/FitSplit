@@ -558,7 +558,7 @@ export async function setGymStatus(
     const profileSnapshot = await db
       .collection(collectionPaths.authProfiles)
       .where("defaultGymId", "==", gymId)
-      .where("role", "in", ["owner", "member"])
+      .where("role", "in", ["owner", "trainer", "member"])
       .get();
 
     const batch = db.batch();

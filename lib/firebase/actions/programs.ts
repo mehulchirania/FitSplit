@@ -7,7 +7,7 @@ import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
 import type { FormActionState } from "@/types/action-state";
 import type { WorkoutProgram } from "@/types/domain";
-import { getWorkoutPrograms } from "@/lib/firebase/read-models";
+import { getWorkoutPrograms } from "@/lib/firebase/read-models/programs";
 import workoutsData from "@/lib/workouts.json";
 import {
   requireFirebase,

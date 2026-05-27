@@ -1,185 +1,64 @@
-import Link from "next/link";
-import { AddMemberForm } from "@/components/add-member-form";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { BulkMemberList } from "@/components/bulk-member-list";
-import { Activity, Bell, Dumbbell, UsersRound } from "@/components/icons";
+import { MembersHybridView } from "@/components/members-hybrid-view";
+import type { HybridMember } from "@/components/members-hybrid-view";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import { getActiveProgramAssignments, getMembers, getWorkoutPrograms } from "@/lib/firebase/read-models";
-
+import {
+  getActiveProgramAssignments,
+  getMembers,
+  getWorkoutPrograms,
+} from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
-type SortKey = "name" | "newest" | "oldest" | "active" | "inactive";
-type FilterKey = "all" | "plan" | "no-plan";
-
-const sortOptions: { label: string; value: SortKey }[] = [
-  { label: "Name A–Z",      value: "name"     },
-  { label: "Newest",        value: "newest"   },
-  { label: "Oldest",        value: "oldest"   },
-  { label: "Active first",  value: "active"   },
-  { label: "Inactive first",value: "inactive" },
-];
-
-function sortMembers(
-  members: Awaited<ReturnType<typeof getMembers>>["members"],
-  sort: SortKey
-) {
-  return [...members].sort((a, b) => {
-    switch (sort) {
-      case "newest":   return b.joinedAt.localeCompare(a.joinedAt);
-      case "oldest":   return a.joinedAt.localeCompare(b.joinedAt);
-      case "active":   return Number(b.isActive) - Number(a.isActive) || a.fullName.localeCompare(b.fullName);
-      case "inactive": return Number(a.isActive) - Number(b.isActive) || a.fullName.localeCompare(b.fullName);
-      default:         return a.fullName.localeCompare(b.fullName);
-    }
-  });
+function daysToExpiry(endDate?: string): number | null {
+  if (!endDate) return null;
+  return Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-export default async function MembersPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ sort?: string; filter?: string }>;
-}) {
+export default async function MembersPage() {
   const currentUser = await requireRole(["admin", "owner"]);
-
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+
   const [{ members }, { assignments }, { programs }] = await Promise.all([
     getMembers(gymId),
     getActiveProgramAssignments(gymId),
-    getWorkoutPrograms(gymId)
+    getWorkoutPrograms(gymId),
   ]);
-
-  const { sort: rawSort = "name", filter: rawFilter = "all" } = await searchParams;
-  const sort   = (sortOptions.some((o) => o.value === rawSort)   ? rawSort   : "name")    as SortKey;
-  const filter = (["all", "plan", "no-plan"].includes(rawFilter) ? rawFilter : "all") as FilterKey;
 
   const assignedIds = new Set(assignments.map((a) => a.memberId));
 
-  const totalCount    = members.length;
-  const activeCount   = members.filter((m) => m.isActive).length;
-  const withPlanCount = members.filter((m) => assignedIds.has(m.id)).length;
-  const noPlanCount   = totalCount - withPlanCount;
+  // Build a lookup: memberId → program title
+  const programById = new Map(programs.map((p) => [p.id, p.title]));
+  const assignmentByMemberId = new Map(
+    assignments.map((a) => [a.memberId, a.programId])
+  );
 
-  const filtered =
-    filter === "plan"    ? members.filter((m) =>  assignedIds.has(m.id)) :
-    filter === "no-plan" ? members.filter((m) => !assignedIds.has(m.id)) :
-    members;
+  const hybridMembers: HybridMember[] = members.map((m) => {
+    const programId = assignmentByMemberId.get(m.id);
+    return {
+      id: m.id,
+      fullName: m.fullName,
+      avatarInitials: m.avatarInitials,
+      isActive: m.isActive,
+      username: m.username,
+      goal: m.goal,
+      joinedAt: m.joinedAt,
+      membershipStatus: m.membershipStatus,
+      membershipEndDate: m.membershipEndDate,
+      currentPackageName: m.currentPackageName,
+      assignedTrainer: undefined, // not denormalised in getMembers; shown only on member detail
+      hasPlan: assignedIds.has(m.id),
+      programTitle: programId ? programById.get(programId) : undefined,
+      daysToExpiry: daysToExpiry(m.membershipEndDate),
+    };
+  });
 
-  const sorted = sortMembers(filtered, sort);
-
-  function href(f: FilterKey, s: SortKey) {
-    return `/owner/members?filter=${f}&sort=${s}`;
-  }
+  const hybridPrograms = programs.map((p) => ({ id: p.id, title: p.title }));
 
   return (
-    <main className="page">
-      {/* ── Header ── */}
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Members" }]} />
-          <h1>Member profiles.</h1>
-          <p>
-            Create profiles, assign workout programs, and manage gym access — all from one place.
-          </p>
-          {/* Quick-glance stats */}
-          <div className="ui-cards" style={{ marginTop: 16, gap: 10 }}>
-            <article className="ui-card blue">
-              <p className="tip"><UsersRound /> {totalCount}</p>
-              <p className="second-text">Total</p>
-            </article>
-            <article className="ui-card green">
-              <p className="tip"><Activity /> {activeCount}</p>
-              <p className="second-text">Active</p>
-            </article>
-            <article className="ui-card purple">
-              <p className="tip"><Dumbbell /> {withPlanCount}</p>
-              <p className="second-text">Has plan</p>
-            </article>
-            <article className="ui-card red">
-              <p className="tip"><Bell /> {noPlanCount}</p>
-              <p className="second-text">No plan</p>
-            </article>
-          </div>
-        </div>
-        <AddMemberForm />
-      </section>
-
-      {/* ── Filter + Sort bar ── */}
-      <div className="members-filter-bar">
-        {/* Filter tabs — use Link for soft navigation, preserves scroll & state */}
-        <nav className="members-filter-tabs" aria-label="Filter members">
-          <Link
-            aria-current={filter === "all" ? "page" : undefined}
-            className={filter === "all" ? "is-selected" : ""}
-            href={href("all", sort)}
-            replace
-            scroll={false}
-          >
-            All
-            <span className="ftab-count">{totalCount}</span>
-          </Link>
-          <Link
-            aria-current={filter === "plan" ? "page" : undefined}
-            className={filter === "plan" ? "is-selected" : ""}
-            href={href("plan", sort)}
-            replace
-            scroll={false}
-          >
-            Has plan
-            <span className="ftab-count">{withPlanCount}</span>
-          </Link>
-          <Link
-            aria-current={filter === "no-plan" ? "page" : undefined}
-            className={filter === "no-plan" ? "is-selected" : ""}
-            href={href("no-plan", sort)}
-            replace
-            scroll={false}
-          >
-            Needs plan
-            <span className={`ftab-count ${noPlanCount > 0 ? "ftab-alert" : ""}`}>
-              {noPlanCount}
-            </span>
-          </Link>
-        </nav>
-
-        {/* Sort tabs */}
-        <div className="sort-tabs" aria-label="Sort members">
-          {sortOptions.map((opt) => (
-            <Link
-              aria-current={sort === opt.value ? "page" : undefined}
-              className={sort === opt.value ? "is-selected" : ""}
-              href={href(filter, opt.value)}
-              key={opt.value}
-              replace
-              scroll={false}
-            >
-              {opt.label}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* ── Member list with bulk select ── */}
-      <section className="list-panel" style={{ padding: 0 }}>
-        <div className="panel-title" style={{ padding: "14px 20px 12px" }}>
-          <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <UsersRound />
-            {filter === "all"     ? "All members"       :
-             filter === "plan"    ? "Members with plan" :
-                                    "Members needing a plan"}
-          </h2>
-          <span className="status-pill status-neutral" style={{ fontSize: "0.72rem" }}>
-            {sorted.length}
-          </span>
-        </div>
-
-        <BulkMemberList
-          assignedIds={assignedIds}
-          members={sorted}
-          programs={programs.map((p) => ({ id: p.id, title: p.title }))}
-        />
-      </section>
-    </main>
+    <MembersHybridView
+      initialMembers={hybridMembers}
+      programs={hybridPrograms}
+    />
   );
 }

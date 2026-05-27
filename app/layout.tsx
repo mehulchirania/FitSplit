@@ -8,7 +8,14 @@ import { ScrollReveal } from "@/components/scroll-reveal";
 import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import { getAdminNotifications, getGymDetail, getMemberNotifications, getOwnerNotifications, getUnreadContactMessageCount, getActiveWorkoutSessions } from "@/lib/firebase/read-models";
+import { getGymDetail } from "@/lib/firebase/read-models/gyms";
+import {
+  getAdminNotifications,
+  getMemberNotifications,
+  getOwnerNotifications,
+  getUnreadContactMessageCount
+} from "@/lib/firebase/read-models/notifications";
+import { getActiveWorkoutSessions } from "@/lib/firebase/read-models/sessions";
 import type { Notification } from "@/types/domain";
 import { Inter, DM_Sans } from "next/font/google";
 import "./globals.css";
@@ -33,6 +40,8 @@ import "./styles/14-radix-overrides.css";
 import "./styles/15-ui-upgrades.css";
 import "./styles/16-ux-improvements.css";
 import "./styles/17-profile-metrics.css";
+import "./styles/18-billing-trainers.css";
+import "./styles/19-members-redesign.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });

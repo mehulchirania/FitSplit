@@ -17,13 +17,17 @@ const ownerLinks = [
   { href: "/owner/members", label: "Members" },
   { href: "/owner/training", label: "Training" },
   { href: "/owner/programs", label: "Workout Programs" },
-  { href: "/owner/exercises", label: "Exercise Catalog" }
+  { href: "/owner/exercises", label: "Exercise Catalog" },
+  { href: "/owner/packages", label: "Packages" },
+  { href: "/owner/billing", label: "Billing" },
+  { href: "/owner/trainers", label: "Trainers" },
 ];
 
 const trainerLinks = [
   { href: "/trainer", label: "My Schedule" },
-  { href: "/owner/members", label: "Members" },
-  { href: "/owner/training", label: "All PT Plans" }
+  { href: "/trainer/members", label: "My Members" },
+  { href: "/owner/training", label: "All PT Plans" },
+  { href: "/profile", label: "Profile" },
 ];
 
 function isActiveLink(pathname: string, href: string) {
@@ -41,7 +45,7 @@ export function MainNav({ role, staffType }: { role?: Role; staffType?: string }
   let links = ownerLinks;
   if (role === "admin" || pathname.startsWith("/admin")) {
     links = adminLinks;
-  } else if (staffType === "trainer") {
+  } else if (role === "trainer" || staffType === "trainer") {
     links = trainerLinks;
   }
 

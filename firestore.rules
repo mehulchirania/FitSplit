@@ -38,6 +38,14 @@ service cloud.firestore {
         && currentGymId() == gymId;
     }
 
+    // First-class trainer role check.
+    function isTrainerForGym(gymId) {
+      return signedIn()
+        && role() == "trainer"
+        && currentGymId() == gymId;
+    }
+
+    // Owner or trainer in the same gym.
     function isStaffForGym(gymId) {
       return signedIn()
         && (role() == "owner" || role() == "trainer" || role() == "staff")
@@ -78,6 +86,18 @@ service cloud.firestore {
       return adminOrOwnerScoped(data) || memberOwned(data);
     }
 
+    // Trainers can read member data their gym-level visibility setting allows.
+    // Visibility enforcement is primarily done server-side; rules provide a
+    // coarse baseline: trainer can read any member in their gym.
+    // The finer assigned_only / all_pt_members distinction is enforced by
+    // server-side queries and callable functions, not rules (rules can't
+    // efficiently join across docs without significant read costs).
+    function trainerCanReadMember(gymId) {
+      return isTrainerForGym(gymId);
+    }
+
+    // ─── Gym-scoped collections ───────────────────────────────────────────────
+
     match /gyms/{gymId} {
       allow read: if isGymUser(gymId);
       allow create, delete: if isAdmin();
@@ -85,10 +105,10 @@ service cloud.firestore {
 
       match /members/{userId} {
         allow read: if isAdmin()
-          || isStaffForGym(gymId)
+          || isOwnerForGym(gymId)
+          || trainerCanReadMember(gymId)
           || isMemberSelf(userId);
-        // Privileged creation/deletion is handled by Firebase Functions/Admin SDK.
-        allow create, delete: if false;
+        allow create, delete: if false; // privileged via Functions/Admin SDK
         allow update: if isAdmin()
           || isOwnerForGym(gymId)
           || (
@@ -102,8 +122,7 @@ service cloud.firestore {
         allow read: if isAdmin()
           || isStaffForGym(gymId)
           || isMemberSelf(userId);
-        // Staff writes are privileged and must go through Firebase Functions/Admin SDK.
-        allow create, update, delete: if false;
+        allow create, update, delete: if false; // privileged via Functions/Admin SDK
       }
 
       match /exerciseCatalog/{exerciseId} {
@@ -123,7 +142,8 @@ service cloud.firestore {
 
       match /notifications/{notificationId} {
         allow read: if isAdmin()
-          || isStaffForGym(gymId)
+          || isOwnerForGym(gymId)
+          || isTrainerForGym(gymId)
           || isMemberSelf(resource.data.recipientUserId)
           || isMemberSelf(resource.data.recipientId);
         allow create: if isAdmin() || isOwnerForGym(gymId);
@@ -137,34 +157,52 @@ service cloud.firestore {
       }
 
       match /liftLogs/{liftLogId} {
-        allow read: if adminOrOwnerOrMemberScoped(resource.data);
-        allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || trainerCanReadMember(gymId)
+          || memberOwned(resource.data);
+        allow create: if request.resource.data.gymId == gymId
+          && (adminOrOwnerOrMemberScoped(request.resource.data) || isTrainerForGym(gymId));
         allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
       }
 
+      match /macroLogs/{macroLogId} {
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || trainerCanReadMember(gymId)
+          || memberOwned(resource.data);
+        allow create: if request.resource.data.gymId == gymId
+          && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+      }
+
+      match /activityLogs/{activityLogId} {
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || trainerCanReadMember(gymId)
+          || memberOwned(resource.data);
+        allow create: if request.resource.data.gymId == gymId
+          && (adminOrOwnerOrMemberScoped(request.resource.data) || isTrainerForGym(gymId));
+        allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data)
+          || isTrainerForGym(gymId);
+      }
+
       match /programAssignments/{assignmentId} {
-        allow read: if adminOrOwnerOrMemberScoped(resource.data);
-        // Assignment writes are privileged and must go through Firebase Functions/Admin SDK.
-        allow create, update, delete: if false;
+        allow read: if adminOrOwnerOrMemberScoped(resource.data)
+          || trainerCanReadMember(gymId);
+        allow create, update, delete: if false; // privileged via Functions/Admin SDK
       }
 
       match /activityEvents/{eventId} {
         allow read: if isAdmin()
           || ownerScoped(resource.data)
-          || (
-            resource.data.memberId != null
-            && memberOwned(resource.data)
-          )
-          || (
-            resource.data.recipientId != null
-            && isMemberSelf(resource.data.recipientId)
-          );
-        // Activity writes are system-generated by Functions/Admin SDK.
-        allow create, update, delete: if false;
+          || (resource.data.memberId != null && memberOwned(resource.data))
+          || (resource.data.recipientId != null && isMemberSelf(resource.data.recipientId));
+        allow create, update, delete: if false; // system-generated by Functions/Admin SDK
       }
 
       match /workoutSessions/{sessionId} {
-        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow read: if adminOrOwnerOrMemberScoped(resource.data) || trainerCanReadMember(gymId);
         allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
         allow update: if adminOrOwnerOrMemberScoped(resource.data)
           && request.resource.data.memberId == resource.data.memberId
@@ -179,13 +217,13 @@ service cloud.firestore {
       }
 
       match /bodyMetricLogs/{bodyMetricLogId} {
-        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow read: if adminOrOwnerOrMemberScoped(resource.data) || trainerCanReadMember(gymId);
         allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
         allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
       }
 
       match /dayLogs/{dayLogId} {
-        allow read: if adminOrOwnerOrMemberScoped(resource.data);
+        allow read: if adminOrOwnerOrMemberScoped(resource.data) || trainerCanReadMember(gymId);
         allow create: if request.resource.data.gymId == gymId && adminOrOwnerOrMemberScoped(request.resource.data);
         allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
       }
@@ -206,8 +244,7 @@ service cloud.firestore {
         allow update, delete: if isAdmin() || isOwnerForGym(gymId);
       }
 
-      // Any gym staff (owner or trainer) can read and write any PT session in
-      // the gym — enabling cover when the assigned trainer is unavailable.
+      // PT sessions — any gym staff can read/write (cover trainer support).
       // Members can read their own sessions.
       match /ptSessions/{ptSessionId} {
         allow read: if isAdmin()
@@ -218,8 +255,6 @@ service cloud.firestore {
         allow delete: if isAdmin() || isOwnerForGym(gymId);
       }
 
-      // PT lift logs follow the same gym-staff-wide access as PT sessions.
-      // Members can read logs tied to their own sessions.
       match /ptLiftLogs/{ptLiftLogId} {
         allow read: if isAdmin()
           || isStaffForGym(gymId)
@@ -227,11 +262,50 @@ service cloud.firestore {
         allow create: if isAdmin() || isStaffForGym(gymId);
         allow update, delete: if isAdmin() || isStaffForGym(gymId);
       }
+
+      // ── Billing collections — trainers have NO access ──────────────────────
+
+      // Membership package definitions — owner creates, members can read their gym's packages.
+      match /packages/{packageId} {
+        allow read: if isAdmin() || isOwnerForGym(gymId) || isGymMember(gymId);
+        allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
+        // Trainers: no access to billing/packages.
+      }
+
+      // Per-member membership records — owner and member-self only.
+      match /memberships/{membershipId} {
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || (isGymMember(gymId) && resource.data.memberId == memberId());
+        allow create, update, delete: if false; // privileged via Functions/Admin SDK
+        // Trainers: no access.
+      }
+
+      // Payment requests — owner and member-self only.
+      match /paymentRequests/{requestId} {
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || (isGymMember(gymId) && resource.data.memberId == memberId());
+        allow create: if isAdmin()
+          || isOwnerForGym(gymId)
+          || (isGymMember(gymId) && request.resource.data.memberId == memberId());
+        allow update, delete: if false; // approval/rejection go through Functions
+        // Trainers: no access.
+      }
+
+      // Pre-computed dashboard summary — read by owner, written by Functions.
+      match /summaries/{summaryId} {
+        allow read: if isAdmin() || isOwnerForGym(gymId);
+        allow write: if false; // written exclusively by Admin SDK / Functions
+      }
     }
+
+    // ─── Root-level collections ───────────────────────────────────────────────
 
     match /authProfiles/{userId} {
       allow read: if isAdmin()
         || isOwnerForGym(profileGym(resource.data))
+        || isTrainerForGym(profileGym(resource.data))
         || isMemberSelf(userId);
       allow create, delete: if isAdmin()
         || (request.resource.data.role == "member" && isOwnerForGym(profileGym(request.resource.data)));
@@ -289,22 +363,14 @@ service cloud.firestore {
 
     match /programAssignments/{assignmentId} {
       allow read: if adminOrOwnerOrMemberScoped(resource.data);
-      // Assignment writes are privileged and must go through Firebase Functions/Admin SDK.
       allow create, update, delete: if false;
     }
 
     match /activityEvents/{eventId} {
       allow read: if isAdmin()
         || ownerScoped(resource.data)
-        || (
-          resource.data.memberId != null
-          && memberOwned(resource.data)
-        )
-        || (
-          resource.data.recipientId != null
-          && isMemberSelf(resource.data.recipientId)
-        );
-      // Activity writes are system-generated by Functions/Admin SDK.
+        || (resource.data.memberId != null && memberOwned(resource.data))
+        || (resource.data.recipientId != null && isMemberSelf(resource.data.recipientId));
       allow create, update, delete: if false;
     }
 
@@ -333,16 +399,6 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // Admin SDK only — no client access.  Rules are explicit deny for documentation.
-    match /loginAttempts/{id} {
-      allow read, write: if false;
-    }
-
-    match /usernames/{id} {
-      allow read, write: if false;
-    }
-
-    // Root-level mirrors for gym-scoped collections used by collectionGroup queries.
     match /bodyMetricLogs/{bodyMetricLogId} {
       allow read: if adminOrOwnerOrMemberScoped(resource.data);
       allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
@@ -361,23 +417,44 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
-    // Root-level PT mirrors — admin-only; gym-scoped paths are the primary access layer.
     match /ptSessions/{ptSessionId} {
       allow read: if isAdmin()
-        || (signedIn() && (role() == "owner" || role() == "member")
-            && currentGymId() == resource.data.gymId);
+        || (signedIn() && (role() == "owner" || role() == "trainer")
+            && currentGymId() == resource.data.gymId)
+        || (signedIn() && role() == "member" && currentGymId() == resource.data.gymId);
       allow write: if isAdmin()
-        || (signedIn() && role() == "owner"
+        || (signedIn() && (role() == "owner" || role() == "trainer")
             && currentGymId() == resource.data.gymId);
     }
 
     match /ptLiftLogs/{ptLiftLogId} {
       allow read: if isAdmin()
-        || (signedIn() && (role() == "owner" || role() == "member")
-            && currentGymId() == resource.data.gymId);
+        || (signedIn() && (role() == "owner" || role() == "trainer")
+            && currentGymId() == resource.data.gymId)
+        || (signedIn() && role() == "member" && currentGymId() == resource.data.gymId);
       allow write: if isAdmin()
-        || (signedIn() && role() == "owner"
+        || (signedIn() && (role() == "owner" || role() == "trainer")
             && currentGymId() == resource.data.gymId);
+    }
+
+    // Admin SDK only — explicit deny for documentation.
+    match /loginAttempts/{id} {
+      allow read, write: if false;
+    }
+
+    match /usernames/{id} {
+      allow read, write: if false;
+    }
+
+    // Admin-only platform summary.
+    match /platformSummaries/{id} {
+      allow read: if isAdmin();
+      allow write: if false; // written exclusively by Admin SDK / Functions
+    }
+
+    match /archives/{id} {
+      allow read: if isAdmin();
+      allow write: if false;
     }
   }
 }

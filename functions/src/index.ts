@@ -20,8 +20,9 @@ const storage = getStorage();
 const region = "asia-south1";
 const primaryGymId = "shg";
 
-type Role = "admin" | "owner" | "member";
+type Role = "admin" | "owner" | "trainer" | "member";
 type StaffType = "owner" | "trainer" | "staff";
+type TrainerMemberVisibility = "assigned_only" | "all_pt_members" | "all_members";
 
 type CallableUser = {
   uid: string;
@@ -136,7 +137,7 @@ function getCallableUser(request: { auth?: { uid: string; token: Record<string, 
 
   const role = String(request.auth.token.role ?? "") as Role;
   const gymId = String(request.auth.token.gymId ?? "");
-  if (!["admin", "owner", "member"].includes(role)) {
+  if (!["admin", "owner", "trainer", "member"].includes(role)) {
     throw new HttpsError("permission-denied", "Your account role is not allowed.");
   }
 
@@ -444,12 +445,15 @@ export const createStaffAccount = onCall({ region }, async (request) => {
   const now = new Date().toISOString();
   const authEmail = `${staffId}@staff.fitsplit.app`;
 
+  // Trainers get the first-class "trainer" role; owners stay "owner".
+  const authRole: Role = normalizedStaffType === "trainer" ? "trainer" : "owner";
+
   await createAuthUser({
     uid: staffId,
     email: authEmail,
     fullName,
     password: "password",
-    role: "owner",
+    role: authRole,
     gymId,
     isActive: true
   });
@@ -461,7 +465,7 @@ export const createStaffAccount = onCall({ region }, async (request) => {
     phone,
     authEmail,
     username: phone,
-    role: "owner",
+    role: authRole,
     staffType: normalizedStaffType,
     defaultGymId: gymId,
     avatarInitials: profileInitials(fullName),
@@ -1253,6 +1257,492 @@ export const lookupLoginEmail = onCall({ region }, async (request) => {
 
   throw new HttpsError("not-found", "No account found for that username or phone number.");
 });
+
+// ─── Phase 2: Trainer / Package / Payment / Billing Functions ────────────────
+
+/**
+ * createTrainer — convenience wrapper around createStaffAccount with staffType="trainer".
+ * Accepts the same payload; always sets role="trainer" and staffType="trainer".
+ */
+export const createTrainer = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  assertCanManageGym(user, String(request.data?.gymId ?? ""));
+
+  // Delegate to the shared logic but force staffType="trainer".
+  const data = { ...request.data, staffType: "trainer" };
+  request.data = data;
+
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  const fullName = asString(request.data?.fullName, "Full name");
+  const phone = asString(request.data?.phone, "Phone number");
+  const email = optionalString(request.data?.email).toLowerCase();
+  if (email) assertEmail(email);
+  await assertPhoneAvailable(phone);
+
+  const staffId = randomUUID();
+  const now = new Date().toISOString();
+  const authEmail = `${staffId}@staff.fitsplit.app`;
+
+  await createAuthUser({ uid: staffId, email: authEmail, fullName, password: "password", role: "trainer", gymId, isActive: true });
+
+  const staffProfile = {
+    id: staffId, fullName, email, phone, authEmail, username: phone,
+    role: "trainer", staffType: "trainer", defaultGymId: gymId,
+    avatarInitials: profileInitials(fullName), isActive: true,
+    mustChangePassword: true, createdAt: now, updatedAt: now,
+    assignedMemberIds: []
+  };
+  await db.collection("authProfiles").doc(staffId).set(authProfilePayload(staffId, staffProfile));
+  await mirrorProfileToGym(staffId, staffProfile);
+
+  return { status: "success", staffId, message: `${fullName} was added as a trainer.` };
+});
+
+/**
+ * assignTrainerToPTMember
+ * Sets `assignedTrainerId` on a member and syncs `assignedMemberIds` on the trainer's staff doc.
+ * Also marks the member as isPT=true.
+ */
+export const assignTrainerToPTMember = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+
+  const memberId = asString(request.data?.memberId, "Member ID");
+  const trainerId = asString(request.data?.trainerId, "Trainer ID");
+
+  // Verify trainer exists and belongs to this gym.
+  const trainerDoc = await db.doc(`gyms/${gymId}/staff/${trainerId}`).get();
+  if (!trainerDoc.exists) throw new HttpsError("not-found", "Trainer not found in this gym.");
+  const trainerData = trainerDoc.data() ?? {};
+  if (trainerData.role !== "trainer" && trainerData.staffType !== "trainer") {
+    throw new HttpsError("invalid-argument", "The specified staff member is not a trainer.");
+  }
+
+  // Verify member belongs to this gym.
+  await assertMemberBelongsToGym(memberId, gymId);
+
+  const now = new Date().toISOString();
+  const batch = db.batch();
+
+  // Update member doc.
+  batch.set(db.doc(`gyms/${gymId}/members/${memberId}`), {
+    assignedTrainerId: trainerId, isPT: true, updatedAt: now
+  }, { merge: true });
+  batch.set(db.doc(`authProfiles/${memberId}`), {
+    assignedTrainerId: trainerId, isPT: true, updatedAt: now
+  }, { merge: true });
+
+  // Update trainer's assignedMemberIds array.
+  const existingIds: string[] = Array.isArray(trainerData.assignedMemberIds) ? trainerData.assignedMemberIds : [];
+  if (!existingIds.includes(memberId)) {
+    const updatedIds = [...existingIds, memberId];
+    batch.set(db.doc(`gyms/${gymId}/staff/${trainerId}`), { assignedMemberIds: updatedIds, updatedAt: now }, { merge: true });
+    batch.set(db.doc(`authProfiles/${trainerId}`), { assignedMemberIds: updatedIds, updatedAt: now }, { merge: true });
+  }
+
+  await batch.commit();
+  return { status: "success", message: "Trainer assigned to member successfully." };
+});
+
+/**
+ * updateTrainerVisibility
+ * Sets `trainerMemberVisibility` on the gym doc. Owner-only.
+ */
+export const updateTrainerVisibility = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+
+  const visibility = asString(request.data?.visibility, "Visibility");
+  const validValues: TrainerMemberVisibility[] = ["assigned_only", "all_pt_members", "all_members"];
+  if (!validValues.includes(visibility as TrainerMemberVisibility)) {
+    throw new HttpsError("invalid-argument", `Visibility must be one of: ${validValues.join(", ")}`);
+  }
+
+  await db.doc(`gyms/${gymId}`).set({ trainerMemberVisibility: visibility, updatedAt: new Date().toISOString() }, { merge: true });
+  return { status: "success", message: `Trainer visibility set to "${visibility}".` };
+});
+
+/**
+ * createOrUpdatePackage
+ * Creates or updates a membership package definition. Owner-only.
+ */
+export const createOrUpdatePackage = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+
+  const name = asString(request.data?.name, "Package name");
+  const durationMonths = Number(request.data?.durationMonths ?? 1);
+  const price = Number(request.data?.price ?? 0);
+  const currency = optionalString(request.data?.currency) || "INR";
+  const description = optionalString(request.data?.description);
+  const includesPT = request.data?.includesPT === true;
+  const ptSessionsIncluded = includesPT ? Number(request.data?.ptSessionsIncluded ?? 0) : 0;
+  const isActive = request.data?.isActive !== false;
+
+  if (durationMonths < 1 || durationMonths > 24) throw new HttpsError("invalid-argument", "Duration must be 1–24 months.");
+  if (price < 0) throw new HttpsError("invalid-argument", "Price cannot be negative.");
+
+  const now = new Date().toISOString();
+  const packageId = request.data?.packageId ? String(request.data.packageId) : randomUUID();
+  const isNew = !request.data?.packageId;
+
+  await db.doc(`gyms/${gymId}/packages/${packageId}`).set({
+    id: packageId, gymId, name, description: description || null,
+    durationMonths, price, currency, includesPT, ptSessionsIncluded,
+    isActive, updatedAt: now,
+    ...(isNew ? { createdAt: now } : {})
+  }, { merge: true });
+
+  return { status: "success", packageId, message: `Package "${name}" ${isNew ? "created" : "updated"}.` };
+});
+
+/**
+ * submitPaymentRequest
+ * Member raises a payment request for a package. Owner must approve to activate membership.
+ */
+export const submitPaymentRequest = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+
+  // Members can submit for themselves; owners/admins can submit on behalf of a member.
+  const targetMemberId = user.role === "member"
+    ? (user.memberId ?? user.uid)
+    : asString(request.data?.memberId, "Member ID");
+
+  if (user.role === "member") {
+    if (user.gymId !== gymId) throw new HttpsError("permission-denied", "Not a member of this gym.");
+  } else {
+    assertCanManageGym(user, gymId);
+  }
+
+  const packageId = asString(request.data?.packageId, "Package ID");
+  const method = optionalString(request.data?.method) || "cash";
+  if (!["cash", "card", "upi", "other"].includes(method)) throw new HttpsError("invalid-argument", "Invalid payment method.");
+
+  // Load package details.
+  const pkgDoc = await db.doc(`gyms/${gymId}/packages/${packageId}`).get();
+  if (!pkgDoc.exists) throw new HttpsError("not-found", "Package not found.");
+  const pkg = pkgDoc.data() ?? {};
+
+  // Fetch member name for denormalisation.
+  const memberDoc = await db.doc(`authProfiles/${targetMemberId}`).get();
+  const memberName = memberDoc.exists ? String(memberDoc.data()?.fullName ?? "") : "";
+
+  const now = new Date().toISOString();
+  const requestId = randomUUID();
+
+  await db.doc(`gyms/${gymId}/paymentRequests/${requestId}`).set({
+    id: requestId, gymId, memberId: targetMemberId, memberName,
+    packageId, packageName: String(pkg.name ?? ""), amount: Number(pkg.price ?? 0),
+    currency: String(pkg.currency ?? "INR"), method, status: "pending",
+    requestedAt: now
+  });
+
+  // Notify gym owner.
+  const ownerSnap = await db.collection(`gyms/${gymId}/staff`).where("role", "==", "owner").limit(1).get();
+  if (!ownerSnap.empty) {
+    const ownerId = ownerSnap.docs[0].id;
+    await db.collection(`gyms/${gymId}/notifications`).add({
+      recipientId: ownerId, recipientRole: "owner",
+      type: "payment_request_pending",
+      title: "Payment request received",
+      body: `${memberName} submitted a ${method} payment request for ${pkg.name}.`,
+      actionHref: "/owner/billing", memberId: targetMemberId,
+      createdAt: now
+    });
+  }
+
+  return { status: "success", requestId, message: "Payment request submitted." };
+});
+
+/**
+ * approvePaymentRequest
+ * Owner approves a cash payment → creates a Membership, updates member snapshot fields.
+ * Card/UPI approval follows the same path but is flagged as mock-only.
+ */
+export const approvePaymentRequest = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+
+  const requestId = asString(request.data?.requestId, "Request ID");
+  const reqDoc = await db.doc(`gyms/${gymId}/paymentRequests/${requestId}`).get();
+  if (!reqDoc.exists) throw new HttpsError("not-found", "Payment request not found.");
+  const reqData = reqDoc.data() ?? {};
+  if (reqData.status !== "pending") throw new HttpsError("failed-precondition", "Request is not pending.");
+
+  // Load the package to get durationMonths.
+  const pkgDoc = await db.doc(`gyms/${gymId}/packages/${reqData.packageId}`).get();
+  if (!pkgDoc.exists) throw new HttpsError("not-found", "Package no longer exists.");
+  const pkg = pkgDoc.data() ?? {};
+
+  const now = new Date().toISOString();
+  const startDate = now.slice(0, 10);
+  const endDate = addMonths(startDate, Number(pkg.durationMonths ?? 1));
+  const membershipId = randomUUID();
+  const memberId = String(reqData.memberId);
+  const packageName = String(pkg.name ?? "");
+
+  const batch = db.batch();
+
+  // Create membership record.
+  batch.set(db.doc(`gyms/${gymId}/memberships/${membershipId}`), {
+    id: membershipId, gymId, memberId, packageId: String(reqData.packageId), planName: packageName,
+    startDate, endDate, durationMonths: Number(pkg.durationMonths ?? 1),
+    status: "active", paymentRequestId: requestId,
+    activatedAt: now, createdAt: now
+  });
+
+  // Update payment request status.
+  batch.update(reqDoc.ref, { status: "approved", resolvedAt: now, membershipId });
+
+  // Denormalise onto member doc for fast list-view filtering.
+  const memberUpdate = { membershipStatus: "active", membershipEndDate: endDate, currentPackageName: packageName, updatedAt: now };
+  batch.set(db.doc(`gyms/${gymId}/members/${memberId}`), memberUpdate, { merge: true });
+  batch.set(db.doc(`authProfiles/${memberId}`), memberUpdate, { merge: true });
+
+  await batch.commit();
+
+  // Notify member.
+  await db.collection(`gyms/${gymId}/notifications`).add({
+    recipientId: memberId, recipientRole: "member",
+    type: "membership_renewed",
+    title: "Membership activated",
+    body: `Your ${packageName} membership is active until ${endDate}.`,
+    actionHref: "/member/membership", memberId,
+    createdAt: now
+  });
+
+  return { status: "success", membershipId, message: "Payment approved. Membership activated." };
+});
+
+/**
+ * rejectPaymentRequest — Owner rejects a pending payment request.
+ */
+export const rejectPaymentRequest = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+
+  const requestId = asString(request.data?.requestId, "Request ID");
+  const reason = optionalString(request.data?.reason) || "Rejected by owner.";
+
+  const reqDoc = await db.doc(`gyms/${gymId}/paymentRequests/${requestId}`).get();
+  if (!reqDoc.exists) throw new HttpsError("not-found", "Payment request not found.");
+  if ((reqDoc.data() ?? {}).status !== "pending") throw new HttpsError("failed-precondition", "Request is not pending.");
+
+  const now = new Date().toISOString();
+  await reqDoc.ref.update({ status: "rejected", resolvedAt: now, notes: reason });
+
+  // Notify member.
+  const memberId = String((reqDoc.data() ?? {}).memberId ?? "");
+  if (memberId) {
+    await db.collection(`gyms/${gymId}/notifications`).add({
+      recipientId: memberId, recipientRole: "member",
+      type: "payment_request_rejected",
+      title: "Payment request declined",
+      body: reason, actionHref: "/member/membership", memberId, createdAt: now
+    });
+  }
+
+  return { status: "success", message: "Payment request rejected." };
+});
+
+/**
+ * activateOrRenewMembership — Owner directly activates/renews without a payment request.
+ */
+export const activateOrRenewMembership = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+
+  const memberId = asString(request.data?.memberId, "Member ID");
+  const packageId = asString(request.data?.packageId, "Package ID");
+
+  const pkgDoc = await db.doc(`gyms/${gymId}/packages/${packageId}`).get();
+  if (!pkgDoc.exists) throw new HttpsError("not-found", "Package not found.");
+  const pkg = pkgDoc.data() ?? {};
+
+  const now = new Date().toISOString();
+  const startDate = now.slice(0, 10);
+  const endDate = addMonths(startDate, Number(pkg.durationMonths ?? 1));
+  const membershipId = randomUUID();
+  const packageName = String(pkg.name ?? "");
+
+  const batch = db.batch();
+  batch.set(db.doc(`gyms/${gymId}/memberships/${membershipId}`), {
+    id: membershipId, gymId, memberId, packageId, planName: packageName,
+    startDate, endDate, durationMonths: Number(pkg.durationMonths ?? 1),
+    status: "active", activatedAt: now, createdAt: now
+  });
+  const memberUpdate = { membershipStatus: "active", membershipEndDate: endDate, currentPackageName: packageName, updatedAt: now };
+  batch.set(db.doc(`gyms/${gymId}/members/${memberId}`), memberUpdate, { merge: true });
+  batch.set(db.doc(`authProfiles/${memberId}`), memberUpdate, { merge: true });
+  await batch.commit();
+
+  return { status: "success", membershipId, message: `Membership activated until ${endDate}.` };
+});
+
+/**
+ * generateGymDashboardStats — pre-compute and write gyms/{gymId}/summaries/dashboard.
+ * Call after bulk operations or on a schedule to keep the dashboard cheap to load.
+ */
+export const generateGymDashboardStats = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const gymId = asString(request.data?.gymId, "Gym ID");
+  assertCanManageGym(user, gymId);
+  await computeGymDashboard(gymId);
+  return { status: "success", message: "Dashboard stats updated." };
+});
+
+async function computeGymDashboard(gymId: string) {
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+  const in7Days = addMonths(todayStr, 0, 7); // helper overload
+
+  const [membersSnap, pendingSnap, trainersSnap, membershipsSnap] = await Promise.all([
+    db.collection(`gyms/${gymId}/members`).get(),
+    db.collection(`gyms/${gymId}/paymentRequests`).where("status", "==", "pending").get(),
+    db.collection(`gyms/${gymId}/staff`).where("role", "in", ["owner", "trainer"]).get(),
+    db.collection(`gyms/${gymId}/memberships`).where("status", "==", "active").get()
+  ]);
+
+  let totalMembers = 0, activeMembers = 0, ptMembers = 0, expiringThisWeek = 0, expiredCount = 0, revenueMTD = 0;
+  for (const doc of membersSnap.docs) {
+    const d = doc.data();
+    if (d.role !== "member") continue;
+    totalMembers++;
+    if (d.isActive !== false) activeMembers++;
+    if (d.isPT === true) ptMembers++;
+    if (d.membershipEndDate) {
+      if (d.membershipEndDate < todayStr) expiredCount++;
+      else if (d.membershipEndDate <= in7Days) expiringThisWeek++;
+    }
+  }
+
+  // Rough MTD revenue from approved payment requests this month.
+  const monthStart = todayStr.slice(0, 7) + "-01";
+  const approvedSnap = await db.collection(`gyms/${gymId}/paymentRequests`)
+    .where("status", "==", "approved")
+    .where("resolvedAt", ">=", monthStart)
+    .get();
+  for (const doc of approvedSnap.docs) revenueMTD += Number(doc.data().amount ?? 0);
+
+  const summary = {
+    gymId, totalMembers, activeMembers, ptMembers, expiringThisWeek, expiredCount,
+    pendingPaymentRequests: pendingSnap.size,
+    activeTrainers: trainersSnap.docs.filter((d) => d.data().role === "trainer" && d.data().isActive !== false).length,
+    totalRevenueMTD: revenueMTD, currency: "INR",
+    lastComputedAt: new Date().toISOString()
+  };
+
+  await db.doc(`gyms/${gymId}/summaries/dashboard`).set(summary);
+  return summary;
+}
+
+/**
+ * generateAdminDashboardStats — cross-gym aggregate for the admin console.
+ * Writes to platformSummaries/main.
+ */
+export const generateAdminDashboardStats = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  if (user.role !== "admin") throw new HttpsError("permission-denied", "Admin only.");
+
+  const gymsSnap = await db.collection("gyms").where("status", "==", "active").get();
+  let totalGyms = 0, totalMembers = 0, totalTrainers = 0;
+
+  for (const gymDoc of gymsSnap.docs) {
+    totalGyms++;
+    const [mSnap, tSnap] = await Promise.all([
+      db.collection(`gyms/${gymDoc.id}/members`).count().get(),
+      db.collection(`gyms/${gymDoc.id}/staff`).where("role", "==", "trainer").count().get()
+    ]);
+    totalMembers += mSnap.data().count;
+    totalTrainers += tSnap.data().count;
+  }
+
+  await db.doc("platformSummaries/main").set({
+    totalGyms, totalMembers, totalTrainers,
+    lastComputedAt: new Date().toISOString()
+  });
+
+  return { status: "success", message: "Admin platform stats updated." };
+});
+
+// Utility: add N months (and optional extra days) to a YYYY-MM-DD string.
+function addMonths(dateStr: string, months: number, days = 0): string {
+  const d = new Date(`${dateStr}T00:00:00Z`);
+  d.setUTCMonth(d.getUTCMonth() + months);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+export const processMembershipExpiries = onSchedule({ region, schedule: "every 24 hours", retryCount: 0 }, async () => {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const in7Days = addMonths(todayStr, 0, 7);
+  const gymsSnap = await db.collection("gyms").where("status", "==", "active").get();
+
+  for (const gymDoc of gymsSnap.docs) {
+    const gymId = gymDoc.id;
+    const membersSnap = await db.collection(`gyms/${gymId}/members`)
+      .where("membershipEndDate", "<=", in7Days).get();
+
+    const batch = db.batch();
+    let batchCount = 0;
+
+    for (const memberDoc of membersSnap.docs) {
+      const d = memberDoc.data();
+      const endDate = String(d.membershipEndDate ?? "");
+      if (!endDate) continue;
+
+      const isExpired = endDate < todayStr;
+      const isExpiringSoon = !isExpired && endDate <= in7Days;
+      const newStatus = isExpired ? "expired" : "expiring_soon";
+      const currentStatus = d.membershipStatus;
+
+      if (currentStatus === newStatus) continue; // already up-to-date
+
+      const update = { membershipStatus: newStatus, updatedAt: new Date().toISOString() };
+      batch.set(memberDoc.ref, update, { merge: true });
+      batch.set(db.doc(`authProfiles/${memberDoc.id}`), update, { merge: true });
+      batchCount += 2;
+
+      // Send notification once per status transition.
+      if (isExpired && currentStatus !== "expired") {
+        await db.collection(`gyms/${gymId}/notifications`).add({
+          recipientId: memberDoc.id, recipientRole: "member",
+          type: "membership_expired",
+          title: "Membership expired",
+          body: "Your gym membership has expired. Renew to keep access.",
+          actionHref: "/member/membership", memberId: memberDoc.id,
+          createdAt: new Date().toISOString()
+        });
+      } else if (isExpiringSoon && currentStatus !== "expiring_soon") {
+        const days = Math.ceil((new Date(`${endDate}T00:00:00Z`).getTime() - Date.now()) / 86400000);
+        await db.collection(`gyms/${gymId}/notifications`).add({
+          recipientId: memberDoc.id, recipientRole: "member",
+          type: "membership_expiring_soon",
+          title: "Membership expiring soon",
+          body: `Your membership expires in ${days} day${days === 1 ? "" : "s"}.`,
+          actionHref: "/member/membership", memberId: memberDoc.id,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      if (batchCount >= 490) {
+        await batch.commit();
+        batchCount = 0;
+      }
+    }
+
+    if (batchCount > 0) await batch.commit();
+  }
+});
+
+// ─── Scheduled Functions ─────────────────────────────────────────────────────
 
 export const purgeExpiredArchives = onSchedule({ region, schedule: "every 24 hours", retryCount: 0 }, async () => {
   const expired = await db.collection("archives").where("retentionExpiresAt", "<=", new Date()).limit(450).get();

@@ -197,11 +197,11 @@ export default async function MemberDashboard() {
               <strong>{liftLogs.length}</strong>
               <small>sets saved</small>
             </a>
-            <div className="md-hero-stat-new">
-              <span>Status</span>
-              <strong>{program ? "Ready" : "Pending"}</strong>
-              <small>{program ? "plan assigned" : "trainer review"}</small>
-            </div>
+            <a href="/member/membership" className="md-hero-stat-new md-hero-stat-link-new">
+              <span>Membership</span>
+              <strong>{member.membershipStatus ?? "—"}</strong>
+              <small>{member.membershipEndDate ? `until ${new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short" }).format(new Date(member.membershipEndDate))}` : "tap to join"}</small>
+            </a>
           </div>
         </div>
       </header>

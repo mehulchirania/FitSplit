@@ -27,7 +27,9 @@ export const collectionPaths = {
   macroLogs: "macroLogs",
   activityLogs: "activityLogs",
   // Sparse index for atomic username uniqueness. Doc ID = normalized username.
-  usernames: "usernames"
+  usernames: "usernames",
+  // Cross-gym admin aggregate. Single doc: platformSummaries/main.
+  platformSummaries: "platformSummaries"
 } as const;
 
 export const gymScopedCollectionPaths = {
@@ -50,7 +52,15 @@ export const gymScopedCollectionPaths = {
   ptSessions: "ptSessions",
   ptLiftLogs: "ptLiftLogs",
   macroLogs: "macroLogs",
-  activityLogs: "activityLogs"
+  activityLogs: "activityLogs",
+  // Membership package definitions set by the gym owner.
+  packages: "packages",
+  // Per-member membership records (one per active/past period).
+  memberships: "memberships",
+  // Payment requests raised by members for package renewals/purchases.
+  paymentRequests: "paymentRequests",
+  // Pre-computed summary docs. Single doc: summaries/dashboard.
+  summaries: "summaries"
 } as const;
 
 export type GymScopedCollectionKey = keyof typeof gymScopedCollectionPaths;

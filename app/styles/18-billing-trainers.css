@@ -1,0 +1,1076 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   18-billing-trainers.css — Packages, billing, trainers, stat-card,
+   data-table, empty-state, package-card, payment-request-card styles.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Stat card ────────────────────────────────────────────────────────────── */
+
+.stat-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 20px 14px;
+  transition: box-shadow var(--fast);
+}
+
+.stat-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card-link {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius);
+}
+
+.stat-card-link:hover .stat-card {
+  box-shadow: var(--shadow-md);
+}
+
+.stat-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.stat-card-icon {
+  display: flex;
+  align-items: center;
+  color: var(--text-soft);
+  width: 18px;
+  height: 18px;
+}
+
+.stat-card-icon svg { width: 18px; height: 18px; }
+
+.stat-card-value {
+  font-size: 1.6rem;
+  font-weight: 780;
+  line-height: 1;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.stat-card-label {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+
+.stat-card-sub {
+  font-size: 0.72rem;
+  color: var(--text-muted, var(--text-soft));
+  margin-top: 2px;
+}
+
+/* ── Billing stats row ───────────────────────────────────────────────────── */
+
+.billing-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+/* ── Billing filter bar ──────────────────────────────────────────────────── */
+
+.billing-filter-tabs {
+  margin-bottom: 16px;
+}
+
+/* ── Billing request list ────────────────────────────────────────────────── */
+
+.billing-request-list {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Payment request card ────────────────────────────────────────────────── */
+
+.payment-request-card {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--fast);
+}
+
+.payment-request-card:last-child {
+  border-bottom: none;
+}
+
+.payment-request-card:hover {
+  background: var(--bg-subtle);
+}
+
+.prc-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.prc-identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.prc-member {
+  font-weight: 650;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.prc-date {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.prc-body {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+
+.prc-package {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+}
+
+.prc-amount {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prc-method {
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-soft);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+}
+
+.prc-notes {
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  margin: 0 0 6px;
+  font-style: italic;
+}
+
+.prc-resolved {
+  font-size: 0.75rem;
+  color: var(--text-muted, var(--text-soft));
+  margin: 0 0 8px;
+}
+
+.prc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.prc-reject-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.prc-reject-input-row .input-sm {
+  flex: 1;
+  min-width: 160px;
+  height: 32px;
+  font-size: 0.82rem;
+  padding: 0 10px;
+}
+
+/* ── Danger button ───────────────────────────────────────────────────────── */
+
+.button-danger {
+  align-items: center;
+  background: #ef4444;
+  border: 1px solid #ef4444;
+  border-radius: 999px;
+  color: #fff;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.875rem;
+  font-weight: 760;
+  gap: 6px;
+  justify-content: center;
+  min-height: 36px;
+  padding: 7px 15px;
+  transition: background var(--fast), border-color var(--fast), transform var(--fast);
+}
+
+.button-danger:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.button-danger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Package card ────────────────────────────────────────────────────────── */
+
+.package-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow var(--fast);
+}
+
+.package-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.package-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.package-card-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.package-card-desc {
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.45;
+}
+
+.package-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+}
+
+.package-price {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.package-duration {
+  color: var(--text-soft);
+}
+
+.package-pt-badge {
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--brand);
+  border: 1px solid color-mix(in srgb, var(--brand) 30%, transparent);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.package-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+/* ── Packages layout ─────────────────────────────────────────────────────── */
+
+.packages-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 900px) {
+  .packages-layout {
+    grid-template-columns: 1fr 380px;
+    align-items: start;
+  }
+}
+
+.packages-list-col {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.packages-form-col {
+  position: sticky;
+  top: 80px;
+}
+
+.packages-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.packages-grid--inactive {
+  opacity: 0.65;
+}
+
+.packages-archived {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.packages-archived-toggle {
+  padding: 12px 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  list-style: none;
+}
+
+.packages-archived-toggle::-webkit-details-marker { display: none; }
+
+/* ── Package form ────────────────────────────────────────────────────────── */
+
+.package-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.form-row-2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.input-prefix-group {
+  display: flex;
+  gap: 0;
+  border: 1px solid var(--input-border, var(--border));
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--input-bg, var(--bg-elevated));
+}
+
+.input-prefix-select {
+  border: none !important;
+  border-radius: 0 !important;
+  background: var(--bg-subtle) !important;
+  border-right: 1px solid var(--border) !important;
+  flex-shrink: 0;
+  width: auto;
+  padding-right: 24px;
+  font-size: 0.8rem;
+}
+
+.input-prefix-main {
+  border: none !important;
+  border-radius: 0 !important;
+  flex: 1;
+  background: transparent !important;
+}
+
+.form-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.form-checkbox-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+/* ── Trainer list ────────────────────────────────────────────────────────── */
+
+.trainer-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.trainer-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  transition: background var(--fast);
+}
+
+.trainer-row:last-child {
+  border-bottom: none;
+}
+
+.trainer-row:hover {
+  background: var(--bg-subtle);
+}
+
+.trainer-row-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand) 14%, var(--bg-subtle));
+  color: var(--brand);
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+.trainer-row-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trainer-row-name {
+  font-weight: 650;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.trainer-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 3px;
+  flex-wrap: wrap;
+}
+
+.trainer-row-phone {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.trainer-row-stats {
+  display: flex;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.trainer-row-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.trainer-row-stat strong {
+  font-size: 1.1rem;
+  font-weight: 760;
+  color: var(--text);
+  line-height: 1;
+}
+
+.trainer-row-stat span {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+  white-space: nowrap;
+}
+
+.trainer-row-actions {
+  flex-shrink: 0;
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+
+.empty-state-icon {
+  width: 40px;
+  height: 40px;
+  color: var(--text-soft);
+  opacity: 0.5;
+  margin-bottom: 4px;
+}
+
+.empty-state-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.empty-state-heading {
+  font-size: 1rem;
+  font-weight: 680;
+  color: var(--text);
+  margin: 0;
+}
+
+.empty-state-body {
+  font-size: 0.85rem;
+  color: var(--text-soft);
+  margin: 0;
+  max-width: 320px;
+}
+
+/* ── Trainer visibility form ─────────────────────────────────────────────── */
+
+.visibility-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.visibility-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--fast), background var(--fast);
+}
+
+.visibility-option:hover {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 4%, transparent);
+}
+
+.visibility-option.is-selected {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 7%, transparent);
+}
+
+.visibility-option input[type="radio"] {
+  margin-top: 2px;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+}
+
+.visibility-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.visibility-option-label {
+  font-size: 0.88rem;
+  font-weight: 640;
+  color: var(--text);
+}
+
+.visibility-option-desc {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+/* ── Data table ──────────────────────────────────────────────────────────── */
+
+.data-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.data-table thead th {
+  padding: 10px 16px;
+  text-align: left;
+  font-size: 0.75rem;
+  font-weight: 640;
+  color: var(--text-soft);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--fast);
+}
+
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.data-table tbody tr:hover {
+  background: var(--bg-subtle);
+}
+
+.data-table td {
+  padding: 12px 16px;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.data-table-skeleton {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.skeleton-row {
+  height: 40px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+  animation: skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.data-table-empty {
+  padding: 32px 20px;
+  text-align: center;
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+/* ── Form hint ───────────────────────────────────────────────────────────── */
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  margin: 0;
+}
+
+/* ── Amber quick-link card ───────────────────────────────────────────────── */
+
+.ui-card.amber {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff;
+}
+
+/* ── Member membership page ──────────────────────────────────────────────── */
+
+.membership-page .page-header {
+  margin-bottom: 20px;
+}
+
+.membership-status-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.msc-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.msc-label {
+  font-size: 0.72rem;
+  font-weight: 640;
+  color: var(--text-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.msc-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.msc-plan {
+  font-weight: 650;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.msc-expiry {
+  font-size: 0.82rem;
+  color: var(--text-soft);
+}
+
+.msc-expiry--warn {
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.msc-expiry--danger {
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.msc-right {
+  display: flex;
+  gap: 20px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.msc-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.msc-stat strong {
+  font-size: 1.5rem;
+  font-weight: 780;
+  color: var(--text);
+  line-height: 1;
+}
+
+.msc-stat span {
+  font-size: 0.7rem;
+  color: var(--text-soft);
+}
+
+.membership-pending-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: color-mix(in srgb, #f59e0b 10%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, #f59e0b 30%, var(--border));
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.membership-pending-banner svg {
+  width: 16px;
+  height: 16px;
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.membership-renew-details {
+  margin-bottom: 16px;
+}
+
+.membership-renew-toggle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  cursor: pointer;
+  list-style: none;
+  padding: 8px 0;
+}
+
+.membership-renew-toggle::-webkit-details-marker { display: none; }
+
+/* ── Package option cards ─────────────────────────────────────────────────── */
+
+.pkg-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pkg-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color var(--fast), background var(--fast);
+}
+
+.pkg-option:hover {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 4%, transparent);
+}
+
+.pkg-option.is-selected {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 8%, transparent);
+}
+
+.pkg-option input[type="radio"] {
+  margin-top: 3px;
+  accent-color: var(--brand);
+  flex-shrink: 0;
+}
+
+.pkg-option-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pkg-option-name {
+  font-weight: 650;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.pkg-option-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+}
+
+.pkg-option-price {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.pkg-option-dur {
+  color: var(--text-soft);
+}
+
+.pkg-option-pt {
+  color: var(--brand);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.pkg-option-desc {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  line-height: 1.4;
+}
+
+/* ── Payment method pills ────────────────────────────────────────────────── */
+
+.method-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.method-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-soft);
+  transition: border-color var(--fast), color var(--fast), background var(--fast);
+}
+
+.method-pill input[type="radio"] {
+  display: none;
+}
+
+.method-pill:hover {
+  border-color: var(--brand);
+  color: var(--text);
+}
+
+.method-pill.is-selected {
+  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 10%, transparent);
+  color: var(--brand);
+}
+
+/* ── Membership request form ─────────────────────────────────────────────── */
+
+.membership-request-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.membership-submitted {
+  text-align: center;
+  padding: 24px 16px;
+}
+
+.membership-submitted-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--brand) 15%, var(--bg-subtle));
+  color: var(--brand);
+  font-size: 1.4rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+}
+
+.membership-submitted h3 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 8px;
+}
+
+.membership-submitted p {
+  font-size: 0.88rem;
+  color: var(--text-soft);
+  margin: 0;
+  max-width: 320px;
+  margin-inline: auto;
+}
+
+/* ── Payment history ─────────────────────────────────────────────────────── */
+
+.payment-history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.payment-history-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.payment-history-row:last-child {
+  border-bottom: none;
+}
+
+.phr-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.phr-package {
+  font-weight: 650;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+
+.phr-meta {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.phr-amount {
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text);
+}
+
+.phr-method, .phr-dur {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.phr-date {
+  font-size: 0.75rem;
+  color: var(--text-soft);
+}
+
+.phr-notes {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  font-style: italic;
+}
+
+/* ── Mobile responsive tweaks ───────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+  .billing-stats {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .trainer-row {
+    flex-wrap: wrap;
+  }
+
+  .trainer-row-actions {
+    width: 100%;
+  }
+
+  .form-row-2col {
+    grid-template-columns: 1fr;
+  }
+
+  .prc-reject-input-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+/* ── Owner dashboard: clickable stat boxes ───────────────────────────────── */
+
+.odp-stat-link {
+  cursor: pointer;
+  border-radius: 12px;
+  transition: background 0.15s, opacity 0.15s;
+  color: inherit;
+}
+
+.odp-stat-link:hover {
+  background: color-mix(in srgb, var(--brand) 10%, var(--bg));
+  opacity: 0.92;
+}
+
+.odp-stat-link strong {
+  color: var(--brand);
+}

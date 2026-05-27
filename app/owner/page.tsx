@@ -16,7 +16,9 @@ import {
   getMembers,
   getOwnerNotifications,
   getGymFloorLoadMap,
-  getRecentSessionCounts
+  getRecentSessionCounts,
+  getPendingPaymentRequests,
+  getGymDashboardSummary,
 } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -39,7 +41,9 @@ export default async function OwnerDashboard() {
     { sessions: workoutSessions },
     { assignments },
     { slots },
-    sessionCounts
+    sessionCounts,
+    pendingPayments,
+    dashboardSummary,
   ] = await Promise.all([
     getMembers(gymId),
     getOwnerNotifications(gymId),
@@ -47,7 +51,9 @@ export default async function OwnerDashboard() {
     getActiveWorkoutSessions(gymId),
     getActiveProgramAssignments(gymId),
     getGymFloorLoadMap(gymId),
-    getRecentSessionCounts(gymId)
+    getRecentSessionCounts(gymId),
+    getPendingPaymentRequests(gymId),
+    getGymDashboardSummary(gymId),
   ]);
 
   const assignedMemberIds = new Set(assignments.map((a) => a.memberId));
@@ -80,10 +86,11 @@ export default async function OwnerDashboard() {
           <h1>Dashboard</h1>
         </div>
 
-        <OwnerQuickLinks 
-          unassignedMembersCount={unassignedMembers.length} 
-          isTrainer={isTrainer} 
-          isStaff={isStaff} 
+        <OwnerQuickLinks
+          unassignedMembersCount={unassignedMembers.length}
+          pendingPaymentCount={pendingPayments.length}
+          isTrainer={isTrainer}
+          isStaff={isStaff}
         />
       </header>
 
@@ -103,7 +110,7 @@ export default async function OwnerDashboard() {
       {/* ── Stats bar ───────────────────────────────────────────── */}
       <section aria-label="Gym overview" className="odp-stats">
         <div className="odp-stat">
-          <strong>{members.length}</strong>
+          <strong>{dashboardSummary?.totalMembers ?? members.length}</strong>
           <span>All Members</span>
         </div>
         <div className="odp-stat-sep" />
@@ -112,15 +119,31 @@ export default async function OwnerDashboard() {
           <span>Need Workouts</span>
         </div>
         <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong>{assignedMemberIds.size}</strong>
-          <span>Covered Members</span>
-        </div>
-        <div className="odp-stat-sep" />
         <div className={workoutSessions.length > 0 ? "odp-stat odp-stat--active" : "odp-stat"}>
           <strong>{workoutSessions.length}</strong>
           <span>In Gym Now</span>
         </div>
+        <div className="odp-stat-sep" />
+        {dashboardSummary?.expiringThisWeek !== undefined && dashboardSummary.expiringThisWeek > 0 ? (
+          <Link href="/owner/billing" className={`odp-stat odp-stat--urgent odp-stat-link`} style={{ textDecoration: "none" }}>
+            <strong>{dashboardSummary.expiringThisWeek}</strong>
+            <span>Expiring Soon</span>
+          </Link>
+        ) : (
+          <div className="odp-stat">
+            <strong>{dashboardSummary?.activeMembers ?? assignedMemberIds.size}</strong>
+            <span>Active Members</span>
+          </div>
+        )}
+        {dashboardSummary?.totalRevenueMTD !== undefined && (
+          <>
+            <div className="odp-stat-sep" />
+            <Link href="/owner/billing" className="odp-stat odp-stat-link" style={{ textDecoration: "none" }}>
+              <strong>{dashboardSummary.currency} {dashboardSummary.totalRevenueMTD.toLocaleString("en-IN")}</strong>
+              <span>Revenue MTD</span>
+            </Link>
+          </>
+        )}
       </section>
 
       {/* ── Content grid ────────────────────────────────────────── */}

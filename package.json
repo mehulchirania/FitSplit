@@ -9,6 +9,7 @@
     "deploy:firebase": "npm run build && firebase deploy",
     "functions:build": "npm --prefix functions run build",
     "functions:deploy": "npm --prefix functions run build && firebase deploy --only functions",
+    "seed:billing": "node scripts/seed-billing.mjs",
     "seed:auth": "node scripts/seed-firebase-auth.mjs",
     "seed:firebase": "node scripts/seed-firebase.mjs",
     "seed:demo": "node scripts/seed-demo-firestore.mjs",
@@ -27,6 +28,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:rules": "node --experimental-vm-modules scripts/test-firestore-rules.mjs",
+    "migrate:phase1": "node scripts/migrate-phase1.mjs",
+    "migrate:phase1:commit": "node scripts/migrate-phase1.mjs --commit",
     "prepare": "husky"
   },
   "dependencies": {
@@ -53,6 +57,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
     "@eslint/eslintrc": "^3.3.5",
     "@next/bundle-analyzer": "^15.5.18",
     "@sentry/nextjs": "^9.0.0",

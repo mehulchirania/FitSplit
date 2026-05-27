@@ -279,6 +279,10 @@ function redirectForRole(role: Role) {
     return "/owner";
   }
 
+  if (role === "trainer") {
+    return "/trainer";
+  }
+
   return "/member";
 }
 

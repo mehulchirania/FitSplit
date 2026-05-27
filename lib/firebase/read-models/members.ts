@@ -1,6 +1,6 @@
 import { cache } from "react";
 import { unstable_cache } from "next/cache";
-import type { Member, ProfileMetrics } from "@/types/domain";
+import type { Member, ProfileMetrics, TrainerMemberVisibility } from "@/types/domain";
 
 import { members as mockMembers } from "@/lib/mock-data";
 import { collectionPaths } from "../collections";
@@ -287,7 +287,12 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     username: await resolveMemberUsername(getFirebaseAdminServices().db, memberId, data),
     age: data.age ? Number(data.age) : undefined,
     heightCm: data.heightCm ? Number(data.heightCm) : undefined,
-    weightKg: data.weightKg ? Number(data.weightKg) : undefined
+    weightKg: data.weightKg ? Number(data.weightKg) : undefined,
+    isPT: data.isPT === true,
+    assignedTrainerId: data.assignedTrainerId ? String(data.assignedTrainerId) : undefined,
+    membershipStatus: data.membershipStatus ? String(data.membershipStatus) as Member["membershipStatus"] : undefined,
+    membershipEndDate: data.membershipEndDate ? String(data.membershipEndDate) : undefined,
+    currentPackageName: data.currentPackageName ? String(data.currentPackageName) : undefined
   };
 
   const profile: ProfileMetrics = {
@@ -315,18 +320,35 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
 
 export async function getTrainersForGymUncached(gymId: string): Promise<Member[]> {
   const { db } = getFirebaseAdminServices();
-  const scopedSnap = await gymCollection(db, gymId, "staff")
-    .where("role", "==", "owner")
-    .get();
+  // Query both first-class trainer role and legacy owner+staffType="trainer" records.
+  const [scopedSnap, trainerRoleSnap] = await Promise.all([
+    gymCollection(db, gymId, "staff")
+      .where("role", "in", ["owner", "trainer"])
+      .get(),
+    gymCollection(db, gymId, "staff")
+      .where("role", "==", "trainer")
+      .get()
+  ]);
   const rootSnap = scopedSnap.empty
     ? await db
         .collection(collectionPaths.authProfiles)
         .where("defaultGymId", "==", gymId)
-        .where("role", "==", "owner")
+        .where("role", "in", ["owner", "trainer"])
         .get()
     : null;
 
-  const docs = scopedSnap.empty && rootSnap ? rootSnap.docs : scopedSnap.docs;
+  // Merge: prefer gym-scoped staff docs; fall back to root authProfiles.
+  const seenIds = new Set<string>();
+  const docs = [...(scopedSnap.empty && rootSnap ? rootSnap.docs : scopedSnap.docs)];
+  // Ensure first-class trainer role docs are always included (avoids dedup issues
+  // when gymId query returns only owners on a gym that has trainers too).
+  for (const d of trainerRoleSnap.docs) {
+    if (!seenIds.has(d.id)) {
+      docs.push(d);
+      seenIds.add(d.id);
+    }
+  }
+
   return docs
     .map((d) => mapProfileToMember(d.id, d.data() as Record<string, unknown>))
     .filter((staff) => staff.isActive !== false && staff.staffType !== "staff")
@@ -342,4 +364,47 @@ export async function getTrainersForGym(gymId: string): Promise<Member[]> {
     ["read:getTrainersForGym", gymId],
     { tags: ["staff", gymTag(gymId, "staff")], revalidate: 60 }
   )(gymId);
+}
+
+// ── Trainer-visibility-aware member fetch ─────────────────────────────────
+
+/**
+ * Fetches members visible to a trainer, enforcing the gym's
+ * `trainerMemberVisibility` setting:
+ *   assigned_only  — only PT members where assignedTrainerId === trainerId
+ *   all_pt_members — all members with isPT === true in the gym
+ *   all_members    — every member in the gym
+ */
+async function getMembersForTrainerUncached(
+  gymId: string,
+  trainerId: string,
+  visibility: TrainerMemberVisibility
+): Promise<Member[]> {
+  if (!hasFirebaseAdminConfig()) return [];
+  const { db } = getFirebaseAdminServices();
+
+  let query = gymCollection(db, gymId, "members") as FirebaseFirestore.Query;
+  if (visibility === "assigned_only") {
+    query = query.where("assignedTrainerId", "==", trainerId).where("isPT", "==", true);
+  } else if (visibility === "all_pt_members") {
+    query = query.where("isPT", "==", true);
+  }
+  // all_members: no extra filter
+
+  const snap = await query.get();
+  return snap.docs
+    .map((d) => mapProfileToMember(d.id, d.data() as Record<string, unknown>))
+    .filter((m) => m.isActive !== false && !m.staffType);
+}
+
+export function getMembersForTrainer(
+  gymId: string,
+  trainerId: string,
+  visibility: TrainerMemberVisibility
+): Promise<Member[]> {
+  return unstable_cache(
+    getMembersForTrainerUncached,
+    ["read:getMembersForTrainer", gymId, trainerId, visibility],
+    { tags: [gymTag(gymId, "members")], revalidate: 60 }
+  )(gymId, trainerId, visibility);
 }

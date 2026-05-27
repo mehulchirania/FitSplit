@@ -169,12 +169,16 @@ export type GymCacheCollection =
   | "gyms"
   | "lift-logs"
   | "members"
+  | "memberships"
   | "notifications"
+  | "packages"
+  | "paymentRequests"
   | "programs"
   | "pt-lift-logs"
   | "pt-sessions"
   | "sessions"
-  | "staff";
+  | "staff"
+  | "summaries";
 
 const DEFAULT_GYM_CACHE_COLLECTIONS: GymCacheCollection[] = [
   "activity",

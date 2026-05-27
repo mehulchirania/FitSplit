@@ -26,6 +26,14 @@ function linksForRole(role: Role) {
     ];
   }
 
+  if (role === "trainer") {
+    return [
+      { href: "/trainer", label: "Schedule", icon: Calendar },
+      { href: "/trainer/members", label: "Members", icon: UsersRound },
+      { href: "/profile", label: "Profile", icon: UserRound }
+    ];
+  }
+
   return [
     { href: "/member", label: "Workout", icon: Dumbbell },
     { href: "/member#history", label: "History", icon: Clock },

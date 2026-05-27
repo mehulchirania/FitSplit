@@ -3,7 +3,8 @@ import type {
   GymNotice,
   GymNoticeType,
   Member,
-  Notification
+  Notification,
+  TrainerMemberVisibility
 } from "@/types/domain";
 
 import { collectionPaths, gymCollectionPath, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
@@ -33,7 +34,13 @@ export function mapProfileToMember(docId: string, data: Record<string, unknown>)
     goal: String(data.goal ?? "General fitness"),
     staffType: data.staffType ? String(data.staffType) as Member["staffType"] : undefined,
     isActive: data.isActive !== false,
-    username
+    username,
+    // Phase 1 — trainer-aware fields
+    isPT: data.isPT === true,
+    assignedTrainerId: data.assignedTrainerId ? String(data.assignedTrainerId) : undefined,
+    membershipStatus: data.membershipStatus ? String(data.membershipStatus) as Member["membershipStatus"] : undefined,
+    membershipEndDate: data.membershipEndDate ? String(data.membershipEndDate) : undefined,
+    currentPackageName: data.currentPackageName ? String(data.currentPackageName) : undefined
   };
 }
 
@@ -105,6 +112,13 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
     longitude: data.longitude != null ? Number(data.longitude) : undefined,
     radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined,
     notices: notices.length > 0 ? notices : undefined,
+    // Phase 1 — trainer-aware gym fields
+    ownerId: data.ownerId ? String(data.ownerId) : undefined,
+    trainerMemberVisibility: (["assigned_only", "all_pt_members", "all_members"] as TrainerMemberVisibility[]).includes(
+      data.trainerMemberVisibility as TrainerMemberVisibility
+    )
+      ? (data.trainerMemberVisibility as TrainerMemberVisibility)
+      : undefined,
   };
 }
 

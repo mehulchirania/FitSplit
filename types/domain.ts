@@ -1,6 +1,16 @@
 export type MembershipStatus = "active" | "expiring_soon" | "expired";
 
-export type Role = "admin" | "owner" | "member";
+export type Role = "admin" | "owner" | "trainer" | "member";
+
+/**
+ * Controls which members a trainer can see inside a gym.
+ * Set on the gym doc (`trainerMemberVisibility`) and enforced in both
+ * Firestore rules and server-side queries.
+ *   assigned_only   — only PT members where `assignedTrainerId === trainer UID`
+ *   all_pt_members  — all members with `isPT === true` in the same gym
+ *   all_members     — every member in the same gym (maximum visibility)
+ */
+export type TrainerMemberVisibility = "assigned_only" | "all_pt_members" | "all_members";
 
 export type VideoSource = "upload" | "youtube" | "vimeo" | "none";
 
@@ -34,7 +44,17 @@ export type GymWorkspace = {
   slug: string;
   ownerName: string;
   ownerUserId: string;
+  /**
+   * UID of the single owner. Enforced by Cloud Function transaction.
+   * Denormalised here so queries can filter by owner without a join.
+   */
+  ownerId?: string;
   status: "active" | "paused" | "inactive";
+  /**
+   * Governs which members trainers of this gym can see/query.
+   * Defaults to "assigned_only" when not set.
+   */
+  trainerMemberVisibility?: TrainerMemberVisibility;
   expiryWarningDays: number;
   memberCount: number;
   logoUrl?: string;
@@ -90,7 +110,24 @@ export type MemberProfile = {
   primarySlot?: "A" | "B" | "C" | "D";
   secondarySlot?: "A" | "B" | "C" | "D";
   injuryNotes?: string;
+  /** Display name of the assigned trainer (free-text, denormalised). */
   assignedTrainer?: string;
+  /**
+   * UID of the trainer staff record this member is assigned to.
+   * Used for trainer-visibility queries and PT session filtering.
+   */
+  assignedTrainerId?: string;
+  /** True when this member has an active personal-training arrangement. */
+  isPT?: boolean;
+  /**
+   * Computed membership status — denormalised from the latest Membership doc
+   * so member lists can be filtered/sorted without joining memberships.
+   */
+  membershipStatus?: MembershipStatus;
+  /** ISO date (YYYY-MM-DD) of current membership expiry. */
+  membershipEndDate?: string;
+  /** Display name of the active package, e.g. "Monthly PT Pack". */
+  currentPackageName?: string;
   macroNutritionTarget?: MacroNutritionTarget;
   coachNote?: string;
   coachNoteUpdatedAt?: string;
@@ -116,20 +153,112 @@ export type Member = Pick<
   | "age"
   | "weightKg"
   | "heightCm"
+  // PT / trainer-assignment fields for list-view filtering
+  | "isPT"
+  | "assignedTrainerId"
+  | "membershipStatus"
+  | "membershipEndDate"
+  | "currentPackageName"
   // C4: Coach note preview shown on member cards via Radix Popover.
   | "coachNote"
   | "coachNoteUpdatedAt"
   | "coachNoteUpdatedByName"
 >;
 
+/**
+ * A membership package definition — set by the gym owner.
+ * Lives at: gyms/{gymId}/packages/{packageId}
+ */
+export type Package = {
+  id: string;
+  gymId: string;
+  name: string;
+  description?: string;
+  /** Duration in months (e.g. 1, 3, 6, 12). */
+  durationMonths: number;
+  price: number;
+  currency: string;
+  /** Whether this package includes PT sessions. */
+  includesPT?: boolean;
+  /** Number of PT sessions included, if any. */
+  ptSessionsIncluded?: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt?: string;
+};
+
+/**
+ * A payment request raised when a member wants to renew/purchase a package.
+ * Lives at: gyms/{gymId}/paymentRequests/{requestId}
+ *
+ * Approval flow:
+ *   Cash  — owner approves manually → membership activated
+ *   Card/UPI — integration-ready placeholder; does NOT activate without owner confirmation
+ */
+export type PaymentRequest = {
+  id: string;
+  gymId: string;
+  memberId: string;
+  memberName?: string;
+  packageId: string;
+  packageName?: string;
+  amount: number;
+  currency: string;
+  method: "cash" | "card" | "upi" | "other";
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  /** ISO datetime when request was raised. */
+  requestedAt: string;
+  /** ISO datetime when owner approved/rejected. */
+  resolvedAt?: string;
+  resolvedByName?: string;
+  /** ID of the Membership doc created on approval. */
+  membershipId?: string;
+  notes?: string;
+};
+
+/**
+ * A membership record — one per active or past membership period for a member.
+ * Lives at: gyms/{gymId}/memberships/{membershipId}
+ *
+ * The `Member.membershipStatus`, `membershipEndDate`, and `currentPackageName`
+ * fields on the member doc are denormalised snapshots kept in sync on approval.
+ */
 export type Membership = {
   id: string;
+  gymId?: string;
   memberId: string;
+  packageId?: string;
+  /** Display name of the package at time of activation (survives package edits). */
   planName: string;
   startDate: string;
   endDate: string;
   durationMonths: number;
+  status?: "active" | "expired" | "cancelled";
   paymentReference?: string;
+  paymentRequestId?: string;
+  activatedAt?: string;
+  renewedAt?: string;
+  cancelledAt?: string;
+  createdAt?: string;
+};
+
+/**
+ * Pre-computed dashboard summary for a gym.
+ * Lives at: gyms/{gymId}/summaries/dashboard (single doc, overwritten on recalc).
+ * Avoids expensive full-collection scans on every owner dashboard load.
+ */
+export type DashboardSummary = {
+  gymId: string;
+  totalMembers: number;
+  activeMembers: number;
+  ptMembers: number;
+  expiringThisWeek: number;
+  expiredCount: number;
+  pendingPaymentRequests: number;
+  activeTrainers: number;
+  totalRevenueMTD: number;
+  currency: string;
+  lastComputedAt: string;
 };
 
 export type Exercise = {
@@ -352,6 +481,12 @@ export type ActivityLog = {
   notes?: string;
   loggedAt: string;
   sessionId?: string;
+  /** "member" = self-logged (default); "trainer" = logged during a PT session */
+  source?: "member" | "trainer";
+  /** UID of the trainer who logged this entry (when source === "trainer") */
+  loggedByTrainerId?: string;
+  /** PT session ID this activity was logged within (when source === "trainer") */
+  ptSessionId?: string;
 };
 
 /**

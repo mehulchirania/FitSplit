@@ -336,3 +336,51 @@ export function callLookupLoginEmail(input: LookupLoginEmailInput) {
     "lookupLoginEmail"
   )(input);
 }
+
+// ── Phase 2: Trainer / Package / Payment functions ────────────────────────────
+
+export type AssignTrainerInput = { gymId: string; memberId: string; trainerId: string };
+export function callAssignTrainerToPTMember(input: AssignTrainerInput) {
+  return httpsCallable<AssignTrainerInput, FnResult>(fns(), "assignTrainerToPTMember")(input);
+}
+
+export type TrainerVisibilityInput = { gymId: string; visibility: "assigned_only" | "all_pt_members" | "all_members" };
+export function callUpdateTrainerVisibility(input: TrainerVisibilityInput) {
+  return httpsCallable<TrainerVisibilityInput, FnResult>(fns(), "updateTrainerVisibility")(input);
+}
+
+export type PackageInput = {
+  gymId: string; packageId?: string; name: string; description?: string;
+  durationMonths: number; price: number; currency?: string;
+  includesPT?: boolean; ptSessionsIncluded?: number; isActive?: boolean;
+};
+export function callCreateOrUpdatePackage(input: PackageInput) {
+  return httpsCallable<PackageInput, FnResult<{ packageId: string }>>(fns(), "createOrUpdatePackage")(input);
+}
+
+export type PaymentRequestInput = { gymId: string; packageId: string; method: string; memberId?: string };
+export function callSubmitPaymentRequest(input: PaymentRequestInput) {
+  return httpsCallable<PaymentRequestInput, FnResult<{ requestId: string }>>(fns(), "submitPaymentRequest")(input);
+}
+
+export type ResolvePaymentInput = { gymId: string; requestId: string; reason?: string };
+export function callApprovePaymentRequest(input: ResolvePaymentInput) {
+  return httpsCallable<ResolvePaymentInput, FnResult<{ membershipId: string }>>(fns(), "approvePaymentRequest")(input);
+}
+export function callRejectPaymentRequest(input: ResolvePaymentInput) {
+  return httpsCallable<ResolvePaymentInput, FnResult>(fns(), "rejectPaymentRequest")(input);
+}
+
+export type ActivateMembershipInput = { gymId: string; memberId: string; packageId: string };
+export function callActivateOrRenewMembership(input: ActivateMembershipInput) {
+  return httpsCallable<ActivateMembershipInput, FnResult<{ membershipId: string }>>(fns(), "activateOrRenewMembership")(input);
+}
+
+export type DashboardStatsInput = { gymId: string };
+export function callGenerateGymDashboardStats(input: DashboardStatsInput) {
+  return httpsCallable<DashboardStatsInput, FnResult>(fns(), "generateGymDashboardStats")(input);
+}
+
+export function callGenerateAdminDashboardStats() {
+  return httpsCallable<Record<string, never>, FnResult>(fns(), "generateAdminDashboardStats")({});
+}

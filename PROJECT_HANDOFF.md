@@ -2,6 +2,222 @@
 
 Verified analysis against the live codebase (May 2026). Items are ordered by execution priority, not theoretical impact.
 
+---
+
+## 🏗️ Next Major Milestone — Multi-Gym, Trainer, PT, Billing & Permissions Redesign (2026-05-28)
+
+### Summary
+FitSplit has gym-scoped tenancy, Firebase Auth, Functions, Firestore, PT sessions, members, staff, programs, and activity logs, but is missing first-class trainers, billing/packages/payment flows, trainer visibility enforcement, and dashboard summaries. This milestone closes all of those gaps in a staged rollout.
+
+### Key Architecture Changes
+
+**Domain types to add/expand (`types/domain.ts`):**
+- `Role = "admin" | "owner" | "trainer" | "member"`
+- `TrainerMemberVisibility = "assigned_only" | "all_pt_members" | "all_members"`
+- New types: `Package`, `Membership`, `PaymentRequest`, `DashboardSummary`
+- Unified `ActivityLog` (already added — ensure trainer-aware fields)
+- Trainer-aware member fields: `isPT`, `assignedTrainerId`, `membershipStatus`, `membershipEndDate`, `currentPackageName`
+
+**Canonical Firestore shape:**
+- `gyms/{gymId}` — add `ownerId`, `trainerMemberVisibility`, `active`/`status`
+- `gyms/{gymId}/members/{memberId}` — add `isPT`, `assignedTrainerId`, `membershipStatus`, `membershipEndDate`, `currentPackageName`
+- `gyms/{gymId}/staff/{userId}` — owner/trainer records; trainer records carry `assignedMemberIds[]`
+- `gyms/{gymId}/packages` — membership package definitions
+- `gyms/{gymId}/memberships` — per-member active membership records
+- `gyms/{gymId}/paymentRequests` — cash/card/UPI payment flows
+- `gyms/{gymId}/activityLogs` — already exists, ensure trainer-accessible
+- `gyms/{gymId}/notifications` — already exists
+- `gyms/{gymId}/summaries/dashboard` — pre-computed summary doc (avoids expensive full-collection reads)
+- `platformSummaries/main` — admin dashboard aggregate cards
+- Keep `authProfiles/{uid}` as global login/index/claims source
+
+**Keep global default exercises/programs outside gyms; gym-created ones stay under `gyms/{gymId}`.**
+
+### Backend, Rules & Functions (`functions/src/`)
+
+New/updated callable functions:
+- `createGymWithOwner`, `createTrainer`, `createMember`, `assignTrainerToPTMember`, `updateTrainerVisibility`
+- `createOrUpdatePackage`, `submitPaymentRequest`, `approvePaymentRequest`, `rejectPaymentRequest`, `activateOrRenewMembership`
+- `generateGymDashboardStats`, `generateAdminDashboardStats`, `processMembershipExpiries`, `seedMockGymData`
+- Update existing member toggle, program assignment, PT assignment, archive, and login-lookup functions to understand `role: "trainer"`
+- Enforce one owner per gym via transaction on `gyms/{gymId}.ownerId`
+
+**Payment scope:** Cash = full approval flow. Card/UPI = mock/integration-ready only.
+
+**Firestore rules enforcement:**
+- Admin: all gyms
+- Owner: own gym only
+- Trainer: own gym, filtered by `trainerMemberVisibility`
+  - `assigned_only` → PT members where `assignedTrainerId == trainerId`
+  - `all_pt_members` → all PT members in gym
+  - `all_members` → all members in gym
+- Member: own documents only
+- Trainers cannot access packages, billing, payments, or other gyms
+
+### UI & Flow Changes
+
+**Admin Console:** Overview · Gyms · Owners · Trainers · Members · Packages · Billing · Payment Requests · Activity Logs · Settings
+
+**Owner Console:** Overview · Members · PT Management · Trainers · Packages · Billing · Payment Requests · Activity Logs · Gym Settings
+- Dashboard uses summary docs, not expensive full-collection reads
+- Gym Settings → Trainer Access section with `trainerMemberVisibility` selector
+
+**Trainer Console (new):** Overview · My Members · PT Activity · Progress Logs · PR Logs · Macro Logs · Cardio Logs · Stretch Logs
+- No billing/package visibility at all
+
+**Member App additions:** Membership/Billing tab, Cardio tab, Stretches tab
+- PT members see PT guidance instead of the normal workout schedule
+
+**Reusable UI components to create:** `StatCard`, `DataTable`, `StatusBadge`, `ActionMenu`, `ConfirmDialog`, `EmptyState`, `SearchFilterBar`, `PackageCard`, `PaymentRequestCard`, `NotificationBell`
+
+### Migration & Mock Data
+- Backfill trainer-like records from `role: "owner" + staffType: "trainer"` → `role: "trainer"`
+- Backfill SHG members with `isPT`, `assignedTrainerId`, membership summary fields, package references
+- Remove duplicate Titan gym entry; add `Fitness Studio` gym
+- Seed SHG, Titan Gym, Fitness Studio each with: one owner, multiple trainers, regular + PT members, trainer-member assignments, packages, active/expired memberships, pending cash payment requests, activity logs, notifications
+- Preserve 60-day archive retention for deleted gyms, members, packages, payment requests, programs, and staff
+
+### Staged Rollout (work through in order)
+
+| Phase | Scope |
+|---|---|
+| **1 ✅** | Schema / types / collection constants / read-model updates + migration scripts |
+| **2 ✅** | Callable Functions + Firestore rules + emulator rule tests |
+| **3 ✅** | Admin + owner dashboard and management pages |
+| **4 ✅** | Trainer console + trainer visibility enforcement |
+| **5 ✅** | Member billing / PT / member dashboard flow |
+| **6 ✅** | Firestore indexes, dashboard summary integration, billing seed script |
+
+### Test Plan
+- `npm run typecheck`, `npm run build`, `npm run functions:build` must pass after every phase
+- Firestore rules emulator tests: admin all-gyms, owner own-gym, trainer visibility modes, member self-access, billing permissions
+- Manual smoke: admin manages all gyms; owner manages own gym only; trainer login works; trainer visibility changes produce correct member lists; PT members see PT guidance not workout schedule; member renewal creates pending payment request; cash approval activates membership; card/UPI mock does not activate without confirmation; dashboard summaries load without full-collection scans; archive entries created on delete
+
+---
+
+## Latest Update - 2026-05-28: Members page — Design 04 Hybrid redesign
+
+Implemented Design 04 (Hybrid) from the Claude Design export. Replaces the old table+gradient-stats layout.
+
+### New files
+- **`components/members-hybrid-view.tsx`** — Full client component implementing the D4 Hybrid. Action queue, KPI strip, directory table, dark bulk dock, all inline. Uses `sonner` toasts. Reuses existing `callBulkAssignProgram` + `callBulkToggleMemberAccess` for bulk ops.
+- **`app/styles/19-members-redesign.css`** — `mhv-*` scoped CSS: queue cards, KPI chips, avatar colours, refined table, dark bulk dock, dark mode variants, responsive breakpoints.
+
+### Modified files
+- **`app/owner/members/page.tsx`** — Replaced old server component (stats cards + `BulkMemberList`) with the new one. Computes `daysToExpiry` from `membershipEndDate`, builds `HybridMember[]` array (hasPlan, programTitle included), passes to `MembersHybridView`.
+- **`app/layout.tsx`** — Added `import "./styles/19-members-redesign.css"`.
+
+### Design recap (D4 Hybrid = D1 table + D3 queue)
+1. **Action queue** — horizontal scroll, one card per urgent member. Priority: expired (red) → expiring soon (amber) → no plan (blue). Each card has a dismiss (snooze) and a CTA that navigates to the member profile. Queue header shows a pulsing dot + count badge.
+2. **KPI strip** — 4 clickable cards (Total / Active / Needs plan / Renewals due) that filter the directory. Left accent stripe is toned by urgency. Active chip gets a double-border.
+3. **Directory** — search-first toolbar, sort select, refined table (checkbox, avatar+status dot, membership cell with pill+subtext, plan cell, joined date). Prev/Next pagination at 10/page.
+4. **Dark bulk dock** — floats above the bottom, slides in on first selection. Shows: count badge, Assign plan (→ program picker), Renew, Message, Restore, Suspend (red), × to clear.
+5. **Add member** — toggleable inline panel powered by existing `AddMemberForm`.
+
+### Notes
+- `assignedTrainer` (display name) is not in `getMembers` result (only `assignedTrainerId` is). The plan cell shows `w/ {trainer}` only when the field is populated — could be added by joining trainer profiles in the read model later.
+- The old `BulkMemberList` component is preserved; only the members page uses the new view.
+
+---
+
+## Latest Update - 2026-05-28: Phase 6 — Indexes, dashboard summary, seed script
+
+### New files
+- **`scripts/seed-billing.mjs`** — Seed script for packages, payment requests, active/expired memberships, trainer-to-PT-member assignments, and dashboard summary doc. Run with `npm run seed:billing`. Safe to re-run (skips existing docs). Also manually computes and writes `gyms/shg/summaries/dashboard`.
+
+### Modified files
+- **`firestore.indexes.json`** — Added 7 composite indexes for new Phase 1-5 collections:
+  - `paymentRequests`: `status + requestedAt DESC` (status-filtered listing)
+  - `paymentRequests`: `memberId + requestedAt DESC` (member's own payment history)
+  - `paymentRequests`: `memberId + packageId + status` (duplicate pending guard)
+  - `paymentRequests`: `status + resolvedAt ASC` (MTD revenue query in Cloud Function)
+  - `memberships`: `memberId + createdAt DESC` (member membership history)
+  - `members`: `assignedTrainerId + isPT` (trainer assigned_only visibility filter)
+- **`app/owner/page.tsx`** — Fetches `getGymDashboardSummary` in parallel with other data. Stats bar now shows: totalMembers (from summary if available), unassigned count, live session count, and conditionally "Expiring Soon" (amber urgent) or "Active Members", plus "Revenue MTD" as a clickable link to `/owner/billing` when the summary doc exists.
+- **`app/styles/18-billing-trainers.css`** — Added `.odp-stat-link` class for clickable stat boxes in the dashboard stats bar (brand-colored strong, hover highlight).
+- **`package.json`** — Added `"seed:billing": "node scripts/seed-billing.mjs"` script.
+
+### Architecture note
+`gyms/{gymId}/summaries/dashboard` is computed by the `generateGymDashboardStats` Cloud Function (already deployed, see `functions/src/index.ts`). The seed script also writes this document directly so the dashboard works before the function has run. In production, the function re-computes it on a schedule or on-demand.
+
+---
+
+## Latest Update - 2026-05-28: Phase 5 — Member membership & billing flow
+
+### New files
+- **`lib/firebase/actions/member-billing.ts`** — `submitPaymentRequestAction` server action: member submits a payment request for a package. Guards against duplicate pending requests, loads package details, notifies gym owner.
+- **`lib/firebase/actions.ts`** — exports `member-billing`.
+- **`lib/firebase/read-models/billing.ts`** — Added `getPaymentRequestsForMember(gymId, memberId)` for member-scoped history query.
+- **`app/member/membership/page.tsx`** — Full membership page for members:
+  - Active membership status card with days-left count and expiry warning (amber ≤7 days, red = expired)
+  - Pending request banner suppresses the join form while request is in review
+  - Renew/join form hidden inside `<details>` when membership is active + not expiring
+  - Payment request history list
+  - Membership history list
+- **`components/membership-request-form.tsx`** — Client form: package radio options, payment method pills (cash/UPI/card/other), submits via `submitPaymentRequestAction`, shows success state after submit.
+
+### Dashboard link
+- Member dashboard hero "Status" stat replaced with a "Membership" stat card linking to `/member/membership`. Shows `membershipStatus` and expiry date inline.
+
+### CSS
+- `18-billing-trainers.css` extended with: `membership-status-card`, `membership-pending-banner`, `pkg-option-list`, `method-pills`, `payment-history-list`, `membership-request-form`, `membership-submitted`.
+
+### Status
+- `npx tsc --noEmit` exits 0.
+
+---
+
+## Latest Update - 2026-05-28: Phase 4 — Trainer console + visibility enforcement
+
+### Changes
+- **`lib/auth.ts`** — `redirectForRole` now sends `role === "trainer"` users to `/trainer` instead of falling through to `/member`.
+- **`middleware.ts`** — Added `/trainer` protected route (allows `trainer` + `owner` roles). Added `trainer` to `roleHome` map. Matcher updated to include `/trainer/:path*`. Added `trainer` to `/profile`, `/activity`, `/about` allowed roles.
+- **`lib/firebase/read-models/members.ts`** — New `getMembersForTrainer(gymId, trainerId, visibility)` that enforces `TrainerMemberVisibility`:
+  - `assigned_only` → Firestore query `.where("assignedTrainerId", "==", trainerId).where("isPT", "==", true)`
+  - `all_pt_members` → `.where("isPT", "==", true)`
+  - `all_members` → no filter (full gym member list)
+  - Cached with `gym:{gymId}:members` tag, 60s revalidate
+- **`app/trainer/page.tsx`** — Rewritten: `requireRole(["owner", "trainer"])`, fetches gym doc to read `trainerMemberVisibility`, uses `getMembersForTrainer` for PT booking form, accepts `memberId` search param for pre-selected member, `StatusBadge` replacing raw `status-pill` strings.
+- **`app/trainer/members/page.tsx`** (new) — Full member list page for trainers with stat cards, visibility mode label, member rows with PT/assigned/membership status badges, "Assign PT →" links.
+- **`components/main-nav.tsx`** — Trainer nav now matches on `role === "trainer"` (not only `staffType`). Trainer links updated to `/trainer/members` instead of `/owner/members`.
+- **`components/mobile-bottom-nav.tsx`** — Added `role === "trainer"` branch: Schedule, Members, Profile tabs.
+
+### Result
+- A trainer logging in with `role: "trainer"` is routed to `/trainer`, sees only the members matching their gym's visibility setting, and can assign PT plans to those members only. TypeScript exits 0.
+
+---
+
+## Latest Update - 2026-05-28: Phase 3 — Owner billing, packages & trainers pages
+
+### New pages
+- `app/owner/packages/page.tsx` — Package list with create/edit inline form. Active/inactive split. Deactivate action from PackageCard.
+- `app/owner/billing/page.tsx` — Payment requests list with All/Pending/Approved/Rejected filter tabs, stat cards, approve/reject actions.
+- `app/owner/trainers/page.tsx` — Trainer roster with per-trainer PT member count, links to sessions, and a "PT members without trainer" action list.
+- Owner settings now includes a `TrainerVisibilityForm` (assigned_only / all_pt_members / all_members) wired to `updateTrainerVisibilityAction`.
+
+### New components
+- `components/payment-request-card.tsx` — Approve/reject card with inline rejection reason input, `sonner` toasts.
+- `components/package-form.tsx` — Create/edit package form (name, duration, price, currency, PT sessions).
+- `components/trainer-visibility-form.tsx` — Radio-based visibility selector that saves on change.
+- `components/stat-card.tsx`, `components/status-badge.tsx`, `components/empty-state.tsx`, `components/data-table.tsx` — Reusable UI primitives.
+- `components/package-card.tsx` — Package display card with edit/deactivate.
+- `app/owner/packages/packages-client.tsx` — Client wrapper for edit/create mode toggle.
+
+### Dashboard update
+- Owner dashboard now fetches `getPendingPaymentRequests` and passes pending count to `OwnerQuickLinks`.
+- Quick links now show an amber "Payments" chip with badge when there are pending requests.
+
+### Navigation
+- `main-nav.tsx` owner links now include Packages, Billing, Trainers.
+
+### CSS
+- `app/styles/18-billing-trainers.css` — All styles for stat-card, payment-request-card, package-card, package-form, trainer-list, empty-state, data-table, trainer-visibility-form.
+
+### Status
+- `npx tsc --noEmit` exits 0. No regressions.
+
+---
+
 ## Latest Update - 2026-05-27: Member dashboard wellness/progress pass
 
 - Removed the empty `Training Insights` profile card path by deleting the dead `ProfileAiSummary` component and the deleted `lib/ai.ts` dependency. The profile page now keeps concrete metrics, charts, bodyweight, and security only.
@@ -145,6 +361,8 @@ Add `@next/bundle-analyzer` as an npm script. Recharts and Radix are the likely 
 3. Husky + lint-staged — 20 min (item 3, baseline added but warnings remain)
 4. Sentry DSN configuration — need `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` in `.env.local` / CI secrets (item 4)
 5. Security rule tests — requires `@firebase/rules-unit-testing` + emulator in CI (item 15)
+6. **`muscleTargetDescription` in `lib/workouts.json`** — `scripts/patch-muscle-targets.mjs` was created and writes descriptions to the Firestore exercise catalog, but the 66 mock exercises in `lib/workouts.json` still lack the `muscleTargetDescription` field. The field is typed as `muscleTargetDescription?: string` in `Exercise` (domain.ts). Needs a one-pass fill of all 66 entries covering the specific muscle focus (e.g. "Targets the lateral and long head of the triceps…", "Emphasises the lower chest fibres…"). Once added, the exercise detail UI pill will render for mock exercises too — currently it only renders for Firestore catalog docs that were patched directly.
+7. **Exercise JSON / catalog deep cleanup** — `lib/workouts.json` has 66 exercises across 8 muscle groups but no normalised `muscleGroup`, `equipment`, or `movementPattern` fields on individual entries (only top-level group keys). A cleanup pass should: add per-entry `muscleGroup` (lowercase, e.g. `"chest"`), `equipment`, and `movementPattern` fields; deduplicate any entries where the same exercise appears under multiple groups; cross-reference every `exerciseId` in `gyms/shg/workoutPrograms` split days against the JSON IDs and flag any missing entries; verify the 3 exercises that resolve to Firestore UUIDs (Pec Deck Fly → `efee6382…`, Barbell Row → `f17b8521…`, Hammer Curl → `ec5320ce…`) are still handled correctly after any restructure. Do **not** change existing short IDs (`ch_01`, `bk_03`, etc.) — they are referenced in live program assignments.
 
 **Done (as of May 27, 2026):**
 - Items 5, 6 (revised — Gemini removed, local rules retained), 7, 8, 9, 10, 11, 12, 13, 14, 16 — all complete
