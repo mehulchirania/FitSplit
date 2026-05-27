@@ -1,5 +1,4 @@
 import type { Exercise, SkipReason, WorkoutExercise } from "@/types/domain";
-import type { Modification } from "@/lib/stores/workout-store";
 
 export const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -127,91 +126,6 @@ export function findAlternative(
     }
     return true;
   });
-}
-
-export function createModification(
-  activeDay: { exercises: WorkoutExercise[] },
-  injury: string,
-  exercises: Exercise[]
-): Modification {
-  const usedIds = new Set(activeDay.exercises.map((item) => item.exerciseId));
-  const swaps: Modification["swaps"] = [];
-  const addedStretches: Modification["addedStretches"] = [];
-  const routine = activeDay.exercises.map((item) => {
-    if (!isContraindicated(item, injury, exercises)) {
-      return item;
-    }
-
-    const original = exercises.find((exercise) => exercise.id === item.exerciseId);
-    const alternative = findAlternative(usedIds, injury, exercises, original?.muscleGroup as string | undefined);
-
-    if (!original || !alternative) {
-      return item;
-    }
-
-    usedIds.add(alternative.id);
-    swaps.push({
-      from: original.name,
-      to: alternative.name,
-      reason: `Swapped to protect your ${injury}. Maintains similar movement pattern.`
-    });
-
-    return { ...item, exerciseId: alternative.id, notes: "AI Semi-Personal Trainer swap" };
-  });
-
-  const rule = getInjuryRule(injury);
-  if (rule.stretches && rule.stretches.length > 0) {
-    const stretchExercises = rule.stretches.map((stretchId) => {
-      const ex = exercises.find(e => e.id === stretchId);
-      if (ex) {
-        addedStretches.push({
-          name: ex.name,
-          reason: `Therapeutic warm-up for your reported ${injury}.`
-        });
-      }
-      return {
-        exerciseId: stretchId,
-        sets: 2,
-        reps: "10-15",
-        restSeconds: 30,
-        notes: "AI Suggestion: Warm-up stretch"
-      };
-    });
-    routine.unshift(...stretchExercises);
-  }
-
-  if (!swaps.length && !addedStretches.length) {
-    const recoveryExercises = exercises
-      .filter((exercise) => getInjuryRule(injury).preferredMuscles.includes(exercise.muscleGroup as string))
-      .slice(0, 4)
-      .map((exercise, index) => ({
-        exerciseId: exercise.id,
-        sets: index === 0 ? 2 : 3,
-        reps: index === 0 ? "easy warm-up" : "12-15",
-        restSeconds: 60,
-        notes: "AI Semi-Personal Trainer recovery routine"
-      }));
-
-    return {
-      injury,
-      summary: getInjuryRule(injury).summary,
-      swaps: [{
-        from: "Original training intensity",
-        to: "Dedicated recovery routine",
-        reason: "No direct contraindicated exercise was detected, so the plan was softened."
-      }],
-      addedStretches: [],
-      routine: recoveryExercises
-    };
-  }
-
-  return {
-    injury,
-    summary: getInjuryRule(injury).summary,
-    swaps,
-    addedStretches,
-    routine
-  };
 }
 
 export function getExerciseName(exerciseId: string, exercises: Exercise[]) {

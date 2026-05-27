@@ -3,7 +3,35 @@ import type { ContactMessage, Notification } from "@/types/domain";
 import { notifications as mockNotifications } from "@/lib/mock-data";
 import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection, sanitizeNotification, trainingNotificationCopy } from "./shared";
+import { gymCollection } from "./shared";
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function mapNotificationDoc(
+  doc: FirebaseFirestore.QueryDocumentSnapshot<FirebaseFirestore.DocumentData>
+): Notification {
+  const data = doc.data();
+  return {
+    id: doc.id,
+    recipientRole: String(data.recipientRole ?? "owner") as Notification["recipientRole"],
+    recipientId: String(data.recipientId ?? ""),
+    type: String(data.type ?? "membership_expiring_soon") as Notification["type"],
+    title: String(data.title ?? "Notification"),
+    body: String(data.body ?? ""),
+    createdAt: String(data.createdAt ?? new Date().toISOString()),
+    readAt: data.readAt ? String(data.readAt) : undefined,
+    exerciseRequestId: data.exerciseRequestId ? String(data.exerciseRequestId) : undefined,
+    actionHref: data.actionHref ? String(data.actionHref) : undefined,
+    memberId: data.memberId ? String(data.memberId) : undefined,
+    ptSessionId: data.ptSessionId ? String(data.ptSessionId) : undefined,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Owner notifications
+// ---------------------------------------------------------------------------
 
 export async function getOwnerNotifications(gymId?: string): Promise<{
   notifications: Notification[];
@@ -13,7 +41,7 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
     return {
       notifications: mockNotifications.filter(
         (notification) => notification.recipientRole === "owner"
-      ).map(sanitizeNotification),
+      ),
       isPersisted: false
     };
   }
@@ -43,7 +71,7 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
     return {
       notifications: mockNotifications.filter(
         (notification) => notification.recipientRole === "owner"
-      ).map(sanitizeNotification),
+      ),
       isPersisted: false
     };
   }
@@ -53,28 +81,15 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
   }
 
   const notifications: Notification[] = snapshot.docs
-    .map((doc) => {
-      const data = doc.data();
-        const copy = trainingNotificationCopy(
-          String(data.title ?? "Notification"),
-          String(data.body ?? "")
-        );
-
-        return {
-          id: doc.id,
-          recipientRole: String(data.recipientRole ?? "owner") as Notification["recipientRole"],
-          recipientId: String(data.recipientId ?? ""),
-          type: String(data.type ?? "membership_expiring_soon") as Notification["type"],
-          title: copy.title,
-          body: copy.body,
-        createdAt: String(data.createdAt ?? new Date().toISOString()),
-        readAt: data.readAt ? String(data.readAt) : undefined
-      };
-    })
+    .map(mapNotificationDoc)
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
   return { notifications, isPersisted: true };
 }
+
+// ---------------------------------------------------------------------------
+// Admin notifications
+// ---------------------------------------------------------------------------
 
 export async function getAdminNotifications(): Promise<{
   notifications: Notification[];
@@ -102,19 +117,7 @@ export async function getAdminNotifications(): Promise<{
       : scopedSnapshot;
 
     const notifications: Notification[] = snapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-        return {
-          id: doc.id,
-          recipientRole: "admin" as Notification["recipientRole"],
-          recipientId: String(data.recipientId ?? ""),
-          type: String(data.type ?? "password_reset_request") as Notification["type"],
-          title: String(data.title ?? "Notification"),
-          body: String(data.body ?? ""),
-          createdAt: String(data.createdAt ?? new Date().toISOString()),
-          readAt: data.readAt ? String(data.readAt) : undefined
-        };
-      })
+      .map(mapNotificationDoc)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     return { notifications, isPersisted: true };
@@ -123,13 +126,17 @@ export async function getAdminNotifications(): Promise<{
   }
 }
 
+// ---------------------------------------------------------------------------
+// Member notifications
+// ---------------------------------------------------------------------------
+
 export async function getMemberNotifications(memberId: string): Promise<{
   notifications: Notification[];
   isPersisted: boolean;
 }> {
   const fallback = mockNotifications.filter(
     (notification) => notification.recipientId === memberId
-  ).map(sanitizeNotification);
+  );
 
   if (!hasFirebaseAdminConfig()) {
     return { notifications: fallback, isPersisted: false };
@@ -151,25 +158,9 @@ export async function getMemberNotifications(memberId: string): Promise<{
           .limit(50)
           .get()
       : scopedSnapshot;
-    const notifications: Notification[] = snapshot.docs
-      .map((doc) => {
-        const data = doc.data();
-          const copy = trainingNotificationCopy(
-            String(data.title ?? "Notification"),
-            String(data.body ?? "")
-          );
 
-          return {
-            id: doc.id,
-            recipientRole: String(data.recipientRole ?? "member") as Notification["recipientRole"],
-            recipientId: String(data.recipientId ?? memberId),
-            type: String(data.type ?? "program_assigned") as Notification["type"],
-            title: copy.title,
-            body: copy.body,
-          createdAt: String(data.createdAt ?? new Date().toISOString()),
-          readAt: data.readAt ? String(data.readAt) : undefined
-        };
-      })
+    const notifications: Notification[] = snapshot.docs
+      .map(mapNotificationDoc)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
     return { notifications, isPersisted: true };
@@ -177,6 +168,10 @@ export async function getMemberNotifications(memberId: string): Promise<{
     return { notifications: fallback, isPersisted: false };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Contact messages
+// ---------------------------------------------------------------------------
 
 export async function getUnreadContactMessageCount(): Promise<number> {
   if (!hasFirebaseAdminConfig()) {

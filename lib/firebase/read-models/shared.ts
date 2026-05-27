@@ -103,22 +103,9 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
   };
 }
 
-export function trainingNotificationCopy(title: string, body: string) {
-  const combined = `${title} ${body}`.toLowerCase();
-
-  if (combined.includes("membership") || combined.includes("renew")) {
-    return {
-      title: "Training profile follow-up",
-      body: "Review this member's profile and assigned workout plan in FitSplit."
-    };
-  }
-
-  return { title, body };
-}
-
+/** No-op pass-through kept for backward compat — title override was removed. */
 export function sanitizeNotification(notification: Notification): Notification {
-  const copy = trainingNotificationCopy(notification.title, notification.body);
-  return { ...notification, title: copy.title, body: copy.body };
+  return notification;
 }
 
 export function gymTag(gymId?: string, collection?: string) {

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { notFound } from "next/navigation";
-import { AiProgramBrief } from "@/components/ai-program-brief";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import Link from "next/link";
@@ -252,12 +251,6 @@ export default async function MemberDetailPage({
             </p>
           </ConfirmActionForm>
 
-          {/* AI program match */}
-          <AiProgramBrief
-            defaultGoal={member.goal}
-            memberId={member.id}
-            memberName={member.fullName}
-          />
         </section>
 
         {/* ── Sidebar ── */}

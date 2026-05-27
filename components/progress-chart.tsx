@@ -48,8 +48,24 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
 
   if (options.length === 0) {
     return (
-      <div style={{ padding: "20px 0", color: "var(--text-faint)", fontSize: "0.85rem" }}>
-        Log at least one set to see your progress chart.
+      <div style={{
+        alignItems: "center",
+        background: "var(--bg-subtle)",
+        border: "1px dashed var(--border)",
+        borderRadius: "12px",
+        display: "flex",
+        flexDirection: "column",
+        gap: "8px",
+        padding: "32px 20px",
+        textAlign: "center"
+      }}>
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-faint)", opacity: 0.5 }} aria-hidden>
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+        </svg>
+        <p style={{ color: "var(--text)", fontWeight: 600, fontSize: "0.9rem", margin: 0 }}>No lift data yet</p>
+        <span style={{ color: "var(--text-faint)", fontSize: "0.8rem" }}>
+          Log at least one set during a workout to see your strength chart.
+        </span>
       </div>
     );
   }

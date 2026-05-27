@@ -77,6 +77,7 @@ export async function requestCatalogExercise(
       title: "New exercise catalog request",
       body: `${gymName} wants to add "${name}" (${muscleGroup}) to the catalog.`,
       exerciseRequestId: requestId,
+      actionHref: "/owner/exercises",
       createdAt: now
     };
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);

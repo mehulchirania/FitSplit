@@ -247,7 +247,9 @@ export function AppTopbar({
                 >
                   <Bell />
                   {visibleNotifications.length > 0 ? (
-                    <span className="notification-red-dot" aria-hidden="true" />
+                    <span className="notification-count-badge" aria-label={`${visibleNotifications.length} unread`}>
+                      {visibleNotifications.length > 9 ? "9+" : visibleNotifications.length}
+                    </span>
                   ) : null}
                 </button>
               </DropdownMenu.Trigger>
@@ -263,35 +265,76 @@ export function AppTopbar({
                       <p className="eyebrow">Notifications</p>
                       <h2>{role === "owner" ? "Gym updates" : "Training updates"}</h2>
                     </div>
+                    {visibleNotifications.length > 0 && (
+                      <button
+                        className="notif-clear-all"
+                        disabled={isClearingNotifications}
+                        onClick={handleClearNotifications}
+                        type="button"
+                      >
+                        {isClearingNotifications ? "Clearing…" : "Mark all read"}
+                      </button>
+                    )}
                   </div>
                   {visibleNotifications.length > 0 ? (
                     <>
                       <div className="notification-dropdown-list">
-                        {visibleNotifications.slice(0, 6).map((notification) => (
-                          <article className="notification-dropdown-item" key={notification.id}>
-                            <span className="notification-dot" />
-                            <div>
-                              <strong>{notification.title}</strong>
-                              <p>{notification.body}</p>
+                        {visibleNotifications.slice(0, 6).map((notification) => {
+                          const timeAgo = (() => {
+                            try {
+                              const diff = Date.now() - new Date(notification.createdAt).getTime();
+                              const m = Math.floor(diff / 60_000);
+                              if (m < 1) return "just now";
+                              if (m < 60) return `${m}m ago`;
+                              const h = Math.floor(m / 60);
+                              if (h < 24) return `${h}h ago`;
+                              return `${Math.floor(h / 24)}d ago`;
+                            } catch { return ""; }
+                          })();
+
+                          const inner = (
+                            <div className="notif-dd-inner">
+                              <div className="notif-dd-text">
+                                <strong className="notif-dd-title">{notification.title}</strong>
+                                <p className="notif-dd-body">{notification.body}</p>
+                              </div>
+                              <span className="notif-dd-meta">
+                                {timeAgo}
+                                {notification.actionHref && <span className="notif-dd-chevron">›</span>}
+                              </span>
                             </div>
-                          </article>
-                        ))}
+                          );
+
+                          return (
+                            <DropdownMenu.Item asChild key={notification.id}>
+                              {notification.actionHref ? (
+                                <Link
+                                  className="notification-dropdown-item notif-dd-link"
+                                  href={notification.actionHref}
+                                >
+                                  {inner}
+                                </Link>
+                              ) : (
+                                <div className="notification-dropdown-item notif-dd-static">
+                                  {inner}
+                                </div>
+                              )}
+                            </DropdownMenu.Item>
+                          );
+                        })}
                       </div>
-                      <DropdownMenu.Item asChild>
-                        <button
-                          className="button button-secondary notification-clear-button"
-                          disabled={isClearingNotifications}
-                          onClick={handleClearNotifications}
-                          type="button"
-                        >
-                          {isClearingNotifications ? "Clearing..." : "Clear notifications"}
-                        </button>
-                      </DropdownMenu.Item>
+                      {role === "owner" && (
+                        <DropdownMenu.Item asChild>
+                          <Link className="notif-view-all" href="/owner/notifications">
+                            View all notifications →
+                          </Link>
+                        </DropdownMenu.Item>
+                      )}
                     </>
                   ) : (
-                    <p className="notification-empty">
-                      {role === "owner" ? "No gym notifications." : "No new training updates."}
-                    </p>
+                    <div className="notification-empty">
+                      <p>{role === "owner" ? "All caught up — no new updates." : "No new training updates."}</p>
+                    </div>
                   )}
                 </DropdownMenu.Content>
               </DropdownMenu.Portal>

@@ -171,11 +171,16 @@ export default async function OwnerDashboard() {
               <h2>
                 <Bell /> Notifications
               </h2>
-              {ownerNotifications.length > 0 && (
-                <span className="status-pill status-neutral">{ownerNotifications.length}</span>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {ownerNotifications.length > 0 && (
+                  <span className="status-pill status-neutral">{ownerNotifications.length}</span>
+                )}
+                <Link href="/owner/notifications" style={{ fontSize: "0.8rem", color: "var(--text-soft)" }}>
+                  See all →
+                </Link>
+              </div>
             </div>
-            <NotificationList items={ownerNotifications.slice(0, 5)} />
+            <NotificationList items={ownerNotifications.slice(0, 8)} />
           </section>
 
           <section className="list-panel">

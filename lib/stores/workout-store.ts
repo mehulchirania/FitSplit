@@ -1,15 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { DayLog, LiftLog, SkipReason, WorkoutExercise } from '@/types/domain';
+import type { DayLog, LiftLog, SkipReason } from '@/types/domain';
 import type { FormActionState } from '@/types/action-state';
-
-export type Modification = {
-  injury: string;
-  summary: string;
-  swaps: Array<{ from: string; to: string; reason: string }>;
-  addedStretches: Array<{ name: string; reason: string }>;
-  routine: WorkoutExercise[];
-};
 
 type WorkoutState = {
   // Session State
@@ -18,27 +10,24 @@ type WorkoutState = {
   elapsedSeconds: number;
   sessionStatus: FormActionState | null;
   isSessionPending: boolean;
-  
-  // AI Trainer & Modifications
+
+  // Trainer note (injury / limitation saved to profile)
   injury: string;
-  modification: Modification | null;
-  workoutMode: "default" | "ai";
-  isAiSwapping: boolean;
-  
+
   // Logs & PRs
   liftLogs: LiftLog[];
   offlineLogsCount: number;
   logSuccess: boolean;
   isNewPR: boolean;
-  
+
   // Modals & Events
   eventStatus: FormActionState | null;
   isEventPending: boolean;
-  
+
   // Program Selection
   selectedDayIndex: number;
   selectedExerciseIdForForm: string;
-  
+
   // Day Logging (Skip/Other)
   dayLogs: DayLog[];
   skipMode: "none" | "skip" | "other";
@@ -52,24 +41,21 @@ type WorkoutState = {
   setElapsedSeconds: (seconds: number | ((prev: number) => number)) => void;
   setSessionStatus: (status: FormActionState | null) => void;
   setIsSessionPending: (isPending: boolean) => void;
-  
+
   setInjury: (injury: string) => void;
-  setModification: (modification: Modification | null) => void;
-  setWorkoutMode: (mode: "default" | "ai") => void;
-  setIsAiSwapping: (isSwapping: boolean) => void;
-  
+
   setLiftLogs: (logs: LiftLog[] | ((prev: LiftLog[]) => LiftLog[])) => void;
   addLiftLog: (log: LiftLog) => void;
   setOfflineLogsCount: (count: number) => void;
   setLogSuccess: (success: boolean) => void;
   setIsNewPR: (isNewPR: boolean) => void;
-  
+
   setEventStatus: (status: FormActionState | null) => void;
   setIsEventPending: (isPending: boolean) => void;
-  
+
   setSelectedDayIndex: (index: number) => void;
   setSelectedExerciseIdForForm: (id: string) => void;
-  
+
   setDayLogs: (logs: DayLog[] | ((prev: DayLog[]) => DayLog[])) => void;
   setSkipMode: (mode: "none" | "skip" | "other") => void;
   setSkipReason: (reason: SkipReason | "") => void;
@@ -81,89 +67,75 @@ type WorkoutState = {
 export const useWorkoutStore = create<WorkoutState>()(
   persist(
     (set) => ({
-  isSessionActive: false,
-  sessionId: "",
-  elapsedSeconds: 0,
-  sessionStatus: null,
-  isSessionPending: false,
-  
-  injury: "",
-  modification: null,
-  workoutMode: "default",
-  isAiSwapping: false,
-  
-  liftLogs: [],
-  offlineLogsCount: 0,
-  logSuccess: false,
-  isNewPR: false,
-  
-  eventStatus: null,
-  isEventPending: false,
-  
-  selectedDayIndex: 0,
-  selectedExerciseIdForForm: "",
-  
-  dayLogs: [],
-  skipMode: "none",
-  skipReason: "",
-  skipNote: "",
-  isDayLogging: false,
-  dayLogStatus: null,
+      isSessionActive: false,
+      sessionId: "",
+      elapsedSeconds: 0,
+      sessionStatus: null,
+      isSessionPending: false,
 
-  setSessionActive: (isActive, id = "") => set({ isSessionActive: isActive, sessionId: id }),
-  setElapsedSeconds: (seconds) => set((state) => ({ 
-    elapsedSeconds: typeof seconds === 'function' ? seconds(state.elapsedSeconds) : seconds 
-  })),
-  setSessionStatus: (status) => set({ sessionStatus: status }),
-  setIsSessionPending: (isPending) => set({ isSessionPending: isPending }),
-  
-  setInjury: (injury) => set({ injury }),
-  setModification: (modification) => set({ modification }),
-  setWorkoutMode: (mode) => set({ workoutMode: mode }),
-  setIsAiSwapping: (isSwapping) => set({ isAiSwapping: isSwapping }),
-  
-  setLiftLogs: (logs) => set((state) => ({ 
-    liftLogs: typeof logs === 'function' ? logs(state.liftLogs) : logs 
-  })),
-  addLiftLog: (log) => set((state) => ({ liftLogs: [log, ...state.liftLogs] })),
-  setOfflineLogsCount: (count) => set({ offlineLogsCount: count }),
-  setLogSuccess: (success) => set({ logSuccess: success }),
-  setIsNewPR: (isNewPR) => set({ isNewPR }),
-  
-  setEventStatus: (status) => set({ eventStatus: status }),
-  setIsEventPending: (isPending) => set({ isEventPending: isPending }),
-  
-  setSelectedDayIndex: (index) => set({ selectedDayIndex: index }),
-  setSelectedExerciseIdForForm: (id) => set({ selectedExerciseIdForForm: id }),
-  
-  setDayLogs: (logs) => set((state) => ({ 
-    dayLogs: typeof logs === 'function' ? logs(state.dayLogs) : logs 
-  })),
-  setSkipMode: (mode) => set({ skipMode: mode }),
-  setSkipReason: (reason) => set({ skipReason: reason }),
-  setSkipNote: (note) => set({ skipNote: note }),
-  setIsDayLogging: (isLogging) => set({ isDayLogging: isLogging }),
-  setDayLogStatus: (status) => set({ dayLogStatus: status }),
+      injury: "",
+
+      liftLogs: [],
+      offlineLogsCount: 0,
+      logSuccess: false,
+      isNewPR: false,
+
+      eventStatus: null,
+      isEventPending: false,
+
+      selectedDayIndex: 0,
+      selectedExerciseIdForForm: "",
+
+      dayLogs: [],
+      skipMode: "none",
+      skipReason: "",
+      skipNote: "",
+      isDayLogging: false,
+      dayLogStatus: null,
+
+      setSessionActive: (isActive, id = "") => set({ isSessionActive: isActive, sessionId: id }),
+      setElapsedSeconds: (seconds) => set((state) => ({
+        elapsedSeconds: typeof seconds === 'function' ? seconds(state.elapsedSeconds) : seconds
+      })),
+      setSessionStatus: (status) => set({ sessionStatus: status }),
+      setIsSessionPending: (isPending) => set({ isSessionPending: isPending }),
+
+      setInjury: (injury) => set({ injury }),
+
+      setLiftLogs: (logs) => set((state) => ({
+        liftLogs: typeof logs === 'function' ? logs(state.liftLogs) : logs
+      })),
+      addLiftLog: (log) => set((state) => ({ liftLogs: [log, ...state.liftLogs] })),
+      setOfflineLogsCount: (count) => set({ offlineLogsCount: count }),
+      setLogSuccess: (success) => set({ logSuccess: success }),
+      setIsNewPR: (isNewPR) => set({ isNewPR }),
+
+      setEventStatus: (status) => set({ eventStatus: status }),
+      setIsEventPending: (isPending) => set({ isEventPending: isPending }),
+
+      setSelectedDayIndex: (index) => set({ selectedDayIndex: index }),
+      setSelectedExerciseIdForForm: (id) => set({ selectedExerciseIdForForm: id }),
+
+      setDayLogs: (logs) => set((state) => ({
+        dayLogs: typeof logs === 'function' ? logs(state.dayLogs) : logs
+      })),
+      setSkipMode: (mode) => set({ skipMode: mode }),
+      setSkipReason: (reason) => set({ skipReason: reason }),
+      setSkipNote: (note) => set({ skipNote: note }),
+      setIsDayLogging: (isLogging) => set({ isDayLogging: isLogging }),
+      setDayLogStatus: (status) => set({ dayLogStatus: status }),
     }),
     {
       name: "fitsplit-workout",
-      // sessionStorage: cleared when the tab closes, so there is no stale
-      // mid-workout state left over the next morning when the member reopens
-      // the app. But navigating away and back within the same session
-      // (e.g., accidentally tapping a link) restores the full workout state.
+      // sessionStorage: cleared when the tab closes.
       storage: createJSONStorage(() =>
         typeof window !== "undefined" ? sessionStorage : localStorage
       ),
-      // Only persist the fields that are meaningful to restore mid-workout.
-      // Ephemeral UI flags (isPending, isLogging, eventStatus…) are excluded
-      // so they always start fresh.
       partialize: (state) => ({
         isSessionActive: state.isSessionActive,
         sessionId: state.sessionId,
         elapsedSeconds: state.elapsedSeconds,
         injury: state.injury,
-        modification: state.modification,
-        workoutMode: state.workoutMode,
         liftLogs: state.liftLogs,
         selectedDayIndex: state.selectedDayIndex,
         dayLogs: state.dayLogs,

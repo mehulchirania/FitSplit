@@ -104,6 +104,7 @@ export async function submitContactMessage(
       title: "New landing page message",
       body: `${name} sent a contact request.`,
       contactMessageId: messageId,
+      actionHref: "/admin/inbox",
       createdAt: now
     };
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);

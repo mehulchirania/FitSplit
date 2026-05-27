@@ -74,56 +74,6 @@ function pickProgramWithoutAi(programs: WorkoutProgram[], memberGoal: string) {
   return programPool.find((program) => program.splitType === "ppl_upper_lower") ?? programPool[0];
 }
 
-async function pickProgramWithGemini(programs: WorkoutProgram[], memberGoal: string) {
-  const assignablePrograms = programs.filter((program) =>
-    program.days.some((day) => day.exercises.length > 0)
-  );
-  const programPool = assignablePrograms.length ? assignablePrograms : programs;
-  const apiKey = process.env.GEMINI_API_KEY ?? process.env.GOOGLE_GEMINI_API_KEY;
-
-  if (!apiKey) {
-    return pickProgramWithoutAi(programPool, memberGoal);
-  }
-
-  const model = process.env.GEMINI_MODEL ?? "gemini-flash-latest";
-  const prompt = [
-    "Pick the best FitSplit workout program id for this gym member.",
-    "Return only one exact id from the list. No markdown.",
-    `Member goal: ${memberGoal || "General fitness"}`,
-    "Programs:",
-    ...programPool.map((program) =>
-      `- ${program.id}: ${program.title}; goal=${program.goal}; days=${program.daysPerWeek}; difficulty=${program.difficulty}; split=${program.splitType}`
-    )
-  ].join("\n");
-
-  try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { maxOutputTokens: 32, temperature: 0.2 }
-        }),
-        headers: { "Content-Type": "application/json", "X-goog-api-key": apiKey },
-        method: "POST"
-      }
-    );
-
-    if (!response.ok) {
-      return pickProgramWithoutAi(programPool, memberGoal);
-    }
-
-    const payload = (await response.json()) as {
-      candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-    };
-    const text = payload.candidates?.[0]?.content?.parts?.[0]?.text?.trim() ?? "";
-    const selectedId = text.replace(/[`"' ]/g, "");
-    return programPool.find((program) => program.id === selectedId) ?? pickProgramWithoutAi(programPool, memberGoal);
-  } catch (error) {
-    console.warn("Gemini program selection failed; using fallback.", error);
-    return pickProgramWithoutAi(programPool, memberGoal);
-  }
-}
 
 async function resolveExerciseRecordId(sourceExerciseId: string) {
   const db = requireFirebase();
@@ -203,6 +153,8 @@ export async function assignProgramToMember(
       type: "program_assigned",
       title: "Workout program assigned",
       body: `${programTitle} is now available in your weekly schedule.`,
+      actionHref: "/member",
+      memberId,
       createdAt: now
     };
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
@@ -255,7 +207,7 @@ export async function generateAndAssignProgram(
     const { memberId, memberName, memberGoal: rawGoal = "General fitness" } = parsed.data;
     const memberGoal = rawGoal.trim() || "General fitness";
     const { programs } = await getWorkoutPrograms(currentUser.gymId);
-    const selectedProgram = await pickProgramWithGemini(programs, memberGoal);
+    const selectedProgram = pickProgramWithoutAi(programs, memberGoal);
 
     if (!selectedProgram) {
       throw new Error("No workout programs are available to assign.");
@@ -715,6 +667,8 @@ export async function createAndAssignCustomProgram(
       type: "program_assigned",
       title: "Workout program assigned",
       body: `${title} is now available in your weekly schedule.`,
+      actionHref: "/member",
+      memberId,
       createdAt: now
     };
     await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);

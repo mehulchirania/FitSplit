@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import Link from "next/link";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
@@ -89,6 +90,62 @@ export default async function OwnerReportsPage() {
   // ── Slot distribution ─────────────────────────────────────────
   // slots is SlotLoad[] — each item has slotId ("A"|"B"|"C"|"D") and memberCount
   const totalSlotted = slots.reduce((n, s) => n + s.memberCount, 0);
+
+  // Zero-member empty state
+  if (members.length === 0) {
+    return (
+      <main className="page">
+        <header style={{ marginBottom: "1.5rem" }}>
+          <Breadcrumb
+            crumbs={[
+              { label: "Owner", href: "/owner" },
+              { label: "Reports" }
+            ]}
+          />
+          <h1 style={{ marginTop: "0.5rem" }}>{gym?.name ?? "Gym"} — Reports</h1>
+        </header>
+        <div style={{
+          alignItems: "center",
+          background: "var(--bg-subtle)",
+          border: "1px dashed var(--border)",
+          borderRadius: "16px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "12px",
+          margin: "40px auto",
+          maxWidth: "480px",
+          padding: "48px 32px",
+          textAlign: "center"
+        }}>
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-faint)", opacity: 0.45 }} aria-hidden>
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          <p style={{ color: "var(--text)", fontWeight: 700, fontSize: "1.05rem", margin: 0 }}>
+            No members yet
+          </p>
+          <span style={{ color: "var(--text-soft)", fontSize: "0.875rem", lineHeight: 1.6 }}>
+            Add your first member to start seeing attendance trends, workout coverage, and PT plan reports.
+          </span>
+          <Link href="/owner/members" style={{
+            background: "var(--brand)",
+            borderRadius: "8px",
+            color: "#000",
+            display: "inline-block",
+            fontWeight: 600,
+            fontSize: "0.875rem",
+            marginTop: "8px",
+            padding: "10px 20px",
+            textDecoration: "none"
+          }}>
+            Add a member →
+          </Link>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="page">

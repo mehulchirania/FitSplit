@@ -321,6 +321,9 @@ export async function completePTSession(
       type: "pt_session_completed",
       title: "PT Session Completed",
       body: "Your personal training session has been completed. Great work!",
+      actionHref: "/member/pt-history",
+      ptSessionId,
+      memberId: session.memberId,
       createdAt: now,
       updatedAt: now
     };
@@ -397,6 +400,9 @@ export async function cancelPTSession(
       body: cancelReason
         ? `Your PT session has been cancelled. Reason: ${cancelReason}`
         : "Your PT session has been cancelled.",
+      actionHref: "/member/pt-history",
+      ptSessionId,
+      memberId: session.memberId,
       createdAt: now,
       updatedAt: now
     };
@@ -492,6 +498,9 @@ export async function reschedulePTSession(
       type: "pt_session_rescheduled",
       title: "PT Session Rescheduled",
       body: `Your PT session has been rescheduled to ${new Date(scheduledAt).toLocaleString()}.`,
+      actionHref: "/member/pt-history",
+      ptSessionId,
+      memberId: session.memberId,
       createdAt: now,
       updatedAt: now
     };

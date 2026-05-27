@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Toaster } from "sonner";
 import { AppTopbar } from "@/components/app-topbar";
 import { FcmSetup } from "@/components/fcm-setup";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -137,6 +138,18 @@ export default async function RootLayout({
           {currentUser?.role === "member" && <FcmSetup />}
           {children}
           <MobileBottomNav role={currentUser?.role} />
+          <Toaster
+            position="bottom-center"
+            toastOptions={{
+              style: {
+                background: "var(--bg-elevated)",
+                border: "1px solid var(--border)",
+                color: "var(--text)",
+                borderRadius: "10px",
+                fontSize: "0.875rem"
+              }
+            }}
+          />
         </div>
       </body>
     </html>

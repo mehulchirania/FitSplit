@@ -235,6 +235,12 @@ export type Notification = {
   createdAt: string;
   readAt?: string;
   exerciseRequestId?: string;
+  /** Deep-link URL for the notification action (e.g. "/owner/members/abc123") */
+  actionHref?: string;
+  /** Member UID for member-related notifications */
+  memberId?: string;
+  /** PT session ID for PT-related notifications */
+  ptSessionId?: string;
 };
 
 export type ExerciseRequest = {

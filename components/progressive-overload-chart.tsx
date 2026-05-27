@@ -9,6 +9,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 import type { LiftLog, Exercise } from "@/types/domain";
 
@@ -28,8 +29,8 @@ export function ProgressiveOverloadChart({
     exercisesWithLogs[0]?.id || ""
   );
 
-  const chartData = useMemo(() => {
-    if (!selectedExerciseId) return [];
+  const { chartData, prValue } = useMemo(() => {
+    if (!selectedExerciseId) return { chartData: [], prValue: 0 };
 
     const logsForExercise = liftLogs.filter(
       (log) => log.exerciseId === selectedExerciseId
@@ -47,23 +48,22 @@ export function ProgressiveOverloadChart({
 
     const sortedData = Array.from(maxWeightPerDay.entries())
       .map(([date, maxWeight]) => {
-        // Parse date from UTC or simple format
-        // Creating Date from YYYY-MM-DD might shift timezone, but it's ok for basic display
-        const [year, month, day] = date.split('-');
-        const formattedDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString(undefined, {
+        const [year, month, day] = date.split("-");
+        const formattedDate = new Date(
+          parseInt(year),
+          parseInt(month) - 1,
+          parseInt(day)
+        ).toLocaleDateString(undefined, {
           month: "short",
           day: "numeric",
         });
-        
-        return {
-          date: formattedDate,
-          rawDate: date,
-          weight: maxWeight,
-        };
+        return { date: formattedDate, rawDate: date, weight: maxWeight };
       })
       .sort((a, b) => a.rawDate.localeCompare(b.rawDate));
 
-    return sortedData;
+    const prValue = sortedData.reduce((max, d) => Math.max(max, d.weight), 0);
+
+    return { chartData: sortedData, prValue };
   }, [liftLogs, selectedExerciseId]);
 
   if (exercisesWithLogs.length === 0) {
@@ -108,45 +108,61 @@ export function ProgressiveOverloadChart({
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
             <LineChart
               data={chartData}
-              margin={{ top: 10, right: 10, bottom: 5, left: -20 }}
+              margin={{ top: 16, right: 16, bottom: 5, left: -20 }}
             >
               <CartesianGrid strokeDasharray="4 4" stroke="var(--border)" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="var(--text-faint)" 
-                fontSize={12} 
+              <XAxis
+                dataKey="date"
+                stroke="var(--text-faint)"
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
                 dy={12}
               />
-              <YAxis 
-                stroke="var(--text-faint)" 
-                fontSize={12} 
+              <YAxis
+                stroke="var(--text-faint)"
+                fontSize={12}
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={(value) => `${value}`}
                 dx={-8}
               />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: 'var(--bg-elevated)',
-                  borderColor: 'var(--border)',
-                  color: 'var(--text)',
-                  borderRadius: '10px',
-                  boxShadow: 'var(--shadow)',
-                  padding: '12px'
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "var(--bg-elevated)",
+                  borderColor: "var(--border)",
+                  color: "var(--text)",
+                  borderRadius: "10px",
+                  boxShadow: "var(--shadow)",
+                  padding: "12px"
                 }}
-                itemStyle={{ color: 'var(--brand)', fontWeight: 'bold' }}
-                formatter={(value) => [`${Number(value ?? 0)} lbs`, "Max Weight"]}
+                itemStyle={{ color: "var(--brand)", fontWeight: "bold" }}
+                formatter={(value) => [`${Number(value ?? 0)} kg`, "Max Weight"]}
               />
+              {/* PR reference line */}
+              {prValue > 0 && (
+                <ReferenceLine
+                  y={prValue}
+                  stroke="var(--brand)"
+                  strokeDasharray="6 4"
+                  strokeOpacity={0.55}
+                  label={{
+                    value: `PR ${prValue} kg`,
+                    position: "insideTopRight",
+                    fontSize: 11,
+                    fill: "var(--brand)",
+                    fontWeight: 600
+                  }}
+                />
+              )}
               <Line
                 type="monotone"
                 dataKey="weight"
                 name="Max Weight"
                 stroke="var(--brand)"
-                strokeWidth={3}
-                dot={{ r: 5, fill: "var(--bg-elevated)", strokeWidth: 2, stroke: "var(--brand)" }}
-                activeDot={{ r: 7, fill: "var(--brand)", stroke: "var(--bg-elevated)", strokeWidth: 2 }}
+                strokeWidth={2.5}
+                dot={false}
+                activeDot={{ r: 6, fill: "var(--brand)", stroke: "var(--bg-elevated)", strokeWidth: 2 }}
               />
             </LineChart>
           </ResponsiveContainer>

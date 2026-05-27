@@ -1,65 +1,53 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-"use client";
-
-import { useState } from "react";
-import { generateWorkoutSummary } from "@/lib/ai";
 import { Activity } from "@/components/icons";
+import { getWorkoutInsights } from "@/lib/ai";
+import { getExerciseCatalog, getLiftLogsForMember } from "@/lib/firebase/read-models";
+import type { Exercise, LiftLog } from "@/types/domain";
 
-export function ProfileAiSummary({ memberId }: { memberId: string }) {
-  const [summary, setSummary] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+/**
+ * WorkoutInsightsCard — server component.
+ * Renders trainer-style tips from the member's lift logs.
+ * No AI API, no loading state, renders at request time.
+ */
+export async function ProfileAiSummary({ memberId }: { memberId: string }) {
+  let liftLogs: LiftLog[] = [];
+  let exercises: Exercise[] = [];
 
-  async function handleGenerate() {
-    setIsLoading(true);
-    try {
-      const result = await generateWorkoutSummary(memberId);
-      setSummary(result ?? "AI could not generate a summary at this time.");
-    } catch (e) {
-      setSummary("An error occurred while generating the insight.");
-    } finally {
-      setIsLoading(false);
-    }
+  try {
+    const [logsResult, exercisesResult] = await Promise.all([
+      getLiftLogsForMember(memberId),
+      getExerciseCatalog()
+    ]);
+    liftLogs = logsResult.liftLogs ?? [];
+    exercises = exercisesResult.exercises ?? [];
+  } catch {
+    // silently fall back to empty arrays
   }
+
+  const insight = getWorkoutInsights(liftLogs, exercises);
 
   return (
     <section className="list-panel" style={{ marginTop: 24 }}>
       <div className="panel-title">
-        <h2>
-          <Activity /> AI Progress Insight
+        <h2 style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <Activity /> Training Insights
         </h2>
-        <span className="status-pill status-active">Powered by Gemini</span>
+        <span className="status-pill status-neutral">Based on your logs</span>
       </div>
-      <div className="busyness-widget" style={{ textAlign: "left", alignItems: "flex-start", padding: "24px" }}>
-        {!summary && !isLoading && (
-          <div style={{ textAlign: "center", width: "100%" }}>
-            <p style={{ marginBottom: 16 }}>
-              Get a personalized breakdown of your recent lift history from your AI Semi-Personal Trainer.
-            </p>
-            <button className="button button-primary" onClick={handleGenerate} type="button">
-              Generate AI Insight
-            </button>
-          </div>
-        )}
-
-        {isLoading && (
-          <div style={{ textAlign: "center", width: "100%", padding: "24px 0" }}>
-            <p className="eyebrow" style={{ animation: "pulse 1.5s infinite" }}>Analyzing lift logs...</p>
-          </div>
-        )}
-
-        {summary && !isLoading && (
-          <div style={{ width: "100%" }}>
-            <div style={{ whiteSpace: "pre-line", lineHeight: 1.6 }}>{summary}</div>
-            <button 
-              className="button button-secondary" 
-              onClick={handleGenerate} 
-              type="button"
-              style={{ marginTop: 24 }}
-            >
-              Regenerate Insight
-            </button>
-          </div>
-        )}
+      <div style={{ padding: "20px 24px" }}>
+        {insight.split("\n\n").map((para, i) => (
+          <p
+            key={i}
+            style={{
+              margin: i === 0 ? "0 0 10px" : "10px 0 0",
+              fontSize: "0.9rem",
+              lineHeight: 1.65,
+              color: "var(--text-soft)"
+            }}
+            dangerouslySetInnerHTML={{
+              __html: para.replace(/\*\*(.+?)\*\*/g, "<strong style='color:var(--text)'>$1</strong>")
+            }}
+          />
+        ))}
       </div>
     </section>
   );
