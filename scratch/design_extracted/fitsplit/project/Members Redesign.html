@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FitSplit · Members Redesign</title>
+
+<link rel="stylesheet" href="members-shared.css" />
+<link rel="stylesheet" href="direction-1-refined.css" />
+<link rel="stylesheet" href="direction-2-cards.css" />
+<link rel="stylesheet" href="direction-3-triage.css" />
+<link rel="stylesheet" href="direction-4-hybrid.css" />
+
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+  body { background: #f0eee9; overflow: hidden; }
+  #app { width: 100vw; height: 100vh; }
+
+  /* Tweak-driven overrides */
+  :root[data-density="compact"] .d2-card { padding: 10px 14px; gap: 14px; }
+  :root[data-density="compact"] .d1-row td { padding: 8px 16px; }
+  :root[data-density="compact"] .d3-row { padding: 8px 18px; }
+  :root[data-density="compact"] .d3-q { padding: 12px; gap: 8px; }
+  :root[data-density="compact"] .fs-avatar--lg { width: 40px; height: 40px; font-size: 13px; }
+  :root[data-density="compact"] .fs-avatar--md { width: 34px; height: 34px; font-size: 12px; }
+
+  :root[data-avatar-style="mono"] .fs-avatar { background: linear-gradient(135deg, var(--text), #2a3a3e) !important; }
+  :root[data-avatar-style="neutral"] .fs-avatar { background: linear-gradient(135deg, #6e7d83, #4d5b60) !important; }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Data + icons -->
+<script src="mock-members.js"></script>
+<script type="text/babel" src="members-icons.jsx"></script>
+
+<!-- Direction components -->
+<script type="text/babel" src="direction-1-refined.jsx"></script>
+<script type="text/babel" src="direction-2-cards.jsx"></script>
+<script type="text/babel" src="direction-3-triage.jsx"></script>
+<script type="text/babel" src="direction-4-hybrid.jsx"></script>
+
+<!-- Canvas + tweaks -->
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+</head>
+<body>
+<div id="app" data-screen-label="Members redesign · 3 directions"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useEffect } = React;
+
+const DEFAULTS = /*EDITMODE-BEGIN*/{
+  "accent": "#128d65",
+  "density": "comfortable",
+  "avatarStyle": "color"
+}/*EDITMODE-END*/;
+
+function Root() {
+  const [tweaks, setTweak] = window.useTweaks(DEFAULTS);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--brand", tweaks.accent);
+    // derive strong + soft from accent
+    root.style.setProperty(
+      "--brand-strong",
+      `color-mix(in srgb, ${tweaks.accent} 70%, #061513)`
+    );
+    root.style.setProperty(
+      "--brand-soft",
+      `color-mix(in srgb, ${tweaks.accent} 14%, #ffffff)`
+    );
+    root.setAttribute("data-density", tweaks.density);
+    root.setAttribute("data-avatar-style", tweaks.avatarStyle);
+  }, [tweaks.accent, tweaks.density, tweaks.avatarStyle]);
+
+  return (
+    <>
+      <window.DesignCanvas>
+        <window.DCSection
+          id="directions"
+          title="Members page — four directions"
+          subtitle="04 · Hybrid mixes the calm table (01) with the action queue (03). All interactive."
+        >
+          <window.DCArtboard
+            id="d4"
+            label="04 · Hybrid — queue + table (recommended)"
+            width={1280}
+            height={920}
+          >
+            <window.DirectionHybrid />
+          </window.DCArtboard>
+
+          <window.DCArtboard
+            id="d1"
+            label="01 · Refined — calmer table"
+            width={1280}
+            height={920}
+          >
+            <window.DirectionOne />
+          </window.DCArtboard>
+
+          <window.DCArtboard
+            id="d2"
+            label="02 · Restructured — rich card list"
+            width={1280}
+            height={920}
+          >
+            <window.DirectionTwo />
+          </window.DCArtboard>
+
+          <window.DCArtboard
+            id="d3"
+            label="03 · Reimagined — action queue first"
+            width={1280}
+            height={920}
+          >
+            <window.DirectionThree />
+          </window.DCArtboard>
+        </window.DCSection>
+      </window.DesignCanvas>
+
+      <window.TweaksPanel title="Tweaks">
+        <window.TweakSection label="Brand">
+          <window.TweakColor
+            label="Accent"
+            value={tweaks.accent}
+            onChange={(v) => setTweak("accent", v)}
+            options={["#128d65", "#0a6b9a", "#7a4abf", "#b35a2a"]}
+          />
+          <window.TweakRadio
+            label="Avatar"
+            value={tweaks.avatarStyle}
+            onChange={(v) => setTweak("avatarStyle", v)}
+            options={[
+              { value: "color", label: "Color" },
+              { value: "mono", label: "Mono" },
+              { value: "neutral", label: "Neutral" }
+            ]}
+          />
+        </window.TweakSection>
+
+        <window.TweakSection label="Layout">
+          <window.TweakRadio
+            label="Density"
+            value={tweaks.density}
+            onChange={(v) => setTweak("density", v)}
+            options={[
+              { value: "comfortable", label: "Comfortable" },
+              { value: "compact", label: "Compact" }
+            ]}
+          />
+        </window.TweakSection>
+      </window.TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<Root />);
+</script>
+</body>
+</html>
