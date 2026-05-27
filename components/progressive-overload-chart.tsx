@@ -82,13 +82,13 @@ export function ProgressiveOverloadChart({
       <div className="panel-title" style={{ padding: 0, border: "none", marginBottom: "20px" }}>
         <p className="eyebrow" style={{ margin: 0 }}>Progressive Overload</p>
         <select
+          className="exercise-select"
           value={selectedExerciseId}
           onChange={(e) => setSelectedExerciseId(e.target.value)}
           style={{
             padding: "8px 12px",
             borderRadius: "8px",
             border: "1px solid var(--border)",
-            background: "var(--bg-elevated)",
             color: "var(--text)",
             fontSize: "0.9rem",
             fontWeight: 600,

@@ -16,7 +16,7 @@ function slugify(name: string) {
     .replace(/^-|-$/g, "");
 }
 
-const emptyForm = { name: "", slug: "", location: "", status: "active", phone: "", email: "" };
+const emptyForm = { name: "", slug: "", location: "", locationUrl: "", status: "active", phone: "", email: "" };
 
 export function AddGymForm() {
   const router = useRouter();
@@ -43,6 +43,7 @@ export function AddGymForm() {
           name: String(form.get("name") ?? ""),
           slug: String(form.get("slug") ?? ""),
           location: String(form.get("location") ?? ""),
+          locationUrl: String(form.get("locationUrl") ?? ""),
           status: String(form.get("status") ?? "active") as "active" | "paused" | "inactive",
           phone: String(form.get("phone") ?? ""),
           email: String(form.get("email") ?? "")
@@ -97,6 +98,16 @@ export function AddGymForm() {
               onChange={(e) => setFormValues((v) => ({ ...v, location: e.target.value }))}
               placeholder="City, State"
               value={formValues.location}
+            />
+          </label>
+          <label>
+            Google Maps Location URL
+            <input
+              name="locationUrl"
+              onChange={(e) => setFormValues((v) => ({ ...v, locationUrl: e.target.value }))}
+              placeholder="https://maps.google.com/..."
+              type="url"
+              value={formValues.locationUrl}
             />
           </label>
           <label>

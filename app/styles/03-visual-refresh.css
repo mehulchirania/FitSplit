@@ -178,8 +178,8 @@
   --danger-soft: #ffe5e9;
   --info: #31556b;
   --info-soft: #e4eef4;
-  --surface-glass: color-mix(in srgb, var(--bg-elevated) 74%, transparent);
-  --surface-glass-strong: color-mix(in srgb, var(--bg-elevated) 86%, transparent);
+  --surface-glass: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  --surface-glass-strong: color-mix(in srgb, var(--bg-elevated) 95%, transparent);
   --shadow: 0 28px 90px rgba(10, 24, 28, 0.14);
   --shadow-soft: 0 16px 44px rgba(10, 24, 28, 0.08);
   --shadow-glow: 0 18px 54px color-mix(in srgb, var(--brand) 18%, transparent);
@@ -209,8 +209,8 @@ html[data-theme="dark"] {
   --danger-soft: #3a1419;
   --info: #a9d3ee;
   --info-soft: #132936;
-  --surface-glass: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
-  --surface-glass-strong: color-mix(in srgb, var(--bg-elevated) 84%, transparent);
+  --surface-glass: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+  --surface-glass-strong: color-mix(in srgb, var(--bg-elevated) 92%, transparent);
   --shadow: 0 30px 100px rgba(0, 0, 0, 0.56);
   --shadow-soft: 0 18px 50px rgba(0, 0, 0, 0.34);
   --shadow-glow: 0 18px 54px color-mix(in srgb, var(--brand) 13%, transparent);

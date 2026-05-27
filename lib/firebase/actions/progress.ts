@@ -451,6 +451,64 @@ export async function updateMakeupStatus(
   }
 }
 
+// ── Activity logging (stretch / cardio) ──────────────────────────────────────
+
+const LogActivitySchema = z.object({
+  memberId: ZodHelpers.textRequired("Member"),
+  type: z.enum(["stretch", "cardio"]),
+  name: ZodHelpers.textRequired("Activity name"),
+  duration: z.coerce.number().min(1).max(600).optional(),
+  distance: z.coerce.number().min(0).max(1000).optional(),
+  notes: z.string().max(400).optional(),
+  sessionId: z.string().optional()
+});
+
+export async function logActivity(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, LogActivitySchema);
+    if (!parsed.success) return parsed.state;
+
+    const { memberId, type, name, duration, distance, notes, sessionId } = parsed.data;
+    assertCanManageMember(currentUser, memberId);
+
+    if (!hasFirebaseAdminConfig()) {
+      return success(`${type === "stretch" ? "Stretch" : "Cardio"} logged (local mode).`, undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    }
+
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+    const id = randomUUID();
+
+    const activityRecord = {
+      id,
+      memberId,
+      gymId,
+      type,
+      name: name.trim(),
+      ...(duration !== undefined ? { duration } : {}),
+      ...(distance !== undefined ? { distance } : {}),
+      ...(notes ? { notes: notes.trim() } : {}),
+      ...(sessionId ? { sessionId } : {}),
+      loggedAt: now,
+      createdAt: now
+    };
+
+    await db.collection(collectionPaths.activityLogs).doc(id).set(activityRecord);
+    await mirrorGymScopedRecord(db, gymId, "activityLogs", id, activityRecord);
+
+    return success(type === "stretch" ? "Mobility work logged." : "Cardio logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+  } catch (error) {
+    console.error("Unable to log activity", error);
+    return failure(error, "Could not log activity. Please try again.");
+  }
+}
+
 // ── Workout sessions ──────────────────────────────────────────────────────────
 
 const SessionSchema = z.object({

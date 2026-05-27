@@ -15,7 +15,7 @@ import {
   getGymWorkspaces,
   getOwnersForGym
 } from "@/lib/firebase/read-models";
-import { ProfileAiSummary } from "@/components/profile-ai-summary";
+import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
 import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisplayName } from "@/lib/firebase/actions";
 
 export const dynamic = "force-dynamic";
@@ -263,21 +263,9 @@ export default async function ProfilePage({
             and future AI-assisted workout planning.
           </p>
         </div>
-        <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 15 }}>
-          <article className="ui-card purple">
-            <p className="tip" style={{ fontSize: "1.2em" }}>
-              {profile.weightKg ? `${profile.weightKg} kg` : "N/A"}
-            </p>
-            <p className="second-text">Current Weight</p>
-          </article>
-          <article className="ui-card red">
-            <p className="tip" style={{ fontSize: "1.2em" }}>
-              {profile.heightCm ? `${profile.heightCm} cm` : "N/A"}
-            </p>
-            <p className="second-text">Current Height</p>
-          </article>
-        </aside>
       </section>
+
+      <ProfileMetricsWidget profile={profile} />
 
       <ProfileForm memberId={memberId} profile={profile} trainers={trainers} isReadOnlyTrainer={true} />
 
@@ -288,8 +276,6 @@ export default async function ProfilePage({
       <MuscleRadarChart liftLogs={liftLogs} exercises={exercises} />
 
       <ProgressiveOverloadChart liftLogs={liftLogs} exercises={exercises} />
-
-      <ProfileAiSummary memberId={memberId} />
 
       <section className="list-panel" style={{ marginTop: 16 }}>
         <div className="panel-title">

@@ -1030,17 +1030,11 @@
       "description": "Owner generated split pulling from the exercise catalog.",
       "is_custom": true,
       "schedule": [
-        {
-          "day": 1,
-          "title": "Custom Day 1",
-          "workouts": [
-            {
-              "exercise_id": "",
-              "sets": 0,
-              "reps": ""
-            }
-          ]
-        }
+      {
+        "day": 1,
+        "title": "Custom Day 1",
+        "workouts": []
+      }
       ]
     }
   ]

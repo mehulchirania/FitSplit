@@ -40,6 +40,8 @@ export type GymWorkspace = {
   logoUrl?: string;
   logoPath?: string;
   location?: string;
+  /** Google Maps or similar URL for the gym's physical location */
+  locationUrl?: string;
   phone?: string;
   email?: string;
   instagram?: string;
@@ -149,6 +151,11 @@ export type Exercise = {
    * Defaults to true. When false the tutorial button is hidden on the member dashboard.
    */
   showTutorial?: boolean;
+  /**
+   * Concise anatomical description of what muscles this exercise targets and how.
+   * Displayed as an informational pill in the exercise detail view during workouts.
+   */
+  muscleTargetDescription?: string;
 };
 
 export type WorkoutExercise = {
@@ -307,6 +314,44 @@ export type MacroNutritionTarget = {
   fat?: number;
   waterLiters?: number;
   notes?: string;
+};
+
+/**
+ * Daily macro nutrition log entry — one document per member per calendar day.
+ * Document ID: `${memberId}_${date}` — upsert semantics.
+ * Lives at: gyms/{gymId}/macroLogs/{id}
+ */
+export type MacroLog = {
+  id: string;
+  memberId: string;
+  gymId: string;
+  /** Calendar date in YYYY-MM-DD format (local timezone) */
+  date: string;
+  protein: number;
+  carbs: number;
+  fat: number;
+  /** Water in litres */
+  water: number;
+  loggedAt: string;
+};
+
+/**
+ * Activity log entry for stretch or cardio sessions.
+ * Lives at: gyms/{gymId}/activityLogs/{id}
+ */
+export type ActivityLog = {
+  id: string;
+  memberId: string;
+  gymId: string;
+  type: "stretch" | "cardio";
+  name: string;
+  /** Duration in minutes */
+  duration?: number;
+  /** Distance in km (cardio only) */
+  distance?: number;
+  notes?: string;
+  loggedAt: string;
+  sessionId?: string;
 };
 
 /**

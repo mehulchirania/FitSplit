@@ -34,6 +34,7 @@ const CreateGymSchema = z.object({
   slug: z.string().optional(),
   status: z.string().optional(),
   location: z.string().optional(),
+  locationUrl: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional()
 });
@@ -42,6 +43,7 @@ const UpdateGymSchema = z.object({
   gymId: ZodHelpers.textRequired("Gym ID"),
   name: ZodHelpers.textRequired("Gym name"),
   location: z.string().optional(),
+  locationUrl: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().optional(),
   instagram: z.string().optional(),
@@ -269,11 +271,19 @@ export async function createGymWorkspace(
     if (!parsed.success) return parsed.state;
 
     const db = requireFirebase();
-    const { name, slug: requestedSlug = "", status: rawStatus, location = "", phone = "", email = "" } = parsed.data;
+    const { name, slug: requestedSlug = "", status: rawStatus, location = "", locationUrl = "", phone = "", email = "" } = parsed.data;
     const slug = slugifyGymName(requestedSlug || name);
+    const trimmedLocationUrl = locationUrl.trim();
 
     if (!slug) {
       throw new Error("Gym slug is invalid.");
+    }
+    if (trimmedLocationUrl) {
+      try {
+        new URL(trimmedLocationUrl);
+      } catch {
+        throw new Error("Location URL must be a valid URL.");
+      }
     }
 
     const now = new Date().toISOString();
@@ -293,6 +303,7 @@ export async function createGymWorkspace(
       expiryWarningDays: 7,
       status: normalizeGymStatusInput(rawStatus ?? null),
       location: location.trim(),
+      locationUrl: trimmedLocationUrl || null,
       phone: phone.trim(),
       email: email.trim().toLowerCase(),
       instagram: "",
@@ -450,11 +461,18 @@ export async function updateGymDetails(
     if (!parsed.success) return parsed.state;
 
     const db = requireFirebase();
-    const { gymId, name, location = "", phone = "", email = "", instagram = "", linkedin = "", youtube = "" } = parsed.data;
+    const { gymId, name, location = "", locationUrl = "", phone = "", email = "", instagram = "", linkedin = "", youtube = "" } = parsed.data;
+
+    // Validate locationUrl if provided
+    const trimmedLocationUrl = locationUrl.trim();
+    if (trimmedLocationUrl) {
+      try { new URL(trimmedLocationUrl); } catch { throw new Error("Location URL must be a valid URL (e.g. https://maps.google.com/...)."); }
+    }
 
     const updateData: any = {
       name,
       location: location.trim(),
+      locationUrl: trimmedLocationUrl || null,
       phone: phone.trim(),
       email: email.trim(),
       instagram: instagram.trim(),

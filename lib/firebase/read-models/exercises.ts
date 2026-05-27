@@ -82,6 +82,7 @@ export async function getExerciseCatalogUncached(gymId?: string): Promise<{
       ownerOnly: true,
       source: hasDefaultExercise ? "predefined" : "custom",
       showTutorial: data.showTutorial !== false,
+      muscleTargetDescription: data.muscleTargetDescription ? String(data.muscleTargetDescription) : undefined,
       skipDefaultOverride: isMirroredDefault && hasDefaultExercise
     };
   });

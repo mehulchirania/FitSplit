@@ -63,16 +63,50 @@
   z-index: 90;
 }
 
+/* ── Radix Select dropdown content ─────────────────────────────────────── */
+/* The dropdown renders in a portal; --bg-elevated is transparent in dark    */
+/* theme (rgba(255,255,255,0.03)), so we need a solid opaque surface here.   */
+.radix-select-content {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: var(--radius-sm, 8px);
+  color: var(--text);
+}
+
+html[data-theme="dark"] .radix-select-content {
+  background: #1c1e22;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 /* ── Radix Select items ─────────────────────────────────────────────────── */
+.radix-select-item {
+  color: var(--text);
+  background: transparent;
+}
+
 .radix-select-item[data-highlighted] {
-  background: var(--bg-subtle);
+  background: rgba(255, 255, 255, 0.07);
   color: var(--brand);
   outline: none;
+}
+
+html[data-theme="light"] .radix-select-item[data-highlighted] {
+  background: rgba(0, 0, 0, 0.05);
 }
 
 .radix-select-trigger:focus-visible {
   border-color: var(--brand-strong);
   outline: none;
+}
+
+/* ── Native <select> for chart exercise picker ──────────────────────────── */
+/* --bg-elevated is semi-transparent in dark theme; use a solid surface     */
+.exercise-select {
+  background: #ffffff;
+}
+
+html[data-theme="dark"] .exercise-select {
+  background: #1c1e22;
 }
 
 /* sr-only helper for Radix Dialog.Title */

@@ -91,6 +91,11 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
     logoUrl: data.logoUrl ? String(data.logoUrl) : docId === PRIMARY_GYM_ID ? "/shg-gym-logo.jpeg" : undefined,
     logoPath: data.logoPath ? String(data.logoPath) : undefined,
     location: data.location ? String(data.location) : undefined,
+    locationUrl: data.locationUrl
+      ? String(data.locationUrl)
+      : docId === PRIMARY_GYM_ID
+        ? "https://maps.app.goo.gl/Vo99C5szeTzyQKPo9"
+        : undefined,
     phone: data.phone ? String(data.phone) : undefined,
     email: data.email ? String(data.email) : undefined,
     instagram: data.instagram ? String(data.instagram) : undefined,

@@ -742,7 +742,7 @@ function inferCategory(name) {
 // 5. MAIN
 // ─────────────────────────────────────────────────────────────────────────────
 
-const snapshot = await db.collection("exerciseCatalog").where("gymId", "==", gymId).get();
+const snapshot = await db.collection(`gyms/${gymId}/exerciseCatalog`).get();
 
 if (snapshot.empty) {
   console.log("No exerciseCatalog docs found for gymId:", gymId);

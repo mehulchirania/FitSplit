@@ -1,4 +1,4 @@
-import type { BodyMetricLog, DayLog, LiftLog, MakeupStatus, SkipReason } from "@/types/domain";
+import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MakeupStatus, SkipReason } from "@/types/domain";
 
 import { collectionPaths, gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
@@ -249,5 +249,82 @@ export async function getMacroLogForMember(
     };
   } catch {
     return { macroLog: null };
+  }
+}
+
+/**
+ * Fetch the last N days of macro logs for a member.
+ * Used to render macro history charts and the 7-day summary.
+ */
+export async function getMacroLogsForMember(
+  memberId: string,
+  gymId: string,
+  days = 7
+): Promise<{ macroLogs: MacroLog[] }> {
+  if (!hasFirebaseAdminConfig()) return { macroLogs: [] };
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(`gyms/${gymId}/macroLogs`)
+      .where("memberId", "==", memberId)
+      .orderBy("date", "desc")
+      .limit(days)
+      .get();
+    const macroLogs: MacroLog[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        memberId: String(data.memberId ?? memberId),
+        gymId: String(data.gymId ?? gymId),
+        date: String(data.date ?? ""),
+        protein: Number(data.protein ?? 0),
+        carbs: Number(data.carbs ?? 0),
+        fat: Number(data.fat ?? 0),
+        water: Number(data.water ?? 0),
+        loggedAt: String(data.loggedAt ?? data.updatedAt ?? new Date().toISOString())
+      };
+    });
+    return { macroLogs };
+  } catch {
+    return { macroLogs: [] };
+  }
+}
+
+/**
+ * Fetch recent activity logs (stretch/cardio) for a member.
+ */
+export async function getActivityLogsForMember(
+  memberId: string,
+  gymId: string,
+  limit = 30
+): Promise<{ activityLogs: ActivityLog[] }> {
+  if (!hasFirebaseAdminConfig()) return { activityLogs: [] };
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(`gyms/${gymId}/activityLogs`)
+      .where("memberId", "==", memberId)
+      .orderBy("loggedAt", "desc")
+      .limit(limit)
+      .get();
+    const activityLogs: ActivityLog[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      const type = data.type === "cardio" ? "cardio" : "stretch";
+      return {
+        id: doc.id,
+        memberId: String(data.memberId ?? memberId),
+        gymId: String(data.gymId ?? gymId),
+        type,
+        name: String(data.name ?? ""),
+        duration: data.duration != null ? Number(data.duration) : undefined,
+        distance: data.distance != null ? Number(data.distance) : undefined,
+        notes: data.notes ? String(data.notes) : undefined,
+        loggedAt: String(data.loggedAt ?? new Date().toISOString()),
+        sessionId: data.sessionId ? String(data.sessionId) : undefined
+      };
+    });
+    return { activityLogs };
+  } catch {
+    return { activityLogs: [] };
   }
 }

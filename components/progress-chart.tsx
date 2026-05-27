@@ -20,11 +20,12 @@ function formatDate(iso: string) {
 interface Props {
   exercises: Exercise[];
   liftLogs: LiftLog[];
+  onExerciseSelect?: (exerciseId: string) => void;
 }
 
-export function ProgressChart({ exercises, liftLogs }: Props) {
-  // Build exercise options that have at least 2 logged entries
-  const exerciseMap = new Map<string, { name: string; logs: { date: string; weight: number }[] }>();
+export function ProgressChart({ exercises, liftLogs, onExerciseSelect }: Props) {
+  // Build exercise options — one entry per exercise, logs sorted oldest → newest
+  const exerciseMap = new Map<string, { name: string; logs: { date: string; rawDate: string; weight: number }[] }>();
 
   for (const log of liftLogs) {
     if (!log.weight || !log.loggedAt) continue;
@@ -35,6 +36,7 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
     }
     exerciseMap.get(log.exerciseId)!.logs.push({
       date: formatDate(log.loggedAt),
+      rawDate: log.loggedAt.slice(0, 10),
       weight: log.weight,
     });
   }
@@ -70,9 +72,15 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
     );
   }
 
-  const chartData = selected?.logs ?? [];
+  // Sort ascending (oldest left → newest right = psychological "improving" direction)
+  const chartData = [...(selected?.logs ?? [])].sort((a, b) => a.rawDate.localeCompare(b.rawDate));
   const maxWeight = Math.max(...chartData.map((d) => d.weight), 0);
   const minWeight = Math.min(...chartData.map((d) => d.weight), 0);
+
+  function selectExercise(id: string) {
+    setSelectedId(id);
+    onExerciseSelect?.(id);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
@@ -82,7 +90,8 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
           <button
             key={opt.id}
             type="button"
-            onClick={() => setSelectedId(opt.id)}
+            onClick={() => selectExercise(opt.id)}
+            title={`Click to pre-fill "${opt.name}" in the log form`}
             style={{
               padding: "5px 12px",
               borderRadius: "999px",
@@ -100,6 +109,13 @@ export function ProgressChart({ exercises, liftLogs }: Props) {
           </button>
         ))}
       </div>
+
+      {/* Hint when onExerciseSelect is wired */}
+      {onExerciseSelect && (
+        <p style={{ fontSize: "11px", color: "var(--text-faint)", margin: 0 }}>
+          Tap an exercise above to jump straight to logging it ↓
+        </p>
+      )}
 
       {/* Chart */}
       <div style={{ height: 180, minHeight: 180, minWidth: 0 }}>

@@ -67,6 +67,7 @@ export type CreateGymWorkspaceInput = {
   name: string;
   slug?: string;
   location?: string;
+  locationUrl?: string;
   status?: "active" | "paused" | "inactive";
   phone?: string;
   email?: string;
@@ -85,6 +86,7 @@ export type UpdateGymDetailsInput = {
   gymId: string;
   name: string;
   location?: string;
+  locationUrl?: string;
   phone?: string;
   email?: string;
   instagram?: string;

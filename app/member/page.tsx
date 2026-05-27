@@ -6,6 +6,8 @@ import { MemberDashboardTabs } from "@/components/member-dashboard-tabs";
 import { MemberHistory } from "@/components/member-history";
 import { MemberProgressPanel } from "@/components/member-progress-panel";
 import { WorkoutCalendar } from "@/components/workout-calendar";
+import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
+import { ActivityLogForm } from "@/components/activity-log-form";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import type { Member } from "@/types/domain";
@@ -15,6 +17,8 @@ import {
   getExerciseCatalog,
   getGymDetail,
   getLiftLogsForMember,
+  getMacroLogsForMember,
+  getActivityLogsForMember,
   getMacroLogForMember,
   getMemberWithProfile,
   getProgramAssignmentForMember,
@@ -52,7 +56,9 @@ export default async function MemberDashboard() {
     { sessions },
     { gym },
     { dayLogs },
-    { macroLog: initialMacroLog }
+    { macroLog: initialMacroLog },
+    { macroLogs },
+    { activityLogs }
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
     getProgramAssignmentForMember(currentMemberId, gymId),
@@ -62,7 +68,9 @@ export default async function MemberDashboard() {
     getActiveWorkoutSessions(gymId),
     getGymDetail(gymId),
     getDayLogsForMember(currentMemberId, gymId),
-    getMacroLogForMember(currentMemberId, gymId, todayDate)
+    getMacroLogForMember(currentMemberId, gymId, todayDate),
+    getMacroLogsForMember(currentMemberId, gymId, 14),
+    getActivityLogsForMember(currentMemberId, gymId, 30)
   ]);
 
   if (!member) return null;
@@ -153,10 +161,23 @@ export default async function MemberDashboard() {
               ) : (
                 <span className="md-badge-new md-badge-accent-new">Awaiting trainer</span>
               )}
-              <span className="md-badge-new">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                {gym?.name ?? "Your gym"}
-              </span>
+              {gym?.locationUrl ? (
+                <a
+                  className="md-badge-new md-gym-location-link"
+                  href={gym.locationUrl}
+                  rel="noopener noreferrer"
+                  target="_blank"
+                  title="Open gym location in Google Maps"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {gym.name}
+                </a>
+              ) : (
+                <span className="md-badge-new">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  {gym?.name ?? "Your gym"}
+                </span>
+              )}
             </div>
           </div>
 
@@ -283,7 +304,14 @@ export default async function MemberDashboard() {
                   <h2>Recent training activity</h2>
                 </div>
               </div>
-              <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} />
+              <MemberHistory
+                liftLogs={liftLogs}
+                exercises={exercises}
+                dayLogs={dayLogs}
+                activityLogs={activityLogs}
+                macroLogs={macroLogs}
+                macroTarget={profile.macroNutritionTarget}
+              />
             </div>
 
             <div className="member-progress-history-card">
@@ -293,7 +321,23 @@ export default async function MemberDashboard() {
                   <h2>Training calendar</h2>
                 </div>
               </div>
-              <WorkoutCalendar liftLogs={liftLogs} dayLogs={dayLogs} />
+              <WorkoutCalendar
+                liftLogs={liftLogs}
+                dayLogs={dayLogs}
+                activityLogs={activityLogs}
+                macroLogs={macroLogs}
+                macroTarget={profile.macroNutritionTarget}
+              />
+            </div>
+
+            <div className="member-progress-history-card">
+              <div className="panel-title" style={{ marginBottom: "20px" }}>
+                <div>
+                  <p className="eyebrow">Cardio & mobility</p>
+                  <h2>Log other activity</h2>
+                </div>
+              </div>
+              <ActivityLogForm memberId={member.id} gymId={gymId} recentLogs={activityLogs} />
             </div>
           </div>
         }
@@ -306,6 +350,11 @@ export default async function MemberDashboard() {
               </div>
               <span className="status-pill status-neutral">Optional tracking</span>
             </div>
+            
+            <div style={{ padding: "0 22px" }}>
+              <ProfileMetricsWidget profile={profile} />
+            </div>
+
             <div className="member-wellness-grid">
               <div className="member-metrics-card">
                 <h3>Profile metrics</h3>
@@ -318,6 +367,7 @@ export default async function MemberDashboard() {
                 date={todayDate}
                 target={profile.macroNutritionTarget}
                 initialActual={initialMacroLog ?? undefined}
+                macroHistory={macroLogs}
               />
             </div>
           </section>

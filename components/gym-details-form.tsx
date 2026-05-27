@@ -14,6 +14,7 @@ export function GymDetailsForm({
     id: string;
     name: string;
     location?: string;
+    locationUrl?: string;
     phone?: string;
     email?: string;
     instagram?: string;
@@ -37,6 +38,7 @@ export function GymDetailsForm({
           gymId: gym.id,
           name: String(formData.get("name") ?? ""),
           location: String(formData.get("location") ?? ""),
+          locationUrl: String(formData.get("locationUrl") ?? ""),
           phone: String(formData.get("phone") ?? ""),
           email: String(formData.get("email") ?? ""),
           instagram: String(formData.get("instagram") ?? ""),
@@ -65,6 +67,10 @@ export function GymDetailsForm({
         <label>
           Location
           <input name="location" defaultValue={gym.location} placeholder="City, State" />
+        </label>
+        <label>
+          Google Maps Location URL
+          <input name="locationUrl" defaultValue={gym.locationUrl} placeholder="https://maps.google.com/..." type="url" />
         </label>
         <label>
           Contact Phone

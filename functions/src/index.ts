@@ -484,8 +484,16 @@ export const createGymWorkspace = onCall({ region }, async (request) => {
 
   const name = asString(request.data?.name, "Gym name");
   const slug = slugifyGymName(optionalString(request.data?.slug) || name);
+  const locationUrl = optionalString(request.data?.locationUrl);
   if (!slug) {
     throw new HttpsError("invalid-argument", "Gym slug is invalid.");
+  }
+  if (locationUrl) {
+    try {
+      new URL(locationUrl);
+    } catch {
+      throw new HttpsError("invalid-argument", "Location URL must be a valid URL.");
+    }
   }
 
   const gymRef = db.collection("gyms").doc(slug);
@@ -504,6 +512,7 @@ export const createGymWorkspace = onCall({ region }, async (request) => {
     expiryWarningDays: 7,
     status: normalizeGymStatus(request.data?.status),
     location: optionalString(request.data?.location),
+    locationUrl,
     phone: optionalString(request.data?.phone),
     email: optionalString(request.data?.email).toLowerCase(),
     instagram: "",
@@ -531,12 +540,21 @@ export const updateGymDetails = onCall({ region }, async (request) => {
   const gymId = asString(request.data?.gymId, "Gym ID");
   const name = asString(request.data?.name, "Gym name");
   const email = optionalString(request.data?.email).toLowerCase();
+  const locationUrl = optionalString(request.data?.locationUrl);
   if (email) assertEmail(email, "Contact email");
+  if (locationUrl) {
+    try {
+      new URL(locationUrl);
+    } catch {
+      throw new HttpsError("invalid-argument", "Location URL must be a valid URL.");
+    }
+  }
 
   await db.collection("gyms").doc(gymId).set(
     {
       name,
       location: optionalString(request.data?.location),
+      locationUrl,
       phone: optionalString(request.data?.phone),
       email,
       instagram: optionalString(request.data?.instagram),

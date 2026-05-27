@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { logLiftSet, syncOfflineLifts } from "@/lib/firebase/actions";
 import { offlineDB } from "@/lib/offline-db";
 import { getDefaultDayIndex, getExerciseName } from "@/lib/workout-utils";
@@ -154,6 +155,7 @@ export function MemberProgressPanel({
       offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
       setIsNewPR(false);
       setLogSuccess(true);
+      toast.success("Set saved offline. It will sync when you are back online.");
       liftFormRef.current?.reset();
       setTimeout(() => setLogSuccess(false), 3000);
       return;
@@ -167,6 +169,7 @@ export function MemberProgressPanel({
         setLiftLogs((current) => [newLog, ...current]);
         setIsNewPR(weight > prevMax);
         setLogSuccess(true);
+        toast.success(weight > prevMax ? "New PR logged. Strong progress." : "Set logged. Progress recorded.");
         liftFormRef.current?.reset();
         setTimeout(() => { setLogSuccess(false); setIsNewPR(false); }, 3000);
         router.refresh();
@@ -180,6 +183,7 @@ export function MemberProgressPanel({
       offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
       setIsNewPR(false);
       setLogSuccess(true);
+      toast.success("Set saved offline. It will sync when your connection returns.");
       liftFormRef.current?.reset();
       setTimeout(() => setLogSuccess(false), 3000);
     }
@@ -196,7 +200,11 @@ export function MemberProgressPanel({
             <h2>Strength trend</h2>
           </div>
         </div>
-        <ProgressChart exercises={exercises} liftLogs={liftLogs} />
+        <ProgressChart
+          exercises={exercises}
+          liftLogs={liftLogs}
+          onExerciseSelect={setSelectedExerciseId}
+        />
       </div>
 
       <WorkoutLiftLogForm

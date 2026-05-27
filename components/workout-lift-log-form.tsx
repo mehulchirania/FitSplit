@@ -4,14 +4,8 @@ import type React from "react";
 import type { Exercise, LiftLog, WorkoutExercise } from "@/types/domain";
 import type { FormActionState } from "@/types/action-state";
 import { getExerciseName } from "@/lib/workout-utils";
-import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "framer-motion";
 import * as Select from "@radix-ui/react-select";
-
-const ProgressChart = dynamic(() => import("@/components/progress-chart").then(mod => mod.ProgressChart), {
-  ssr: false,
-  loading: () => <p className="form-message">Loading chart...</p>
-});
 
 type WorkoutLiftLogFormProps = {
   memberId: string;
@@ -162,12 +156,10 @@ export function WorkoutLiftLogForm({
 
             <Select.Portal>
               <Select.Content
+                className="radix-select-content"
                 position="popper"
                 style={{
-                  background: "var(--bg-elevated)",
-                  border: "1px solid var(--border)",
-                  borderRadius: "var(--radius-sm)",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
+                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
                   maxHeight: "320px",
                   overflowY: "auto",
                   zIndex: 200,
@@ -316,16 +308,6 @@ export function WorkoutLiftLogForm({
         </div>
       </details>
 
-      {liftLogs.length > 0 && (
-        <details className="member-details-panel">
-          <summary className="member-details-summary">
-            <span className="status-pill status-neutral">Progress Chart</span>
-          </summary>
-          <div className="member-details-body">
-            <ProgressChart exercises={exercises} liftLogs={liftLogs} />
-          </div>
-        </details>
-      )}
     </div>
   );
 }

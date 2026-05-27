@@ -42,6 +42,57 @@ function getSecondaryMuscles(exercise: Exercise) {
   return secondaryByPrimary[exercise.muscleGroup] ?? [];
 }
 
+function getMuscleTargetDescription(exercise: Exercise) {
+  if (exercise.muscleTargetDescription) return exercise.muscleTargetDescription;
+  
+  const text = `${exercise.name} ${exercise.instructions}`.toLowerCase();
+  const group = exercise.muscleGroup;
+
+  if (group === "Chest") {
+    if (text.includes("incline")) return "Upper chest focus with front delts and triceps assisting.";
+    if (text.includes("decline") || text.includes("dip")) return "Lower chest focus with triceps assisting.";
+    if (text.includes("fly")) return "Mid-chest adduction focus with controlled stretch and squeeze.";
+    return "Full chest press focus with mid chest, front delts, and triceps.";
+  }
+  if (group === "Back") {
+    if (text.includes("pulldown") || text.includes("pull-up")) return "Lat-width focus with biceps and lower traps assisting.";
+    if (text.includes("row")) return "Mid-back focus: lats, rhomboids, traps, and rear delts.";
+    if (text.includes("deadlift")) return "Posterior-chain focus: spinal erectors, glutes, hamstrings, and traps.";
+    return "Back focus across lats, traps, rhomboids, and rear delts.";
+  }
+  if (group === "Shoulders") {
+    if (text.includes("lateral") || text.includes("side")) return "Side delt focus for shoulder width.";
+    if (text.includes("rear") || text.includes("face pull")) return "Rear delt and upper-back stability focus.";
+    if (text.includes("press")) return "Front delt and full-shoulder press focus with triceps assisting.";
+    return "Shoulder focus across front, side, and rear delts.";
+  }
+  if (group === "Triceps") {
+    if (text.includes("overhead")) return "Long head triceps focus with a deep stretched position.";
+    if (text.includes("pushdown") || text.includes("pressdown")) return "Lateral and medial head triceps focus.";
+    return "Full triceps focus: long head, lateral head, and medial head.";
+  }
+  if (group === "Biceps") {
+    if (text.includes("hammer")) return "Brachialis and brachioradialis focus with biceps assisting.";
+    if (text.includes("incline")) return "Long head biceps focus from a stretched shoulder position.";
+    if (text.includes("preacher") || text.includes("concentration")) return "Short head biceps focus with strict elbow position.";
+    return "Biceps focus across long head, short head, and brachialis.";
+  }
+  if (group === "Legs") {
+    if (text.includes("curl")) return "Hamstring focus with knee-flexion control.";
+    if (text.includes("extension")) return "Quad isolation focus, especially rectus femoris and vastus group.";
+    if (text.includes("calf")) return "Calf focus across gastrocnemius and soleus.";
+    if (text.includes("hip") || text.includes("thrust")) return "Glute focus with hamstrings assisting.";
+    return "Lower-body focus across quads, hamstrings, glutes, calves, and adductors.";
+  }
+  if (group === "Core") {
+    return "Core focus across abs, obliques, deep trunk stabilizers, and hip flexors.";
+  }
+  if (group === "Cardio") {
+    return "Conditioning focus for heart rate, stamina, and lower-body endurance.";
+  }
+  return `${group} focus with supporting stabilizer muscles.`;
+}
+
 function getYouTubeEmbedUrl(videoUrl: string): string | null {
   if (!videoUrl) return null;
   try {
@@ -124,6 +175,10 @@ export function ExerciseList({
                     .filter((v) => v && v !== "none" && v !== "null")
                     .join(" / ")}
                 </span>
+                <div className="muscle-target-pill" aria-label={`${exercise.name} target detail`}>
+                  <span className="muscle-target-pill-icon" aria-hidden="true">Target</span>
+                  <span className="muscle-target-pill-text">{getMuscleTargetDescription(exercise)}</span>
+                </div>
                 {exercise.instructions && (
                   <details className="exercise-instructions">
                     <summary>Instructions</summary>

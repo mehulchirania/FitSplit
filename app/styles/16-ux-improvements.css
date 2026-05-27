@@ -569,14 +569,22 @@ html[data-theme="dark"] .md-hero-new {
   width: 12px;
 }
 
-/* ── 23. Workout calendar — light theme calendar cells ───────────────────── */
+/* ── 23. Workout calendar — light theme overrides ────────────────────────── */
 
 html[data-theme="light"] .cal-cell {
-  background: #ffffff;
+  background: transparent;
 }
 
 html[data-theme="light"] .cal-cell:hover:not(:disabled) {
-  background: var(--bg-subtle);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+html[data-theme="light"] .cal-cell--trained {
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+}
+
+html[data-theme="light"] .cal-cell--skipped {
+  background: color-mix(in srgb, #dc2626 8%, transparent);
 }
 
 /* ── 24. Smooth page transitions ─────────────────────────────────────────── */

@@ -376,111 +376,144 @@ html[data-theme="dark"] .focus-exercise-card {
 /* ── Workout training calendar ───────────────────────────────────────────── */
 .workout-calendar {
   container-type: inline-size;
+  max-width: 420px;          /* keeps cells a comfortable size on wide screens */
 }
 
-.cal-nav {
+/* ── Header row: prev | month+stats | next ── */
+.cal-header {
   align-items: center;
   display: flex;
-  gap: 12px;
+  gap: 8px;
   justify-content: space-between;
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
-.cal-month-label {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0;
+.cal-header-center {
+  flex: 1;
   text-align: center;
 }
 
+.cal-month-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.cal-month-stats {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.cal-stat-chip {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.7rem;
+  font-weight: 600;
+  gap: 4px;
+  padding: 2px 8px;
+}
+
+.cal-stat-trained {
+  background: color-mix(in srgb, var(--success, #22c55e) 12%, transparent);
+  color: var(--success, #22c55e);
+}
+
+.cal-stat-skipped {
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
+  color: var(--danger, #ef4444);
+}
+
 .cal-nav-btn {
-  background: var(--bg-surface);
+  background: transparent;
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   cursor: pointer;
-  font-size: 1.2rem;
+  flex-shrink: 0;
+  font-size: 1.1rem;
   line-height: 1;
-  padding: 4px 10px;
-  transition: background 0.15s;
+  padding: 4px 9px;
+  transition: background 0.15s, border-color 0.15s;
 }
 
 .cal-nav-btn:hover:not(:disabled) {
-  background: var(--bg-elevated);
+  background: var(--bg-subtle);
+  border-color: var(--border-strong);
 }
 
 .cal-nav-btn:disabled {
   cursor: default;
-  opacity: 0.35;
+  opacity: 0.3;
 }
 
-.cal-summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 16px;
-}
-
-.cal-legend-item {
-  align-items: center;
-  color: var(--text-soft);
-  display: flex;
-  font-size: 0.82rem;
-  gap: 6px;
-}
-
+/* ── Dot indicators ── */
 .cal-dot {
   border-radius: 50%;
   display: inline-block;
   flex-shrink: 0;
-  height: 8px;
-  width: 8px;
+  height: 6px;
+  width: 6px;
 }
 
 .cal-dot--trained  { background: var(--success, #22c55e); }
 .cal-dot--skipped  { background: var(--danger,  #ef4444); }
 .cal-dot--makeup   { background: var(--warning, #f59e0b); }
 
+/* ── Grid ── */
 .cal-grid {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   grid-template-columns: repeat(7, 1fr);
 }
 
 .cal-grid--header {
-  margin-bottom: 4px;
+  margin-bottom: 3px;
 }
 
 .cal-dow {
   color: var(--text-faint);
-  font-size: 0.72rem;
+  font-size: 0.65rem;
   font-weight: 700;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
   padding: 2px 0;
   text-align: center;
   text-transform: uppercase;
 }
 
+/* ── Day cells ── */
 .cal-cell {
   align-items: center;
   aspect-ratio: 1;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid transparent;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   gap: 2px;
   justify-content: center;
-  padding: 2px;
+  padding: 1px;
   position: relative;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background 0.1s, border-color 0.1s;
 }
 
 .cal-cell:hover:not(:disabled) {
-  background: var(--bg-elevated);
-  border-color: var(--border-strong);
+  background: var(--bg-subtle);
+  border-color: var(--border);
+}
+
+/* Trained day — subtle green fill */
+.cal-cell--trained {
+  background: color-mix(in srgb, var(--success, #22c55e) 14%, transparent);
+}
+
+/* Skipped day — subtle red fill */
+.cal-cell--skipped {
+  background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
 }
 
 .cal-cell--empty {
@@ -491,42 +524,38 @@ html[data-theme="dark"] .focus-exercise-card {
 }
 
 .cal-cell--today {
-  border-color: var(--brand);
+  border-color: var(--brand) !important;
   font-weight: 700;
 }
 
 .cal-cell--selected {
-  background: color-mix(in srgb, var(--brand) 12%, var(--bg-elevated));
-  border-color: var(--brand);
+  background: color-mix(in srgb, var(--brand) 18%, transparent) !important;
+  border-color: var(--brand) !important;
 }
 
 .cal-cell--future {
   cursor: default;
-  opacity: 0.35;
+  opacity: 0.3;
 }
 
 .cal-cell-day {
   line-height: 1;
 }
 
-.cal-cell-dots {
-  display: flex;
-  gap: 2px;
-  justify-content: center;
-}
-
+/* ── Detail callout ── */
 .cal-detail {
-  background: var(--bg-surface);
+  background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-top: 16px;
-  padding: 12px 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
 }
 
 .cal-detail-date {
-  font-size: 0.88rem;
+  color: var(--text);
+  font-size: 0.82rem;
   font-weight: 700;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .cal-detail-badges {
@@ -535,14 +564,25 @@ html[data-theme="dark"] .focus-exercise-card {
   gap: 6px;
 }
 
-/* Responsive: tighter cells on small screens */
-@container (max-width: 380px) {
-  .cal-cell {
-    font-size: 0.72rem;
-    border-radius: 4px;
-  }
-  .cal-dot {
-    height: 6px;
-    width: 6px;
-  }
+/* ── Bottom legend ── */
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.cal-legend-item {
+  align-items: center;
+  color: var(--text-faint);
+  display: flex;
+  font-size: 0.72rem;
+  gap: 5px;
+}
+
+/* Responsive: even tighter at very small widths */
+@container (max-width: 320px) {
+  .cal-cell       { font-size: 0.68rem; border-radius: 4px; }
+  .cal-dot        { height: 5px; width: 5px; }
+  .cal-dow        { font-size: 0.58rem; }
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import {
   clearDayLog,
   endWorkoutSession,
@@ -192,6 +193,9 @@ export function useWorkoutConsole({
     setSessionActive(false);
     setElapsedSeconds(0);
     setSessionStatus(result);
+    if (result.status === "success") {
+      toast.success("Workout completed. Solid work.");
+    }
     router.refresh();
   }
 
@@ -309,6 +313,7 @@ export function useWorkoutConsole({
       addLiftLog(newLog);
       offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
       setIsNewPR(false); setLogSuccess(true); liftFormRef.current?.reset();
+      toast.success("Set saved offline. It will sync when you are back online.");
       setTimeout(() => setLogSuccess(false), 3000);
       return;
     }
@@ -319,6 +324,7 @@ export function useWorkoutConsole({
       if (result.status === "success") {
         setLiftLogs((current) => [newLog, ...current].slice(0, 12));
         setIsNewPR(weight > prevMax); setLogSuccess(true); liftFormRef.current?.reset();
+        toast.success(weight > prevMax ? "New PR logged. Strong progress." : "Set logged. Progress recorded.");
         setTimeout(() => { setLogSuccess(false); setIsNewPR(false); }, 3000);
         router.refresh();
       } else { setEventStatus(result); }
@@ -328,6 +334,7 @@ export function useWorkoutConsole({
       addLiftLog(newLog);
       offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
       setIsNewPR(false); setLogSuccess(true); liftFormRef.current?.reset();
+      toast.success("Set saved offline. It will sync when your connection returns.");
       setTimeout(() => setLogSuccess(false), 3000);
     }
   }
