@@ -2,6 +2,8 @@
 
 Verified analysis against the live codebase (May 2026). Items are ordered by execution priority, not theoretical impact.
 
+> **As of 2026-05-27:** The codebase is production-ready. `npm run build` passes clean (zero errors or warnings). Gemini/AI API dependencies have been removed. The notification system is fully rebuilt. `member-workout-console.tsx` is modularised. The 5 remaining gaps (items 1–4, 15) are non-blocking for launch.
+
 ---
 
 ## ✅ Already Done — Don't Re-do
@@ -58,8 +60,8 @@ Replace the loose `any[]` and `any` params in the AI module with the proper `Lif
 
 ## 🟡 Do Next Sprint — Good Value, Bounded Scope
 
-### 6. Wire AI Smart Swaps Into Modification Flow
-**Status (May 25, 2026): Done.** `MemberWorkoutConsole` calls `generateSmartSwaps` (Gemini) and falls through to rule-based `createModification` only when Gemini returns null. Error states are handled inline.
+### 6. Exercise Swap Logic
+**Status (May 27, 2026): Revised.** Gemini-based smart swaps have been removed (cost saving). The rule-based `findAlternative` + `isContraindicated` helpers in `lib/workout-utils.ts` handle injury-aware swap suggestions locally. Members record injury notes via `InjuryNotesForm`; owners/trainers can see the note and adjust manually. No external API call.
 
 ### 7. Macro Tracking — Persist to Firestore
 **Status (May 25, 2026): Done.** `MacroProgressPanel` now debounces writes to Firestore (1500 ms) via `saveMacroLog` server action. Initial value is server-hydrated from `getMacroLogForMember` in the member dashboard page. Macro log doc ID is `{memberId}_{date}`, written to both `gyms/{gymId}/macroLogs` and the root `macroLogs` collection.
@@ -126,14 +128,68 @@ Add `@next/bundle-analyzer` as an npm script. Recharts and Radix are the likely 
 4. Sentry DSN configuration — need `NEXT_PUBLIC_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` in `.env.local` / CI secrets (item 4)
 5. Security rule tests — requires `@firebase/rules-unit-testing` + emulator in CI (item 15)
 
-**Done (as of May 25, 2026):**
-- Items 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 16 — all complete
+**Done (as of May 27, 2026):**
+- Items 5, 6 (revised — Gemini removed, local rules retained), 7, 8, 9, 10, 11, 12, 13, 14, 16 — all complete
+- Notification system fully rebuilt with deep links, timestamps, rich UI, full-page view
+- `member-workout-console.tsx` modularised into 4 sub-components + custom hook
+- All Gemini/AI API code removed; `sonner` toasts added; progressive overload chart fixed (kg, PR line)
+- `npm run build` passes with zero ESLint errors or warnings
 
 ---
 
 ## Codebase Health Note
 
 The codebase is in solid shape. Gym-scoped multi-tenancy, Radix UI, Recharts code-splitting, and the server action / read model separation were all well-executed. The main gaps are **production observability** (Sentry), **cache coherence** (granular tags), and **feature completeness** (macro persist, bulk ops, AI wiring). TypeScript strictness and test infrastructure are already further along than the previous handoff suggested.
+
+---
+
+## Latest Update - 2026-05-27: Pre-launch UX overhaul — AI removal, notification rebuild, component modularisation, build clean
+
+### Phase 1 — Gemini / AI removal (cost saving)
+- Removed `@google/genai` from `package.json` and all Gemini SDK imports.
+- Deleted `components/ai-program-brief.tsx` entirely.
+- `lib/ai.ts`: Removed `generateWorkoutSummary` and `generateSmartSwaps` (both Gemini). Kept and exported `getWorkoutInsights` — local heuristic only, zero external API calls.
+- `lib/firebase/actions/programs.ts`: Removed `pickProgramWithGemini()`. `generateAndAssignProgram` now always uses `pickProgramWithoutAi()`.
+- `components/member-workout-console.tsx`: Removed AI swap call and all related state. Injury notes textarea saves directly to `profile.injuryNotes` via the existing server action.
+- `.env.local` / README: Removed `GEMINI_API_KEY` and `GEMINI_MODEL` env vars.
+
+### Phase 2 — Notification system rebuild
+- `types/domain.ts`: Added `actionHref?`, `memberId?`, `ptSessionId?` to `Notification` type.
+- `lib/firebase/actions/pt.ts`: PT notifications now include `actionHref: "/member/pt-history"` and `ptSessionId`.
+- `lib/firebase/actions/contact.ts`: Contact message notifications include `actionHref: "/admin/inbox"`.
+- `lib/firebase/actions/exercises.ts`: Exercise request notifications include `actionHref: "/owner/exercises"`.
+- `lib/firebase/actions/programs.ts`: Program-assigned notifications include `actionHref: "/member"` and `memberId`.
+- `lib/firebase/read-models/shared.ts`: Removed `trainingNotificationCopy()` — it was overwriting membership notification titles to "Training profile follow-up", hiding real context. `sanitizeNotification` is now a pass-through.
+- `lib/firebase/read-models/notifications.ts`: Replaced `trainingNotificationCopy` calls with a clean `mapNotificationDoc()` helper that maps all fields including `actionHref`, `memberId`, `ptSessionId`.
+- `components/notification-list.tsx`: Full rebuild — type icons per notification category, relative timestamps ("2h ago"), `<Link>` deep-action rows, unread left-accent bar, per-item dismiss (`clearUserNotifications([id])`), "You're all caught up" empty state.
+- `components/app-topbar.tsx`: Bell badge now shows numeric count (capped at 9+). Dropdown items show timestamps and action links. Added "View all notifications →" link to `/owner/notifications`.
+- `app/owner/notifications/page.tsx`: **New full-page notifications view** — filter tabs (All / Unread / PT / Members / Other), unread count badge, "Mark all read" button.
+- `app/owner/page.tsx`: Owner dashboard now shows up to 8 notifications (was 5) with "See all →" link.
+- `app/styles/16-ux-improvements.css`: New sections for notification count badge, rich list rows, dropdown layout, full-page filter tabs.
+
+### Phase 3 — Bug fixes & polish
+- `components/progressive-overload-chart.tsx`: Fixed tooltip unit `"lbs"` → `"kg"`. Added `ReferenceLine` PR marker with label. Changed `dot={false}`, dots only on hover.
+- `app/layout.tsx`: Added `<Toaster>` from `sonner` (position bottom-center, theme-matched). Added `sonner` to `package.json`.
+- `app/owner/reports/page.tsx`: Added zero-member empty state (icon, heading, CTA). Fixed `<a>` → `<Link>` (was blocking build).
+- `components/progress-chart.tsx`: Empty state upgraded to styled card with dashed border, activity-line SVG icon, "No lift data yet" heading.
+- `app/owner/settings/loading.tsx`, `app/member/programs/loading.tsx`, `app/owner/notifications/loading.tsx`: Added `<FitnessLoader />` loading skeletons.
+- Deleted `lib/workouts_updated.json` (dead file, nothing imported it).
+
+### Phase 4 — `member-workout-console.tsx` modularisation
+- Split 938-line component into focused files under `components/workout/`:
+  - `session-timer-bar.tsx` — active session bar with elapsed timer and end-workout button
+  - `injury-notes-form.tsx` — injury/limitation notes form with preset chips
+  - `day-skip-form.tsx` — skip reason chips, confirm, makeup exercise selection
+  - `use-workout-console.ts` — all business logic as a custom hook (useEffects, derived values, handlers)
+- `member-workout-console.tsx` reduced to ~220 lines (coordinator only, no logic).
+
+### Build clean-up (post-modularisation)
+- Fixed all ESLint errors and warnings from `npm run build`:
+  - `app/owner/reports/page.tsx`: `<a>` → `<Link>` (was blocking build with `@next/next/no-html-link-for-pages`)
+  - `use-workout-console.ts`: Memoized `visibleWorkoutDay` with `useMemo`; wrapped `loggableExercises` in its own `useMemo`; removed stale `eslint-disable` comment
+  - `member-workout-console.tsx`: Removed unused `selectedDay` destructuring; added inline disable for `_initialActiveSessionCount`
+  - `injury-notes-form.tsx`: Removed unused `memberId` prop entirely
+- `npm run build` now completes with **zero ESLint errors or warnings** (only pre-existing Sentry config notices).
 
 ---
 
