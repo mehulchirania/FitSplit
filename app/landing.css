@@ -44,16 +44,16 @@
 .lpd-brand {
   display: inline-flex;
   align-items: center;
-  gap: 9px;
-  font-size: 16px;
+  gap: 12px;
+  font-size: 22px;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
   text-decoration: none;
 }
 .lpd-brand__mark {
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -181,8 +181,24 @@
   margin: 0 0 14px;
 }
 .lpd-foot__col ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.lpd-foot__col a { color: var(--text-soft); text-decoration: none; font-size: 14px; transition: color 100ms; }
-.lpd-foot__col a:hover { color: var(--text); }
+.lpd-foot__col a,
+.lpd-foot__col .lp-foot-btn { 
+  color: var(--text-soft); 
+  text-decoration: none; 
+  font-size: 14px; 
+  transition: color 100ms; 
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.lpd-foot__col a:hover,
+.lpd-foot__col .lp-foot-btn:hover { 
+  color: var(--text); 
+}
 .lpd-foot__brand-blurb { font-size: 14px; color: var(--text-soft); margin: 14px 0 0; max-width: 280px; line-height: 1.55; }
 .lpd-foot__bar { padding-top: 22px; display: flex; justify-content: space-between; font-size: 12.5px; color: var(--text-faint); }
 

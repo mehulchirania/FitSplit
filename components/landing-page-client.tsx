@@ -1,6 +1,7 @@
 "use client";
 
 import { FirebaseError } from "firebase/app";
+import Link from "next/link";
 import {
   useEffect,
   useRef,
@@ -357,13 +358,15 @@ function L1_Nav({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => 
       <div className="lpd-container lpd-nav__inner">
         <a className="lpd-brand" href="#top">
           <span className="lpd-brand__mark">
-            <BrandMark size={32} />
+            <BrandMark size={44} />
           </span>
           FitSplit
         </a>
         <nav className="lpd-nav__links">
           {LANDING_MOCK.nav.map((item) => (
-            <a key={item} href={item === "About" ? "/about" : `#l1-${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
+            item === "About" 
+              ? <Link key={item} href="/about">{item}</Link>
+              : <a key={item} href={`#l1-${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
           ))}
         </nav>
         <div className="lpd-nav__cta">
@@ -598,22 +601,38 @@ function L1_Pricing({ onLogin }: { onLogin: () => void }) {
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
 function L1_FAQ() {
   return (
-    <section className="lpd-section lpd-section--tight">
+    <section className="lpd-section lpd-section--tight" id="l1-faq">
       <div className="lpd-container">
         <div className="lpd-section-head lpd-section-head--left" style={{ maxWidth: 760 }}>
           <span className="lpd-section-label">FAQ</span>
           <h2 className="lpd-h2">Common questions.</h2>
         </div>
-        <div className="l1-faq__list">
-          {LANDING_MOCK.faq.map((item) => (
-            <details key={item.q} className="l1-faq__item">
-              <summary>
-                {item.q}
-                <IcPlus />
-              </summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "64px", alignItems: "flex-start" }}>
+          <div className="l1-faq__list" style={{ maxWidth: "100%" }}>
+            {LANDING_MOCK.faq.map((item) => (
+              <details key={item.q} className="l1-faq__item">
+                <summary>
+                  {item.q}
+                  <IcPlus />
+                </summary>
+                <p>{item.a}</p>
+              </details>
+            ))}
+          </div>
+          <div className="l1-contact-form" style={{ background: "var(--bg-elevated)", padding: "32px", borderRadius: "24px", border: "1px solid var(--border)" }}>
+            <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px", color: "var(--text)" }}>Have another question?</h3>
+            <p style={{ fontSize: "14px", color: "var(--text-soft)", marginBottom: "24px" }}>Send us a message and we'll get back to you shortly.</p>
+            <form className="lp-modal-form" onSubmit={(e) => { 
+              e.preventDefault(); 
+              window.alert("Message sent to admin inbox!"); 
+              (e.target as HTMLFormElement).reset();
+            }}>
+               <label className="lp-field"><span>Name</span><input type="text" required /></label>
+               <label className="lp-field"><span>Email</span><input type="email" required /></label>
+               <label className="lp-field"><span>Message</span><textarea rows={4} style={{ background: "var(--input-bg, rgba(255, 255, 255, 0.04))", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", color: "var(--fg)", fontSize: "16px", outline: "none", resize: "none", width: "100%", fontFamily: "inherit" }} required /></label>
+               <button type="submit" className="lpd-btn lpd-btn--brand lpd-btn--lg" style={{ width: "100%", marginTop: "8px" }}>Send message</button>
+            </form>
+          </div>
         </div>
       </div>
     </section>
@@ -653,7 +672,7 @@ function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
           <div>
             <a className="lpd-brand" href="#top">
               <span className="lpd-brand__mark">
-                <BrandMark size={32} />
+                <BrandMark size={44} />
               </span>
               FitSplit
             </a>
@@ -672,7 +691,7 @@ function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
                   if (item === "Contact") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("Write to: fitsplit.in@gmail.com")}>{item}</button></li>;
                   if (item === "Status") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("All systems operational.")}>{item}</button></li>;
                   if (item === "Privacy") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("Mock Privacy Policy:\n\nWe do not sell your data. We secure it with industry standard practices.")}>{item}</button></li>;
-                  if (item === "About") return <li key={item}><a href="/about">{item}</a></li>;
+                  if (item === "About") return <li key={item}><Link href="/about">{item}</Link></li>;
                   return <li key={item}><a href="#">{item}</a></li>;
                 })}
               </ul>

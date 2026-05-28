@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { X as CloseIcon } from "@/components/icons";
 
 export const metadata = {
   title: "About | FitSplit",
