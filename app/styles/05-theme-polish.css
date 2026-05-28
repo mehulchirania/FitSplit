@@ -132,11 +132,6 @@ html[data-theme="dark"] .topnav a:focus-visible {
   color: #ffffff;
 }
 
-html[data-theme="dark"] .button-primary {
-  background: linear-gradient(135deg, #ffffff, #bdbdbd);
-  box-shadow: 0 18px 44px rgb(255 255 255 / 0.10);
-  color: #080808;
-}
 
 .dashboard-header,
 .hero-band {

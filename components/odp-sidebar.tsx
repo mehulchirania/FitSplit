@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useTransition, useRef, useEffect } from "react";
+import { logoutUser } from "@/lib/auth";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const IC = {
@@ -62,7 +64,21 @@ export type OdpSidebarData = {
 
 export function OdpSidebar({ data }: { data: OdpSidebarData }) {
   const pathname = usePathname();
-  const initials = data.ownerFirstName.slice(0, 2).toUpperCase();
+
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
 
   // Match helpers — treat /owner exactly as dashboard, sub-paths as their own
   function isActive(href: string) {
@@ -89,7 +105,7 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
   return (
     <aside className="odp2-sidebar">
       {/* Brand */}
-      <div className="odp2-sidebar__brand">
+      <Link href="/owner" className="odp2-sidebar__brand" style={{ textDecoration: "none" }}>
         <div className="odp2-sidebar__logo">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/icon-512.png" alt="FitSplit" width={34} height={34} style={{ borderRadius: 10, display: "block" }} />
@@ -98,7 +114,7 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
           <div className="odp2-sidebar__gym-name">FitSplit</div>
           <div className="odp2-sidebar__gym-sub">{data.gymName}</div>
         </div>
-      </div>
+      </Link>
 
       {/* Navigation */}
       <nav className="odp2-sidebar__nav">
@@ -135,12 +151,67 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
       </nav>
 
       {/* User */}
-      <div className="odp2-sidebar__footer">
-        <div className="odp2-sidebar__avatar">{initials}</div>
+      <div 
+        className="odp2-sidebar__footer"
+        ref={menuRef}
+        onClick={(e) => {
+          e.preventDefault();
+          setMenuOpen((p) => !p);
+        }}
+        style={{ 
+          cursor: "pointer", 
+          position: "relative",
+          width: "100%",
+          background: "transparent",
+          border: "none",
+          borderTop: "1px solid var(--border)",
+          textAlign: "left",
+          fontFamily: "inherit",
+          color: "inherit",
+          outline: "none"
+        }}
+      >
+        <div className="odp2-sidebar__avatar" style={{ background: "transparent", padding: 0 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon-512.png" alt="Gym" width={32} height={32} style={{ borderRadius: "50%", display: "block" }} />
+        </div>
         <div>
           <div className="odp2-sidebar__user-name">{data.ownerFirstName}</div>
           <div className="odp2-sidebar__user-role">Owner</div>
         </div>
+
+        {menuOpen && (
+          <div className="profile-dropdown" style={{ 
+            position: 'absolute', 
+            bottom: '100%', 
+            left: 14, 
+            right: 14, 
+            marginBottom: 8, 
+            padding: 8, 
+            borderRadius: 14, 
+            border: '1px solid var(--border-strong, #ccc)',
+            boxShadow: 'var(--shadow, 0 10px 30px rgba(0,0,0,0.2))',
+            background: 'var(--bg-elevated, #fff)',
+            zIndex: 9999
+          }}>
+            <button 
+              className="odp2-nav-link"
+              style={{ width: '100%', justifyContent: 'flex-start', color: 'var(--danger)', background: 'transparent' }}
+              onClick={(e) => { 
+                e.stopPropagation(); 
+                startTransition(() => { logoutUser(); }); 
+              }}
+              disabled={isPending}
+            >
+              <span className="odp2-nav-link-icon" style={{ color: 'var(--danger)' }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line>
+                </svg>
+              </span>
+              {isPending ? "Logging out..." : "Log out"}
+            </button>
+          </div>
+        )}
       </div>
     </aside>
   );

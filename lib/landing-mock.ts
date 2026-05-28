@@ -1,7 +1,7 @@
 export const LANDING_MOCK = {
   brand: { name: "FitSplit" },
 
-  nav: ["Product", "Pricing", "Customers", "Resources"],
+  nav: ["Product", "Resources"],
 
   hero: {
     eyebrow: "Workout delivery for modern gyms",

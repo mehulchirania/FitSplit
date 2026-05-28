@@ -581,9 +581,6 @@ p {
   color: #ffffff;
 }
 
-html[data-theme="dark"] .button-primary {
-  color: #05110d;
-}
 
 .button-secondary {
   box-shadow: none;

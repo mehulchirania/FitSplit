@@ -296,7 +296,7 @@ function L1_Nav({ onLogin }: { onLogin: () => void }) {
       <div className="lpd-container lpd-nav__inner">
         <a className="lpd-brand" href="#top">
           <span className="lpd-brand__mark">
-            <BrandMark size={22} />
+            <BrandMark size={32} />
           </span>
           FitSplit
         </a>
@@ -430,24 +430,6 @@ function L1_Hero({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-// ─── Proof strip ──────────────────────────────────────────────────────────────
-function L1_Proof() {
-  return (
-    <section className="l1-proof">
-      <div className="lpd-container">
-        <div className="l1-proof__grid">
-          {LANDING_MOCK.proof.map((p) => (
-            <div key={p.label} className="l1-proof__item">
-              <strong>{p.value}</strong>
-              <span>{p.label}</span>
-              <small>{p.small}</small>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 // ─── Features ─────────────────────────────────────────────────────────────────
 function L1_Features() {
@@ -498,35 +480,7 @@ function L1_HowItWorks() {
   );
 }
 
-// ─── Testimonial + partners ───────────────────────────────────────────────────
-function L1_Testimonial() {
-  const { testimonial, partners } = LANDING_MOCK;
-  const initials = testimonial.author.split(" ").map((p) => p[0]).join("").slice(0, 2).toUpperCase();
-  return (
-    <section className="lpd-section" id="l1-customers">
-      <div className="lpd-container">
-        <div className="l1-test__card">
-          <p className="l1-test__quote">
-            <span className="l1-test__quote-mark">&ldquo;</span>
-            {testimonial.quote}
-          </p>
-          <div className="l1-test__attr">
-            <div className="l1-test__avatar">{initials}</div>
-            <div>
-              <strong>{testimonial.author}</strong>
-              <small>{testimonial.role}</small>
-            </div>
-          </div>
-        </div>
-        <div className="l1-partners">
-          {partners.map((p) => (
-            <span key={p} className="l1-partner">{p}</span>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
+
 
 // ─── Pricing (temporarily hidden — uncomment when ready) ─────────────────────
 /*
@@ -638,15 +592,15 @@ function L1_Footer() {
           <div>
             <a className="lpd-brand" href="#top">
               <span className="lpd-brand__mark">
-                <BrandMark size={22} />
+                <BrandMark size={32} />
               </span>
               FitSplit
             </a>
             <p className="lpd-foot__brand-blurb">Workout delivery, trainer coordination, member progress — one workspace.</p>
           </div>
           {[
-            { h: "Product", items: ["Owner dashboard", "Trainer console", "Member app", "Pricing"] },
-            { h: "Company", items: ["About", "Customers", "Blog", "Careers"] },
+            { h: "Product", items: ["Owner dashboard", "Trainer console", "Member app"] },
+            { h: "Company", items: ["About", "Blog", "Careers"] },
             { h: "Support", items: ["Help center", "Contact", "Status", "Privacy"] }
           ].map((col) => (
             <div key={col.h} className="lpd-foot__col">
@@ -705,9 +659,7 @@ export function LandingPageClient() {
         {/* Hero is immediately visible — no scroll-reveal wrapper */}
         <L1_Hero onLogin={() => setLoginOpen(true)} />
 
-        <div data-reveal>
-          <L1_Proof />
-        </div>
+
 
         <div data-reveal>
           <L1_Features />
@@ -717,9 +669,7 @@ export function LandingPageClient() {
           <L1_HowItWorks />
         </div>
 
-        <div data-reveal>
-          <L1_Testimonial />
-        </div>
+
 
         {/* Pricing hidden — uncomment <L1_Pricing> here when ready */}
 
