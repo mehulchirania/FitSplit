@@ -1,12 +1,5 @@
-import Link from "next/link";
-import { OwnerQuickLinks } from "@/components/owner-quick-links";
-import { Bell, UsersRound } from "@/components/icons";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { MemberRow } from "@/components/member-row";
-import { NotificationList } from "@/components/notification-list";
-import { GymNoticeManager } from "@/components/gym-notice-manager";
-import { GymFloorLoadMap } from "@/components/gym-floor-load-map-lazy";
-import { AttendanceTrendChart } from "@/components/attendance-trend-chart-lazy";
+import { OwnerDashboardTabs } from "@/components/owner-dashboard-tabs";
+import type { OwnerDashboardData, DashAction, PTSessionItem, FloorSlot } from "@/components/owner-dashboard-tabs";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
@@ -18,20 +11,31 @@ import {
   getGymFloorLoadMap,
   getRecentSessionCounts,
   getPendingPaymentRequests,
-  getGymDashboardSummary,
 } from "@/lib/firebase/read-models";
+import { getAllPTSessionsForGym } from "@/lib/firebase/read-models/pt";
 
 export const dynamic = "force-dynamic";
 
-function getJoinedDate(joinedAt: string) {
-  const d = new Date(joinedAt);
-  return Number.isFinite(d.getTime()) ? d : new Date();
+function daysFromNow(endDate?: string): number | null {
+  if (!endDate) return null;
+  return Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+}
+
+function todayLabel(): string {
+  const now = new Date();
+  const dow   = now.toLocaleDateString("en-US", { weekday: "long" });
+  const date  = now.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return `${dow} · ${date}`;
+}
+
+function formatTime(iso: string): string {
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return "—";
+  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
 }
 
 export default async function OwnerDashboard() {
   const currentUser = await requireRole(["admin", "owner"]);
-  const isTrainer = currentUser.role === "owner" && currentUser.staffType === "trainer";
-  const isStaff = currentUser.role === "owner" && currentUser.staffType === "staff";
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [
@@ -43,7 +47,7 @@ export default async function OwnerDashboard() {
     { slots },
     sessionCounts,
     pendingPayments,
-    dashboardSummary,
+    allPTSessions,
   ] = await Promise.all([
     getMembers(gymId),
     getOwnerNotifications(gymId),
@@ -53,164 +57,161 @@ export default async function OwnerDashboard() {
     getGymFloorLoadMap(gymId),
     getRecentSessionCounts(gymId),
     getPendingPaymentRequests(gymId),
-    getGymDashboardSummary(gymId),
+    getAllPTSessionsForGym(gymId),
   ]);
 
-  const assignedMemberIds = new Set(assignments.map((a) => a.memberId));
-  const unassignedMembers = members.filter((m) => !assignedMemberIds.has(m.id));
+  // ── Compute derived data ──────────────────────────────────────────────────
 
+  const assignedIds = new Set(assignments.map((a) => a.memberId));
 
+  // unassigned active members sorted oldest-join first
+  const unassigned = members
+    .filter((m) => m.isActive && !assignedIds.has(m.id))
+    .sort((a, b) => a.joinedAt.localeCompare(b.joinedAt));
+
+  const expiredMembers  = members.filter((m) => m.membershipStatus === "expired");
+  const expiringMembers = members.filter((m) => m.membershipStatus === "expiring_soon");
+
+  // ── Build unified action queue ────────────────────────────────────────────
+  const actions: DashAction[] = [
+    // Expired first
+    ...expiredMembers.map((m) => {
+      const d = daysFromNow(m.membershipEndDate);
+      return {
+        id: `expired-${m.id}`,
+        kind: "expired" as const,
+        memberName: m.fullName,
+        memberId: m.id,
+        subtitle: `${m.currentPackageName ?? "Membership"} lapsed${d !== null ? ` ${Math.abs(d)} day${Math.abs(d) === 1 ? "" : "s"} ago` : ""}`,
+        href: `/owner/members/${m.id}`,
+        ctaLabel: "Renew",
+      };
+    }),
+    // Pending payments
+    ...pendingPayments.map((p) => ({
+      id: `payment-${p.id}`,
+      kind: "payment" as const,
+      memberName: p.memberName ?? "Unknown",
+      memberId: p.memberId,
+      subtitle: `${p.packageName ?? "Payment"} · ${p.currency}${p.amount.toLocaleString("en-IN")} · ${p.method}`,
+      href: `/owner/billing`,
+      ctaLabel: "Approve",
+    })),
+    // Expiring soon
+    ...expiringMembers.map((m) => {
+      const d = daysFromNow(m.membershipEndDate);
+      return {
+        id: `expiring-${m.id}`,
+        kind: "expiring" as const,
+        memberName: m.fullName,
+        memberId: m.id,
+        subtitle: `${m.currentPackageName ?? "Membership"} · expires in ${d !== null ? `${d} day${d === 1 ? "" : "s"}` : "soon"}`,
+        href: `/owner/members/${m.id}`,
+        ctaLabel: "View",
+      };
+    }),
+    // No plan (active, unassigned)
+    ...unassigned.map((m) => ({
+      id: `noplan-${m.id}`,
+      kind: "noplan" as const,
+      memberName: m.fullName,
+      memberId: m.id,
+      subtitle: m.goal ? `Goal: ${m.goal}` : "No workout plan assigned",
+      href: `/owner/members/${m.id}`,
+      ctaLabel: "Assign",
+    })),
+  ];
+
+  // ── Recent joins (last 7 days) ────────────────────────────────────────────
   const sevenDaysAgo = new Date();
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  const unassignedSorted = [...unassignedMembers].sort(
-    (a, b) => getJoinedDate(a.joinedAt).getTime() - getJoinedDate(b.joinedAt).getTime()
-  );
-  const urgentUnassignedCount = unassignedSorted.filter(
-    (m) => getJoinedDate(m.joinedAt) < sevenDaysAgo
-  ).length;
+  const recentJoins = members
+    .filter((m) => new Date(m.joinedAt) >= sevenDaysAgo)
+    .sort((a, b) => b.joinedAt.localeCompare(a.joinedAt))
+    .slice(0, 10)
+    .map((m) => ({
+      id: m.id,
+      name: m.fullName,
+      initials: m.avatarInitials,
+      joinedAt: m.joinedAt,
+      goal: m.goal ?? undefined,
+    }));
 
+  // ── PT sessions today ─────────────────────────────────────────────────────
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const ptSessions: PTSessionItem[] = allPTSessions
+    .filter((s) => s.scheduledAt.startsWith(todayStr) && s.status !== "cancelled")
+    .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
+    .map((s) => ({
+      id: s.id,
+      time: formatTime(s.scheduledAt),
+      memberName: s.memberName ?? s.memberId,
+      trainerName: s.trainerName ?? undefined,
+      status: s.status === "active" ? "active" : s.status === "completed" ? "completed" : "scheduled",
+    }));
 
+  // ── Floor slots ───────────────────────────────────────────────────────────
+  const floor: FloorSlot[] = slots.map((sl) => ({
+    slotId: sl.slotId,
+    label: sl.label,
+    time: sl.time,
+    memberCount: sl.memberCount,
+  }));
 
-  return (
-    <main className="page odp">
-      {/* ── Page header ─────────────────────────────────────────── */}
-      <header className="odp-header">
-        <div className="odp-header-copy">
-          <Breadcrumb
-            crumbs={[
-              { label: isTrainer ? "Trainer" : isStaff ? "Staff" : "Owner" },
-              { label: "Dashboard" }
-            ]}
-          />
-          <p className="eyebrow">{gym?.name ?? "Gym"}</p>
-          <h1>Dashboard</h1>
-        </div>
+  // ── Who's training (active sessions joined with member names) ─────────────
+  const memberById = new Map(members.map((m) => [m.id, m]));
+  const inGym = workoutSessions.map((s) => {
+    const m = memberById.get(s.memberId);
+    return {
+      id: s.memberId,
+      name: m?.fullName ?? s.memberId,
+      initials: m?.avatarInitials ?? s.memberId.slice(0, 2).toUpperCase(),
+    };
+  });
 
-        <OwnerQuickLinks
-          unassignedMembersCount={unassignedMembers.length}
-          pendingPaymentCount={pendingPayments.length}
-          isTrainer={isTrainer}
-          isStaff={isStaff}
-        />
-      </header>
+  // ── Membership mix (by package name) ─────────────────────────────────────
+  const pkgCounts = new Map<string, number>();
+  for (const m of members) {
+    if (m.currentPackageName) {
+      pkgCounts.set(m.currentPackageName, (pkgCounts.get(m.currentPackageName) ?? 0) + 1);
+    }
+  }
+  const membershipMix = [...pkgCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 6)
+    .map(([plan, count]) => ({ plan, count }));
 
-      {/* ── Action Banner for Trainers ──────────────────────────── */}
-      {(isTrainer || isStaff) && unassignedMembers.length > 0 && (
-        <div className="ui-card red" style={{ marginBottom: "20px", padding: "20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderRadius: "16px" }}>
-          <div>
-            <h2 style={{ color: "#fff", margin: 0, fontSize: "1.2rem" }}>{unassignedMembers.length} Members Need Workouts</h2>
-            <p style={{ color: "rgba(255,255,255,0.8)", margin: "4px 0 0", fontSize: "0.9rem" }}>Tap here to assign them a plan.</p>
-          </div>
-          <Link href="/owner/members?filter=no-plan&sort=oldest" className="button button-primary" style={{ flexShrink: 0 }}>
-            Review Now
-          </Link>
-        </div>
-      )}
+  // ── Activity notifications ────────────────────────────────────────────────
+  const notifications = ownerNotifications.slice(0, 10).map((n) => ({
+    id: n.id,
+    body: n.body,
+    createdAt: n.createdAt,
+    type: n.type,
+    actionHref: n.actionHref,
+  }));
 
-      {/* ── Stats bar ───────────────────────────────────────────── */}
-      <section aria-label="Gym overview" className="odp-stats">
-        <div className="odp-stat">
-          <strong>{dashboardSummary?.totalMembers ?? members.length}</strong>
-          <span>All Members</span>
-        </div>
-        <div className="odp-stat-sep" />
-        <div className={unassignedMembers.length > 0 ? "odp-stat odp-stat--urgent" : "odp-stat"}>
-          <strong>{unassignedMembers.length}</strong>
-          <span>Need Workouts</span>
-        </div>
-        <div className="odp-stat-sep" />
-        <div className={workoutSessions.length > 0 ? "odp-stat odp-stat--active" : "odp-stat"}>
-          <strong>{workoutSessions.length}</strong>
-          <span>In Gym Now</span>
-        </div>
-        <div className="odp-stat-sep" />
-        {dashboardSummary?.expiringThisWeek !== undefined && dashboardSummary.expiringThisWeek > 0 ? (
-          <Link href="/owner/billing" className={`odp-stat odp-stat--urgent odp-stat-link`} style={{ textDecoration: "none" }}>
-            <strong>{dashboardSummary.expiringThisWeek}</strong>
-            <span>Expiring Soon</span>
-          </Link>
-        ) : (
-          <div className="odp-stat">
-            <strong>{dashboardSummary?.activeMembers ?? assignedMemberIds.size}</strong>
-            <span>Active Members</span>
-          </div>
-        )}
-        {dashboardSummary?.totalRevenueMTD !== undefined && (
-          <>
-            <div className="odp-stat-sep" />
-            <Link href="/owner/billing" className="odp-stat odp-stat-link" style={{ textDecoration: "none" }}>
-              <strong>{dashboardSummary.currency} {dashboardSummary.totalRevenueMTD.toLocaleString("en-IN")}</strong>
-              <span>Revenue MTD</span>
-            </Link>
-          </>
-        )}
-      </section>
+  // ── Owner name ────────────────────────────────────────────────────────────
+  const firstName = currentUser.fullName.split(" ")[0] ?? currentUser.fullName;
 
-      {/* ── Content grid ────────────────────────────────────────── */}
-      <div className="odp-grid">
-        {/* ── Main column ─────────────────────────── */}
-        <div className="odp-main">
-          <section className="list-panel">
-            <div className="panel-title">
-              <h2>
-                <UsersRound /> Needs Attention
-              </h2>
-              <div className="odp-panel-actions">
-                {urgentUnassignedCount > 0 && (
-                  <span
-                    className="status-pill status-warning"
-                    title={`${urgentUnassignedCount} member${urgentUnassignedCount === 1 ? "" : "s"} waiting more than 7 days`}
-                  >
-                    {urgentUnassignedCount} urgent
-                  </span>
-                )}
-                <Link className="button button-secondary" href="/owner/members?filter=no-plan&sort=oldest">
-                  View all
-                </Link>
-              </div>
-            </div>
-            {unassignedSorted.length === 0 ? (
-              <p className="odp-empty">All members have a workout program assigned.</p>
-            ) : (
-              unassignedSorted.slice(0, 5).map((member) => (
-                <MemberRow key={member.id} member={member} />
-              ))
-            )}
-          </section>
+  const data: OwnerDashboardData = {
+    gymName: gym?.name ?? "Gym",
+    ownerFirstName: firstName,
+    todayLabel: todayLabel(),
+    totalMembers: members.length,
+    activeMembers: members.filter((m) => m.isActive).length,
+    noPlanCount: unassigned.length,
+    pendingPaymentsCount: pendingPayments.length,
+    expiringCount: expiringMembers.length,
+    expiredCount: expiredMembers.length,
+    actions,
+    recentJoins,
+    floor,
+    ptSessions,
+    inGym,
+    attendanceTrend: sessionCounts,
+    membershipMix,
+    notifications,
+  };
 
-          {!isTrainer && !isStaff && (
-            <>
-              <GymFloorLoadMap slots={slots} />
-              {/* C10: Attendance-over-time LineChart */}
-              <AttendanceTrendChart data={sessionCounts} />
-            </>
-          )}
-        </div>
-
-        {/* ── Side column ─────────────────────────── */}
-        <aside className="odp-side">
-          <section className="list-panel">
-            <div className="panel-title">
-              <h2>
-                <Bell /> Notifications
-              </h2>
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                {ownerNotifications.length > 0 && (
-                  <span className="status-pill status-neutral">{ownerNotifications.length}</span>
-                )}
-                <Link href="/owner/notifications" style={{ fontSize: "0.8rem", color: "var(--text-soft)" }}>
-                  See all →
-                </Link>
-              </div>
-            </div>
-            <NotificationList items={ownerNotifications.slice(0, 8)} />
-          </section>
-
-          <section className="list-panel">
-            <GymNoticeManager notices={gym?.notices ?? []} />
-          </section>
-        </aside>
-      </div>
-    </main>
-  );
+  return <OwnerDashboardTabs data={data} />;
 }

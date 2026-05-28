@@ -216,3 +216,55 @@ export function Edit({ className }: IconProps) {
     </svg>
   );
 }
+
+export function Lightning({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M13 2L4 14h7l-1 8 9-12h-7l1-8z" />
+    </svg>
+  );
+}
+
+export function Sparkle({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />
+    </svg>
+  );
+}
+
+export function CheckIcon({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 12l5 5L20 6" />
+    </svg>
+  );
+}
+
+export function ChevR({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export function Chart({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M3 21V3" />
+      <path d="M21 21H3" />
+      <path d="M7 17v-5" />
+      <path d="M12 17v-9" />
+      <path d="M17 17v-12" />
+    </svg>
+  );
+}
+
+export function ChevD({ className }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}

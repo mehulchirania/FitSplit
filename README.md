@@ -287,6 +287,146 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 
 ---
 
+## 🎨 Design System
+
+### Design Tokens
+
+All tokens live in `app/styles/00-base-shell.css`. The app ships in **dark mode by default** (`data-theme="dark"` on `<html>`), with light mode available via toggle.
+
+#### Color Tokens
+
+| Token | Light | Dark | Usage |
+|---|---|---|---|
+| `--brand` | `#4f46e5` (indigo) | `#C8F135` (lime) | Primary action fills |
+| `--brand-strong` | `#4338ca` | `#b8e028` | Hover state of brand fills |
+| `--brand-soft` | `#e0e7ff` | `rgba(200,241,53,.12)` | Tinted backgrounds, badges |
+| `--primary-foreground` | `#ffffff` | `#0A0A0A` | **Text on brand-filled elements** |
+| `--bg` | `#ffffff` | `#111111` | Page background |
+| `--bg-card` | `#f9f9f9` | `#1a1a1a` | Card/panel backgrounds |
+| `--bg-hover` | `#f2f2f2` | `#222222` | Hover state backgrounds |
+| `--text` | `#0a0a0a` | `#f5f5f5` | Primary body text |
+| `--text-soft` | `#737373` | `#a3a3a3` | Secondary/muted text |
+| `--border` | `rgba(0,0,0,.09)` | `rgba(255,255,255,.09)` | Dividers, card borders |
+| `--accent` | `#737373` | `#a3a3a3` | Icon tints, subtle labels |
+| `--accent-soft` | `#f1f1f1` | `#1f1f1f` | Soft background fills |
+| `--danger` | `#dc2626` | `#ef4444` | Error states, destructive actions |
+| `--danger-soft` | `#fee2e2` | `rgba(239,68,68,.12)` | Error backgrounds |
+| `--warning` | `#d97706` | `#f59e0b` | Warning states |
+
+#### Critical Button Rule
+
+> ⚠️ `--brand` is **lime (#C8F135)** in dark mode — NEVER pair it with `color: white`. Always use `color: var(--primary-foreground)`.
+
+```css
+/* ✅ Correct — works in both themes */
+.my-button {
+  background: var(--brand);
+  color: var(--primary-foreground);
+}
+
+/* ❌ Wrong — unreadable on lime in dark mode */
+.my-button {
+  background: var(--brand);
+  color: white;
+}
+```
+
+#### Button Variants
+
+| Variant | Class | Background | Text | Use for |
+|---|---|---|---|---|
+| Primary | `.lpd-btn--brand` / `.lpd-btn--primary` | `var(--brand)` | `var(--primary-foreground)` | Main CTAs |
+| Ghost | `.lpd-btn--ghost` | transparent | `var(--text)` | Secondary actions |
+| Danger | — | `var(--danger)` | `#ffffff` | Destructive actions |
+| Subtle | — | `var(--accent-soft)` | `var(--text-soft)` | Tertiary/icon-only |
+
+Always reset `<button>` default UA styles for custom-styled buttons:
+```css
+.my-button {
+  background: transparent;
+  border: none;
+  font: inherit;
+  cursor: pointer;
+}
+```
+
+---
+
+### CSS Architecture
+
+CSS is split into 16 modular files under `app/styles/`, loaded in order via `app/globals.css`. Each file has a numeric prefix defining load order:
+
+| File | Scope |
+|---|---|
+| `00-base-shell.css` | Design tokens (all CSS variables), base reset |
+| `01-typography.css` | Font scale, headings, prose |
+| `02-layout.css` | Grid, containers, spacing utilities |
+| `03-components.css` | Shared components (cards, badges, inputs) |
+| `04-member-app.css` | Member-facing pages |
+| `05-theme-polish.css` | Theme refinements, dark-mode overrides |
+| `06-animations.css` | Scroll-reveal, transitions |
+| `07-landing.css` | Landing page layout structure |
+| `08-admin-catalog-media.css` | Admin UI, exercise catalog, media |
+| `09-trainer.css` | Trainer pages |
+| `10-pt-management.css` | PT scheduling and booking |
+| `11-member-detail.css` | Member detail pages |
+| `12-floor-map.css` | Gym floor load map |
+| `14-program-gallery.css` | Program browser |
+| `15-notifications.css` | Notification list + bell dropdown |
+| `16-ux-improvements.css` | Cross-cutting UX fixes and dark mode polish |
+| `20-owner-dashboard.css` | Owner dashboard workspace (`.odp2-*`) |
+
+Also: `app/landing.css` for all landing page component styles.
+
+#### Class Prefix Conventions
+
+| Prefix | Scope |
+|---|---|
+| `odp2-` | Owner dashboard workspace (Owner Dashboard v2) |
+| `lpd-` | Landing page shared components (buttons, modals) |
+| `l1-` | L1 Hero section on the landing page |
+| `lp-modal-` | Landing page modals (login, contact) |
+| `nlist-` | Notification list component |
+| `ntf-` | Notification bell topbar dropdown |
+
+---
+
+### Owner Dashboard Layout
+
+The owner dashboard uses a **fixed full-viewport workspace** pattern:
+
+```css
+.odp2-workspace {
+  position: fixed;
+  inset: 0;           /* top:0 right:0 bottom:0 left:0 */
+  z-index: 1000;
+  display: flex;
+  overflow: hidden;
+}
+```
+
+The app topbar (`.topbar`) is suppressed via CSS `:has()` when the workspace is mounted, avoiding z-index battles:
+
+```css
+body:has(.odp2-workspace) .topbar,
+body:has(.odp2-workspace) .mobile-bottom-nav {
+  display: none !important;
+}
+```
+
+#### Priority Row Color Coding (Owner Tables)
+
+Used in member lists and activity feeds to surface urgency:
+
+| Status | Token | Meaning |
+|---|---|---|
+| 🔴 Urgent / Expired | `var(--danger)` / `var(--danger-soft)` | Membership expired, overdue |
+| 🟡 Warning | `var(--warning)` | Expiring soon (≤7 days) |
+| 🟢 Active / Normal | `var(--brand-soft)` | Current, healthy |
+| ⚪ Neutral | `var(--bg-card)` | No action needed |
+
+---
+
 ## 📝 Maintenance & Handoff
 
 For architectural logs, dated updates, and next milestones, see **`PROJECT_HANDOFF.md`**.

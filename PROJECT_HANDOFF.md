@@ -240,6 +240,65 @@ Implemented Design 04 (Hybrid) from the Claude Design export. Replaces the old t
 
 ---
 
+## 🎨 Design System Standards (Reference for Future Builds)
+
+See `README.md` → **Design System** section for the full reference. Key rules summarised here for quick lookup during development.
+
+### Critical Button Rule
+
+> `--brand` is **lime (#C8F135)** in dark mode. Never pair it with `color: white`. Always use `color: var(--primary-foreground)`.
+
+```css
+/* ✅ Always do this */
+.btn { background: var(--brand); color: var(--primary-foreground); }
+/* ❌ Never do this */
+.btn { background: var(--brand); color: white; }
+```
+
+### Core Token Quick Reference
+
+| Token | Dark value | Light value |
+|---|---|---|
+| `--brand` | `#C8F135` (lime) | `#4f46e5` (indigo) |
+| `--brand-strong` | `#b8e028` | `#4338ca` |
+| `--primary-foreground` | `#0A0A0A` | `#ffffff` |
+| `--danger` | `#ef4444` | `#dc2626` |
+| `--warning` | `#f59e0b` | `#d97706` |
+
+### Button `<button>` Reset
+
+Any `<button>` used as a custom-styled element needs these resets to clear UA grey background:
+```css
+button.my-custom { background: transparent; border: none; font: inherit; cursor: pointer; }
+```
+
+### CSS File Prefixes
+
+| Prefix | Scope |
+|---|---|
+| `odp2-` | Owner dashboard workspace |
+| `lpd-` | Landing page shared (buttons, modals) |
+| `l1-` | L1 Hero section |
+| `lp-modal-` | Landing page modals |
+| `nlist-` | Notification list |
+| `ntf-` | Notification topbar dropdown |
+| `mhv-` | Members hybrid view |
+
+### Owner Dashboard Topbar Suppression
+
+The owner workspace uses `position: fixed; inset: 0` and suppresses the app topbar via CSS `:has()`:
+```css
+body:has(.odp2-workspace) .topbar,
+body:has(.odp2-workspace) .mobile-bottom-nav { display: none !important; }
+```
+**Do not** try to fight this with z-index. The `:has()` approach is intentional and definitive.
+
+### Priority Row Color Coding (Owner Tables)
+
+Expired → `var(--danger)` / Expiring soon → `var(--warning)` / Active → `var(--brand-soft)` / Neutral → `var(--bg-card)`
+
+---
+
 ## ✅ Already Done — Don't Re-do
 
 ### TypeScript Strict Mode

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FitSplit · Landing Page Redesign</title>
+
+<link rel="stylesheet" href="member-shared.css" />
+<link rel="stylesheet" href="landing-shared.css" />
+<link rel="stylesheet" href="landing-1-editorial.css" />
+<link rel="stylesheet" href="landing-2-bold.css" />
+<link rel="stylesheet" href="landing-3-product.css" />
+
+<style>
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  }
+  body { background: #f0eee9; overflow: hidden; }
+  #app { width: 100vw; height: 100vh; }
+</style>
+
+<!-- React + Babel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<!-- Data + icons -->
+<script src="landing-mock.js"></script>
+<script type="text/babel" src="member-icons.jsx"></script>
+
+<!-- Directions -->
+<script type="text/babel" src="landing-1-editorial.jsx"></script>
+<script type="text/babel" src="landing-2-bold.jsx"></script>
+<script type="text/babel" src="landing-3-product.jsx"></script>
+
+<!-- Browser chrome, canvas, tweaks -->
+<script type="text/babel" src="browser-window.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+</head>
+<body>
+<div id="app" data-screen-label="Landing page redesign · 3 directions"></div>
+
+<script type="text/babel" data-presets="env,react">
+const { useEffect } = React;
+
+const DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "dark",
+  "accent": "#128d65"
+}/*EDITMODE-END*/;
+
+const ACCENT_DARK = {
+  "#128d65": "#20c08b",
+  "#0a6b9a": "#5dc1f3",
+  "#7a4abf": "#b48af0",
+  "#b35a2a": "#e8a47d"
+};
+
+function Root() {
+  const [tweaks, setTweak] = window.useTweaks(DEFAULTS);
+  const isDark = tweaks.theme === "dark";
+
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-theme", tweaks.theme);
+    const accent = tweaks.accent;
+    const darkAccent = ACCENT_DARK[accent] || accent;
+    root.style.setProperty("--brand", isDark ? darkAccent : accent);
+    root.style.setProperty(
+      "--brand-strong",
+      isDark
+        ? `color-mix(in srgb, ${darkAccent} 80%, white)`
+        : `color-mix(in srgb, ${accent} 70%, #061513)`
+    );
+    root.style.setProperty(
+      "--brand-soft",
+      isDark
+        ? `color-mix(in srgb, ${darkAccent} 16%, transparent)`
+        : `color-mix(in srgb, ${accent} 14%, #ffffff)`
+    );
+  }, [tweaks.theme, tweaks.accent, isDark]);
+
+  const W = 1440;
+  const H = 900;
+
+  return (
+    <>
+      <window.DesignCanvas>
+        <window.DCSection
+          id="landing"
+          title="Landing page — three directions"
+          subtitle="Scroll within each browser window to explore the full page. Tweaks panel switches theme. D2 is dark-always by design."
+        >
+          <window.DCArtboard
+            id="l1"
+            label="01 · Calm Editorial — premium SaaS"
+            width={W}
+            height={H}
+          >
+            <window.ChromeWindow
+              url="fitsplit.in"
+              tabs={[{ title: "FitSplit · Workout delivery for gyms", active: true }]}
+              width={W}
+              height={H}
+            >
+              <window.LandingOne />
+            </window.ChromeWindow>
+          </window.DCArtboard>
+
+          <window.DCArtboard
+            id="l2"
+            label="02 · Athletic Energy — dark, bold (gym poster)"
+            width={W}
+            height={H}
+          >
+            <window.ChromeWindow
+              url="fitsplit.in"
+              tabs={[{ title: "FitSplit · Workout delivery for gyms", active: true }]}
+              width={W}
+              height={H}
+            >
+              <window.LandingTwo />
+            </window.ChromeWindow>
+          </window.DCArtboard>
+
+          <window.DCArtboard
+            id="l3"
+            label="03 · Product-Forward — show the product"
+            width={W}
+            height={H}
+          >
+            <window.ChromeWindow
+              url="fitsplit.in"
+              tabs={[{ title: "FitSplit · Workout delivery for gyms", active: true }]}
+              width={W}
+              height={H}
+            >
+              <window.LandingThree />
+            </window.ChromeWindow>
+          </window.DCArtboard>
+        </window.DCSection>
+      </window.DesignCanvas>
+
+      <window.TweaksPanel title="Tweaks">
+        <window.TweakSection label="Theme">
+          <window.TweakRadio
+            label="Mode"
+            value={tweaks.theme}
+            onChange={(v) => setTweak("theme", v)}
+            options={[
+              { value: "light", label: "Light" },
+              { value: "dark", label: "Dark" }
+            ]}
+          />
+        </window.TweakSection>
+
+        <window.TweakSection label="Brand">
+          <window.TweakColor
+            label="Accent"
+            value={tweaks.accent}
+            onChange={(v) => setTweak("accent", v)}
+            options={["#128d65", "#0a6b9a", "#7a4abf", "#b35a2a"]}
+          />
+        </window.TweakSection>
+      </window.TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("app")).render(<Root />);
+</script>
+</body>
+</html>

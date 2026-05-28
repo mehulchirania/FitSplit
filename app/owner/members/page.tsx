@@ -56,9 +56,12 @@ export default async function MembersPage() {
   const hybridPrograms = programs.map((p) => ({ id: p.id, title: p.title }));
 
   return (
-    <MembersHybridView
-      initialMembers={hybridMembers}
-      programs={hybridPrograms}
-    />
+    <div className="odp2-scroll">
+      <MembersHybridView
+        initialMembers={hybridMembers}
+        programs={hybridPrograms}
+      />
+    </div>
   );
 }
+
