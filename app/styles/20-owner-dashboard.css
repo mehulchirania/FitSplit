@@ -279,6 +279,17 @@ body:has(.odp2-workspace) .mobile-bottom-nav {
   padding: 20px 24px 40px;
 }
 
+/* Sub-pages using .page class directly render inside odp2-main — give them scroll */
+.odp2-main > .page,
+.odp2-main > main.page {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-width: none;
+  margin: 0;
+  padding: 24px 28px 48px;
+}
+
 /* ── Card primitive ───────────────────────────────────────────────────────── */
 .odp2-card {
   background: var(--bg-elevated);

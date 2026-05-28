@@ -43,6 +43,7 @@ import "./styles/17-profile-metrics.css";
 import "./styles/18-billing-trainers.css";
 import "./styles/19-members-redesign.css";
 import "./styles/20-owner-dashboard.css";
+import "./styles/21-member-redesign.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
