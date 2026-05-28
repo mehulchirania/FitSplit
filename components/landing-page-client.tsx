@@ -274,6 +274,67 @@ function IcPlus() {
     </svg>
   );
 }
+
+function EnquiryModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [body, setBody] = useState("");
+  
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
+  }, [open, onClose]);
+
+  function onBackdrop(e: ReactMouseEvent<HTMLDivElement>) {
+    if (e.target === e.currentTarget) onClose();
+  }
+
+  function onSubmit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!name || !contact) { window.alert("Please provide a name and contact info."); return; }
+    window.alert("Enquiry sent! We will reach out to you at " + contact + " shortly.");
+    onClose();
+  }
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div className="lp-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onMouseDown={onBackdrop}>
+          <motion.section className="lp-modal" role="dialog" aria-modal="true" aria-label="Enquiry" initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93, y: 20 }} transition={{ duration: 0.3, ease: EASE }}>
+            <div className="lp-modal-hdr">
+              <div className="lp-modal-brand">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/new_logo.png" alt="FitSplit" width="52" height="22" />
+                <span>FitSplit</span>
+              </div>
+              <button className="lp-modal-x" onClick={onClose} aria-label="Close" type="button"><CloseIcon /></button>
+            </div>
+            <h2 className="lp-modal-title">Get in touch</h2>
+            <p className="lp-modal-sub">Tell us a bit about your gym and we'll get back to you with setup instructions.</p>
+            <form className="lp-modal-form" onSubmit={onSubmit}>
+              <label className="lp-field"><span>Name</span><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></label>
+              <label className="lp-field"><span>Contact (Email or Phone)</span><input type="text" value={contact} onChange={(e) => setContact(e.target.value)} required /></label>
+              <label className="lp-field">
+                <span>Message (Optional)</span>
+                <textarea 
+                  value={body} 
+                  onChange={(e) => setBody(e.target.value)} 
+                  rows={3} 
+                  style={{ background: "var(--input-bg, rgba(255, 255, 255, 0.04))", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", color: "var(--fg)", fontSize: "16px", outline: "none", resize: "none", width: "100%", fontFamily: "inherit" }} 
+                />
+              </label>
+              <button type="submit" className="lpd-btn lpd-btn--brand lpd-btn--lg" style={{ marginTop: "16px", width: "100%" }}>Send Enquiry</button>
+            </form>
+          </motion.section>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function IcArrow() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -290,7 +351,7 @@ function featIcon(icon: string) {
 }
 
 // ─── Nav ─────────────────────────────────────────────────────────────────────
-function L1_Nav({ onLogin }: { onLogin: () => void }) {
+function L1_Nav({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => void }) {
   return (
     <header className="lpd-nav">
       <div className="lpd-container lpd-nav__inner">
@@ -302,12 +363,12 @@ function L1_Nav({ onLogin }: { onLogin: () => void }) {
         </a>
         <nav className="lpd-nav__links">
           {LANDING_MOCK.nav.map((item) => (
-            <a key={item} href={`#l1-${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
+            <a key={item} href={item === "About" ? "/about" : `#l1-${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
           ))}
         </nav>
         <div className="lpd-nav__cta">
           <button className="lpd-btn lpd-btn--ghost" onClick={onLogin}>Log in</button>
-          <button className="lpd-btn lpd-btn--brand" onClick={onLogin}>Start free trial</button>
+          <button className="lpd-btn lpd-btn--brand" onClick={onEnquiry}>Start free trial</button>
         </div>
       </div>
     </header>
@@ -391,7 +452,7 @@ function L1_MockPhone() {
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function L1_Hero({ onLogin }: { onLogin: () => void }) {
+function L1_Hero({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => void }) {
   const { hero } = LANDING_MOCK;
   return (
     <section className="l1-hero" id="top">
@@ -409,7 +470,7 @@ function L1_Hero({ onLogin }: { onLogin: () => void }) {
           </h1>
           <p className="l1-hero__sub">{hero.sub}</p>
           <div className="l1-hero__cta">
-            <button className="lpd-btn lpd-btn--primary lpd-btn--lg" onClick={onLogin}>
+            <button className="lpd-btn lpd-btn--primary lpd-btn--lg" onClick={onEnquiry}>
               {hero.ctaPrimary} <IcArrow />
             </button>
             <button className="lpd-btn lpd-btn--ghost lpd-btn--lg" onClick={onLogin}>
@@ -560,7 +621,7 @@ function L1_FAQ() {
 }
 
 // ─── CTA banner ───────────────────────────────────────────────────────────────
-function L1_CTA({ onLogin }: { onLogin: () => void }) {
+function L1_CTA({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => void }) {
   return (
     <section className="l1-cta">
       <div className="lpd-container">
@@ -570,7 +631,7 @@ function L1_CTA({ onLogin }: { onLogin: () => void }) {
             <p className="lpd-sub">14 days free. No card required. Live in under a week.</p>
           </div>
           <div className="l1-cta__btns">
-            <button className="lpd-btn lpd-btn--brand lpd-btn--lg" onClick={onLogin}>
+            <button className="lpd-btn lpd-btn--brand lpd-btn--lg" onClick={onEnquiry}>
               Start free trial <IcArrow />
             </button>
             <button className="lpd-btn lpd-btn--ghost lpd-btn--lg" onClick={onLogin}>
@@ -584,7 +645,7 @@ function L1_CTA({ onLogin }: { onLogin: () => void }) {
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
-function L1_Footer() {
+function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
   return (
     <footer className="lpd-foot">
       <div className="lpd-container">
@@ -600,15 +661,20 @@ function L1_Footer() {
           </div>
           {[
             { h: "Product", items: ["Owner dashboard", "Trainer console", "Member app"] },
-            { h: "Company", items: ["About", "Blog", "Careers"] },
+            { h: "Company", items: ["About"] },
             { h: "Support", items: ["Help center", "Contact", "Status", "Privacy"] }
           ].map((col) => (
             <div key={col.h} className="lpd-foot__col">
               <h4>{col.h}</h4>
               <ul>
-                {col.items.map((item) => (
-                  <li key={item}><a href="#">{item}</a></li>
-                ))}
+                {col.items.map((item) => {
+                  if (item === "Help center") return <li key={item}><button className="lp-foot-btn" onClick={onEnquiry}>{item}</button></li>;
+                  if (item === "Contact") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("Write to: fitsplit.in@gmail.com")}>{item}</button></li>;
+                  if (item === "Status") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("All systems operational.")}>{item}</button></li>;
+                  if (item === "Privacy") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("Mock Privacy Policy:\n\nWe do not sell your data. We secure it with industry standard practices.")}>{item}</button></li>;
+                  if (item === "About") return <li key={item}><a href="/about">{item}</a></li>;
+                  return <li key={item}><a href="#">{item}</a></li>;
+                })}
               </ul>
             </div>
           ))}
@@ -625,6 +691,7 @@ function L1_Footer() {
 // ─── Main export ──────────────────────────────────────────────────────────────
 export function LandingPageClient() {
   const [loginOpen, setLoginOpen] = useState(false);
+  const [enquiryOpen, setEnquiryOpen] = useState(false);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", "dark");
@@ -654,10 +721,10 @@ export function LandingPageClient() {
   return (
     <LazyMotion features={domAnimation}>
       <div className="lpd l1">
-        <L1_Nav onLogin={() => setLoginOpen(true)} />
+        <L1_Nav onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
 
         {/* Hero is immediately visible — no scroll-reveal wrapper */}
-        <L1_Hero onLogin={() => setLoginOpen(true)} />
+        <L1_Hero onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
 
 
 
@@ -678,12 +745,13 @@ export function LandingPageClient() {
         </div>
 
         <div data-reveal>
-          <L1_CTA onLogin={() => setLoginOpen(true)} />
+          <L1_CTA onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
         </div>
 
-        <L1_Footer />
+        <L1_Footer onEnquiry={() => setEnquiryOpen(true)} />
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <EnquiryModal open={enquiryOpen} onClose={() => setEnquiryOpen(false)} />
     </LazyMotion>
   );
 }
