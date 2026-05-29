@@ -53,6 +53,8 @@ export function FocusedDayView({
 
   const ex = day.exercises[activeIndex];
   const name = getExerciseName(ex.exerciseId, exercises);
+  const dictEx = exercises.find((e) => e.id === ex.exerciseId);
+  const videoUrl = dictEx?.gymVideoUrl || dictEx?.videoUrl;
 
   // Compute last log and PR for current exercise
   let lastLog: LiftLog | undefined = undefined;
@@ -107,6 +109,27 @@ export function FocusedDayView({
             <p style={{ margin: "12px 0 0", color: "var(--text-soft)", fontSize: "1rem" }}>
               {ex.notes}
             </p>
+          )}
+
+          {videoUrl && (
+            <a
+              href={videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: "inline-flex", alignItems: "center", gap: "6px",
+                marginTop: "14px", padding: "7px 14px",
+                borderRadius: "99px", border: "1px solid var(--border)",
+                background: "var(--bg-subtle)", color: "var(--text-soft)",
+                fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
+                transition: "background 120ms, color 120ms"
+              }}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="7" width="14" height="10" rx="2"/><path d="M16 11l5-4v10l-5-4"/>
+              </svg>
+              Watch tutorial
+            </a>
           )}
 
           <div className="focus-ex-last" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid var(--border)", width: "100%", maxWidth: "240px" }}>

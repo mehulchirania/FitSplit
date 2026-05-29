@@ -41,6 +41,7 @@ export type ActivityItem = {
   body: string;
   createdAt: string;
   type: string;
+  actionHref?: string;
 };
 
 export type OwnerDashboardData = {
@@ -321,17 +322,41 @@ function TodayTab({ d, dismissed, onDismiss, setTab }: {
             </div>
             <div className="odp2-card-body odp2-card-body--flush">
               {d.notifications.length === 0 ? (
-                <p className="odp2-empty">No recent activity.</p>
+                <div className="odp2-activity-empty">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                  </svg>
+                  <span>All caught up — no new activity</span>
+                </div>
               ) : (
-                d.notifications.slice(0, 5).map((n) => (
-                  <div key={n.id} className="odp2-activity-row">
-                    <div className="odp2-activity-icon">{IC.user}</div>
-                    <div className="odp2-activity-body">
-                      <span>{n.body}</span>
-                      <small>{relativeTime(n.createdAt)}</small>
+                d.notifications.slice(0, 8).map((n) => {
+                  const icon = n.type.startsWith("pt_") ? IC.today
+                    : n.type === "member_created" ? IC.user
+                    : n.type.startsWith("membership") ? IC.bell
+                    : n.type === "program_assigned" ? IC.dumbbell
+                    : IC.bell;
+                  const row = (
+                    <div className="odp2-activity-row">
+                      <div className="odp2-activity-icon">{icon}</div>
+                      <div className="odp2-activity-body">
+                        <span>{n.body}</span>
+                        <small>{relativeTime(n.createdAt)}</small>
+                      </div>
+                      {n.actionHref && (
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, color: "var(--text-faint)" }}>
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
+                      )}
                     </div>
-                  </div>
-                ))
+                  );
+                  return n.actionHref ? (
+                    <Link key={n.id} href={n.actionHref} className="odp2-activity-link">
+                      {row}
+                    </Link>
+                  ) : (
+                    <div key={n.id}>{row}</div>
+                  );
+                })
               )}
             </div>
           </div>

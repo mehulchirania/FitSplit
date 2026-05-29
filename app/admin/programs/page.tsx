@@ -1,128 +1,108 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { GymSelector } from "@/components/gym-selector";
-import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
-import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
+import { getWorkoutPrograms, getGymWorkspaces, getActiveProgramAssignments } from "@/lib/firebase/read-models";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import {
-  getActiveProgramAssignments,
-  getExerciseCatalog,
-  getGymWorkspaces,
-  getMembers,
-  getWorkoutPrograms
-} from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminProgramsPage({
-  searchParams
-}: {
-  searchParams: Promise<{ gym?: string }>;
-}) {
+const PROGRAM_COLORS = [
+  "linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, transparent))",
+  "linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, transparent))",
+  "linear-gradient(135deg, #D97706, color-mix(in srgb, #D97706 55%, transparent))",
+  "linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 55%, transparent))",
+  "linear-gradient(135deg, #7C3AED, color-mix(in srgb, #7C3AED 55%, transparent))",
+  "linear-gradient(135deg, #0891B2, color-mix(in srgb, #0891B2 55%, transparent))",
+  "linear-gradient(135deg, #B45309, color-mix(in srgb, #B45309 55%, transparent))",
+  "linear-gradient(135deg, #BE185D, color-mix(in srgb, #BE185D 55%, transparent))",
+];
+
+export default async function AdminProgramsPage() {
   await requireRole(["admin"]);
 
-  const { gym: gymParam } = await searchParams;
-  const { gyms } = await getGymWorkspaces();
-  const selectedGymId = gymParam ?? gyms[0]?.id ?? PRIMARY_GYM_ID;
-  const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
-
-  const [
-    { exercises, catalog },
-    { programs },
-    { assignments },
-    { members },
-    allGymProgramData
-  ] = await Promise.all([
-    getExerciseCatalog(selectedGymId),
-    getWorkoutPrograms(selectedGymId),
-    getActiveProgramAssignments(selectedGymId),
-    getMembers(selectedGymId),
-    Promise.all(
-      gyms.map(async (gym) => {
-        const [{ exercises }, { programs }, { assignments }, { members }] = await Promise.all([
-          getExerciseCatalog(gym.id),
-          getWorkoutPrograms(gym.id),
-          getActiveProgramAssignments(gym.id),
-          getMembers(gym.id)
-        ]);
-
-        return {
-          assignments,
-          exercises,
-          gymId: gym.id,
-          gymName: gym.name,
-          members,
-          programs: programs.filter((program) => program.source === "gym")
-        };
-      })
-    )
+  const [{ gyms }, { programs }, { assignments }] = await Promise.all([
+    getGymWorkspaces(),
+    getWorkoutPrograms(PRIMARY_GYM_ID),
+    getActiveProgramAssignments(PRIMARY_GYM_ID),
   ]);
 
-  const predefinedCount = programs.filter((p) => p.source !== "gym").length;
-  const customCount = allGymProgramData.reduce((count, group) => count + group.programs.length, 0);
+  const presetPrograms = programs.filter(p => p.source === "predefined" || p.source !== "gym");
+  const mostUsed = programs.length > 0
+    ? programs.reduce((best, p) =>
+        (assignments.filter(a => a.programId === p.id).length > assignments.filter(a => a.programId === best.id).length) ? p : best
+      , programs[0])
+    : null;
+
+  const gymUsingPreset = gyms.filter(g => g.status === "active").length;
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Workout Programs" }]} />
-          <h1>Workout programs</h1>
-          <p>
-            Review all training plans across gyms. Programs are created by gym owners and assigned to members.
-          </p>
-
-          <GymSelector gyms={gyms} pathname="/admin/programs" selectedGymId={selectedGymId} />
+    <div className="odp2-scroll">
+      {/* Header */}
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Admin / Programs</div>
+          <h1 className="adm-title">Preset program catalog</h1>
         </div>
+        <div className="adm-head-actions">
+          <Link href="/admin/inbox" className="adm-btn adm-btn--ghost">Inbox</Link>
+          <Link href={`/owner/programs`} className="adm-btn">+ New preset</Link>
+        </div>
+      </div>
 
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>
-              <Dumbbell /> {selectedGym?.name ?? "Programs"}
-            </h2>
-            <span className="status-pill status-active">
-              {programs.length} plan{programs.length !== 1 ? "s" : ""}
-            </span>
+      <p className="adm-page-desc">
+        Master library of presets available to all gyms. Edit to update across the platform.
+      </p>
+
+      {/* KPI row */}
+      <div className="adm-kpis" style={{ marginBottom: 20 }}>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>PRESETS</small>
+          <strong>{programs.length}</strong>
+        </div>
+        <div className="adm-kpi">
+          <small>GYMS USING</small>
+          <strong>{gymUsingPreset}/{gyms.length}</strong>
+        </div>
+        <div className="adm-kpi adm-kpi--accent">
+          <small>MOST POPULAR</small>
+          <strong>{mostUsed?.title ?? "—"}</strong>
+        </div>
+        <div className="adm-kpi adm-kpi--warn">
+          <small>NEW REQUESTS</small>
+          <strong>—</strong>
+        </div>
+      </div>
+
+      {/* Program card grid */}
+      {programs.length === 0 ? (
+        <div className="adm-card">
+          <div className="adm-empty">
+            No programs yet.{" "}
+            <Link href="/owner/programs" className="adm-link">Create one from the owner dashboard.</Link>
           </div>
-          <div className="detail-window">
-            <span>
-              Predefined
-              <strong>{predefinedCount}</strong>
-            </span>
-            <span>
-              Custom
-              <strong>{customCount}</strong>
-            </span>
-            <span>
-              Active assignments
-              <strong>{assignments.length}</strong>
-            </span>
-            <span>
-              Members
-              <strong>{members.length}</strong>
-            </span>
-          </div>
-        </aside>
-      </section>
-
-      <WorkoutProgramGallery
-        assignments={assignments}
-        catalog={catalog}
-        customGroups={allGymProgramData}
-        exercises={exercises}
-        members={members}
-        programs={programs}
-      />
-
-      {programs.length === 0 && (
-        <div className="md-empty" style={{ marginTop: 16 }}>
-          <h2>No programs yet</h2>
-          <p>
-            Programs are created by gym owners from their dashboard.{" "}
-            <Link href={`/admin/gyms/${selectedGymId}`}>Go to {selectedGym?.name} settings</Link>.
-          </p>
+        </div>
+      ) : (
+        <div className="adm-program-grid">
+          {programs.map((p, i) => {
+            const gymCount = assignments.filter(a => a.programId === p.id).length;
+            return (
+              <Link key={p.id} href={`/owner/programs/${p.id}`} className="adm-program-card">
+                <div
+                  className="adm-program-card__header"
+                  style={{ background: PROGRAM_COLORS[i % PROGRAM_COLORS.length] }}
+                >
+                  <span className="adm-program-card__title">{p.title}</span>
+                </div>
+                <div className="adm-program-card__body">
+                  <span className="adm-program-card__meta">
+                    {p.difficulty ?? "All levels"} · {p.days?.length ?? 0} day
+                  </span>
+                  <strong className="adm-program-card__count">{gymCount} gyms</strong>
+                </div>
+              </Link>
+            );
+          })}
         </div>
       )}
-    </main>
+    </div>
   );
 }

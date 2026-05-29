@@ -11,7 +11,7 @@ import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
 import type { MemberProfile, Member } from "@/types/domain";
-import { useState, useEffect, useTransition } from "react";
+import { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { logoutUser } from "@/lib/auth";
 
@@ -98,17 +98,30 @@ function Sidebar({
   gymName: string;
   gymLogoUrl?: string | null;
 }) {
+  const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onClick = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", onClick);
+    return () => document.removeEventListener("mousedown", onClick);
+  }, [menuOpen]);
 
   const handleLogout = () => {
+    setMenuOpen(false);
     startTransition(async () => {
       window.localStorage.removeItem("fitsplit-remember-me");
       await logoutUser();
     });
   };
 
-  const items = [
-    { v: "coach",    label: "Coach",    icon: <Icons.Mail size={18} /> },
+  const tabItems = [
     { v: "train",    label: "Train",    icon: <Icons.Dumbbell size={18} /> },
     { v: "progress", label: "Progress", icon: <Icons.Chart size={18} /> },
     { v: "calendar", label: "Calendar", icon: <Icons.Calendar size={18} /> },
@@ -116,20 +129,42 @@ function Sidebar({
   ];
 
   const gymShort = gymName.split(" · ")[0];
+  const initials = firstName.charAt(0).toUpperCase();
+
+  // Chevron + logout icons inlined
+  const ChevD = () => (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  );
+  const LogOutIco = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  );
 
   return (
     <aside className="m3d-side">
-      {/* Brand + gym */}
+      {/* Brand + gym co-brand lockup */}
       <div className="m3d-side__logo">
-        <div className="m3d-side__logo-mark">
-          {gymLogoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={gymLogoUrl} alt={gymShort} width={28} height={28} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
-          ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src="/icon-512.png" alt="FitSplit" width={28} height={28} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
-          )}
-        </div>
+        {gymLogoUrl ? (
+          <div className="m3d-side__cobrand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
+              <img src="/icon-512.png" alt="FitSplit" width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+            </div>
+            <span className="m3d-side__cobrand-sep">×</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
+              <img src={gymLogoUrl} alt={gymShort} width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+            </div>
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element
+          <div className="m3d-side__logo-mark">
+            <img src="/icon-512.png" alt="FitSplit" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+          </div>
+        )}
         <div className="m3d-side__logo-text">
           <span>FitSplit</span>
           <span className="m3d-side__gym-sub">{gymShort}</span>
@@ -138,7 +173,13 @@ function Sidebar({
 
       {/* Nav */}
       <nav className="m3d-side__nav">
-        {items.map((it) => (
+        {/* Coach — dedicated full-page thread */}
+        <Link href="/member/coach" className="m3d-side__item">
+          <Icons.Mail size={18} />
+          <span>Coach</span>
+        </Link>
+        {/* Internal tab items */}
+        {tabItems.map((it) => (
           <button
             key={it.v}
             className={`m3d-side__item${tab === it.v ? " m3d-side__item--on" : ""}`}
@@ -151,19 +192,67 @@ function Sidebar({
         ))}
       </nav>
 
-      {/* Footer: profile + logout */}
-      <div className="m3d-side__bottom">
+      {/* ── Snowflake-style profile footer ── */}
+      <div className="m3d-side__user-footer" ref={menuRef}>
+        {/* Popup menu — opens upward */}
+        {menuOpen && (
+          <>
+            <div className="m3d-user-menu__overlay" onClick={() => setMenuOpen(false)} />
+            <div className="m3d-user-menu">
+              <div className="m3d-user-menu__header">
+                <Avatar initials={initials} size="sm" />
+                <div>
+                  <div className="m3d-user-menu__name">{firstName}</div>
+                  <div className="m3d-user-menu__role">Member</div>
+                </div>
+              </div>
+              <div className="m3d-user-menu__divider" />
+              <Link href="/member/settings" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
+                <Icons.Settings size={14} /> Settings
+              </Link>
+              <Link href="/member/membership" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
+                <Icons.Bell size={14} /> Membership
+              </Link>
+              <Link href="/member/coach" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
+                <Icons.Mail size={14} /> Message coach
+              </Link>
+              <div className="m3d-user-menu__divider" />
+              <button
+                className="m3d-user-menu__item m3d-user-menu__item--danger"
+                onClick={handleLogout}
+                disabled={isPending}
+                type="button"
+              >
+                <LogOutIco /> {isPending ? "Logging out…" : "Log out"}
+              </button>
+            </div>
+          </>
+        )}
+
+        {/* Main trigger */}
         <button
-          className="m3d-side__item m3d-side__item--profile"
+          className="m3d-user-btn"
           type="button"
+          onClick={() => setMenuOpen((p) => !p)}
+          aria-label="Account menu"
+        >
+          <Avatar initials={initials} size="sm" />
+          <div className="m3d-user-btn__id">
+            <strong>{firstName}</strong>
+            <span>Member</span>
+          </div>
+          <span style={{ opacity: 0.45, display: "flex", alignItems: "center" }}><ChevD /></span>
+        </button>
+
+        {/* Standalone logout button */}
+        <button
+          className="m3d-user-out"
+          type="button"
+          title="Log out"
           onClick={handleLogout}
           disabled={isPending}
         >
-          <Avatar initials={firstName.charAt(0)} size="sm" />
-          <div className="m3d-side__profile-text">
-            <span>{firstName}</span>
-            <span className="m3d-side__profile-sub">{isPending ? "Logging out…" : "Log out"}</span>
-          </div>
+          <LogOutIco />
         </button>
       </div>
     </aside>
@@ -171,7 +260,7 @@ function Sidebar({
 }
 
 /* ── Desktop TopBar ──────────────────────────────────────────────── */
-function DesktopTopBar({ onToast, firstName }: { onToast: (t: string) => void; firstName: string }) {
+function DesktopTopBar({ onToast }: { onToast: (t: string) => void }) {
   return (
     <header className="m3d-top">
       <div className="m3d-top__crumbs">
@@ -189,13 +278,6 @@ function DesktopTopBar({ onToast, firstName }: { onToast: (t: string) => void; f
           <Icons.Bell size={18} />
           <span className="m3d-top__icon-dot" />
         </button>
-        <div className="m3d-top__profile">
-          <Avatar initials={firstName.charAt(0)} size="sm" />
-          <div className="m3d-top__profile-text">
-            <strong>{firstName}</strong>
-            <small>Member</small>
-          </div>
-        </div>
       </div>
     </header>
   );
@@ -208,7 +290,18 @@ function MobileTopBar({ firstName, gymName, gymLogoUrl, onNotif }: {
   gymLogoUrl?: string | null;
   onNotif: () => void;
 }) {
+  const [showMenu, setShowMenu] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const gymShort = gymName.split(" · ")[0];
+
+  const handleLogout = () => {
+    setShowMenu(false);
+    startTransition(async () => {
+      window.localStorage.removeItem("fitsplit-remember-me");
+      await logoutUser();
+    });
+  };
+
   return (
     <div className="mcr-topbar">
       <div className="mcr-topbar__left">
@@ -220,7 +313,47 @@ function MobileTopBar({ firstName, gymName, gymLogoUrl, onNotif }: {
           <Icons.Bell size={18} />
           <span className="mcr-topbar__dot" />
         </button>
-        <Avatar initials={firstName.charAt(0)} size="md" />
+        <div className="mcr-avatar-wrap">
+          <button
+            className="mcr-topbar__avatar-btn"
+            onClick={() => setShowMenu((v) => !v)}
+            aria-label="Account menu"
+            type="button"
+          >
+            <Avatar initials={firstName.charAt(0)} size="md" />
+          </button>
+
+          {showMenu && (
+            <>
+              {/* Click-away overlay */}
+              <div className="mcr-user-menu__overlay" onClick={() => setShowMenu(false)} />
+              <div className="mcr-user-menu">
+                <div className="mcr-user-menu__header">
+                  <Avatar initials={firstName.charAt(0)} size="sm" />
+                  <span>{firstName}</span>
+                </div>
+                <Link href="/member/settings" className="mcr-user-menu__item" onClick={() => setShowMenu(false)}>
+                  <Icons.Settings size={15} /> Settings
+                </Link>
+                <Link href="/member/membership" className="mcr-user-menu__item" onClick={() => setShowMenu(false)}>
+                  <Icons.Bell size={15} /> Membership
+                </Link>
+                <Link href="/member/coach" className="mcr-user-menu__item" onClick={() => setShowMenu(false)}>
+                  <Icons.Mail size={15} /> Message coach
+                </Link>
+                <div className="mcr-user-menu__divider" />
+                <button
+                  className="mcr-user-menu__item mcr-user-menu__item--danger"
+                  onClick={handleLogout}
+                  disabled={isPending}
+                  type="button"
+                >
+                  <Icons.LogOut size={15} /> {isPending ? "Logging out…" : "Log out"}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -228,15 +361,19 @@ function MobileTopBar({ firstName, gymName, gymLogoUrl, onNotif }: {
 
 /* ── Mobile Bottom Tab Bar ───────────────────────────────────────── */
 function MobileTabBar({ tab, setTab }: { tab: string; setTab: (t: string) => void }) {
-  const tabs = [
-    { v: "coach",    label: "Coach",    icon: <Icons.Mail size={22} /> },
+  const tabItems = [
     { v: "train",    label: "Train",    icon: <Icons.Dumbbell size={22} /> },
     { v: "progress", label: "Progress", icon: <Icons.Chart size={22} /> },
     { v: "body",     label: "Body",     icon: <Icons.Heart size={22} /> },
   ];
   return (
     <nav className="mcr-tabbar">
-      {tabs.map((t) => (
+      {/* Coach — links to dedicated full-page view */}
+      <Link href="/member/coach" className="mcr-tabbar__item">
+        <Icons.Mail size={22} />
+        <span>Coach</span>
+      </Link>
+      {tabItems.map((t) => (
         <button
           key={t.v}
           className={`mcr-tabbar__item${tab === t.v ? " mcr-tabbar__item--on" : ""}`}
@@ -291,9 +428,9 @@ function CoachHero({ coachNote, coachNoteFrom, coachNoteUpdatedAt, onToast }: {
               <span className="m3d-coach__online-dot" /> Online · usually replies in 30 min
             </span>
           </div>
-          <button className="m3d-coach__full-thread" type="button">
+          <Link href="/member/coach" className="m3d-coach__full-thread">
             <Icons.Mail size={13} /> Full thread
-          </button>
+          </Link>
         </div>
 
         <div className="m3d-coach__bubble">
@@ -327,6 +464,29 @@ function CoachHero({ coachNote, coachNoteFrom, coachNoteUpdatedAt, onToast }: {
         </div>
       </div>
     </section>
+  );
+}
+
+/* ── Compact coach note banner (train tab) ──────────────────────── */
+function CoachNoteBanner({ coachNote, coachNoteFrom }: {
+  coachNote?: string | null;
+  coachNoteFrom?: string | null;
+}) {
+  if (!coachNote) return null;
+  const initials = coachNoteFrom
+    ? coachNoteFrom.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
+    : "PT";
+  return (
+    <div className="m3d-coach-banner">
+      <div className="m3d-coach-banner__avatar">{initials}</div>
+      <div className="m3d-coach-banner__body">
+        <span className="m3d-coach-banner__from">{coachNoteFrom ?? "Your coach"}</span>
+        <span className="m3d-coach-banner__note">{coachNote.length > 90 ? coachNote.slice(0, 90) + "…" : coachNote}</span>
+      </div>
+      <Link href="/member/coach" className="m3d-coach-banner__link" aria-label="Open coach thread">
+        <Icons.ChevR size={14} />
+      </Link>
+    </div>
   );
 }
 
@@ -701,7 +861,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     member, profile, initialActiveSessionCount,
   } = props;
 
-  const [tab, setTab] = useState("coach");
+  const [tab, setTab] = useState("train");
   const [toast, setToast] = useState<string | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
 
@@ -723,12 +883,14 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
       {/* ── Main Content ── */}
       <div className="m3d-main">
         {/* Desktop topbar (hidden on mobile) */}
-        <DesktopTopBar onToast={handleToast} firstName={firstName} />
+        <DesktopTopBar onToast={handleToast} />
 
         <div className="m3d-content">
 
-          {/* ── Coach tab ── */}
-          {tab === "coach" && (
+          {/* coach tab redirected — kept as no-op since nav links to /member/coach directly */}
+
+          {/* ── Train tab (default home) ── */}
+          {tab === "train" && (
             <>
               {/* Desktop page header */}
               <div className="m3d-pagehead">
@@ -767,12 +929,8 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
 
               <div className="m3d-grid">
                 <div className="m3d-grid__left">
-                  <CoachHero
-                    coachNote={coachNote}
-                    coachNoteFrom={coachNoteFrom}
-                    coachNoteUpdatedAt={coachNoteUpdatedAt}
-                    onToast={handleToast}
-                  />
+                  {/* Compact coach note banner */}
+                  <CoachNoteBanner coachNote={coachNote} coachNoteFrom={coachNoteFrom} />
 
                   {/* Mobile-only stats strip */}
                   <StatsSection
@@ -823,7 +981,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                     <div className="mcr-no-plan">
                       <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
                       <h2>No workout plan assigned</h2>
-                      <p>Your trainer hasn&apos;t assigned a program yet. Reach out to your coach above.</p>
+                      <p>Your trainer hasn&apos;t assigned a program yet. <Link href="/member/coach">Reach out to your coach →</Link></p>
                     </div>
                   )}
 
@@ -861,34 +1019,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                 </div>
               </div>
             </>
-          )}
-
-          {/* ── Train tab ── */}
-          {tab === "train" && (
-            <div className="m3d-grid">
-              <div className="m3d-grid__left">
-                {program ? (
-                  <div className="mcr-workout-wrapper">
-                    <MemberWorkoutConsole
-                      exercises={exercises}
-                      gymId={gymId}
-                      initialActiveSessionCount={initialActiveSessionCount}
-                      initialDayLogs={dayLogs}
-                      initialInjuryNote={injuryNote ?? undefined}
-                      initialLiftLogs={liftLogs}
-                      memberId={memberId}
-                      program={program}
-                    />
-                  </div>
-                ) : (
-                  <div className="mcr-no-plan">
-                    <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
-                    <h2>No workout plan assigned</h2>
-                    <p>Your trainer hasn&apos;t assigned a program yet.</p>
-                  </div>
-                )}
-              </div>
-            </div>
           )}
 
           {/* ── Progress tab ── */}

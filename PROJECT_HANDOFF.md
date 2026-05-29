@@ -4,6 +4,35 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## 🚀 Latest Milestone — E2E User Flow Redesign (2026-05-29)
+
+Based on the Claude Design E2E User Flow bundle (`Eq-9dY9qmQavHnVHeWlVVw`), all roles were redesigned with consistent UI patterns. Implementation is staged across 7 phases.
+
+### Design Decisions (from chat transcripts)
+- **Member dashboard**: Workout-first (today's session is the hero, not coach note). Coach note moves to a dedicated Coach tab. Mobile-first with bottom tab bar.
+- **Co-branding**: FitSplit logo × gym logo lockup in sidebar/topbar for gym-scoped roles (owner, trainer, member). Admin sees FitSplit only.
+- **Button foreground**: Brand (`--brand`) fill buttons use **dark text** (`var(--brand-fg)`) — NOT white. High contrast white-on-green is explicitly avoided.
+- **Owner dashboard**: Tabbed workspace (Today/People/Money/Operations/Insights). Priority cards (Renewals / Plans Pending / Payments) replace Revenue + In-Gym cards on Today tab.
+- **Members page**: D4 Hybrid — Action queue + KPI strip + refined table.
+- **Admin = Owner+**: Admin can access and edit everything the owner can.
+- **Settings**: Members get a `/member/settings` page (units kg/lbs, cm/ft; membership link; notifications; account/PIN).
+- **Exercise videos**: `videoUrl` / `gymVideoUrl` shown as chip buttons on all exercise rows.
+- **Consistent shell**: All desktop roles share sidebar (brand lockup top, profile + logout bottom-left). Mobile member uses top bar + bottom tab bar.
+
+### Phase Plan
+
+| Phase | Scope | Status |
+|---|---|---|
+| **1** | Admin parity — add `"admin"` to all owner-only `requireRole` guards | ✅ Done |
+| **2** | Button foreground fix — `--brand-fg` dark token; audit all brand-fill buttons | ✅ Done |
+| **3** | Member Settings page — `/member/settings` (units, membership, notifications, account) | ✅ Done |
+| **4** | Member Coach page — `/member/coach` (trainer conversation, coach note detail) | ✅ Done |
+| **5** | Member shell improvements — Co-brand lockup, Coach/Settings as links, avatar dropdown (Settings/Membership/Coach/Logout) | ✅ Done |
+| **6** | Programs & Exercise page enhancements — filter chips, current-program highlight, video buttons on FocusedDayView | ✅ Done |
+| **7** | Owner/Admin polish — activity rows clickable with action links, type icons, 8 items, proper empty state | ✅ Done |
+
+---
+
 ## 🏗️ Next Major Milestone — Multi-Gym, Trainer, PT, Billing & Permissions Redesign (2026-05-28)
 
 ### Summary

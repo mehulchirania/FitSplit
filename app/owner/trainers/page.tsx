@@ -10,7 +10,7 @@ import { getTrainersForGym, getMembers } from "@/lib/firebase/read-models";
 export const dynamic = "force-dynamic";
 
 export default async function TrainersPage() {
-  const currentUser = await requireRole(["owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [trainers, { members }] = await Promise.all([

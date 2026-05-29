@@ -182,7 +182,7 @@ export default async function OwnerDashboard() {
     .map(([plan, count]) => ({ plan, count }));
 
   // ── Activity notifications ────────────────────────────────────────────────
-  const notifications = ownerNotifications.slice(0, 10).map((n) => ({
+  const notifications = ownerNotifications.slice(0, 12).map((n) => ({
     id: n.id,
     body: n.body,
     createdAt: n.createdAt,

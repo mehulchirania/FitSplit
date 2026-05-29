@@ -5,6 +5,7 @@ import { GymLogoManager } from "@/components/gym-logo-manager";
 import { GymNoticeManager } from "@/components/gym-notice-manager";
 import { TrainerVisibilityForm } from "@/components/trainer-visibility-form";
 import { requireRole } from "@/lib/auth";
+import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { updateGymLogo } from "@/lib/firebase/actions";
 import { getGymDetail } from "@/lib/firebase/read-models";
 import type { TrainerMemberVisibility } from "@/types/domain";
@@ -12,8 +13,8 @@ import type { TrainerMemberVisibility } from "@/types/domain";
 export const dynamic = "force-dynamic";
 
 export default async function GymSettingsPage() {
-  const currentUser = await requireRole(["owner"]);
-  const gymId = currentUser.gymId;
+  const currentUser = await requireRole(["admin", "owner"]);
+  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const { gym } = await getGymDetail(gymId);
 

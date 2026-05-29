@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddStaffForm } from "@/components/add-staff-form";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { GymAccessStatusAction } from "@/components/gym-access-status-action";
 import { GymArchiveAction } from "@/components/gym-archive-action";
 import { GymDetailsForm } from "@/components/gym-details-form";
 import { GymLogoManager } from "@/components/gym-logo-manager";
-import { UsersRound, Settings } from "@/components/icons";
 import { StaffAccessActions } from "@/components/staff-access-actions";
 import { requireRole } from "@/lib/auth";
 import { updateGymLogo } from "@/lib/firebase/actions";
@@ -14,8 +12,27 @@ import { getGymDetail, getMembers, getOwnersForGym } from "@/lib/firebase/read-m
 
 export const dynamic = "force-dynamic";
 
-export default async function GymManagementPage({
-  params
+function planTier(count: number) {
+  if (count > 300) return { label: "ENTERPRISE", cls: "adm-tag adm-tag--enterprise" };
+  if (count > 100) return { label: "STUDIO", cls: "adm-tag adm-tag--studio" };
+  return { label: "STARTER", cls: "adm-tag adm-tag--starter" };
+}
+
+function gymInitials(name: string) {
+  return name.split(/[\s·\-]+/).filter(Boolean).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+}
+
+function staffInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+}
+
+const AVATAR_COLORS = ["var(--brand)", "var(--accent)", "#7C3AED", "#D97706", "var(--danger)"];
+
+export default async function GymDetailPage({
+  params,
 }: {
   params: Promise<{ gymId: string }>;
 }) {
@@ -25,156 +42,158 @@ export default async function GymManagementPage({
   const [{ gym }, { owners: staff }, { members }] = await Promise.all([
     getGymDetail(gymId),
     getOwnersForGym(gymId),
-    getMembers(gymId)
+    getMembers(gymId),
   ]);
 
-  if (!gym) {
-    notFound();
-  }
+  if (!gym) notFound();
 
-  const isGymAccessEnabled = gym.status !== "inactive" && gym.status !== "paused";
+  const isActive = gym.status === "active";
+  const plan = planTier(gym.memberCount);
+  const initials = gymInitials(gym.name);
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Gyms", href: "/admin/gyms" }, { label: gym.name }]} />
-          <h1>{gym.name}</h1>
-          <p>
-            Control gym-wide settings, manage staff, and monitor workspace status.
+    <div className="odp2-scroll">
+      {/* Header */}
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Admin / Gyms / {gym.name}</div>
+          <h1 className="adm-title">{gym.name}{gym.location ? ` · ${gym.location.split(",")[0]}` : ""}</h1>
+        </div>
+        <div className="adm-head-actions">
+          <Link href="/admin/inbox" className="adm-btn adm-btn--ghost">Inbox</Link>
+          <GymAccessStatusAction gymId={gym.id} isEnabled={isActive} />
+        </div>
+      </div>
+
+      {/* Gym hero card */}
+      <div className="adm-card adm-gym-hero">
+        <div className="adm-gym-hero__avatar" style={{ background: "linear-gradient(135deg, #D97706, color-mix(in srgb, #D97706 60%, transparent))" }}>
+          {initials}
+        </div>
+        <div className="adm-gym-hero__info">
+          <h2 className="adm-gym-hero__name">{gym.name}</h2>
+          <p className="adm-gym-hero__meta">
+            {gym.location ?? "—"} · owned by {gym.ownerName}
           </p>
-          <div className="quick-actions">
-            <Link className="button button-secondary" href="/admin">
-              Back to all gyms
-            </Link>
+          <div className="adm-gym-hero__tags">
+            <span className="adm-tag adm-tag--ok">{gym.status.toUpperCase()}</span>
+            <span className={plan.cls}>{plan.label}</span>
+            <span className="adm-tag adm-tag--neutral">{gym.memberCount} MEMBERS</span>
           </div>
         </div>
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2><Settings /> Gym Status</h2>
-            <span className={`status-pill ${isGymAccessEnabled ? 'status-active' : 'status-neutral'}`}>
-              {isGymAccessEnabled ? "active" : gym.status}
-            </span>
+        <div className="adm-gym-hero__actions">
+          <Link href={`/owner/members`} className="adm-btn adm-btn--ghost">Impersonate owner</Link>
+          <Link href={`#edit-gym`} className="adm-btn">Edit details</Link>
+        </div>
+      </div>
+
+      {/* KPI row */}
+      <div className="adm-kpis adm-kpis--4" style={{ margin: "16px 0" }}>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>MEMBERS</small>
+          <strong>{gym.memberCount}</strong>
+          <em>{members.filter(m => m.isActive).length} active</em>
+        </div>
+        <div className="adm-kpi">
+          <small>TRAINERS</small>
+          <strong>{staff.filter(s => s.staffType === "trainer").length}</strong>
+          <em>{staff.length} total staff</em>
+        </div>
+        <div className="adm-kpi adm-kpi--warn">
+          <small>MRR</small>
+          <strong>—</strong>
+          <em>billing not configured</em>
+        </div>
+        <div className="adm-kpi adm-kpi--danger">
+          <small>SUPPORT TICKETS</small>
+          <strong>0</strong>
+          <em>open</em>
+        </div>
+      </div>
+
+      {/* Two-column: Staff + Billing */}
+      <div className="adm-grid-2" style={{ marginBottom: 20 }}>
+        {/* Staff card */}
+        <div className="adm-card">
+          <div className="adm-card__head">
+            <h3>Staff</h3>
+            <span className="adm-card__link">{staff.length} member{staff.length !== 1 ? "s" : ""}</span>
           </div>
-          <div className="detail-window">
-            <span>
-              Members
-              <strong>{gym.memberCount}</strong>
-            </span>
-            <span>
-              Staff
-              <strong>{staff.length}</strong>
-            </span>
+          <div className="adm-card__body adm-card__body--flush">
+            {staff.length === 0 ? (
+              <div className="adm-empty">No staff assigned to this gym yet.</div>
+            ) : (
+              staff.map((s, i) => (
+                <div
+                  key={s.id}
+                  className={`adm-staff-row${i < staff.length - 1 ? " adm-staff-row--border" : ""}`}
+                >
+                  <span
+                    className="adm-staff-row__avatar"
+                    style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                  >
+                    {staffInitials(s.fullName)}
+                  </span>
+                  <div className="adm-staff-row__info">
+                    <strong>{s.fullName}</strong>
+                    <small>{s.staffType ? (s.staffType.charAt(0).toUpperCase() + s.staffType.slice(1)) : "Owner"}</small>
+                  </div>
+                  <StaffAccessActions fullName={s.fullName} gymId={gym.id} userId={s.id} />
+                </div>
+              ))
+            )}
           </div>
-        </aside>
-      </section>
+        </div>
 
-      <section className="content-grid">
-        <GymDetailsForm gym={gym} />
-
-        <GymLogoManager action={updateGymLogo} currentLogoUrl={gym.logoUrl} gymId={gym.id} gymName={gym.name} />
-
-        <div className="form-panel">
-          <div className="panel-title">
-            <div>
-              <h2>Access Control</h2>
-              <p className="member-meta">
-                Toggle workspace access for all gym staff and members.
-              </p>
+        {/* Billing card */}
+        <div className="adm-card">
+          <div className="adm-card__head">
+            <h3>Billing</h3>
+          </div>
+          <div className="adm-card__body">
+            <div className="adm-billing-row">
+              <span>Plan</span>
+              <strong>{plan.label.charAt(0) + plan.label.slice(1).toLowerCase()} (standard)</strong>
             </div>
-            <GymAccessStatusAction gymId={gym.id} isEnabled={isGymAccessEnabled} />
+            <div className="adm-billing-row">
+              <span>Billing email</span>
+              <strong>{gym.email ?? "—"}</strong>
+            </div>
+            <div className="adm-billing-row">
+              <span>Next renewal</span>
+              <strong>—</strong>
+            </div>
+            <div className="adm-billing-row">
+              <span>Payment method</span>
+              <strong>—</strong>
+            </div>
           </div>
-          <p style={{ marginTop: 12, color: "var(--text-soft)" }}>
-            Disabled gyms block owner, trainer, staff, and member logins by deactivating their profiles and Firebase Auth access.
-          </p>
         </div>
-      </section>
+      </div>
 
-      <section className="content-grid" style={{ marginTop: 16 }}>
-        <AddStaffForm gymId={gym.id} />
-        <div className="form-panel">
-          <h2>Staff roles</h2>
-          <p style={{ fontSize: "0.85rem", color: "var(--text-soft)", lineHeight: 1.6 }}>
-            <strong>Owner</strong> — full access to member management, programs, and settings.<br />
-            <strong>Trainer</strong> — can view members and assign programs.<br />
-            <strong>Staff</strong> — view-only access to member list.
-          </p>
-          <p style={{ fontSize: "0.82rem", color: "var(--text-faint)", marginTop: 8 }}>
-            All staff log in with their email and the default password <code>password</code>. Use the reset button below to change any password.
-          </p>
+      {/* Edit sections — preserved with anchor */}
+      <details className="adm-details-panel" id="edit-gym">
+        <summary className="adm-details-panel__summary">Edit gym details &amp; logo</summary>
+        <div className="adm-details-panel__body">
+          <GymDetailsForm gym={gym} />
+          <GymLogoManager action={updateGymLogo} currentLogoUrl={gym.logoUrl} gymId={gym.id} gymName={gym.name} />
         </div>
-      </section>
+      </details>
 
-      <section className="list-panel" style={{ marginTop: 16 }}>
-        <div className="panel-title">
-          <h2><UsersRound /> Gym Staff</h2>
+      <details className="adm-details-panel">
+        <summary className="adm-details-panel__summary">Add staff member</summary>
+        <div className="adm-details-panel__body">
+          <AddStaffForm gymId={gym.id} />
         </div>
-        <div className="activity-feed">
-          {staff.map((staffMember) => (
-            <article className="member-row" key={staffMember.id}>
-              <span className="avatar">{staffMember.avatarInitials}</span>
-              <div style={{ flex: 1 }}>
-                <span className="member-name">{staffMember.fullName}</span>
-                <span className="member-meta">{staffMember.email}</span>
-              </div>
-              <span className="status-pill status-neutral">{staffMember.staffType ?? "owner"}</span>
-              <span className={`status-pill ${staffMember.isActive ? "status-active" : "status-danger"}`}>
-                {staffMember.isActive ? "active" : "disabled"}
-              </span>
-              <StaffAccessActions fullName={staffMember.fullName} gymId={gym.id} userId={staffMember.id} />
-            </article>
-          ))}
-          {staff.length === 0 && (
-            <p style={{ padding: '24px', textAlign: 'center', color: 'var(--text-soft)' }}>No staff assigned to this gym yet.</p>
-          )}
-        </div>
-      </section>
+      </details>
 
-      <section className="list-panel" style={{ marginTop: 16 }}>
-        <div className="panel-title">
-          <h2><UsersRound /> Gym Members</h2>
-          <span className="status-pill status-neutral">{members.length} total</span>
-        </div>
-        <div className="activity-feed">
-          {members.map((member) => (
-            <article className="member-row" key={member.id}>
-              <span className="avatar">{member.avatarInitials}</span>
-              <div style={{ flex: 1 }}>
-                <span className="member-name">{member.fullName}</span>
-                <span className="member-meta">
-                  {member.username ? `@${member.username}` : member.email}
-                  {member.phone ? ` • ${member.phone}` : ""}
-                </span>
-              </div>
-              <span className={`status-pill ${member.isActive ? "status-active" : "status-danger"}`}>
-                {member.isActive ? "active" : "disabled"}
-              </span>
-              <Link
-                className="button button-secondary"
-                href={`/owner/members/${member.id}`}
-                style={{ fontSize: "0.8rem", padding: "6px 14px" }}
-              >
-                View
-              </Link>
-            </article>
-          ))}
-          {members.length === 0 && (
-            <p style={{ padding: "24px", textAlign: "center", color: "var(--text-soft)" }}>
-              No members assigned to this gym yet.
-            </p>
-          )}
-        </div>
-      </section>
-
+      {/* Danger zone */}
       {gym.id !== "shg" && (
-        <section className="list-panel" style={{ marginTop: 16, borderColor: "var(--error, #f87171)" }}>
-          <div className="panel-title">
-            <h2 style={{ color: "var(--error, #f87171)" }}>Danger Zone</h2>
-          </div>
-          <div style={{ padding: "16px 20px" }}>
-            <p style={{ color: "var(--text-soft)", fontSize: "0.88rem", marginBottom: 12 }}>
-              Permanently deletes this gym and <strong>all associated members and staff</strong> — including their
-              Firebase Auth accounts, workout logs, assignments, sessions, and attendance records. This cannot be undone.
+        <details className="adm-details-panel adm-details-panel--danger">
+          <summary className="adm-details-panel__summary adm-details-panel__summary--danger">Danger zone</summary>
+          <div className="adm-details-panel__body">
+            <p style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 12, lineHeight: 1.6 }}>
+              Permanently deletes this gym and <strong>all associated members and staff</strong>. This cannot be undone.
             </p>
             <GymArchiveAction
               destructive
@@ -183,8 +202,8 @@ export default async function GymManagementPage({
               label="Delete gym and all members"
             />
           </div>
-        </section>
+        </details>
       )}
-    </main>
+    </div>
   );
 }

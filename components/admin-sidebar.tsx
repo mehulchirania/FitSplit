@@ -7,24 +7,14 @@ import { logoutUser } from "@/lib/auth";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const IC = {
-  today: (
+  home: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+      <path d="M3 11l9-7 9 7v9a2 2 0 01-2 2h-3v-6h-8v6H5a2 2 0 01-2-2z"/>
     </svg>
   ),
-  people: (
+  building: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-    </svg>
-  ),
-  money: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-    </svg>
-  ),
-  ops: (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 22v-8h6v8"/><path d="M3 9h18"/>
     </svg>
   ),
   dumbbell: (
@@ -32,19 +22,19 @@ const IC = {
       <path d="M6 5v14M18 5v14"/><line x1="6" y1="12" x2="18" y2="12"/><rect x="3" y="8" width="3" height="8" rx="1"/><rect x="18" y="8" width="3" height="8" rx="1"/>
     </svg>
   ),
-  chart: (
+  exercises: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
     </svg>
   ),
-  payment: (
+  mail: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2"/><polyline points="3 7 12 13 21 7"/>
+    </svg>
+  ),
+  billing: (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-    </svg>
-  ),
-  user: (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
     </svg>
   ),
   settings: (
@@ -69,20 +59,14 @@ const IC = {
   ),
 };
 
-export type OdpSidebarData = {
-  gymName: string;
-  gymLogoUrl?: string | null;
-  ownerFirstName: string;
-  ownerInitials: string;
-  role: string;
-  totalMembers: number;
-  pendingPaymentsCount: number;
-  noPlanCount: number;
+export type AdminSidebarData = {
+  adminName: string;
+  adminInitials: string;
+  inboxCount?: number;
 };
 
-export function OdpSidebar({ data }: { data: OdpSidebarData }) {
+export function AdminSidebar({ data }: { data: AdminSidebarData }) {
   const pathname = usePathname();
-
   const [menuOpen, setMenuOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -103,59 +87,39 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
     startTransition(() => { logoutUser(); });
   };
 
-  // Match helpers — treat /owner exactly as dashboard, sub-paths as their own
   function isActive(href: string) {
-    if (href === "/owner") return pathname === "/owner";
+    if (href === "/admin") return pathname === "/admin";
     return pathname.startsWith(href);
   }
 
-  const NAV_MAIN = [
-    { href: "/owner",          label: "Dashboard",  icon: IC.today,    badge: 0 },
-    { href: "/owner/members",  label: "Members",    icon: IC.people,   badge: data.totalMembers },
-    { href: "/owner/training", label: "Training",   icon: IC.ops,      badge: 0 },
-    { href: "/owner/programs", label: "Programs",   icon: IC.dumbbell, badge: 0 },
-    { href: "/owner/billing",  label: "Billing",    icon: IC.payment,  badge: data.pendingPaymentsCount },
-    { href: "/owner/reports",  label: "Reports",    icon: IC.chart,    badge: 0 },
+  const NAV = [
+    { href: "/admin",          label: "Overview",         icon: IC.home,      badge: 0 },
+    { href: "/admin/gyms",     label: "Gyms",              icon: IC.building,  badge: 0 },
+    { href: "/admin/programs", label: "Programs",          icon: IC.dumbbell,  badge: 0 },
+    { href: "/admin/exercises",label: "Exercises",         icon: IC.exercises, badge: 0 },
+    { href: "/admin/inbox",    label: "Inbox",             icon: IC.mail,      badge: data.inboxCount ?? 0 },
+    { href: "/admin/billing",  label: "Platform billing",  icon: IC.billing,   badge: 0 },
   ];
-
-  const NAV_SETTINGS = [
-    { href: "/owner/packages",  label: "Packages" },
-    { href: "/owner/exercises", label: "Exercise catalog" },
-    { href: "/owner/trainers",  label: "Trainers" },
-    { href: "/owner/settings",  label: "Gym profile" },
-  ];
-
-  const roleLabel = data.role === "admin" ? "Super Admin" : "Owner";
 
   return (
     <aside className="odp2-sidebar">
-      {/* Brand — FitSplit × gym co-brand */}
-      <Link href="/owner" className="odp2-sidebar__brand" style={{ textDecoration: "none" }}>
-        {data.gymLogoUrl ? (
-          <div className="odp2-sidebar__cobrand">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-512.png" alt="FitSplit" className="odp2-sidebar__cobrand-logo" />
-            <span className="odp2-sidebar__cobrand-sep">×</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={data.gymLogoUrl} alt={data.gymName} className="odp2-sidebar__cobrand-logo" />
-          </div>
-        ) : (
-          <div className="odp2-sidebar__logo">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-512.png" alt="FitSplit" width={38} height={38} style={{ borderRadius: 10, display: "block" }} />
-          </div>
-        )}
+      {/* Brand — FitSplit only (no gym co-brand for admin) */}
+      <Link href="/admin" className="odp2-sidebar__brand" style={{ textDecoration: "none" }}>
+        <div className="odp2-sidebar__logo">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/icon-512.png" alt="FitSplit" width={38} height={38} style={{ borderRadius: 11, display: "block" }} />
+        </div>
         <div>
           <div className="odp2-sidebar__gym-name">FitSplit</div>
-          <div className="odp2-sidebar__gym-sub">{data.gymName}</div>
+          <div className="odp2-sidebar__gym-sub">Admin Console</div>
         </div>
       </Link>
 
-      {/* Navigation — scrollable */}
+      {/* Navigation */}
       <nav className="odp2-sidebar__nav">
         <div className="odp2-nav-section">
-          <span className="odp2-nav-section-label">Manage</span>
-          {NAV_MAIN.map((item) => (
+          <span className="odp2-nav-section-label">Platform</span>
+          {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -164,22 +128,8 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
               <span className="odp2-nav-link-icon">{item.icon}</span>
               {item.label}
               {item.badge > 0 && (
-                <span className="odp2-nav-badge">{item.badge > 999 ? "999+" : item.badge}</span>
+                <span className="odp2-nav-badge odp2-nav-badge--alert">{item.badge > 99 ? "99+" : item.badge}</span>
               )}
-            </Link>
-          ))}
-        </div>
-
-        <div className="odp2-nav-section">
-          <span className="odp2-nav-section-label">Configure</span>
-          {NAV_SETTINGS.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`odp2-nav-link${isActive(item.href) ? " odp2-nav-link--active" : ""}`}
-            >
-              <span className="odp2-nav-link-icon">{IC.settings}</span>
-              {item.label}
             </Link>
           ))}
         </div>
@@ -187,27 +137,17 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
 
       {/* ── Snowflake-style profile footer ── */}
       <div className="odp2-sidebar__user-footer" ref={menuRef}>
-        {/* Popup menu — renders above footer */}
         {menuOpen && (
           <>
             <div className="odp2-user-menu__overlay" onClick={() => setMenuOpen(false)} />
             <div className="odp2-user-menu">
               <div className="odp2-user-menu__header">
-                <span className="odp2-user-menu__avatar">{data.ownerInitials}</span>
+                <span className="odp2-user-menu__avatar">{data.adminInitials}</span>
                 <div>
-                  <div className="odp2-user-menu__name">{data.ownerFirstName}</div>
-                  <div className="odp2-user-menu__role">{roleLabel}</div>
+                  <div className="odp2-user-menu__name">{data.adminName}</div>
+                  <div className="odp2-user-menu__role">Super Admin</div>
                 </div>
               </div>
-              <div className="odp2-user-menu__divider" />
-              <Link href="/owner/settings" className="odp2-user-menu__item" onClick={() => setMenuOpen(false)}>
-                <span className="odp2-user-menu__item-icon">{IC.settings}</span>
-                Gym settings
-              </Link>
-              <Link href="/owner/notifications" className="odp2-user-menu__item" onClick={() => setMenuOpen(false)}>
-                <span className="odp2-user-menu__item-icon">{IC.bell}</span>
-                Notifications
-              </Link>
               <div className="odp2-user-menu__divider" />
               <button
                 className="odp2-user-menu__item odp2-user-menu__item--danger"
@@ -222,22 +162,20 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
           </>
         )}
 
-        {/* Main trigger button */}
         <button
           className="odp2-user-btn"
           type="button"
           onClick={() => setMenuOpen((p) => !p)}
           aria-label="Account menu"
         >
-          <span className="odp2-user-btn__avatar">{data.ownerInitials}</span>
+          <span className="odp2-user-btn__avatar">{data.adminInitials}</span>
           <div className="odp2-user-btn__id">
-            <strong>{data.ownerFirstName}</strong>
-            <span>{roleLabel}</span>
+            <strong>{data.adminName}</strong>
+            <span>Super Admin</span>
           </div>
           <span className="odp2-user-btn__chevron" style={{ opacity: 0.45 }}>{IC.chevD}</span>
         </button>
 
-        {/* Separate logout button */}
         <button
           className="odp2-user-out"
           type="button"

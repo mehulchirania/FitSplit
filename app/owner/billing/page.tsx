@@ -24,7 +24,7 @@ export default async function BillingPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const currentUser = await requireRole(["owner"]);
+  const currentUser = await requireRole(["admin", "owner"]);
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const { status: rawStatus } = await searchParams;
 

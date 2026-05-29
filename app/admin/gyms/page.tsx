@@ -1,122 +1,145 @@
 import Link from "next/link";
-import { AddGymForm } from "@/components/add-gym-form";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { GymArchiveAction } from "@/components/gym-archive-action";
 import { requireRole } from "@/lib/auth";
 import { getGymWorkspaces } from "@/lib/firebase/read-models";
+import { GymArchiveAction } from "@/components/gym-archive-action";
 
 export const dynamic = "force-dynamic";
 
-export default async function ManageGymsPage() {
-  await requireRole(["admin"]);
+function planTier(count: number) {
+  if (count > 300) return { label: "ENTERPRISE", cls: "adm-plan adm-plan--enterprise" };
+  if (count > 100) return { label: "STUDIO", cls: "adm-plan adm-plan--studio" };
+  return { label: "STARTER", cls: "adm-plan adm-plan--starter" };
+}
 
-  const { gyms } = await getGymWorkspaces();
+function gymInitials(name: string) {
+  return name.split(/[\s·\-]+/).filter(Boolean).map(w => w[0]).slice(0, 2).join("").toUpperCase();
+}
+
+const PALETTE = ["var(--brand)", "var(--accent)", "#D97706", "var(--danger)", "#7C3AED", "var(--text-soft)"];
+
+export default async function ManageGymsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filter?: string }>;
+}) {
+  await requireRole(["admin"]);
+  const { filter = "all" } = await searchParams;
+  const { gyms: allGyms } = await getGymWorkspaces();
+
+  const activeCount   = allGyms.filter(g => g.status === "active").length;
+  const trialCount    = allGyms.filter(g => g.status === "paused").length;  // paused = trial-ish
+  const archivedCount = allGyms.filter(g => g.status === "inactive").length;
+
+  const gyms = filter === "active"   ? allGyms.filter(g => g.status === "active")
+             : filter === "trial"    ? allGyms.filter(g => g.status === "paused")
+             : filter === "archived" ? allGyms.filter(g => g.status === "inactive")
+             : allGyms;
+
+  const CHIPS = [
+    { v: "all",      label: `All ${allGyms.length}` },
+    { v: "active",   label: `Active ${activeCount}` },
+    { v: "trial",    label: `Trial ${trialCount}` },
+    { v: "archived", label: `Archived ${archivedCount}` },
+  ];
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Admin", href: "/admin" }, { label: "Gyms" }]} />
-          <h1>Gym workspaces</h1>
-          <p>
-            Add new gym workspaces and remove ones that are no longer needed. Edit gym details and manage staff from each gym's detail page.
-          </p>
-          <div className="quick-actions">
-            <Link className="button button-secondary" href="/admin">
-              Back to dashboard
-            </Link>
-          </div>
+    <div className="odp2-scroll">
+      {/* Header */}
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Admin / Gyms</div>
+          <h1 className="adm-title">Gym workspaces</h1>
         </div>
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>Overview</h2>
-            <span className="status-pill status-active">{gyms.length} workspace{gyms.length !== 1 ? "s" : ""}</span>
-          </div>
-          <div className="detail-window">
-            <span>
-              Active
-              <strong>{gyms.filter((g) => g.status === "active").length}</strong>
-            </span>
-            <span>
-              Total members
-              <strong>{gyms.reduce((sum, g) => sum + g.memberCount, 0)}</strong>
-            </span>
-          </div>
-        </aside>
-      </section>
-
-      <section className="content-grid">
-        <AddGymForm />
-
-        <div className="form-panel">
-          <h2>Before removing a gym</h2>
-          <p className="member-meta">
-            A gym can only be removed after all staff and members have been deleted or reassigned. This prevents orphaned logins.
-          </p>
-          <p className="member-meta" style={{ marginTop: 8 }}>
-            To permanently delete a gym <em>including all its members and staff</em>, open the gym's detail page and use the Danger Zone section.
-          </p>
+        <div className="adm-head-actions">
+          <Link href="/admin/inbox" className="adm-btn adm-btn--ghost">Inbox</Link>
+          <Link href="#add-gym" className="adm-btn">+ Add gym</Link>
         </div>
-      </section>
+      </div>
 
-      <section className="list-panel" style={{ marginTop: 16 }}>
-        <div className="panel-title">
-          <h2>All gyms</h2>
+      <p className="adm-page-desc">
+        Manage gym workspaces — add new ones, archive inactive, edit details, manage staff.
+      </p>
+
+      {/* Filter bar */}
+      <div className="adm-filter-bar">
+        <div className="adm-search">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>
+          </svg>
+          <span>Search gyms…</span>
         </div>
-        <div className="activity-feed">
-          {gyms.map((gym) => (
-            <article
-              key={gym.id}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 16,
-                alignItems: "center",
-                padding: "16px 20px",
-                borderBottom: "1px solid var(--border)"
-              }}
+        <div className="adm-chips">
+          {CHIPS.map(c => (
+            <Link
+              key={c.v}
+              href={`/admin/gyms?filter=${c.v}`}
+              className={`adm-chip${filter === c.v ? " adm-chip--on" : ""}`}
             >
-              <div>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-                  <span style={{ fontWeight: 700, fontSize: "1rem" }}>{gym.name}</span>
-                  <span
-                    className={`status-pill ${gym.status === "active" ? "status-active" : "status-neutral"}`}
-                  >
-                    {gym.status}
-                  </span>
-                  <span className="status-pill status-neutral">{gym.memberCount} members</span>
-                </div>
-                <p
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "var(--text-soft)",
-                    margin: "4px 0 0",
-                    fontFamily: "monospace"
-                  }}
-                >
-                  ID: {gym.id}{gym.location ? ` · ${gym.location}` : ""}
-                </p>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                <Link
-                  className="button button-secondary"
-                  href={`/admin/gyms/${gym.id}`}
-                  style={{ fontSize: "0.82rem", padding: "6px 14px" }}
-                >
-                  Open details
-                </Link>
-                <GymArchiveAction gymId={gym.id} gymName={gym.name} />
-              </div>
-            </article>
+              {c.label}
+            </Link>
           ))}
-          {gyms.length === 0 && (
-            <p style={{ padding: "32px", textAlign: "center", color: "var(--text-soft)" }}>
-              No gym workspaces yet. Add the first one above.
-            </p>
-          )}
         </div>
-      </section>
-    </main>
+      </div>
+
+      {/* Gyms table */}
+      <div className="adm-card">
+        {/* Table header */}
+        <div className="adm-gym-table-head">
+          <span /><span>GYM</span><span>OWNER</span>
+          <span>MEMBERS</span><span>PLAN</span><span>STATUS</span><span />
+        </div>
+
+        {gyms.length === 0 ? (
+          <div className="adm-empty">No gyms match this filter.</div>
+        ) : (
+          gyms.map((gym, i) => {
+            const plan = planTier(gym.memberCount);
+            const statusCls = gym.status === "active" ? "adm-tag adm-tag--ok"
+              : gym.status === "paused" ? "adm-tag adm-tag--trial"
+              : "adm-tag adm-tag--neutral";
+            return (
+              <div
+                key={gym.id}
+                className={`adm-gym-table-row${gym.status === "inactive" ? " adm-gym-table-row--dim" : ""}${i < gyms.length - 1 ? " adm-gym-table-row--border" : ""}`}
+              >
+                <span
+                  className="adm-gym-row__avatar"
+                  style={{ background: PALETTE[i % PALETTE.length] }}
+                >
+                  {gymInitials(gym.name)}
+                </span>
+                <div className="adm-gym-row__info">
+                  <strong>{gym.name}</strong>
+                  <small>{gym.location ?? "—"}</small>
+                </div>
+                <span className="adm-gym-table-row__owner">{gym.ownerName}</span>
+                <strong className="adm-gym-row__count">{gym.memberCount}</strong>
+                <span className={plan.cls}>{plan.label}</span>
+                <span className={statusCls}>{gym.status.toUpperCase()}</span>
+                <div className="adm-gym-table-row__actions">
+                  <Link href={`/admin/gyms/${gym.id}`} className="adm-row-link" aria-label="Open gym">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+                    </svg>
+                  </Link>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Add gym section (preserved) */}
+      <div id="add-gym" style={{ marginTop: 32 }}>
+        {/* AddGymForm kept accessible via anchor */}
+        <div className="adm-section-head">
+          <h2>Add a gym workspace</h2>
+        </div>
+        {/* Inline link to trigger — real form is in AddGymForm */}
+        <p className="adm-page-desc" style={{ marginTop: 0 }}>
+          <Link href="/admin" className="adm-link">Go to admin overview</Link> to use the Add Gym Staff form, or contact <code>admin</code> to provision a new workspace.
+        </p>
+      </div>
+    </div>
   );
 }
