@@ -271,7 +271,11 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
 
   const data = doc.data() ?? {};
 
-  if (data.role !== "member") {
+  // Only reject if a role field is explicitly present and is NOT "member".
+  // Gym sub-collection member documents typically omit the role field — they are
+  // members by virtue of being in gyms/{gymId}/members, so the absence of a role
+  // field is fine and should not result in a null member.
+  if (data.role && data.role !== "member") {
     return { member: null, profile: fallbackProfile, isPersisted: true };
   }
 

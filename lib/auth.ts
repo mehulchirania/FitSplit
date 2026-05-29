@@ -755,12 +755,20 @@ async function _loginWithCredentials(formData: FormData) {
         );
         if (resp.ok) {
           const payload = (await resp.json()) as { idToken?: string };
-          if (payload.idToken) return createSession(payload.idToken, rememberMe);
+          if (payload.idToken) {
+            const sessionResult = await createSession(payload.idToken, rememberMe);
+            // Only return the Firebase session if the Firestore profile was found.
+            // If the demo Firebase Auth user exists but has no matching authProfile doc
+            // (common when demo UIDs like "member-aarav" aren't real Firestore UIDs),
+            // fall through to the local compatibility-cookie session below.
+            if (sessionResult.status === "success") return sessionResult;
+          }
         }
       }
     }
 
-    // No Firebase Admin or Firebase Auth sign-in failed — use compatibility cookies.
+    // No Firebase Admin, Firebase Auth failed, or profile lookup failed for demo user
+    // — use compatibility cookies so demo accounts always work.
     return createLocalDemoSession(identifier, password, mode, rememberMe);
   }
 
