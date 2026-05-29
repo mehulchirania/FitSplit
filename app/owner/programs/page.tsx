@@ -1,4 +1,5 @@
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
+import { OpenDetailsButton } from "@/components/open-details-button";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
@@ -33,7 +34,7 @@ export default async function ProgramsPage() {
           <h1 className="adm-title">Training plans</h1>
         </div>
         <div className="adm-head-actions">
-          <a href="#create-program" className="adm-btn adm-btn--ghost">+ Custom plan</a>
+          <OpenDetailsButton targetId="create-program" className="adm-btn adm-btn--ghost">+ Custom plan</OpenDetailsButton>
         </div>
       </div>
       <p className="adm-page-desc">

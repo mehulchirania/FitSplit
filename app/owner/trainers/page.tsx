@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { AddStaffForm } from "@/components/add-staff-form";
+import { OpenDetailsButton } from "@/components/open-details-button";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import { getTrainersForGym, getMembers } from "@/lib/firebase/read-models";
+import { getTrainersForGym, getMembers, getAllPTSessionsForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
@@ -19,20 +20,29 @@ export default async function TrainersPage() {
   const currentUser = await requireRole(["admin", "owner"]);
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
-  const [trainers, { members }] = await Promise.all([
+  const [trainers, { members }, ptPlans] = await Promise.all([
     getTrainersForGym(gymId),
     getMembers(gymId),
+    getAllPTSessionsForGym(gymId),
   ]);
 
-  const ptMembers = members.filter((m) => m.isPT);
+  // Derive active PT members from real PT plan data (scheduled or active sessions)
+  // rather than the `isPT` field on members (which is never written by any action).
+  const activePtMemberIds = new Set(
+    ptPlans
+      .filter((p) => p.status === "scheduled" || p.status === "active")
+      .map((p) => p.memberId)
+  );
+  const ptMembers = members.filter((m) => activePtMemberIds.has(m.id));
   const unassignedPtMembers = ptMembers.filter((m) => !m.assignedTrainerId);
 
-  const assignedCountByTrainer = ptMembers.reduce<Record<string, number>>((acc, m) => {
-    if (m.assignedTrainerId) {
-      acc[m.assignedTrainerId] = (acc[m.assignedTrainerId] ?? 0) + 1;
-    }
-    return acc;
-  }, {});
+  // Count PT members assigned to each trainer via PT plans (not the stale assignedTrainerId field)
+  const trainerPtCount: Record<string, number> = {};
+  ptPlans
+    .filter((p) => p.status === "scheduled" || p.status === "active")
+    .forEach((p) => {
+      trainerPtCount[p.trainerId] = (trainerPtCount[p.trainerId] ?? 0) + 1;
+    });
 
   return (
     <div className="odp2-scroll">
@@ -42,7 +52,7 @@ export default async function TrainersPage() {
           <h1 className="adm-title">Trainers</h1>
         </div>
         <div className="adm-head-actions">
-          <a href="#add-trainer" className="adm-btn">+ Add trainer</a>
+          <OpenDetailsButton targetId="add-trainer" className="adm-btn">+ Add trainer</OpenDetailsButton>
         </div>
       </div>
       <p className="adm-page-desc">
@@ -87,13 +97,12 @@ export default async function TrainersPage() {
               <span style={{ fontSize: 13, color: "var(--text-soft)" }}>
                 Add a trainer using the form below.
               </span>
-              <a href="#add-trainer" className="adm-btn adm-btn--ghost" style={{ marginTop: 8, width: "fit-content", alignSelf: "center" }}>
+              <OpenDetailsButton targetId="add-trainer" className="adm-btn adm-btn--ghost" style={{ marginTop: 8, width: "fit-content", alignSelf: "center" }}>
                 + Add your first trainer
-              </a>
+              </OpenDetailsButton>
             </div>
           ) : (
             trainers.map((trainer, i) => {
-              const assignedCount = assignedCountByTrainer[trainer.id] ?? 0;
               return (
                 <div
                   key={trainer.id}
@@ -121,8 +130,8 @@ export default async function TrainersPage() {
                   </div>
                   <div style={{ display: "flex", gap: 16, alignItems: "center", flexShrink: 0 }}>
                     <div style={{ textAlign: "right" }}>
-                      <strong style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", display: "block", lineHeight: 1 }}>{assignedCount}</strong>
-                      <span style={{ fontSize: 11, color: "var(--text-faint)" }}>PT members</span>
+                      <strong style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", display: "block", lineHeight: 1 }}>{trainerPtCount[trainer.id] ?? 0}</strong>
+                      <span style={{ fontSize: 11, color: "var(--text-faint)" }}>PT plans</span>
                     </div>
                     <Link
                       href={`/owner/training?trainerId=${trainer.id}`}

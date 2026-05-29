@@ -1,5 +1,14 @@
 /* ── Personal Training styles ─────────────────────────────────────────────── */
 
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+
+.pt-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
 /* ── Shared PT badge ─────────────────────────────────────────────────────── */
 
 .pt-trainer-badge {

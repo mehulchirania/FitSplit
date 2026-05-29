@@ -548,12 +548,25 @@ export async function changeMemberPin(
       return { status: "error", message: "New PIN must be different from the current PIN." };
     }
 
-    // Verify current PIN by attempting to sign in via Firebase REST
     const memberId = currentUser.memberId ?? currentUser.uid;
     const authEmail = memberAuthEmail(memberId);
 
-    // We can't verify the old PIN server-side without Firebase client SDK here,
-    // so we update directly — the client already authenticated via session cookie
+    // Verify current PIN via Firebase Auth REST before allowing the change
+    const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
+    if (apiKey) {
+      const verifyResp = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: authEmail, password: `pin-${currentPin}`, returnSecureToken: false })
+        }
+      );
+      if (!verifyResp.ok) {
+        return { status: "error", message: "Current PIN is incorrect. Please try again." };
+      }
+    }
+
     await auth.updateUser(memberId, { password: `pin-${newPin}` });
 
     return success("PIN changed successfully.", undefined, ["members"]);

@@ -455,13 +455,18 @@ export async function updateGymDetails(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin"]);
+    const user = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const parsed = parseActionData(formData, UpdateGymSchema);
     if (!parsed.success) return parsed.state;
 
     const db = requireFirebase();
     const { gymId, name, location = "", locationUrl = "", phone = "", email = "", instagram = "", linkedin = "", youtube = "" } = parsed.data;
+
+    // Owners can only update their own gym
+    if (user.role === "owner" && user.gymId && gymId !== user.gymId) {
+      return { status: "error", message: "Unauthorized: you can only update your own gym." };
+    }
 
     // Validate locationUrl if provided
     const trimmedLocationUrl = locationUrl.trim();
@@ -494,13 +499,18 @@ export async function updateGymLogo(
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
-    await requireRole(["admin"]);
+    const user = await requireRole(["admin", "owner"]);
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
     const parsed = parseActionData(formData, UpdateGymLogoSchema);
     if (!parsed.success) return parsed.state;
 
     const { db, storage } = requireFirebaseServices();
     const { gymId, logoDataUrl } = parsed.data;
+
+    // Owners can only update their own gym's logo
+    if (user.role === "owner" && user.gymId && gymId !== user.gymId) {
+      return { status: "error", message: "Unauthorized: you can only update your own gym." };
+    }
     const buffer = parsePngDataUrl(logoDataUrl);
     const now = new Date().toISOString();
     const token = randomUUID();

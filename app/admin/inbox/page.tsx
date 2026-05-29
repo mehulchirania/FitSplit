@@ -20,7 +20,6 @@ export default async function AdminInboxPage() {
         </div>
         <div className="adm-head-actions">
           <span className="adm-btn adm-btn--ghost adm-btn--active">Inbox</span>
-          <button className="adm-btn" disabled>+ Compose</button>
         </div>
       </div>
 
