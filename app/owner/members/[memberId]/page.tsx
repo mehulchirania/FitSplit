@@ -84,20 +84,23 @@ export default async function MemberDetailPage({
   ).length;
 
   return (
-    <main className="page">
+    <div className="odp2-scroll">
+      <div className="adm-page-head" style={{ marginBottom: 0, paddingBottom: 12 }}>
+        <div>
+          <div className="adm-crumb">
+            Members / <Link href="/owner/members" className="adm-link">All members</Link> / {member.fullName}
+          </div>
+        </div>
+        <div className="adm-head-actions">
+          <Link href="/owner/members" className="adm-btn adm-btn--ghost">← All members</Link>
+        </div>
+      </div>
 
       {/* ══════════════════════════════════════════════════════════════
           HERO — avatar · name · status · contact strip · metrics bar
           ══════════════════════════════════════════════════════════════ */}
       <section className="mpd-hero">
         <div className="mpd-hero-body">
-          <Breadcrumb
-            crumbs={[
-              { label: "Dashboard", href: "/owner" },
-              { label: "Members", href: "/owner/members" },
-              { label: member.fullName }
-            ]}
-          />
 
           {/* Identity row */}
           <div className="mpd-hero-identity">
@@ -307,6 +310,6 @@ export default async function MemberDetailPage({
           </details>
         </aside>
       </div>
-    </main>
+    </div>
   );
 }

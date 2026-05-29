@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { Calendar, Dumbbell, UsersRound } from "@/components/icons";
 import { PTBookingForm } from "@/components/pt-booking-form";
 import { PTCalendarDynamic } from "@/components/pt-calendar-dynamic";
@@ -106,32 +105,32 @@ export default async function OwnerTrainingPage({
   const preselectedTrainer = trainerId ? trainers.find((t) => t.id === trainerId) : null;
 
   return (
-    <main className={`page pt-page${isBookingMode ? " pt-page--booking" : ""}`}>
+    <div className={`odp2-scroll pt-page${isBookingMode ? " pt-page--booking" : ""}`}>
 
       {/* ── Page header ── */}
+      <div className="adm-page-head" style={{ marginBottom: 0 }}>
+        <div>
+          <div className="adm-crumb">Dashboard / Training</div>
+          <h1 className="adm-title">{isBookingMode ? "Assign a PT plan" : "Personal training"}</h1>
+        </div>
+        <div className="adm-head-actions">
+          <Link className="adm-btn adm-btn--ghost" href="/owner/training">View all plans</Link>
+          <Link className="adm-btn" href="/owner/training?book=1">+ Assign PT plan</Link>
+        </div>
+      </div>
+
       <section className="pt-command-hero">
         <div className="pt-command-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Training" }]} />
-          <p className="eyebrow">Personal training</p>
-          <h1>{isBookingMode ? "Assign a PT monthly plan" : "Personal Training"}</h1>
-          <p>
+          <p style={{ color: "var(--text-soft)", fontSize: 13, margin: "0 0 10px" }}>
             Create trainer-led PT plans with member, trainer, duration, and exercises in one flow.
             These plans stay separate from regular workout assignments.
           </p>
-          <div className="pt-command-actions">
-            <Link className="button button-primary" href="/owner/training?book=1">
-              Assign PT plan
-            </Link>
-            <Link className="button button-secondary" href="/owner/training">
-              View all plans
-            </Link>
-          </div>
           {currentUser.role === "admin" && gyms.length > 0 && (
             <div className="pt-admin-gym-switcher" aria-label="Select gym">
               {gyms.map((gym) => (
                 <Link
                   key={gym.id}
-                  className={`button ${gym.id === gymId ? "button-primary" : "button-secondary"}`}
+                  className={`adm-btn${gym.id === gymId ? "" : " adm-btn--ghost"}`}
                   href={`/owner/training?gym=${gym.id}`}
                 >
                   {gym.name}
@@ -175,31 +174,23 @@ export default async function OwnerTrainingPage({
 
         {/* Left: booking form (always visible) */}
         <section className="pt-book-col">
-          <div className="list-panel pt-booking-card">
-            <div className="panel-title pt-booking-card-title">
-              <div>
-                <p className="eyebrow">New assignment</p>
-                <h2>
-                  <Calendar />
-                  Assign PT plan
-                </h2>
-              </div>
+          <div className="adm-card pt-booking-card">
+            <div className="adm-card__head pt-booking-card-title">
+              <h3 style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <Calendar />
+                Assign PT plan
+              </h3>
               {preselectedMember && (
-                <span className="status-pill status-active">
+                <span className="adm-inbox-tag adm-inbox-tag--ok">
                   For {preselectedMember.fullName}
                 </span>
               )}
             </div>
 
-            <div className="pt-booking-intro">
-              <span className="status-pill status-neutral">Monthly plan</span>
-              <h3>Plan setup</h3>
-              <p>
+            <div className="adm-card__body">
+              <p style={{ fontSize: 13, color: "var(--text-soft)", margin: "0 0 14px", lineHeight: 1.6 }}>
                 Default duration is 30 days. Add exercises here for PT only; regular workout plans are not overwritten.
               </p>
-            </div>
-
-            <div className="pt-booking-card-body">
               <PTBookingForm
                 gymId={gymId}
                 exercises={exercises}
@@ -300,16 +291,16 @@ export default async function OwnerTrainingPage({
           {view === "calendar" && filtered.length > 0 ? (
             <PTCalendarDynamic sessions={filtered} />
           ) : filtered.length === 0 ? (
-            <div className="list-panel" style={{ textAlign: "center", padding: "40px 24px" }}>
-              <div style={{ color: "var(--text-soft)", margin: "0 auto 12px", display: "flex", justifyContent: "center" }}>
+            <div className="adm-card" style={{ textAlign: "center", padding: "40px 24px" }}>
+              <div style={{ color: "var(--text-faint)", margin: "0 auto 12px", display: "flex", justifyContent: "center" }}>
                 <Calendar />
               </div>
-              <p style={{ color: "var(--text-soft)", margin: 0 }}>
+              <p style={{ color: "var(--text-soft)", margin: 0, fontSize: 13 }}>
                 {activeFilter === "all" ? "No PT plans yet — assign one using the form." : `No ${activeFilter} PT plans.`}
               </p>
             </div>
           ) : (
-            <section className="list-panel" style={{ padding: 0 }}>
+            <section className="adm-card" style={{ padding: 0 }}>
               {filtered.map((session) => (
                 <article key={session.id} className="pt-session-card">
                   <div className="pt-card-header">
@@ -372,6 +363,6 @@ export default async function OwnerTrainingPage({
           )}
         </aside>
       </div>
-    </main>
+    </div>
   );
 }

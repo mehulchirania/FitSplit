@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { StatusBadge } from "@/components/status-badge";
 import { EmptyState } from "@/components/empty-state";
 import { MembershipRequestForm } from "@/components/membership-request-form";
@@ -49,12 +48,11 @@ export default async function MemberMembershipPage() {
   const membershipStatus = member?.membershipStatus ?? (activeMembership ? "active" : "expired");
 
   return (
-    <main className="page membership-page">
-      <header className="page-header">
-        <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "Membership" }]} />
-        <p className="eyebrow">{gym?.name ?? "Your gym"}</p>
+    <div className="m3d-subpage membership-page">
+      <div className="m3d-subpage__head">
         <h1>Membership</h1>
-      </header>
+        <p style={{ color: "var(--text-soft)", fontSize: 13 }}>{gym?.name ?? "Your gym"}</p>
+      </div>
 
       {/* ── Current status card ── */}
       <div className="membership-status-card">
@@ -192,6 +190,6 @@ export default async function MemberMembershipPage() {
           ← Back to dashboard
         </Link>
       </div>
-    </main>
+    </div>
   );
 }

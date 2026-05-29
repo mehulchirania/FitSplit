@@ -1,4 +1,3 @@
-import { Breadcrumb } from "@/components/breadcrumb";
 import { EmptyState } from "@/components/empty-state";
 import { Dumbbell } from "@/components/icons";
 import { PackagesClient } from "./packages-client";
@@ -18,19 +17,22 @@ export default async function PackagesPage() {
   const inactivePackages = packages.filter((p) => !p.isActive);
 
   return (
-    <main className="page">
-      <header className="page-header">
-        <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Packages" }]} />
-        <p className="eyebrow">Membership</p>
-        <h1>Packages</h1>
-        <p>Define the membership plans your gym offers. Members can request a package and you approve or reject the payment.</p>
-      </header>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Packages</div>
+          <h1 className="adm-title">Membership packages</h1>
+        </div>
+      </div>
+      <p className="adm-page-desc">
+        Define the membership plans your gym offers. Members can request a package and you approve or reject the payment.
+      </p>
 
       <PackagesClient
         gymId={gymId}
         activePackages={activePackages}
         inactivePackages={inactivePackages}
       />
-    </main>
+    </div>
   );
 }

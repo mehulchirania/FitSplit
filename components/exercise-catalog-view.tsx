@@ -6,6 +6,7 @@ import { X } from "@/components/icons";
 import { ExerciseEditForm } from "@/components/exercise-edit-form";
 import { TutorialToggleButton } from "@/components/tutorial-toggle";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
+import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import {
   setExerciseTutorialVisibility,
   setGymExerciseVideo,
@@ -207,6 +208,16 @@ function ExerciseRow({
           action={setExerciseTutorialVisibility}
           exerciseId={exercise.id}
           showTutorial={exercise.showTutorial !== false}
+        />
+      </td>
+
+      {/* Video Preview */}
+      <td style={{ padding: "12px 14px" }}>
+        <CatalogVideoPreview
+          exerciseName={exercise.name}
+          gymVideoUrl={exercise.gymVideoUrl}
+          muscleGroup={exercise.muscleGroup}
+          videoUrl={exercise.videoUrl}
         />
       </td>
 
@@ -434,11 +445,12 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
           }}
         >
           <colgroup>
-            <col style={{ width: "28%" }} />   {/* Exercise */}
-            <col style={{ width: "13%" }} />   {/* Muscle Group */}
-            <col style={{ width: "10%" }} />   {/* Source */}
-            <col style={{ width: "13%" }} />   {/* Tutorial */}
-            <col style={{ width: "28%" }} />   {/* Gym Video */}
+            <col style={{ width: "26%" }} />   {/* Exercise */}
+            <col style={{ width: "12%" }} />   {/* Muscle Group */}
+            <col style={{ width: "9%" }} />    {/* Source */}
+            <col style={{ width: "11%" }} />   {/* Tutorial */}
+            <col style={{ width: "16%" }} />   {/* Preview */}
+            <col style={{ width: "18%" }} />   {/* Gym Video */}
             <col style={{ width: "8%" }} />    {/* Actions */}
           </colgroup>
           <thead>
@@ -448,7 +460,7 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
                 borderBottom: "1px solid var(--border)",
               }}
             >
-              {["Exercise", "Muscle Group", "Source", "Tutorial", "Gym Video", ""].map((h) => (
+              {["Exercise", "Muscle Group", "Source", "Tutorial", "Preview", "Gym Video", ""].map((h) => (
                 <th
                   key={h}
                   style={{
@@ -472,7 +484,7 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
               {/* Section header row */}
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   style={{
                     padding: "0",
                     background: "color-mix(in srgb, var(--brand) 6%, var(--bg-elevated))",
@@ -581,7 +593,7 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
               {/* Section header row */}
               <tr>
                 <td
-                  colSpan={6}
+                  colSpan={7}
                   style={{
                     padding: "0",
                     background: "rgba(255,255,255,0.03)",

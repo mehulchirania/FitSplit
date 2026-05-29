@@ -1,4 +1,3 @@
-import { Breadcrumb } from "@/components/breadcrumb";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
 import { requireRole } from "@/lib/auth";
@@ -27,38 +26,39 @@ export default async function ProgramsPage() {
   const customCount = programs.filter((program) => program.source === "gym").length;
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Workout Programs" }]} />
-          <h1>Training plans</h1>
-          <p>
-            All workout programs for your gym. Assign a plan to any member from their profile page.
-          </p>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Programs</div>
+          <h1 className="adm-title">Training plans</h1>
         </div>
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>Programs</h2>
-            <span className="status-pill status-active">{programs.length} plan{programs.length !== 1 ? "s" : ""}</span>
-          </div>
-          <div className="detail-window">
-            <span>
-              Predefined
-              <strong>{predefinedCount}</strong>
-            </span>
-            <span>
-              Custom
-              <strong>{customCount}</strong>
-            </span>
-            <span>
-              Catalog exercises
-              <strong>{exercises.length}</strong>
-            </span>
-          </div>
-        </aside>
-      </section>
+        <div className="adm-head-actions">
+          <a href="#create-program" className="adm-btn adm-btn--ghost">+ Custom plan</a>
+        </div>
+      </div>
+      <p className="adm-page-desc">
+        All workout programs for your gym. Assign a plan to any member from their profile page.
+      </p>
 
-      {/* Primary: existing programs */}
+      <div className="adm-kpis" style={{ marginBottom: 20 }}>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>TOTAL PLANS</small>
+          <strong>{programs.length}</strong>
+        </div>
+        <div className="adm-kpi">
+          <small>PREDEFINED</small>
+          <strong>{predefinedCount}</strong>
+        </div>
+        <div className="adm-kpi adm-kpi--accent">
+          <small>CUSTOM</small>
+          <strong>{customCount}</strong>
+        </div>
+        <div className="adm-kpi">
+          <small>EXERCISES</small>
+          <strong>{exercises.length}</strong>
+        </div>
+      </div>
+
       <WorkoutProgramGallery
         assignments={assignments}
         catalog={catalog}
@@ -67,15 +67,12 @@ export default async function ProgramsPage() {
         programs={programs}
       />
 
-      {/* Secondary: create a custom program */}
-      <section className="list-panel" style={{ marginTop: 20 }}>
-        <div className="panel-title">
-          <h2>Create a custom program</h2>
-        </div>
-        <div style={{ padding: "0 4px 4px" }}>
+      <details className="adm-details-panel" id="create-program" style={{ marginTop: 16 }}>
+        <summary className="adm-details-panel__summary">Create a custom program</summary>
+        <div className="adm-details-panel__body">
           <CustomPlanBuilder catalog={catalog} />
         </div>
-      </section>
-    </main>
+      </details>
+    </div>
   );
 }

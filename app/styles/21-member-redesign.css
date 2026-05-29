@@ -1562,7 +1562,45 @@
 
 /* ── Body/shell overrides ───────────────────────────────────────────────── */
 body.member-desktop-full .topbar { display: none !important; }
-body.member-desktop-full main { padding: 0 !important; max-width: none !important; height: 100dvh; overflow: hidden; }
+body.member-desktop-full .app-shell { height: 100dvh; overflow: hidden; }
+/* Hide app topbar and lock height whenever the member shell is present */
+body:has(.m3d-root) .topbar { display: none !important; }
+body:has(.m3d-root) .mobile-bottom-nav { display: none !important; }
+body:has(.m3d-root) { height: 100dvh; overflow: hidden; }
+body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+
+/* ── Member sub-page content area ──────────────────────────────────────── */
+.m3d-subpage-content {
+  padding: 28px 32px 48px;
+  overflow-y: auto;
+  height: 100%;
+}
+/* Coach view fills height without outer padding — messaging UI needs its own scroll */
+.m3d-subpage-content:has(.mcv-root) {
+  padding: 0;
+  overflow: hidden;
+}
+.m3d-subpage {
+  max-width: 860px;
+}
+.m3d-subpage__head {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+}
+.m3d-subpage__head h1 {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+.m3d-subpage__head p {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0;
+  line-height: 1.5;
+}
 
 /* ── Mobile breakpoint ──────────────────────────────────────────────────── */
 @media (max-width: 768px) {
@@ -1864,7 +1902,7 @@ body.member-desktop-full main { padding: 0 !important; max-width: none !importan
 .mcv-root {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: 100%;
   max-width: 540px;
   margin: 0 auto;
   background: var(--bg);

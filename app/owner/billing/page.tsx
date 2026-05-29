@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { PaymentRequestCard } from "@/components/payment-request-card";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
@@ -46,91 +45,79 @@ export default async function BillingPage({
   const currency = allRequests[0]?.currency ?? "INR";
 
   return (
-    <main className="page">
-      <header className="page-header">
-        <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Billing" }]} />
-        <p className="eyebrow">Payments</p>
-        <h1>Billing &amp; Payments</h1>
-        <p>Review membership payment requests from members and approve or reject them.</p>
-      </header>
-
-      {/* Summary stats */}
-      <div className="billing-stats">
-        <StatCard
-          label="Pending"
-          value={pendingCount}
-          accent={pendingCount > 0 ? "amber" : "default"}
-        />
-        <StatCard
-          label="Approved"
-          value={approvedCount}
-          accent="green"
-        />
-        <StatCard
-          label="Total revenue"
-          value={`${currency} ${totalRevenue.toLocaleString()}`}
-          accent="blue"
-          sub="Approved payments"
-        />
-        <StatCard
-          label="Rejected"
-          value={rejectedCount}
-          accent={rejectedCount > 0 ? "red" : "default"}
-        />
-      </div>
-
-      {/* Filter tabs */}
-      <nav className="members-filter-tabs billing-filter-tabs" aria-label="Filter payment requests">
-        {filterTabs.map((tab) => {
-          const count =
-            tab.value === "all" ? allRequests.length :
-            tab.value === "pending" ? pendingCount :
-            tab.value === "approved" ? approvedCount :
-            rejectedCount;
-          return (
-            <Link
-              key={tab.value}
-              href={tab.value === "all" ? "/owner/billing" : `/owner/billing?status=${tab.value}`}
-              className={activeFilter === tab.value ? "is-selected" : ""}
-              aria-current={activeFilter === tab.value ? "page" : undefined}
-            >
-              {tab.label}
-              <span className={`ftab-count${tab.value === "pending" && pendingCount > 0 ? " ftab-alert" : ""}`}>
-                {count}
-              </span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Request list */}
-      <div className="list-panel" style={{ padding: 0 }}>
-        <div className="panel-title" style={{ padding: "14px 20px 12px" }}>
-          <h2><Bell /> Payment requests</h2>
-          <span className="status-pill status-neutral" style={{ fontSize: "0.72rem" }}>{filtered.length}</span>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Billing</div>
+          <h1 className="adm-title">Billing &amp; payments</h1>
         </div>
-
-        {filtered.length === 0 ? (
-          <div style={{ padding: "32px 20px" }}>
-            <EmptyState
-              icon={<Bell />}
-              heading="No requests found"
-              body={activeFilter === "pending" ? "No pending payment requests. You're all caught up!" : "No requests match this filter."}
-            />
-          </div>
-        ) : (
-          <div className="billing-request-list">
-            {filtered.map((req) => (
-              <PaymentRequestCard
-                key={req.id}
-                req={req}
-                gymId={gymId}
-                showActions={activeFilter === "all" || activeFilter === "pending"}
-              />
-            ))}
-          </div>
-        )}
       </div>
-    </main>
+      <p className="adm-page-desc">Review membership payment requests from members and approve or reject them.</p>
+
+      <div className="adm-kpis" style={{ marginBottom: 16 }}>
+        <div className={`adm-kpi${pendingCount > 0 ? " adm-kpi--warn" : ""}`}>
+          <small>PENDING</small>
+          <strong>{pendingCount}</strong>
+        </div>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>APPROVED</small>
+          <strong>{approvedCount}</strong>
+        </div>
+        <div className="adm-kpi adm-kpi--accent">
+          <small>TOTAL REVENUE</small>
+          <strong>{currency} {totalRevenue.toLocaleString()}</strong>
+        </div>
+        <div className={`adm-kpi${rejectedCount > 0 ? " adm-kpi--danger" : ""}`}>
+          <small>REJECTED</small>
+          <strong>{rejectedCount}</strong>
+        </div>
+      </div>
+
+      <div className="adm-filter-bar" style={{ marginBottom: 16 }}>
+        <div className="adm-chips">
+          {filterTabs.map((tab) => {
+            const count =
+              tab.value === "all" ? allRequests.length :
+              tab.value === "pending" ? pendingCount :
+              tab.value === "approved" ? approvedCount :
+              rejectedCount;
+            return (
+              <Link
+                key={tab.value}
+                href={tab.value === "all" ? "/owner/billing" : `/owner/billing?status=${tab.value}`}
+                className={`adm-chip${activeFilter === tab.value ? " adm-chip--on" : ""}`}
+              >
+                {tab.label} <span style={{ opacity: 0.65 }}>({count})</span>
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="adm-card">
+        <div className="adm-card__head">
+          <h3>Payment requests</h3>
+          <span className="adm-inbox-tag adm-inbox-tag--ok">{filtered.length}</span>
+        </div>
+        <div className="adm-card__body adm-card__body--flush">
+          {filtered.length === 0 ? (
+            <div className="adm-empty">
+              {activeFilter === "pending" ? "No pending payment requests. You're all caught up!" : "No requests match this filter."}
+            </div>
+          ) : (
+            <div className="billing-request-list">
+              {filtered.map((req) => (
+                <PaymentRequestCard
+                  key={req.id}
+                  req={req}
+                  gymId={gymId}
+                  showActions={activeFilter === "all" || activeFilter === "pending"}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

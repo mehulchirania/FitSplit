@@ -138,7 +138,13 @@ export default async function GymDetailPage({
                     <strong>{s.fullName}</strong>
                     <small>{s.staffType ? (s.staffType.charAt(0).toUpperCase() + s.staffType.slice(1)) : "Owner"}</small>
                   </div>
-                  <StaffAccessActions fullName={s.fullName} gymId={gym.id} userId={s.id} />
+                  <StaffAccessActions
+                    fullName={s.fullName}
+                    gymId={gym.id}
+                    userId={s.id}
+                    phone={s.phone ?? ""}
+                    staffType={(s.staffType as "owner" | "trainer" | "staff") ?? "owner"}
+                  />
                 </div>
               ))
             )}

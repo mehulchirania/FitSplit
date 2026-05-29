@@ -164,6 +164,48 @@ export async function createOwnerProfile(
   }
 }
 
+const UpdateStaffSchema = z.object({
+  userId: ZodHelpers.textRequired("User ID"),
+  gymId: ZodHelpers.textRequired("Gym ID"),
+  fullName: ZodHelpers.textRequired("Full name"),
+  phone: ZodHelpers.textRequired("Phone"),
+  staffType: z.enum(["owner", "trainer", "staff"]).default("owner")
+});
+
+export async function updateStaffProfile(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    await requireRole(["admin"]);
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, UpdateStaffSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { userId, gymId, fullName, phone, staffType } = parsed.data;
+    const { db } = requireFirebaseServices();
+    const now = new Date().toISOString();
+
+    const avatarInitials = fullName
+      .split(/\s+/)
+      .map((p: string) => p[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase();
+
+    const updates = { fullName, phone, username: phone, staffType, avatarInitials, updatedAt: now };
+
+    await Promise.all([
+      db.collection(collectionPaths.authProfiles).doc(userId).set(updates, { merge: true }),
+      scopedGymDoc(db, gymId, "staff", userId).set(updates, { merge: true }),
+    ]);
+
+    return success(`${fullName} was updated.`, gymId, ["staff"]);
+  } catch (error) {
+    return failure(error, "Unable to update staff profile.");
+  }
+}
+
 const DeleteStaffSchema = z.object({
   userId: ZodHelpers.textRequired("User ID"),
   gymId: ZodHelpers.textRequired("Gym ID")

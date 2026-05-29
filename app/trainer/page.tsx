@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { Calendar, UsersRound } from "@/components/icons";
 import { EmptyState } from "@/components/empty-state";
 import { StatusBadge } from "@/components/status-badge";
@@ -72,27 +71,21 @@ export default async function TrainerDashboardPage({
   const trainerOptions = allTrainers.map((t) => ({ id: t.id, fullName: t.fullName }));
 
   return (
-    <main className="page">
+    <div className="odp2-scroll">
       {/* ── Header ── */}
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Trainer" }, { label: "My Schedule" }]} />
-          <p className="eyebrow">Trainer view</p>
-          <h1>My PT schedule</h1>
-          <p>Your upcoming and active PT plans. Active plans can be opened in the live console.</p>
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Trainer / My Schedule</div>
+          <h1 className="adm-title">My PT schedule</h1>
         </div>
-        <div style={{ display: "flex", gap: 8, alignItems: "flex-start", flexWrap: "wrap" }}>
-          <Link
-            className={`button ${book === "1" ? "button-secondary" : "button-primary"}`}
-            href={book === "1" ? "/trainer" : "/trainer?book=1"}
-          >
+        <div className="adm-head-actions">
+          <Link className={`adm-btn adm-btn--ghost${book === "1" ? "" : ""}`} href={book === "1" ? "/trainer" : "/trainer?book=1"}>
             {book === "1" ? "← Back to schedule" : "+ Assign PT plan"}
           </Link>
-          <Link className="button button-secondary" href="/trainer/members">
-            My members
-          </Link>
+          <Link className="adm-btn adm-btn--ghost" href="/trainer/members">My members</Link>
         </div>
-      </section>
+      </div>
+      <p className="adm-page-desc">Your upcoming and active PT plans. Active plans can be opened in the live console.</p>
 
       {/* ── Booking form (toggled) ── */}
       {book === "1" && (
@@ -197,6 +190,6 @@ export default async function TrainerDashboardPage({
           )}
         </section>
       </div>
-    </main>
+    </div>
   );
 }

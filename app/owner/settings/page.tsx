@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { GymDetailsForm } from "@/components/gym-details-form";
 import { GymLogoManager } from "@/components/gym-logo-manager";
 import { GymNoticeManager } from "@/components/gym-notice-manager";
@@ -24,12 +23,14 @@ export default async function GymSettingsPage() {
     gym.trainerMemberVisibility ?? "assigned_only";
 
   return (
-    <main className="page">
-      <header className="page-header">
-        <Breadcrumb crumbs={[{ label: "Owner", href: "/owner" }, { label: "Gym Settings" }]} />
-        <p className="eyebrow">{gym.name}</p>
-        <h1>Gym Settings</h1>
-      </header>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Settings</div>
+          <h1 className="adm-title">Gym settings</h1>
+        </div>
+      </div>
+      <p className="adm-page-desc">Manage gym details, logo, trainer visibility, and member-facing notices.</p>
 
       <div className="content-grid">
         <GymDetailsForm gym={gym} />
@@ -50,6 +51,6 @@ export default async function GymSettingsPage() {
           <GymNoticeManager notices={gym.notices ?? []} />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { Calendar, Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import {
@@ -72,25 +71,15 @@ export default async function MemberPTHistoryPage() {
   const totalScheduled = upcoming.length;
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "PT Plans" }]} />
-          <h1>Personal training.</h1>
-          <p>Your personal-training plans, upcoming work, and completed history.</p>
+    <div className="m3d-subpage">
+      <div className="m3d-subpage__head">
+        <h1>Personal training</h1>
+        <p>Your PT plans, upcoming work, and completed history.</p>
+        <div style={{ display: "flex", gap: 10, marginTop: 10 }}>
+          <span className="adm-inbox-tag adm-inbox-tag--warn">{totalScheduled} upcoming</span>
+          <span className="adm-inbox-tag adm-inbox-tag--ok">{totalCompleted} completed</span>
         </div>
-
-        <aside className="ui-cards" style={{ alignContent: "start", height: "fit-content", gap: 14 }}>
-          <article className="ui-card blue">
-            <p className="tip" style={{ fontSize: "1.2em" }}><Calendar /> {totalScheduled}</p>
-            <p className="second-text">Upcoming</p>
-          </article>
-          <article className="ui-card green">
-            <p className="tip" style={{ fontSize: "1.2em" }}><Dumbbell /> {totalCompleted}</p>
-            <p className="second-text">Completed</p>
-          </article>
-        </aside>
-      </section>
+      </div>
 
       {sessions.length === 0 ? (
         <div className="list-panel" style={{ textAlign: "center", padding: "48px 24px" }}>
@@ -126,7 +115,7 @@ export default async function MemberPTHistoryPage() {
           )}
         </>
       )}
-    </main>
+    </div>
   );
 }
 

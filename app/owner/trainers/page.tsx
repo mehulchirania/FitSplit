@@ -1,13 +1,19 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
-import { EmptyState } from "@/components/empty-state";
-import { StatCard } from "@/components/stat-card";
-import { UserRound, UsersRound } from "@/components/icons";
+import { AddStaffForm } from "@/components/add-staff-form";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { getTrainersForGym, getMembers } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
+
+function trainerInitials(name: string) {
+  const parts = name.trim().split(/\s+/);
+  return parts.length >= 2
+    ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+    : name.slice(0, 2).toUpperCase();
+}
+
+const AVATAR_COLORS = ["var(--brand)", "var(--accent)", "#7C3AED", "#D97706", "var(--danger)"];
 
 export default async function TrainersPage() {
   const currentUser = await requireRole(["admin", "owner"]);
@@ -21,7 +27,6 @@ export default async function TrainersPage() {
   const ptMembers = members.filter((m) => m.isPT);
   const unassignedPtMembers = ptMembers.filter((m) => !m.assignedTrainerId);
 
-  // Build a map of trainerId → assigned PT members
   const assignedCountByTrainer = ptMembers.reduce<Record<string, number>>((acc, m) => {
     if (m.assignedTrainerId) {
       acc[m.assignedTrainerId] = (acc[m.assignedTrainerId] ?? 0) + 1;
@@ -30,125 +35,152 @@ export default async function TrainersPage() {
   }, {});
 
   return (
-    <main className="page">
-      <header className="page-header">
-        <Breadcrumb crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Trainers" }]} />
-        <p className="eyebrow">Staff</p>
-        <h1>Trainers</h1>
-        <p>
-          Manage personal trainers at your gym. Assign trainers to PT members from the{" "}
-          <Link href="/owner/members" style={{ color: "var(--brand)" }}>
-            member detail page
-          </Link>.
-        </p>
-      </header>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Trainers</div>
+          <h1 className="adm-title">Trainers</h1>
+        </div>
+        <div className="adm-head-actions">
+          <a href="#add-trainer" className="adm-btn">+ Add trainer</a>
+        </div>
+      </div>
+      <p className="adm-page-desc">
+        Manage personal trainers at your gym. Assign trainers to PT members from the{" "}
+        <Link href="/owner/members" className="adm-link">member detail page</Link>.
+      </p>
 
-      {/* Stats */}
-      <div className="billing-stats">
-        <StatCard
-          label="Trainers"
-          value={trainers.length}
-          accent="blue"
-        />
-        <StatCard
-          label="PT members"
-          value={ptMembers.length}
-          accent="green"
-        />
-        <StatCard
-          label="Unassigned PT members"
-          value={unassignedPtMembers.length}
-          accent={unassignedPtMembers.length > 0 ? "amber" : "default"}
-        />
+      {/* KPI row */}
+      <div className="adm-kpis" style={{ marginBottom: 20 }}>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>TRAINERS</small>
+          <strong>{trainers.length}</strong>
+          <em>active staff</em>
+        </div>
+        <div className="adm-kpi">
+          <small>PT MEMBERS</small>
+          <strong>{ptMembers.length}</strong>
+          <em>on PT plans</em>
+        </div>
+        <div className={`adm-kpi${unassignedPtMembers.length > 0 ? " adm-kpi--warn" : ""}`}>
+          <small>UNASSIGNED PT</small>
+          <strong>{unassignedPtMembers.length}</strong>
+          <em>{unassignedPtMembers.length > 0 ? "need a trainer" : "all assigned"}</em>
+        </div>
+        <div className="adm-kpi">
+          <small>AVG PT LOAD</small>
+          <strong>{trainers.length > 0 ? Math.round(ptMembers.length / trainers.length) : "—"}</strong>
+          <em>members per trainer</em>
+        </div>
       </div>
 
-      {/* Trainer list */}
-      <div className="list-panel" style={{ padding: 0 }}>
-        <div className="panel-title" style={{ padding: "14px 20px 12px" }}>
-          <h2><UsersRound /> Active trainers</h2>
-          <span className="status-pill status-neutral" style={{ fontSize: "0.72rem" }}>{trainers.length}</span>
+      {/* Trainer roster */}
+      <div className="adm-card" style={{ marginBottom: 16 }}>
+        <div className="adm-card__head">
+          <h3>Active trainers</h3>
+          <span className="adm-inbox-tag adm-inbox-tag--ok">{trainers.length}</span>
         </div>
-
-        {trainers.length === 0 ? (
-          <div style={{ padding: "32px 20px" }}>
-            <EmptyState
-              icon={<UserRound />}
-              heading="No trainers yet"
-              body="Add a trainer by creating a staff account with the Trainer role."
-              action={{ label: "Manage staff →", href: "/owner/settings" }}
-            />
-          </div>
-        ) : (
-          <div className="trainer-list">
-            {trainers.map((trainer) => {
+        <div className="adm-card__body adm-card__body--flush">
+          {trainers.length === 0 ? (
+            <div className="adm-empty" style={{ flexDirection: "column", gap: 8, padding: "32px 20px", textAlign: "center" }}>
+              <p style={{ margin: 0, fontWeight: 700 }}>No trainers yet</p>
+              <span style={{ fontSize: 13, color: "var(--text-soft)" }}>
+                Add a trainer using the form below.
+              </span>
+              <a href="#add-trainer" className="adm-btn adm-btn--ghost" style={{ marginTop: 8, width: "fit-content", alignSelf: "center" }}>
+                + Add your first trainer
+              </a>
+            </div>
+          ) : (
+            trainers.map((trainer, i) => {
               const assignedCount = assignedCountByTrainer[trainer.id] ?? 0;
               return (
-                <div key={trainer.id} className="trainer-row">
-                  <div className="trainer-row-avatar">
-                    {trainer.avatarInitials}
-                  </div>
-                  <div className="trainer-row-info">
-                    <div className="trainer-row-name">{trainer.fullName}</div>
-                    <div className="trainer-row-meta">
+                <div
+                  key={trainer.id}
+                  className={`adm-staff-row${i < trainers.length - 1 ? " adm-staff-row--border" : ""}`}
+                  style={{ padding: "14px 20px" }}
+                >
+                  <span
+                    className="adm-staff-row__avatar"
+                    style={{ background: AVATAR_COLORS[i % AVATAR_COLORS.length] }}
+                  >
+                    {trainerInitials(trainer.fullName)}
+                  </span>
+                  <div className="adm-staff-row__info" style={{ flex: 1, minWidth: 0 }}>
+                    <strong style={{ fontSize: 14, fontWeight: 700, color: "var(--text)" }}>{trainer.fullName}</strong>
+                    <div style={{ display: "flex", gap: 6, marginTop: 3, alignItems: "center", flexWrap: "wrap" }}>
                       {trainer.staffType === "owner" ? (
-                        <span className="status-pill status-active" style={{ fontSize: "0.7rem" }}>Owner</span>
+                        <span className="adm-inbox-tag adm-inbox-tag--ok" style={{ fontSize: "0.7rem" }}>Owner</span>
                       ) : (
-                        <span className="status-pill status-neutral" style={{ fontSize: "0.7rem" }}>Trainer</span>
+                        <span className="adm-inbox-tag" style={{ fontSize: "0.7rem" }}>Trainer</span>
                       )}
-                      {trainer.phone && <span className="trainer-row-phone">{trainer.phone}</span>}
+                      {trainer.phone && (
+                        <span style={{ fontSize: 12, color: "var(--text-faint)" }}>{trainer.phone}</span>
+                      )}
                     </div>
                   </div>
-                  <div className="trainer-row-stats">
-                    <div className="trainer-row-stat">
-                      <strong>{assignedCount}</strong>
-                      <span>PT members</span>
+                  <div style={{ display: "flex", gap: 16, alignItems: "center", flexShrink: 0 }}>
+                    <div style={{ textAlign: "right" }}>
+                      <strong style={{ fontSize: 18, fontWeight: 800, color: "var(--text)", display: "block", lineHeight: 1 }}>{assignedCount}</strong>
+                      <span style={{ fontSize: 11, color: "var(--text-faint)" }}>PT members</span>
                     </div>
-                  </div>
-                  <div className="trainer-row-actions">
                     <Link
                       href={`/owner/training?trainerId=${trainer.id}`}
-                      className="button button-secondary button-sm"
+                      className="adm-btn adm-btn--ghost adm-btn--sm"
                     >
                       View sessions →
                     </Link>
                   </div>
                 </div>
               );
-            })}
-          </div>
-        )}
+            })
+          )}
+        </div>
       </div>
 
       {/* Unassigned PT members */}
       {unassignedPtMembers.length > 0 && (
-        <div className="list-panel" style={{ padding: 0, marginTop: 16 }}>
-          <div className="panel-title" style={{ padding: "14px 20px 12px" }}>
-            <h2>PT members without a trainer</h2>
-            <span className="status-pill status-warning" style={{ fontSize: "0.72rem" }}>{unassignedPtMembers.length}</span>
+        <div className="adm-card" style={{ marginBottom: 16 }}>
+          <div className="adm-card__head">
+            <h3>PT members without a trainer</h3>
+            <span className="adm-inbox-tag adm-inbox-tag--warn">{unassignedPtMembers.length}</span>
           </div>
-          <div className="trainer-list">
-            {unassignedPtMembers.map((m) => (
-              <div key={m.id} className="trainer-row">
-                <div className="trainer-row-avatar">{m.avatarInitials}</div>
-                <div className="trainer-row-info">
-                  <div className="trainer-row-name">{m.fullName}</div>
-                  <div className="trainer-row-meta">
-                    <span className="status-pill status-expiring" style={{ fontSize: "0.7rem" }}>No trainer assigned</span>
-                  </div>
+          <div className="adm-card__body adm-card__body--flush">
+            {unassignedPtMembers.map((m, i) => (
+              <div
+                key={m.id}
+                className={`adm-staff-row${i < unassignedPtMembers.length - 1 ? " adm-staff-row--border" : ""}`}
+                style={{ padding: "12px 20px" }}
+              >
+                <span className="adm-staff-row__avatar" style={{ background: "var(--warning)", fontSize: 12 }}>
+                  {m.avatarInitials}
+                </span>
+                <div className="adm-staff-row__info" style={{ flex: 1 }}>
+                  <strong style={{ fontSize: 13.5, fontWeight: 700 }}>{m.fullName}</strong>
+                  <span className="adm-inbox-tag adm-inbox-tag--warn" style={{ fontSize: "0.7rem", display: "inline-flex", marginTop: 3 }}>No trainer assigned</span>
                 </div>
-                <div className="trainer-row-actions">
-                  <Link
-                    href={`/owner/members/${m.id}`}
-                    className="button button-secondary button-sm"
-                  >
-                    Assign trainer →
-                  </Link>
-                </div>
+                <Link
+                  href={`/owner/members/${m.id}`}
+                  className="adm-btn adm-btn--ghost adm-btn--sm"
+                >
+                  Assign trainer →
+                </Link>
               </div>
             ))}
           </div>
         </div>
       )}
-    </main>
+
+      {/* Add trainer form */}
+      <details className="adm-details-panel" id="add-trainer" open={trainers.length === 0}>
+        <summary className="adm-details-panel__summary">Add a trainer / staff member</summary>
+        <div className="adm-details-panel__body">
+          <p style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 14, lineHeight: 1.6 }}>
+            Creates a FitSplit login for the new staff member. Their default password is <code>password</code> — ask them to change it on first login.
+          </p>
+          <AddStaffForm gymId={gymId} />
+        </div>
+      </details>
+    </div>
   );
 }

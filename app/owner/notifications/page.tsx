@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { NotificationList } from "@/components/notification-list";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
@@ -58,53 +57,48 @@ export default async function OwnerNotificationsPage({
   const unreadCount = notifications.filter((n) => !n.readAt).length;
 
   return (
-    <main className="page">
-      <div className="notif-page-header">
-        <Breadcrumb
-          crumbs={[
-            { label: "Dashboard", href: "/owner" },
-            { label: "Notifications" }
-          ]}
-        />
-        <div className="notif-page-title-row">
-          <div>
-            <h1>Notifications</h1>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Notifications</div>
+          <h1 className="adm-title">
+            Notifications
             {unreadCount > 0 && (
-              <span className="status-pill status-expiring" style={{ marginLeft: 10 }}>
+              <span className="adm-inbox-tag adm-inbox-tag--warn" style={{ marginLeft: 10, verticalAlign: "middle" }}>
                 {unreadCount} unread
               </span>
             )}
-          </div>
+          </h1>
         </div>
       </div>
 
-      {/* Filter tabs */}
-      <nav className="notif-filter-tabs" aria-label="Notification filters">
-        {FILTER_TABS.map((t) => {
-          const count = t.key === "all"
-            ? notifications.length
-            : t.key === "unread"
-            ? unreadCount
-            : filterNotifications(notifications, t.key).length;
-
-          return (
-            <Link
-              key={t.key}
-              href={`/owner/notifications?tab=${t.key}`}
-              className={`notif-filter-tab${tab === t.key ? " notif-filter-tab-active" : ""}`}
-            >
-              {t.label}
-              {count > 0 && (
-                <span className="notif-filter-count">{count}</span>
-              )}
-            </Link>
-          );
-        })}
-      </nav>
-
-      <div className="list-panel" style={{ marginTop: 0 }}>
-        <NotificationList items={filtered} />
+      {/* Filter chips */}
+      <div className="adm-filter-bar" style={{ marginBottom: 16 }}>
+        <div className="adm-chips">
+          {FILTER_TABS.map((t) => {
+            const count = t.key === "all"
+              ? notifications.length
+              : t.key === "unread"
+              ? unreadCount
+              : filterNotifications(notifications, t.key).length;
+            return (
+              <Link
+                key={t.key}
+                href={`/owner/notifications?tab=${t.key}`}
+                className={`adm-chip${tab === t.key ? " adm-chip--on" : ""}`}
+              >
+                {t.label} {count > 0 && <span style={{ opacity: 0.7 }}>({count})</span>}
+              </Link>
+            );
+          })}
+        </div>
       </div>
-    </main>
+
+      <div className="adm-card">
+        <div className="adm-card__body adm-card__body--flush">
+          <NotificationList items={filtered} />
+        </div>
+      </div>
+    </div>
   );
 }
