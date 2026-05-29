@@ -38,7 +38,7 @@ function isActiveLink(pathname: string, href: string) {
 export function MainNav({ role, staffType }: { role?: Role; staffType?: string }) {
   const pathname = usePathname();
 
-  if (!role || role === "member" || pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
+  if (!role || role === "member" || pathname.startsWith("/owner") || pathname.startsWith("/member") || pathname.startsWith("/profile") || pathname.startsWith("/activity")) {
     return null;
   }
 
