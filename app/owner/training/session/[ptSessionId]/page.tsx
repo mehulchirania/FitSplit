@@ -1,6 +1,5 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { TrainerLiveConsole } from "@/components/trainer-live-console";
 import { requireRole } from "@/lib/auth";
 import {
@@ -36,41 +35,30 @@ export default async function PTSessionConsolePage({
   ]);
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb
-            crumbs={[
-              { label: "Dashboard", href: "/owner" },
-              { label: "Training", href: "/owner/training" },
-              { label: `Session — ${session.memberName ?? session.memberId}` }
-            ]}
-          />
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <h1 style={{ margin: 0 }}>
-              {session.memberName ?? session.memberId}
-            </h1>
-            <span className={`status-pill ${STATUS_PILL[session.status] ?? "status-neutral"}`}>
-              {session.status}
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Training / Session</div>
+          <h1 className="adm-title" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            {session.memberName ?? session.memberId}
+            <span className={`adm-inbox-tag${session.status === "active" ? " adm-inbox-tag--ok" : session.status === "scheduled" ? " adm-inbox-tag--warn" : " adm-inbox-tag--accent"}`}>
+              {session.status.toUpperCase()}
             </span>
-          </div>
-          <p style={{ color: "var(--text-soft)" }}>
+          </h1>
+          <p style={{ color: "var(--text-soft)", fontSize: 13, marginTop: 2 }}>
             with {session.trainerName ?? session.trainerId}
           </p>
         </div>
-
-        <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-          <Link className="button button-secondary" href="/owner/training">
-            ← Back to schedule
-          </Link>
+        <div className="adm-head-actions">
+          <Link className="adm-btn adm-btn--ghost" href="/owner/training">← Back to schedule</Link>
         </div>
-      </section>
+      </div>
 
       <TrainerLiveConsole
         session={session}
         initialLiftLogs={liftLogs}
         exercises={exercises}
       />
-    </main>
+    </div>
   );
 }

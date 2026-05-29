@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { AttendanceTrendChart } from "@/components/attendance-trend-chart-lazy";
@@ -91,302 +90,164 @@ export default async function OwnerReportsPage() {
   // slots is SlotLoad[] — each item has slotId ("A"|"B"|"C"|"D") and memberCount
   const totalSlotted = slots.reduce((n, s) => n + s.memberCount, 0);
 
+  const pageHeader = (
+    <div className="adm-page-head">
+      <div>
+        <div className="adm-crumb">Dashboard / Reports</div>
+        <h1 className="adm-title">{gym?.name ?? "Gym"} — Reports</h1>
+      </div>
+    </div>
+  );
+
   // Zero-member empty state
   if (members.length === 0) {
     return (
-      <main className="page">
-        <header style={{ marginBottom: "1.5rem" }}>
-          <Breadcrumb
-            crumbs={[
-              { label: "Owner", href: "/owner" },
-              { label: "Reports" }
-            ]}
-          />
-          <h1 style={{ marginTop: "0.5rem" }}>{gym?.name ?? "Gym"} — Reports</h1>
-        </header>
-        <div style={{
-          alignItems: "center",
-          background: "var(--bg-subtle)",
-          border: "1px dashed var(--border)",
-          borderRadius: "16px",
-          display: "flex",
-          flexDirection: "column",
-          gap: "12px",
-          margin: "40px auto",
-          maxWidth: "480px",
-          padding: "48px 32px",
-          textAlign: "center"
-        }}>
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--text-faint)", opacity: 0.45 }} aria-hidden>
-            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-          </svg>
-          <p style={{ color: "var(--text)", fontWeight: 700, fontSize: "1.05rem", margin: 0 }}>
-            No members yet
-          </p>
-          <span style={{ color: "var(--text-soft)", fontSize: "0.875rem", lineHeight: 1.6 }}>
-            Add your first member to start seeing attendance trends, workout coverage, and PT plan reports.
-          </span>
-          <Link href="/owner/members" style={{
-            background: "var(--brand)",
-            borderRadius: "8px",
-            color: "#000",
-            display: "inline-block",
-            fontWeight: 600,
-            fontSize: "0.875rem",
-            marginTop: "8px",
-            padding: "10px 20px",
-            textDecoration: "none"
-          }}>
-            Add a member →
-          </Link>
+      <div className="odp2-scroll">
+        {pageHeader}
+        <div className="adm-card" style={{ marginTop: 16 }}>
+          <div className="adm-empty" style={{ flexDirection: "column", gap: 12, padding: "48px 32px", textAlign: "center" }}>
+            <p style={{ fontWeight: 700, fontSize: "1.05rem", margin: 0 }}>No members yet</p>
+            <span style={{ fontSize: "0.875rem", lineHeight: 1.6 }}>
+              Add your first member to start seeing attendance trends, workout coverage, and PT plan reports.
+            </span>
+            <Link href="/owner/members" className="adm-btn" style={{ marginTop: 8 }}>Add a member →</Link>
+          </div>
         </div>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className="page">
-      <header style={{ marginBottom: "1.5rem" }}>
-        <Breadcrumb
-          crumbs={[
-            { label: "Owner", href: "/owner" },
-            { label: "Reports" }
-          ]}
-        />
-        <h1 style={{ marginTop: "0.5rem" }}>{gym?.name ?? "Gym"} — Reports</h1>
-        <p style={{ color: "var(--color-text-secondary, #a0a0a0)", marginTop: "0.25rem" }}>
-          As of {now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-        </p>
-      </header>
+    <div className="odp2-scroll">
+      {pageHeader}
+      <p className="adm-page-desc">
+        As of {now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
+      </p>
 
-      {/* ── Top-line stats ──────────────────────────────────────── */}
-      <section aria-label="Top-line stats" className="odp-stats" style={{ marginBottom: "1.5rem" }}>
-        <div className="odp-stat">
+      {/* ── Top-line KPIs ───────────────────────────────────────── */}
+      <div className="adm-kpis adm-kpis--4" style={{ marginBottom: "1.25rem" }}>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>TOTAL MEMBERS</small>
           <strong>{members.length}</strong>
-          <span>Total members</span>
+          <em>{activeMembers.length} active</em>
         </div>
-        <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong>{activeMembers.length}</strong>
-          <span>Active</span>
+        <div className={`adm-kpi${inactiveMembers.length > 0 ? " adm-kpi--warn" : ""}`}>
+          <small>SUSPENDED</small>
+          <strong>{inactiveMembers.length}</strong>
+          <em>inactive accounts</em>
         </div>
-        <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong style={inactiveMembers.length > 0 ? { color: "var(--color-warning, #f59e0b)" } : undefined}>
-            {inactiveMembers.length}
-          </strong>
-          <span>Suspended</span>
+        <div className="adm-kpi adm-kpi--accent">
+          <small>NEW THIS MONTH</small>
+          <strong>{newThisMonth}</strong>
+          <em>{newLastMonth} last month</em>
         </div>
-        <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong style={{ color: "var(--color-success, #22c55e)" }}>{newThisMonth}</strong>
-          <span>New this month</span>
-        </div>
-        <div className="odp-stat-sep" />
-        <div className="odp-stat">
-          <strong>{newLastMonth}</strong>
-          <span>New last month</span>
-        </div>
-        <div className="odp-stat-sep" />
-        <div className="odp-stat">
+        <div className={`adm-kpi${activeSessions.length > 0 ? " adm-kpi--brand" : ""}`}>
+          <small>LIVE NOW</small>
           <strong>{activeSessions.length}</strong>
-          <span>Live now</span>
+          <em>active sessions</em>
         </div>
-      </section>
+      </div>
 
       {/* ── Attendance Trend ────────────────────────────────────── */}
-      <div style={{ marginBottom: "1.5rem" }}>
+      <div style={{ marginBottom: "1.25rem" }}>
         <AttendanceTrendChart data={sessionCounts} />
       </div>
 
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 22rem), 1fr))",
-          gap: "1rem"
-        }}
-      >
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 22rem), 1fr))", gap: "1rem" }}>
+
         {/* ── Workout coverage ──────────────────────────────────── */}
-        <section className="list-panel">
-          <div className="panel-title">
-            <h2>Workout Coverage</h2>
+        <div className="adm-card">
+          <div className="adm-card__head">
+            <h3>Workout Coverage</h3>
+            <span className="adm-inbox-tag adm-inbox-tag--ok">{coveragePct}%</span>
           </div>
-          <div style={{ padding: "0.75rem 1rem 0.5rem" }}>
-            {/* Progress bar */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                marginBottom: "0.75rem"
-              }}
-            >
+          <div className="adm-card__body">
+            <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.75rem" }}>
               <div
                 aria-label={`${coveragePct}% workout coverage`}
                 role="progressbar"
                 aria-valuenow={coveragePct}
                 aria-valuemin={0}
                 aria-valuemax={100}
-                style={{
-                  flex: 1,
-                  height: "0.625rem",
-                  borderRadius: "9999px",
-                  background: "var(--color-surface-raised, #2a2a2a)",
-                  overflow: "hidden"
-                }}
+                style={{ flex: 1, height: 8, borderRadius: 999, background: "var(--bg-muted)", overflow: "hidden" }}
               >
                 <div
                   style={{
                     width: `${coveragePct}%`,
                     height: "100%",
-                    borderRadius: "9999px",
-                    background:
-                      coveragePct >= 80
-                        ? "var(--color-success, #22c55e)"
-                        : coveragePct >= 50
-                        ? "var(--color-accent, #6d28d9)"
-                        : "var(--color-warning, #f59e0b)",
+                    borderRadius: 999,
+                    background: coveragePct >= 80 ? "#22c55e" : coveragePct >= 50 ? "var(--accent)" : "var(--warning)",
                     transition: "width 0.3s ease"
                   }}
                 />
               </div>
-              <span style={{ fontWeight: 700, fontSize: "1.0625rem", minWidth: "2.5rem", textAlign: "right" }}>
+              <span style={{ fontWeight: 700, fontSize: "1rem", minWidth: "2.5rem", textAlign: "right", color: "var(--text)" }}>
                 {coveragePct}%
               </span>
             </div>
-
-            <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.875rem", color: "var(--color-text-secondary, #a0a0a0)" }}>
-              <span>
-                <strong style={{ color: "var(--color-text, #f0f0f0)" }}>{assignedCount}</strong> assigned
-              </span>
-              <span style={unassignedCount > 0 ? { color: "var(--color-warning, #f59e0b)" } : undefined}>
+            <div style={{ display: "flex", gap: "1.5rem", fontSize: "0.875rem", color: "var(--text-soft)" }}>
+              <span><strong style={{ color: "var(--text)" }}>{assignedCount}</strong> assigned</span>
+              <span style={unassignedCount > 0 ? { color: "var(--warning)", fontWeight: 600 } : undefined}>
                 <strong>{unassignedCount}</strong> unassigned
               </span>
-              <span>
-                <strong>{programs.length}</strong> programs
-              </span>
+              <span><strong style={{ color: "var(--text)" }}>{programs.length}</strong> programs</span>
             </div>
           </div>
-        </section>
+        </div>
 
         {/* ── PT Plans ──────────────────────────────────────────── */}
-        <section className="list-panel">
-          <div className="panel-title">
-            <h2>PT Plans</h2>
-            <span className="status-pill status-neutral">{ptPlans.length} total</span>
+        <div className="adm-card">
+          <div className="adm-card__head">
+            <h3>PT Plans</h3>
+            <span className="adm-inbox-tag">{ptPlans.length} total</span>
           </div>
-          <div style={{ padding: "0.75rem 1rem" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+          <div className="adm-card__body">
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", marginBottom: "0.75rem" }}>
               {(
                 [
-                  ["Scheduled", ptByStatus["scheduled"] ?? 0, "status-neutral"],
-                  ["Active", ptByStatus["active"] ?? 0, "status-success"],
-                  ["Completed", ptByStatus["completed"] ?? 0, "status-neutral"],
-                  ["Cancelled", ptByStatus["cancelled"] ?? 0, "status-warning"]
-                ] as [string, number, string][]
-              ).map(([label, count, pill]) => (
-                <div
-                  key={label}
-                  style={{
-                    background: "var(--color-surface-raised, #2a2a2a)",
-                    borderRadius: "0.5rem",
-                    padding: "0.625rem 0.75rem",
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "0.125rem"
-                  }}
-                >
-                  <strong style={{ fontSize: "1.25rem" }}>{count}</strong>
-                  <span
-                    style={{ fontSize: "0.8125rem", color: "var(--color-text-secondary, #a0a0a0)" }}
-                  >
-                    {label}
-                  </span>
+                  ["Scheduled", ptByStatus["scheduled"] ?? 0, "var(--bg-muted)", "var(--text-soft)"],
+                  ["Active",    ptByStatus["active"]    ?? 0, "var(--brand-soft)", "var(--brand)"],
+                  ["Completed", ptByStatus["completed"] ?? 0, "var(--bg-muted)", "var(--text-soft)"],
+                  ["Cancelled", ptByStatus["cancelled"] ?? 0, "var(--danger-soft)", "var(--danger)"],
+                ] as [string, number, string, string][]
+              ).map(([label, count, bg, color]) => (
+                <div key={label} style={{ background: bg, borderRadius: 8, padding: "10px 12px" }}>
+                  <strong style={{ fontSize: "1.25rem", color: "var(--text)", display: "block" }}>{count}</strong>
+                  <span style={{ fontSize: "0.8125rem", color }}>{label}</span>
                 </div>
               ))}
             </div>
             {ptActiveMemberCount > 0 && (
-              <p
-                style={{
-                  marginTop: "0.75rem",
-                  fontSize: "0.875rem",
-                  color: "var(--color-text-secondary, #a0a0a0)"
-                }}
-              >
-                <strong style={{ color: "var(--color-text, #f0f0f0)" }}>{ptActiveMemberCount}</strong>{" "}
+              <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--text-soft)" }}>
+                <strong style={{ color: "var(--text)" }}>{ptActiveMemberCount}</strong>{" "}
                 member{ptActiveMemberCount !== 1 ? "s" : ""} currently on a PT plan
               </p>
             )}
           </div>
-        </section>
+        </div>
 
         {/* ── Program popularity ────────────────────────────────── */}
-        <section className="list-panel">
-          <div className="panel-title">
-            <h2>Programs by Assignments</h2>
+        <div className="adm-card">
+          <div className="adm-card__head">
+            <h3>Programs by Assignments</h3>
           </div>
           {programRows.length === 0 ? (
-            <p style={{ padding: "1rem", color: "var(--color-text-secondary, #a0a0a0)", fontSize: "0.875rem" }}>
-              No programs yet.
-            </p>
+            <div className="adm-empty">No programs yet.</div>
           ) : (
-            <ul style={{ listStyle: "none", margin: 0, padding: "0.25rem 0" }}>
+            <ul style={{ listStyle: "none", margin: 0, padding: "4px 0" }}>
               {programRows.map((row) => {
                 const barPct = programRows[0]?.count
                   ? Math.round((row.count / programRows[0].count) * 100)
                   : 0;
                 return (
-                  <li
-                    key={row.name}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.75rem",
-                      padding: "0.5rem 1rem"
-                    }}
-                  >
-                    <span
-                      style={{
-                        flex: "0 0 10rem",
-                        fontSize: "0.875rem",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                        whiteSpace: "nowrap"
-                      }}
-                      title={row.name}
-                    >
+                  <li key={row.name} style={{ display: "flex", alignItems: "center", gap: "0.75rem", padding: "8px 16px" }}>
+                    <span style={{ flex: "0 0 9rem", fontSize: "0.875rem", color: "var(--text)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={row.name}>
                       {row.name}
                     </span>
-                    <div
-                      style={{
-                        flex: 1,
-                        height: "0.375rem",
-                        borderRadius: "9999px",
-                        background: "var(--color-surface-raised, #2a2a2a)",
-                        overflow: "hidden"
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: `${barPct}%`,
-                          height: "100%",
-                          borderRadius: "9999px",
-                          background: "var(--color-accent, #6d28d9)"
-                        }}
-                      />
+                    <div style={{ flex: 1, height: 5, borderRadius: 999, background: "var(--bg-muted)", overflow: "hidden" }}>
+                      <div style={{ width: `${barPct}%`, height: "100%", borderRadius: 999, background: "var(--brand)" }} />
                     </div>
-                    <span
-                      style={{
-                        flex: "0 0 2rem",
-                        textAlign: "right",
-                        fontSize: "0.875rem",
-                        fontWeight: 600,
-                        color: "var(--color-text-secondary, #a0a0a0)"
-                      }}
-                    >
+                    <span style={{ flex: "0 0 2rem", textAlign: "right", fontSize: "0.875rem", fontWeight: 700, color: "var(--text-soft)" }}>
                       {row.count}
                     </span>
                   </li>
@@ -394,80 +255,35 @@ export default async function OwnerReportsPage() {
               })}
             </ul>
           )}
-        </section>
+        </div>
 
         {/* ── Slot distribution ─────────────────────────────────── */}
-        <section className="list-panel">
-          <div className="panel-title">
-            <h2>Slot Distribution</h2>
-            <span className="status-pill status-neutral">{totalSlotted} slotted</span>
+        <div className="adm-card">
+          <div className="adm-card__head">
+            <h3>Slot Distribution</h3>
+            <span className="adm-inbox-tag">{totalSlotted} slotted</span>
           </div>
           {totalSlotted === 0 ? (
-            <p
-              style={{
-                padding: "1rem",
-                color: "var(--color-text-secondary, #a0a0a0)",
-                fontSize: "0.875rem"
-              }}
-            >
-              No slot assignments yet.
-            </p>
+            <div className="adm-empty">No slot assignments yet.</div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: "0.5rem",
-                padding: "0.75rem 1rem"
-              }}
-            >
+            <div className="adm-card__body" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "0.5rem" }}>
               {(["A", "B", "C", "D"] as const).map((slot) => {
                 const slotData = slots.find((s) => s.slotId === slot);
                 const count = slotData?.memberCount ?? 0;
                 const pct = totalSlotted ? Math.round((count / totalSlotted) * 100) : 0;
                 return (
-                  <div
-                    key={slot}
-                    style={{
-                      background: "var(--color-surface-raised, #2a2a2a)",
-                      borderRadius: "0.5rem",
-                      padding: "0.75rem",
-                      textAlign: "center"
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: "1.25rem",
-                        fontWeight: 700,
-                        marginBottom: "0.125rem"
-                      }}
-                    >
-                      {count}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.8125rem",
-                        color: "var(--color-text-secondary, #a0a0a0)"
-                      }}
-                    >
-                      Slot {slot}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "0.75rem",
-                        color: "var(--color-text-tertiary, #666)",
-                        marginTop: "0.125rem"
-                      }}
-                    >
-                      {pct}%
-                    </div>
+                  <div key={slot} style={{ background: "var(--bg-subtle)", borderRadius: 8, padding: "0.75rem", textAlign: "center", border: "1px solid var(--border)" }}>
+                    <div style={{ fontSize: "1.25rem", fontWeight: 800, color: "var(--text)", marginBottom: 2 }}>{count}</div>
+                    <div style={{ fontSize: "0.8125rem", color: "var(--text-soft)", fontWeight: 600 }}>Slot {slot}</div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--text-faint)", marginTop: 2 }}>{pct}%</div>
                   </div>
                 );
               })}
             </div>
           )}
-        </section>
+        </div>
+
       </div>
-    </main>
+    </div>
   );
 }

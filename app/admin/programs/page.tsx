@@ -1,31 +1,29 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
-import { getWorkoutPrograms, getGymWorkspaces, getActiveProgramAssignments } from "@/lib/firebase/read-models";
+import {
+  getActiveProgramAssignments,
+  getExerciseCatalog,
+  getGymWorkspaces,
+  getMembers,
+  getWorkoutPrograms
+} from "@/lib/firebase/read-models";
+import { WorkoutProgramGallery } from "@/components/workout-program-gallery";
+import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 
 export const dynamic = "force-dynamic";
 
-const PROGRAM_COLORS = [
-  "linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, transparent))",
-  "linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 55%, transparent))",
-  "linear-gradient(135deg, #D97706, color-mix(in srgb, #D97706 55%, transparent))",
-  "linear-gradient(135deg, var(--danger), color-mix(in srgb, var(--danger) 55%, transparent))",
-  "linear-gradient(135deg, #7C3AED, color-mix(in srgb, #7C3AED 55%, transparent))",
-  "linear-gradient(135deg, #0891B2, color-mix(in srgb, #0891B2 55%, transparent))",
-  "linear-gradient(135deg, #B45309, color-mix(in srgb, #B45309 55%, transparent))",
-  "linear-gradient(135deg, #BE185D, color-mix(in srgb, #BE185D 55%, transparent))",
-];
-
 export default async function AdminProgramsPage() {
   await requireRole(["admin"]);
 
-  const [{ gyms }, { programs }, { assignments }] = await Promise.all([
+  const [{ gyms }, { programs }, { assignments }, { catalog, exercises }, { members }] = await Promise.all([
     getGymWorkspaces(),
     getWorkoutPrograms(PRIMARY_GYM_ID),
     getActiveProgramAssignments(PRIMARY_GYM_ID),
+    getExerciseCatalog(PRIMARY_GYM_ID),
+    getMembers(PRIMARY_GYM_ID),
   ]);
 
-  const presetPrograms = programs.filter(p => p.source === "predefined" || p.source !== "gym");
   const mostUsed = programs.length > 0
     ? programs.reduce((best, p) =>
         (assignments.filter(a => a.programId === p.id).length > assignments.filter(a => a.programId === best.id).length) ? p : best
@@ -44,12 +42,12 @@ export default async function AdminProgramsPage() {
         </div>
         <div className="adm-head-actions">
           <Link href="/admin/inbox" className="adm-btn adm-btn--ghost">Inbox</Link>
-          <Link href={`/owner/programs`} className="adm-btn">+ New preset</Link>
+          <a href="#create-program" className="adm-btn">+ New preset</a>
         </div>
       </div>
 
       <p className="adm-page-desc">
-        Master library of presets available to all gyms. Edit to update across the platform.
+        Master library of presets available to all gyms. Edit or expand a program in-place below.
       </p>
 
       {/* KPI row */}
@@ -66,43 +64,28 @@ export default async function AdminProgramsPage() {
           <small>MOST POPULAR</small>
           <strong>{mostUsed?.title ?? "—"}</strong>
         </div>
-        <div className="adm-kpi adm-kpi--warn">
-          <small>NEW REQUESTS</small>
-          <strong>—</strong>
+        <div className="adm-kpi">
+          <small>EXERCISES</small>
+          <strong>{exercises.length}</strong>
         </div>
       </div>
 
-      {/* Program card grid */}
-      {programs.length === 0 ? (
-        <div className="adm-card">
-          <div className="adm-empty">
-            No programs yet.{" "}
-            <Link href="/owner/programs" className="adm-link">Create one from the owner dashboard.</Link>
-          </div>
+      {/* Inline program gallery — allows viewing and editing programs */}
+      <WorkoutProgramGallery
+        assignments={assignments}
+        catalog={catalog}
+        exercises={exercises}
+        members={members}
+        programs={programs}
+      />
+
+      {/* Create new program */}
+      <details className="adm-details-panel" id="create-program" style={{ marginTop: 16 }}>
+        <summary className="adm-details-panel__summary">Create a new preset program</summary>
+        <div className="adm-details-panel__body">
+          <CustomPlanBuilder catalog={catalog} />
         </div>
-      ) : (
-        <div className="adm-program-grid">
-          {programs.map((p, i) => {
-            const gymCount = assignments.filter(a => a.programId === p.id).length;
-            return (
-              <Link key={p.id} href={`/owner/programs/${p.id}`} className="adm-program-card">
-                <div
-                  className="adm-program-card__header"
-                  style={{ background: PROGRAM_COLORS[i % PROGRAM_COLORS.length] }}
-                >
-                  <span className="adm-program-card__title">{p.title}</span>
-                </div>
-                <div className="adm-program-card__body">
-                  <span className="adm-program-card__meta">
-                    {p.difficulty ?? "All levels"} · {p.days?.length ?? 0} day
-                  </span>
-                  <strong className="adm-program-card__count">{gymCount} gyms</strong>
-                </div>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      </details>
     </div>
   );
 }

@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Breadcrumb } from "@/components/breadcrumb";
 import { ExerciseCatalogView } from "@/components/exercise-catalog-view";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
@@ -18,46 +17,44 @@ export default async function ExerciseCatalogPage() {
   const custom = exercises.filter((e) => e.source === "custom");
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb
-            crumbs={[{ label: "Dashboard", href: "/owner" }, { label: "Exercise Catalog" }]}
-          />
-          <h1>Exercise Catalog</h1>
-          <p>
-            Manage your gym&apos;s video demos and control which tutorial videos your members see.
-            Tutorial videos are provided by FitSplit — use the toggles to show or hide them per exercise.
-          </p>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Dashboard / Exercise Catalog</div>
+          <h1 className="adm-title">Exercise catalog</h1>
         </div>
-        <aside className="summary-panel">
-          <div className="panel-title">
-            <h2>Catalog</h2>
-            <span className="status-pill status-active">{exercises.length} exercises</span>
-          </div>
-          <div className="detail-window">
-            <span>
-              FitSplit defaults
-              <strong>{predefined.length}</strong>
-            </span>
-            <span>
-              Custom
-              <strong>{custom.length}</strong>
-            </span>
-            <span>
-              Tutorials visible
-              <strong>{exercises.filter((e) => e.showTutorial !== false).length}</strong>
-            </span>
-            <span>
-              Gym videos set
-              <strong>{exercises.filter((e) => e.gymVideoUrl).length}</strong>
-            </span>
-          </div>
-        </aside>
-      </section>      <ExerciseCatalogView
+        <div className="adm-head-actions">
+          <a href="#add-exercise" className="adm-btn">+ Add exercise</a>
+        </div>
+      </div>
+      <p className="adm-page-desc">
+        Manage your gym&apos;s video demos and control which tutorial videos your members see.
+        Tutorial videos are provided by FitSplit.
+      </p>
+
+      <div className="adm-kpis" style={{ marginBottom: 20 }}>
+        <div className="adm-kpi adm-kpi--brand">
+          <small>TOTAL EXERCISES</small>
+          <strong>{exercises.length}</strong>
+        </div>
+        <div className="adm-kpi">
+          <small>FITSPLIT DEFAULTS</small>
+          <strong>{predefined.length}</strong>
+        </div>
+        <div className="adm-kpi adm-kpi--accent">
+          <small>CUSTOM</small>
+          <strong>{custom.length}</strong>
+        </div>
+        <div className="adm-kpi">
+          <small>WITH GYM VIDEO</small>
+          <strong>{exercises.filter((e) => e.gymVideoUrl).length}</strong>
+        </div>
+      </div>
+
+      <ExerciseCatalogView
         exercises={exercises}
         createAction={createCatalogExercise}
       />
-    </main>
+    </div>
   );
 }

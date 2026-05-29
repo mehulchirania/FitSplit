@@ -1355,6 +1355,12 @@
   border: 1px solid var(--border);
 }
 .adm-btn--ghost:hover { background: var(--bg-elevated); }
+.adm-btn--sm {
+  font-size: 0.8rem;
+  padding: 5px 12px;
+  gap: 5px;
+  border-radius: 7px;
+}
 
 /* KPI row */
 .adm-kpis {
@@ -1901,3 +1907,38 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
   border: 1px solid var(--border);
   font-weight: 700;
 }
+
+/* ── Admin exercise catalog rows ─────────────────────────────────────────── */
+.adm-ex-group-summary {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  cursor: pointer;
+  list-style: none;
+  user-select: none;
+  background: var(--bg-subtle);
+  gap: 8px;
+}
+.adm-ex-group-summary::-webkit-details-marker { display: none; }
+.adm-ex-group-summary:hover { background: color-mix(in srgb, var(--brand) 6%, var(--bg-subtle)); }
+.adm-ex-group-name { font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+.adm-ex-group-chevron { font-size: 9px; color: var(--text-faint); transition: transform 120ms; }
+details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(90deg); }
+
+.adm-ex-list { display: flex; flex-direction: column; }
+
+.adm-ex-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  cursor: pointer;
+  list-style: none;
+  transition: background 80ms;
+}
+.adm-ex-row:hover { background: var(--bg-subtle); }
+.adm-ex-row::-webkit-details-marker { display: none; }
+.adm-ex-row__copy { flex: 1; min-width: 0; }
+.adm-ex-row__copy strong { font-size: 12.5px; font-weight: 700; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-ex-row__copy p { font-size: 11px; color: var(--text-soft); margin: 1px 0 0; }
+.adm-ex-row__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }

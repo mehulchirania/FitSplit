@@ -12,7 +12,6 @@ import {
   getProgramAssignmentForMember,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { getExerciseName } from "@/lib/workout-utils";
 import { FocusedDayView } from "@/components/focused-day-view";
 
@@ -54,14 +53,12 @@ export default async function FocusedDayPage({
   }
 
   return (
-    <main className="page" style={{ maxWidth: "760px" }}>
-      <Breadcrumb
-        crumbs={[
-          { label: "Dashboard", href: "/member" },
-          { label: program.title, href: "/member" },
-          { label: day.title }
-        ]}
-      />
+    <div className="m3d-subpage">
+      <div style={{ marginBottom: 8 }}>
+        <Link href="/member/programs" style={{ fontSize: 12, color: "var(--text-soft)", textDecoration: "none", fontWeight: 600 }}>
+          ← {program.title}
+        </Link>
+      </div>
 
       <header style={{ margin: "20px 0 24px" }}>
         <p style={{ color: "var(--text-faint)", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: "4px" }}>
@@ -89,6 +86,6 @@ export default async function FocusedDayPage({
           Program assigned {assignment.assignedAt ? `on ${new Date(assignment.assignedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}.
         </p>
       )}
-    </main>
+    </div>
   );
 }

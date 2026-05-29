@@ -1,4 +1,3 @@
-import { Breadcrumb } from "@/components/breadcrumb";
 import { Dumbbell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { getExerciseCatalog } from "@/lib/firebase/read-models";
@@ -13,16 +12,11 @@ export default async function MemberExerciseLibraryPage() {
   const { catalog: exerciseCatalogByMuscle } = await getExerciseCatalog(currentUser.gymId);
 
   return (
-    <main className="page">
-      <section className="dashboard-header compact-header">
-        <div className="header-copy">
-          <Breadcrumb crumbs={[{ label: "Dashboard", href: "/member" }, { label: "Exercise Catalog" }]} />
-          <h1>Exercise Catalog</h1>
-          <p>
-            Browse the full library of exercises and watch demonstration videos carefully curated by your gym.
-          </p>
-        </div>
-      </section>
+    <div className="m3d-subpage">
+      <div className="m3d-subpage__head">
+        <h1>Exercise Catalog</h1>
+        <p>Browse the full library and watch demonstration videos curated by your gym.</p>
+      </div>
 
       <section className="catalog-grid" style={{ marginTop: 32 }}>
         {exerciseCatalogByMuscle.map((group) => (
@@ -76,7 +70,7 @@ export default async function MemberExerciseLibraryPage() {
           <p>The exercise catalog is currently empty.</p>
         </div>
       )}
-    </main>
+    </div>
   );
 }
 

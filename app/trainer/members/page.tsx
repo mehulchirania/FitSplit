@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { EmptyState } from "@/components/empty-state";
 import { StatCard } from "@/components/stat-card";
 import { StatusBadge } from "@/components/status-badge";
@@ -34,15 +33,19 @@ export default async function TrainerMembersPage() {
   const assignedToMeCount = members.filter((m) => m.assignedTrainerId === trainerId).length;
 
   return (
-    <main className="page">
-      <header className="page-header">
-        <Breadcrumb crumbs={[{ label: "My Schedule", href: "/trainer" }, { label: "My Members" }]} />
-        <p className="eyebrow">Trainer view</p>
-        <h1>My Members</h1>
-        <p style={{ color: "var(--text-soft)", fontSize: "0.88rem", marginTop: 4 }}>
-          Visibility mode: <strong>{VISIBILITY_LABEL[visibility]}</strong>
-        </p>
-      </header>
+    <div className="odp2-scroll">
+      <div className="adm-page-head">
+        <div>
+          <div className="adm-crumb">Trainer / My Members</div>
+          <h1 className="adm-title">My members</h1>
+        </div>
+        <div className="adm-head-actions">
+          <a href="/trainer" className="adm-btn adm-btn--ghost">← My schedule</a>
+        </div>
+      </div>
+      <p className="adm-page-desc">
+        Visibility mode: <strong>{VISIBILITY_LABEL[visibility]}</strong>
+      </p>
 
       {/* Stats */}
       <div className="billing-stats" style={{ marginBottom: 20 }}>
@@ -120,6 +123,6 @@ export default async function TrainerMembersPage() {
           </div>
         )}
       </div>
-    </main>
+    </div>
   );
 }
