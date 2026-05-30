@@ -1,12 +1,31 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
-import { getExerciseName } from "@/lib/workout-utils";
 import type { WorkoutDay, Exercise, LiftLog, ProgramAssignment } from "@/types/domain";
+import { CatalogVideoPreview } from "@/components/catalog-video-preview";
+
+function ChevDown() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  );
+}
+function ChevUp() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="18 15 12 9 6 15"/>
+    </svg>
+  );
+}
+function TrophyIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M8 4h8v6a4 4 0 01-8 0V4zM6 5H4a2 2 0 002 4M18 5h2a2 2 0 01-2 4M10 14v3l-1 3h6l-1-3v-3"/>
+    </svg>
+  );
+}
 
 export function FocusedDayView({
   day,
@@ -21,167 +40,151 @@ export function FocusedDayView({
   assignment: ProgramAssignment | null;
   programTitle: string;
 }) {
-  const router = useRouter();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [direction, setDirection] = useState(1);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   if (day.exercises.length === 0) {
     return (
       <div style={{ textAlign: "center", marginTop: "40px" }}>
-        <p className="empty-lift-state">No exercises scheduled for this day.</p>
-        <Link href="/member" className="button button-primary" style={{ marginTop: "20px" }}>
-          Back to dashboard
+        <p style={{ color: "var(--text-soft)" }}>No exercises scheduled for this day.</p>
+        <Link href="/member/programs" className="button button-primary" style={{ marginTop: "20px", display: "inline-flex" }}>
+          Back to programs
         </Link>
       </div>
     );
   }
-
-  // Finished state
-  if (activeIndex >= day.exercises.length) {
-    return (
-      <div className="focus-exercise-card" style={{ minHeight: "40vh" }}>
-        <h2 style={{ fontSize: "2rem", margin: 0, fontWeight: 800 }}>Workout complete!</h2>
-        <p style={{ color: "var(--text-soft)", fontSize: "1rem", maxWidth: "300px" }}>
-          Great job finishing Day {day.dayNumber} of {programTitle}.
-        </p>
-        <Link href="/member" className="button button-primary" style={{ marginTop: "24px", minWidth: "200px", justifyContent: "center" }}>
-          Finish
-        </Link>
-      </div>
-    );
-  }
-
-  const ex = day.exercises[activeIndex];
-  const name = getExerciseName(ex.exerciseId, exercises);
-  const dictEx = exercises.find((e) => e.id === ex.exerciseId);
-  const videoUrl = dictEx?.gymVideoUrl || dictEx?.videoUrl;
-
-  // Compute last log and PR for current exercise
-  let lastLog: LiftLog | undefined = undefined;
-  let pr = 0;
-  for (const log of liftLogs) {
-    if (log.exerciseId === ex.exerciseId) {
-      if ((log.weight ?? 0) > pr) pr = log.weight ?? 0;
-      if (!lastLog || new Date(log.loggedAt) > new Date(lastLog.loggedAt)) {
-        lastLog = log;
-      }
-    }
-  }
-
-  const isPR = lastLog && pr === lastLog.weight;
-
-  const handleNext = () => {
-    setDirection(1);
-    setActiveIndex(activeIndex + 1);
-  };
-
-  const handlePrev = () => {
-    setDirection(-1);
-    setActiveIndex(activeIndex - 1);
-  };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "24px", overflow: "hidden" }}>
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.div
-          key={activeIndex}
-          className="focus-exercise-card"
-          initial={{ opacity: 0, x: direction * 50 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: direction * -50 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-        >
-          <span className="focus-ex-number">
-            Exercise {activeIndex + 1} of {day.exercises.length}
-          </span>
-          
-          <h2 style={{ margin: "16px 0 0", fontSize: "1.8rem", fontWeight: 800 }}>
-            {name}
-          </h2>
-          
-          <div className="focus-ex-target">
-            {ex.sets ? `${ex.sets}` : "—"}
-            <span style={{ fontSize: "1.4rem", color: "var(--text-faint)", margin: "0 8px" }}>×</span>
-            {ex.reps ? `${ex.reps}` : "—"}
+    <div className="fdv-root">
+      {/* Stats bar */}
+      <div className="fdv-stats">
+        <div className="fdv-stat">
+          <strong>{day.exercises.length}</strong>
+          <span>exercises</span>
+        </div>
+        <div className="fdv-stat">
+          <strong>{day.exercises.reduce((s, e) => s + (e.sets ?? 0), 0)}</strong>
+          <span>total sets</span>
+        </div>
+        <div className="fdv-stat">
+          <strong>~{day.exercises.length * 8}</strong>
+          <span>min</span>
+        </div>
+        {day.focus && (
+          <div className="fdv-stat fdv-stat--focus">
+            <span className="fdv-focus-label">{day.focus}</span>
           </div>
-          
-          {ex.notes && (
-            <p style={{ margin: "12px 0 0", color: "var(--text-soft)", fontSize: "1rem" }}>
-              {ex.notes}
-            </p>
-          )}
-
-          {videoUrl && (
-            <a
-              href={videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: "inline-flex", alignItems: "center", gap: "6px",
-                marginTop: "14px", padding: "7px 14px",
-                borderRadius: "99px", border: "1px solid var(--border)",
-                background: "var(--bg-subtle)", color: "var(--text-soft)",
-                fontSize: "0.82rem", fontWeight: 600, textDecoration: "none",
-                transition: "background 120ms, color 120ms"
-              }}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="2" y="7" width="14" height="10" rx="2"/><path d="M16 11l5-4v10l-5-4"/>
-              </svg>
-              Watch tutorial
-            </a>
-          )}
-
-          <div className="focus-ex-last" style={{ marginTop: "32px", paddingTop: "24px", borderTop: "1px solid var(--border)", width: "100%", maxWidth: "240px" }}>
-            <p style={{ margin: "0 0 6px", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-faint)", fontWeight: 700 }}>
-              Last time
-            </p>
-            {lastLog ? (
-              <p style={{ margin: 0, fontSize: "1.1rem", fontWeight: 600, color: "var(--text)" }}>
-                {lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}
-                {isPR && <span className="pr-chip" style={{ marginLeft: 8 }}>PR</span>}
-              </p>
-            ) : (
-              <p style={{ margin: 0, color: "var(--text-soft)" }}>No prior logs</p>
-            )}
-          </div>
-        </motion.div>
-      </AnimatePresence>
-
-      <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-        {activeIndex > 0 && (
-          <button 
-            type="button" 
-            className="button button-secondary"
-            onClick={handlePrev}
-          >
-            Previous
-          </button>
         )}
-        <button 
-          type="button" 
-          className="button button-primary"
-          style={{ minWidth: "160px", justifyContent: "center" }}
-          onClick={handleNext}
-        >
-          {activeIndex === day.exercises.length - 1 ? "Finish workout" : "Mark done"}
-        </button>
       </div>
-      
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "12px", gap: "6px" }}>
-        {day.exercises.map((_, i) => (
-          <div 
-            key={i} 
-            style={{
-              height: "4px",
-              flex: 1,
-              maxWidth: "32px",
-              borderRadius: "2px",
-              background: i <= activeIndex ? "var(--brand)" : "var(--bg-subtle)",
-              transition: "background 0.3s ease"
-            }}
-          />
-        ))}
+
+      {/* Warm-up hint */}
+      <div className="fdv-warmup">
+        <span className="fdv-warmup__icon">🔥</span>
+        <span>Warm up for 5–10 min before starting — dynamic stretches, light cardio, or joint mobility.</span>
+      </div>
+
+      {/* Exercise list */}
+      <div className="fdv-list">
+        {day.exercises.map((ex, idx) => {
+          const dictEx = exercises.find((e) => e.id === ex.exerciseId);
+          const name = dictEx?.name ?? ex.exerciseId;
+          const isExpanded = expandedIdx === idx;
+
+          // Lift log data
+          let lastLog: LiftLog | undefined;
+          let pr = 0;
+          for (const log of liftLogs) {
+            if (log.exerciseId === ex.exerciseId) {
+              if ((log.weight ?? 0) > pr) pr = log.weight ?? 0;
+              if (!lastLog || new Date(log.loggedAt) > new Date(lastLog.loggedAt)) lastLog = log;
+            }
+          }
+          const isPR = lastLog && pr === lastLog.weight && pr > 0;
+
+          return (
+            <div key={ex.exerciseId + idx} className={`fdv-row${isExpanded ? " fdv-row--open" : ""}`}>
+              {/* Main row — always visible */}
+              <button
+                className="fdv-row__main"
+                onClick={() => setExpandedIdx(isExpanded ? null : idx)}
+                type="button"
+                aria-expanded={isExpanded}
+              >
+                <span className="fdv-row__num">{idx + 1}</span>
+                <div className="fdv-row__body">
+                  <strong className="fdv-row__name">{name}</strong>
+                  {dictEx?.muscleGroup && (
+                    <span className="fdv-row__group">{dictEx.muscleGroup}</span>
+                  )}
+                </div>
+                <div className="fdv-row__prescription">
+                  <strong>{ex.sets} × {ex.reps || (ex.durationSeconds ? `${ex.durationSeconds}s` : "—")}</strong>
+                </div>
+                {/* Compact video icons */}
+                {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) && (
+                  <div className="fdv-row__vid" onClick={(e) => e.stopPropagation()}>
+                    <CatalogVideoPreview
+                      exerciseName={name}
+                      gymVideoUrl={dictEx.gymVideoUrl}
+                      muscleGroup={dictEx.muscleGroup ?? ""}
+                      videoUrl={dictEx.videoUrl}
+                    />
+                  </div>
+                )}
+                <span className="fdv-row__chev">{isExpanded ? <ChevUp /> : <ChevDown />}</span>
+              </button>
+
+              {/* Expanded detail — inline below the row */}
+              {isExpanded && (
+                <div className="fdv-row__detail">
+                  {ex.notes && (
+                    <p className="fdv-row__notes">{ex.notes}</p>
+                  )}
+                  {dictEx?.instructions && (
+                    <p className="fdv-row__instructions">{dictEx.instructions}</p>
+                  )}
+                  {/* Last logged + PR */}
+                  <div className="fdv-row__history">
+                    <div className="fdv-history-item">
+                      <span>Last logged</span>
+                      {lastLog ? (
+                        <strong>
+                          {lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}
+                          {isPR && <span className="fdv-pr-chip"><TrophyIcon /> PR</span>}
+                        </strong>
+                      ) : (
+                        <strong style={{ color: "var(--text-faint)" }}>No prior logs</strong>
+                      )}
+                    </div>
+                    {pr > 0 && (
+                      <div className="fdv-history-item">
+                        <span>Personal best</span>
+                        <strong>{pr} kg</strong>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Cool-down hint */}
+      <div className="fdv-warmup fdv-cooldown">
+        <span className="fdv-warmup__icon">🧊</span>
+        <span>Cool down with static stretches — hold each for 20–30 seconds to aid recovery.</span>
+      </div>
+
+      {/* Bottom nav */}
+      <div className="fdv-footer">
+        <Link href="/member/programs" className="fdv-back">
+          ← Back to programs
+        </Link>
+        {assignment && (
+          <span className="fdv-assigned-note">
+            Assigned {assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
+          </span>
+        )}
       </div>
     </div>
   );

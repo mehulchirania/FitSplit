@@ -1,8 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// D17: Focused single-day workout view for a member.
-// Accessible from the workout console day tabs via a "View day" link.
-// Shows the day's exercise list with set/rep targets and a compact lift-log form.
-
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
@@ -12,7 +7,6 @@ import {
   getProgramAssignmentForMember,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
-import { getExerciseName } from "@/lib/workout-utils";
 import { FocusedDayView } from "@/components/focused-day-view";
 
 export const dynamic = "force-dynamic";
@@ -54,38 +48,27 @@ export default async function FocusedDayPage({
 
   return (
     <div className="m3d-subpage">
-      <div style={{ marginBottom: 8 }}>
-        <Link href="/member/programs" style={{ fontSize: 12, color: "var(--text-soft)", textDecoration: "none", fontWeight: 600 }}>
-          ← {program.title}
+      {/* Breadcrumb */}
+      <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 20 }}>
+        <Link href="/member/programs" style={{ fontSize: 12, color: "var(--text-faint)", textDecoration: "none", fontWeight: 600, transition: "color 120ms" }}>
+          Programs
         </Link>
+        <span style={{ color: "var(--text-faint)", fontSize: 11 }}>›</span>
+        <span style={{ fontSize: 12, color: "var(--text-soft)", fontWeight: 600 }}>{program.title}</span>
       </div>
 
-      <header style={{ margin: "20px 0 24px" }}>
-        <p style={{ color: "var(--text-faint)", fontSize: "0.8rem", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700, marginBottom: "4px" }}>
-          Day {day.dayNumber}
-        </p>
-        <h1 style={{ margin: 0, fontSize: "1.6rem", fontWeight: 800 }}>{day.title}</h1>
-        {day.focus && (
-          <p style={{ margin: "6px 0 0", color: "var(--text-soft)", fontSize: "0.9rem" }}>
-            Focus: {day.focus}
-          </p>
-        )}
-      </header>
+      <div className="m3d-subpage__head">
+        <h1>{day.title}</h1>
+        {day.focus && <p>Focus: {day.focus}</p>}
+      </div>
 
-      <FocusedDayView 
-        day={day} 
-        exercises={exercises} 
-        liftLogs={liftLogs} 
-        assignment={assignment} 
+      <FocusedDayView
+        day={day}
+        exercises={exercises}
+        liftLogs={liftLogs}
+        assignment={assignment}
         programTitle={program.title}
       />
-
-      {/* Assignment badge at bottom */}
-      {assignment && (
-        <p style={{ marginTop: "24px", fontSize: "0.78rem", color: "var(--text-faint)" }}>
-          Program assigned {assignment.assignedAt ? `on ${new Date(assignment.assignedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}` : ""}.
-        </p>
-      )}
     </div>
   );
 }

@@ -149,31 +149,36 @@ function Sidebar({
 
   return (
     <aside className="m3d-side">
-      {/* Brand + gym co-brand lockup */}
-      <div className="m3d-side__logo">
+      {/* Brand + gym co-brand lockup — clicking goes to dashboard */}
+      <button
+        className="m3d-side__logo m3d-side__logo--btn"
+        onClick={() => setTab("train")}
+        type="button"
+        aria-label="Go to dashboard"
+      >
         {gymLogoUrl ? (
           <div className="m3d-side__cobrand">
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon-512.png" alt="FitSplit" width={38} height={38} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
+              <img src="/icon-512.png" alt="FitSplit" width={42} height={42} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
             </div>
             <span className="m3d-side__cobrand-sep">×</span>
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={gymLogoUrl} alt={gymShort} width={38} height={38} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
+              <img src={gymLogoUrl} alt={gymShort} width={42} height={42} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
             </div>
           </div>
         ) : (
           <div className="m3d-side__logo-mark">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-512.png" alt="FitSplit" width={46} height={46} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "12px" }} />
+            <img src="/icon-512.png" alt="FitSplit" width={52} height={52} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "12px" }} />
           </div>
         )}
         <div className="m3d-side__logo-text">
-          <span>FitSplit</span>
+          <span className="m3d-side__logo-name">FitSplit</span>
           <span className="m3d-side__gym-sub">{gymShort}</span>
         </div>
-      </div>
+      </button>
 
       {/* Nav */}
       <nav className="m3d-side__nav">
@@ -215,6 +220,9 @@ function Sidebar({
                 </div>
               </div>
               <div className="m3d-user-menu__divider" />
+              <Link href="/member/settings" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
+                <Icons.User size={14} /> Profile &amp; metrics
+              </Link>
               <Link href="/member/settings" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
                 <Icons.Settings size={14} /> Settings
               </Link>
@@ -916,9 +924,9 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                 </div>
 
                 <div className="m3d-grid__right">
-                  <PTCard />
                   <BodyMacrosCard member={member} profile={profile} macroLog={macroLog} />
                   <PRsCard liftLogs={liftLogs} exercises={exercises} />
+                  <PTCard />
                   {/* Desktop-only membership */}
                   <section className="m3d-card">
                     <div className="m3d-membership">
