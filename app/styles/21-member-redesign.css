@@ -663,9 +663,9 @@
 }
 .m3d-ex {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1.8fr) 100px 90px 130px 32px;
+  grid-template-columns: 32px minmax(0, 1fr) 90px auto;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--bg-subtle);
@@ -1127,17 +1127,27 @@
 }
 [data-theme="light"] .m3d-ex__video { color: var(--brand-strong); }
 .m3d-ex__video:hover { color: var(--brand-strong); }
-/* Video button wrapper inside exercise rows */
-.m3d-ex__video-wrap .video-indicator,
-.mcr-ex__video-wrap-sm .video-indicator {
-  font-size: 11px;
-  padding: 3px 7px;
-  gap: 4px;
+/* Compact video buttons inside exercise rows — icon only, no label text */
+.m3d-ex__video-wrap .video-indicator {
+  height: 28px;
+  padding: 0 7px;
+  gap: 0;
+  border-radius: 8px;
 }
+.m3d-ex__video-wrap .video-indicator-label { display: none; }
+.m3d-ex__video-wrap > div { gap: 4px; }
 .mcr-ex__video-wrap-sm {
   display: inline-flex;
   align-items: center;
 }
+.mcr-ex__video-wrap-sm .video-indicator {
+  height: 20px;
+  padding: 0 5px;
+  font-size: 10px;
+  gap: 3px;
+  border-radius: 5px;
+}
+.mcr-ex__video-wrap-sm .video-indicator-label { display: none; }
 
 /* ── Avatar ─────────────────────────────────────────────────────────────── */
 .mcr-avatar {

@@ -269,16 +269,6 @@ function Sidebar({
 
 /* ── Desktop TopBar ──────────────────────────────────────────────── */
 function DesktopTopBar({ onToast, unreadCount = 0 }: { onToast: (t: string) => void; unreadCount?: number }) {
-  const [query, setQuery] = React.useState("");
-
-  function handleSearch(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" && query.trim()) {
-      // Navigate to exercises page with search query via URL
-      window.location.href = `/member/exercises?q=${encodeURIComponent(query.trim())}`;
-    }
-    if (e.key === "Escape") setQuery("");
-  }
-
   return (
     <header className="m3d-top">
       <div className="m3d-top__crumbs">
@@ -287,21 +277,6 @@ function DesktopTopBar({ onToast, unreadCount = 0 }: { onToast: (t: string) => v
         <span className="m3d-top__crumb m3d-top__crumb--current">Today</span>
       </div>
       <div className="m3d-top__right">
-        <div className="m3d-top__search">
-          <Icons.Search size={14} />
-          <input
-            placeholder="Search exercises…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleSearch}
-            aria-label="Search exercises"
-          />
-          {query ? (
-            <button type="button" onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-faint)", padding: "0 2px" }} aria-label="Clear search">×</button>
-          ) : (
-            <kbd>↵</kbd>
-          )}
-        </div>
         <button className="m3d-top__icon" onClick={() => unreadCount > 0 ? onToast(`${unreadCount} new notification${unreadCount > 1 ? "s" : ""}`) : onToast("No new notifications")} type="button" aria-label="Notifications">
           <Icons.Bell size={18} />
           {unreadCount > 0 && <span className="m3d-top__icon-dot" />}
@@ -561,14 +536,6 @@ function TodaySessionList({ program, currentWeek, exercises, onStart }: {
               <div className="m3d-ex__sets">
                 <small>SETS × REPS</small>
                 <strong>{ex.sets} × {ex.reps}</strong>
-              </div>
-              <div className="m3d-ex__last">
-                <small>LAST</small>
-                <strong>—<span>kg</span></strong>
-              </div>
-              <div className="m3d-ex__target">
-                <small>COACH&apos;S TARGET</small>
-                <strong>—<span>kg</span></strong>
               </div>
               <div className="m3d-ex__video-wrap">
                 {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) ? (
