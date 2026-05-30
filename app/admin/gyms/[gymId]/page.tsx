@@ -83,7 +83,7 @@ export default async function GymDetailPage({
         </div>
         <div className="adm-gym-hero__actions">
           <Link href={`/owner/members`} className="adm-btn adm-btn--ghost">Impersonate owner</Link>
-          <Link href={`#edit-gym`} className="adm-btn">Edit details</Link>
+          <Link href={`/admin/gyms/${gym.id}/edit`} className="adm-btn">Edit details</Link>
         </div>
       </div>
 
