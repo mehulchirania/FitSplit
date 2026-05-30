@@ -101,11 +101,13 @@ export async function createOwnerProfile(
     const now = new Date().toISOString();
     const authEmail = `${ownerId}@staff.fitsplit.app`;
 
+    const authRole: Role = normalizedStaffType === "trainer" ? "trainer" : "owner";
+
     await upsertAuthUser(auth, {
       email: authEmail,
       fullName,
       uid: ownerId,
-      role: "owner",
+      role: authRole,
       gymId,
       isActive: true
     });
@@ -117,7 +119,7 @@ export async function createOwnerProfile(
       phone,
       authEmail,
       username: phone,
-      role: "owner",
+      role: authRole,
       staffType: normalizedStaffType,
       defaultGymId: gymId,
       avatarInitials: fullName

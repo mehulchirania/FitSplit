@@ -564,6 +564,11 @@ export const updateGymDetails = onCall({ region }, async (request) => {
       instagram: optionalString(request.data?.instagram),
       linkedin: optionalString(request.data?.linkedin),
       youtube: optionalString(request.data?.youtube),
+      ...(request.data?.expiryWarningDays !== undefined && { expiryWarningDays: Number(request.data.expiryWarningDays) }),
+      ...(request.data?.radiusMeters !== undefined && { radiusMeters: Number(request.data.radiusMeters) }),
+      ...(request.data?.latitude !== undefined && { latitude: Number(request.data.latitude) }),
+      ...(request.data?.longitude !== undefined && { longitude: Number(request.data.longitude) }),
+      ...(request.data?.trainerMemberVisibility !== undefined && { trainerMemberVisibility: request.data.trainerMemberVisibility }),
       updatedAt: new Date().toISOString()
     },
     { merge: true }

@@ -20,6 +20,11 @@ export function GymDetailsForm({
     instagram?: string;
     linkedin?: string;
     youtube?: string;
+    expiryWarningDays?: number;
+    radiusMeters?: number;
+    latitude?: number;
+    longitude?: number;
+    trainerMemberVisibility?: "assigned_only" | "all_pt_members" | "all_members";
   };
 }) {
   const router = useRouter();
@@ -43,9 +48,14 @@ export function GymDetailsForm({
           email: String(formData.get("email") ?? ""),
           instagram: String(formData.get("instagram") ?? ""),
           linkedin: String(formData.get("linkedin") ?? ""),
-          youtube: String(formData.get("youtube") ?? "")
+          youtube: String(formData.get("youtube") ?? ""),
+          expiryWarningDays: formData.get("expiryWarningDays") ? Number(formData.get("expiryWarningDays")) : undefined,
+          radiusMeters: formData.get("radiusMeters") ? Number(formData.get("radiusMeters")) : undefined,
+          latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
+          longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
+          trainerMemberVisibility: (formData.get("trainerMemberVisibility") as any) || undefined
         });
-        setMessage({ type: "success", text: result.data.message });
+        setMessage({ type: "success", text: result.data?.message || "Gym details updated successfully." });
         router.refresh();
       } catch {
         const result = await updateGymDetails(initialFormActionState, formData);
@@ -94,6 +104,33 @@ export function GymDetailsForm({
         <label>
           YouTube
           <input name="youtube" defaultValue={gym.youtube} placeholder="channel URL" />
+        </label>
+      </div>
+      <h3 style={{ marginTop: "24px", marginBottom: "12px", fontSize: "0.9rem", textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--text-soft)" }}>Advanced Settings</h3>
+      <div className="form-grid">
+        <label>
+          Trainer Member Visibility
+          <select name="trainerMemberVisibility" defaultValue={gym.trainerMemberVisibility}>
+            <option value="assigned_only">Assigned Only (Default)</option>
+            <option value="all_pt_members">All PT Members</option>
+            <option value="all_members">All Members</option>
+          </select>
+        </label>
+        <label>
+          Expiry Warning Days
+          <input name="expiryWarningDays" type="number" defaultValue={gym.expiryWarningDays} />
+        </label>
+        <label>
+          Geofence Radius (Meters)
+          <input name="radiusMeters" type="number" defaultValue={gym.radiusMeters} />
+        </label>
+        <label>
+          Latitude
+          <input name="latitude" type="number" step="any" defaultValue={gym.latitude} />
+        </label>
+        <label>
+          Longitude
+          <input name="longitude" type="number" step="any" defaultValue={gym.longitude} />
         </label>
       </div>
       {message ? (

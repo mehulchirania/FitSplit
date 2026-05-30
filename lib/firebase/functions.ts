@@ -92,6 +92,11 @@ export type UpdateGymDetailsInput = {
   instagram?: string;
   linkedin?: string;
   youtube?: string;
+  expiryWarningDays?: number;
+  radiusMeters?: number;
+  latitude?: number;
+  longitude?: number;
+  trainerMemberVisibility?: "assigned_only" | "all_pt_members" | "all_members";
 };
 
 export type UpdateGymDetailsResult = FnResult;

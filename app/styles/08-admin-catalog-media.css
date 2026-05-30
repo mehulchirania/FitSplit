@@ -1332,6 +1332,9 @@
   align-items: center;
   flex-shrink: 0;
 }
+.adm-head-actions .gym-selector {
+  margin-top: 0;
+}
 .adm-btn {
   display: inline-flex;
   align-items: center;
@@ -1922,7 +1925,7 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
 .adm-ex-group-summary::-webkit-details-marker { display: none; }
 .adm-ex-group-summary:hover { background: color-mix(in srgb, var(--brand) 6%, var(--bg-subtle)); }
 .adm-ex-group-name { font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
-.adm-ex-group-chevron { font-size: 9px; color: var(--text-faint); transition: transform 120ms; }
+.adm-ex-group-chevron { display: inline-block; font-size: 11px; color: var(--text-faint); transition: transform 120ms; }
 details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(90deg); }
 
 .adm-ex-list { display: flex; flex-direction: column; }

@@ -177,6 +177,44 @@ export default async function GymDetailPage({
         </div>
       </div>
 
+      {/* Members card */}
+      <div className="adm-card" style={{ marginBottom: 20 }}>
+        <div className="adm-card__head">
+          <h3>Members</h3>
+          <span className="adm-card__link">{members.length} member{members.length !== 1 ? "s" : ""}</span>
+        </div>
+        <div className="adm-card__body adm-card__body--flush">
+          {members.length === 0 ? (
+            <div className="adm-empty">No members joined this gym yet.</div>
+          ) : (
+            <div style={{ maxHeight: 400, overflowY: "auto" }}>
+              {members.map((m, i) => (
+                <div
+                  key={m.id}
+                  className={`adm-staff-row${i < members.length - 1 ? " adm-staff-row--border" : ""}`}
+                >
+                  <span
+                    className="adm-staff-row__avatar"
+                    style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
+                  >
+                    {staffInitials(m.fullName)}
+                  </span>
+                  <div className="adm-staff-row__info">
+                    <strong>{m.fullName}</strong>
+                    <small>{m.email || m.phone || "No contact info"}</small>
+                  </div>
+                  <div style={{ marginLeft: "auto", fontSize: 12 }}>
+                    <span className={`adm-tag ${m.isActive ? "adm-tag--ok" : "adm-tag--neutral"}`}>
+                      {m.isActive ? "ACTIVE" : "INACTIVE"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Edit sections — preserved with anchor */}
       <details className="adm-details-panel" id="edit-gym">
         <summary className="adm-details-panel__summary">Edit gym details &amp; logo</summary>
