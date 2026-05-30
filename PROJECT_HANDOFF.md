@@ -4,7 +4,71 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
-## 🚀 Latest Milestone — E2E User Flow Redesign (2026-05-29)
+## 🚀 Latest Milestone — Full Workflow Audit, Bug Fixes & UI Revamp (2026-05-30)
+
+### Summary
+
+Comprehensive audit and fix pass across the entire app. Every user-facing workflow was checked for broken actions, missing auth, dead data, and UX gaps.
+
+### Critical Bug Fixes
+
+**Owner gym settings now save correctly**
+- `updateGymDetails` and `updateGymLogo` both required `admin` role only. Owners calling the server action fallback (when the Cloud Function is unavailable) got "Not authorized". Both actions now accept `["admin", "owner"]` with a guard that owners can only update their own gym.
+
+**Member PIN change now verifies current PIN**
+- `changeMemberPin` updated the password without checking the current PIN. Fixed: now calls Firebase Auth REST (`signInWithPassword`) to verify the current PIN server-side before any update is allowed.
+
+**PT member counts on Trainers page always showed zero**
+- The `isPT` field on member documents is never written by any action. The Trainers page now derives PT member counts from live PT plan data (`getAllPTSessionsForGym` — scheduled + active sessions only). Per-trainer PT load also uses real session counts.
+
+**Member login fixed for demo accounts**
+- Demo logins (e.g. "aarav", "mehulchirania") with Firebase Admin configured would match Firebase Auth successfully, but `createSession` couldn't find an `authProfiles` doc for the fake demo UIDs (e.g. "member-aarav"). This returned "Your FitSplit profile is inactive or missing" instead of falling back to the local demo session. Fixed: the demo path now only accepts a Firebase session result if it actually succeeds; otherwise falls through to `createLocalDemoSession`.
+
+**Member dashboard blank on real accounts**
+- `getMemberWithProfile` returned `member: null` for subcollection member documents that lack a `role` field (which is all real gym members — the role lives on `authProfiles`, not the member doc). Fixed: only reject documents with a `role` field explicitly set to a non-member value.
+
+### UI / UX Fixes
+
+**Owner topbar flash eliminated**
+- `AppTopbar` and `MainNav` both return `null` immediately for `/owner/*` paths at the component level. The previous CSS-only `:has(.odp2-workspace) .topbar { display: none }` approach caused a brief flash because the browser renders the topbar HTML before encountering `.odp2-workspace` deeper in the DOM.
+
+**`<details>` panels now auto-open on anchor click**
+- New `components/open-details-button.tsx` client component replaces bare `<a href="#id">` links on the Programs and Trainers pages. A plain anchor scroll does NOT open a collapsed `<details>` element — the component calls `el.open = true` before the scroll proceeds.
+
+**Admin inbox: removed permanently-disabled Compose button**
+- A `<button disabled>+ Compose</button>` with no backing feature was visible on every inbox visit. Removed.
+
+**`.pt-page` base CSS class added**
+- `10-pt-training.css` defined `.pt-page--booking` but not the base `.pt-page`. Added.
+
+### Loading States
+
+Added `loading.tsx` (FitnessLoader) to all routes that were missing it:
+- `app/owner/billing/`, `app/owner/packages/`, `app/owner/trainers/`
+- All `app/member/(pages)/*` sub-routes: coach, exercises, membership, programs, pt-history, settings
+
+### Owner & Admin UI Revamp (2026-05-29–30)
+
+All owner pages migrated from old `list-panel` / `panel-title` patterns to the `adm-card` / `adm-kpis` design system:
+- **Reports**: 4-column KPI bar, `adm-card` sections, all hardcoded `--color-*` vars replaced with design tokens
+- **Training**: booking form and session list use `adm-card`
+- **Trainers**: full rewrite — KPI row, trainer roster with live PT counts, unassigned PT members, `AddStaffForm`
+- **Members page**: removed double `odp2-scroll` wrapper causing compound padding; `mhv-root` now self-scrolls
+- **Exercise catalog**: added "Preview" column with `CatalogVideoPreview` for YouTube + gym video preview
+- **Admin programs**: embedded `WorkoutProgramGallery` inline (old links to non-existent `/owner/programs/[id]` removed)
+- **Admin staff**: `StaffAccessActions` fully rewritten — inline edit form (name, phone, role), reset password, delete with confirmation; `updateStaffProfile` server action added
+
+### Member Sub-Pages Shell
+
+New route group `app/member/(pages)/` with shared `layout.tsx` rendering `MemberSubSidebar` (sidebar with gym branding, nav links, logout). All member sub-pages (coach, exercises, membership, programs, pt-history, settings) now have a consistent sidebar navigation instead of top-nav.
+
+### CSS Fix Highlight
+
+Member shell height chain (`body → .app-shell → .m3d-root → .m3d-main → .m3d-content`) was broken because `body:has(.m3d-root) main { ... }` targeted `<main>` but the app uses `<div class="app-shell">`. Fixed by targeting `.app-shell` directly.
+
+---
+
+## 🚀 Previous Milestone — E2E User Flow Redesign (2026-05-29)
 
 Based on the Claude Design E2E User Flow bundle (`Eq-9dY9qmQavHnVHeWlVVw`), all roles were redesigned with consistent UI patterns. Implementation is staged across 7 phases.
 

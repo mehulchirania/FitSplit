@@ -201,57 +201,84 @@ npm run split:css                 # Split CSS selectors (legacy helper)
 
 ```
 app/
-  admin/          # Platform admin pages
+  admin/
+    billing/        # Platform billing — coming soon placeholder
+    exercises/      # Global exercise catalog management
+    gyms/[gymId]/   # Gym detail + staff management (owner edit, add staff)
+    inbox/          # Platform support inbox (contact messages)
+    programs/       # Admin-level program management (inline WorkoutProgramGallery)
   owner/
+    billing/        # Payment requests — approve/reject with stat cards
+    exercises/      # Gym exercise catalog (table + video preview column)
+    members/        # Hybrid member roster (action queue, KPI strip, directory)
+      [memberId]/   # Member detail — program, PT, coach note, access
     notifications/  # Full-page notification centre (filter tabs, mark-all-read)
-    reports/        # Membership stats + activity (empty state for zero-member gyms)
-    settings/       # Gym settings (details, logo, notice board)
-    members/        # Member roster + detail pages
-    training/       # PT booking + trainer schedule
-    programs/       # Program library
-  member/         # Member workout pages
-    programs/       # Read-only workout program library
-  trainer/        # Trainer PT schedule
-  styles/         # 16 modular CSS files (dark theme, design tokens in 00-base-shell.css)
+    packages/       # Membership package management
+    programs/       # Program library (WorkoutProgramGallery + CustomPlanBuilder)
+    reports/        # Gym reports — KPIs, attendance trend, workout coverage, PT plans
+    settings/       # Gym settings — details (owner-editable), logo, notices, trainer visibility
+    trainers/       # Trainer roster with live PT plan counts + AddStaffForm
+    training/       # PT booking + session list + calendar view
+  member/
+    page.tsx        # Member dashboard (MemberCoachShell — workout console, progress, wellness)
+    (pages)/        # Route group — sub-pages share MemberSubSidebar layout
+      coach/        # Trainer conversation + coach note detail
+      exercises/    # Read-only exercise catalog
+      membership/   # Membership status, package request form, payment history
+      programs/     # Read-only workout program library
+      pt-history/   # Full PT session history
+      settings/     # Account settings — units, PIN change, notifications
+  trainer/          # Trainer PT schedule + my members list
+  styles/           # 21 modular CSS files (see CSS Architecture section)
 
 components/
-  workout/                          # Workout console sub-components (extracted for maintainability)
+  workout/                          # Extracted workout sub-components
     session-timer-bar.tsx           # Active session bar: elapsed time + end workout
     injury-notes-form.tsx           # Injury/limitation notes with preset chips
     day-skip-form.tsx               # Skip reason chips + confirm + makeup exercises
     use-workout-console.ts          # All workout console business logic (custom hook)
-  member-workout-console.tsx        # Coordinator (~220 lines) — assembles workout sub-components
+  member-workout-console.tsx        # Coordinator (~220 lines)
+  member-sub-sidebar.tsx            # Member sub-pages sidebar (links, gym branding, logout)
+  odp-sidebar.tsx                   # Owner workspace sidebar (nav, user footer, logout)
+  odp-workspace-shell.tsx           # Owner workspace wrapper (sidebar + main area)
+  open-details-button.tsx           # Client button that opens a <details id="…"> + scrolls to it
   trainer-live-console.tsx          # PT session trainer UI
   notification-list.tsx             # Rich notification list (icons, timestamps, links, dismiss)
-  app-topbar.tsx                    # Topbar with numeric bell badge + rich notification dropdown
+  app-topbar.tsx                    # Topbar (hidden for /owner/* at component level, see above)
   gym-floor-load-map.tsx            # Real-time slot occupancy heatmap
   workout-program-gallery.tsx       # Program browser with filtering + readOnly mode
+  catalog-video-preview.tsx         # Exercise video preview chip (YouTube + gym video)
   progress-chart.tsx                # Lift history area chart (styled empty state)
   progressive-overload-chart.tsx    # Progressive overload line chart (PR reference line, kg units)
   muscle-radar-chart.tsx            # Muscle group volume radar
   attendance-calendar.tsx           # Member attendance history
+  members-hybrid-view.tsx           # D4 Hybrid members page (action queue, KPI strip, table)
   bulk-member-list.tsx              # Bulk select + actions
   macro-progress-panel.tsx          # Nutrition target tracking
   workout-insights-card.tsx         # Local heuristic workout insights (no external API)
+  staff-access-actions.tsx          # Inline staff edit/reset-password/delete with useActionState
 
 lib/
-  auth.ts                           # Session cookies, login, requireRole()
-  ai.ts                             # Local workout insights heuristic (getWorkoutInsights) — no external API
+  auth.ts                           # Session cookies, login, requireRole(); demo login fallback fixed
+  ai.ts                             # Local workout insights heuristic (getWorkoutInsights) — no API
   offline-db.ts                     # Dexie IndexedDB (offline lift logging)
-  workout-utils.ts                  # Workout calculation helpers (getWeekStart, getDefaultDayIndex,
-  |                                 #   getDayMuscleTargets, isContraindicated, findAlternative, etc.)
+  workout-utils.ts                  # Workout calculation helpers
   stores/workout-store.ts           # Zustand workout session state
   firebase/
     actions/                        # Server Actions (mutations) — one file per domain
-    read-models/                    # Server-side Firestore reads + mapNotificationDoc helper
+      gyms.ts                       # updateGymDetails + updateGymLogo allow owner role (not admin-only)
+      members.ts                    # changeMemberPin verifies current PIN via Firebase Auth REST
+      pt.ts                         # PT booking, session management, live logging
+      staff.ts                      # updateStaffProfile (fullName, phone, staffType) + delete
+    read-models/                    # Server-side Firestore reads
     client.ts                       # Firebase client SDK init
     admin.ts                        # Firebase Admin SDK init
     collections.ts                  # Collection path constants
     functions.ts                    # Cloud Functions callable wrappers
 
 functions/src/index.ts              # All Cloud Functions (~2000+ lines)
-types/domain.ts                     # All domain types (Notification now has actionHref, memberId, ptSessionId)
-middleware.ts                       # Route protection + role redirects
+types/domain.ts                     # Domain types — Notification has actionHref, memberId, ptSessionId
+middleware.ts                       # Route protection + role redirects (admin/owner/trainer/member)
 firestore.rules                     # Firestore security rules
 ```
 
@@ -354,27 +381,35 @@ Always reset `<button>` default UA styles for custom-styled buttons:
 
 ### CSS Architecture
 
-CSS is split into 16 modular files under `app/styles/`, loaded in order via `app/globals.css`. Each file has a numeric prefix defining load order:
+CSS is split into modular files under `app/styles/`, loaded in order via `app/layout.tsx`. Each file has a numeric prefix defining load order:
 
 | File | Scope |
 |---|---|
-| `00-base-shell.css` | Design tokens (all CSS variables), base reset |
-| `01-typography.css` | Font scale, headings, prose |
-| `02-layout.css` | Grid, containers, spacing utilities |
-| `03-components.css` | Shared components (cards, badges, inputs) |
-| `04-member-app.css` | Member-facing pages |
+| `00-base-shell.css` | Design tokens (all CSS variables), base reset, app-shell layout |
+| `01-owner-members.css` | Legacy owner member table styles (superseded by `19-members-redesign.css`) |
+| `02-shared-components.css` | Shared components — cards, badges, buttons, inputs, modals |
+| `03-visual-refresh.css` | Visual refresh tokens, elevation scale |
+| `04-loader-animation.css` | FitnessLoader barbell animation |
 | `05-theme-polish.css` | Theme refinements, dark-mode overrides |
-| `06-animations.css` | Scroll-reveal, transitions |
-| `07-landing.css` | Landing page layout structure |
-| `08-admin-catalog-media.css` | Admin UI, exercise catalog, media |
-| `09-trainer.css` | Trainer pages |
-| `10-pt-management.css` | PT scheduling and booking |
-| `11-member-detail.css` | Member detail pages |
-| `12-floor-map.css` | Gym floor load map |
-| `14-program-gallery.css` | Program browser |
-| `15-notifications.css` | Notification list + bell dropdown |
-| `16-ux-improvements.css` | Cross-cutting UX fixes and dark mode polish |
-| `20-owner-dashboard.css` | Owner dashboard workspace (`.odp2-*`) |
+| `06-programs-mobile-legacy-landing.css` | Legacy program cards + mobile landing |
+| `07-member-dashboard-legacy.css` | Legacy member dashboard styles (kept for fallback) |
+| `08-admin-catalog-media.css` | Admin UI (`.adm-*`), exercise catalog table, media embeds |
+| `09-profile-history-notices-loader.css` | Profile metrics, workout history, gym notices |
+| `forms.css` | Form panels, field layouts, error/success messages |
+| `member.css` | Core member shell styles |
+| `10-pt-training.css` | PT scheduling, booking, session cards (`.pt-*`) |
+| `11-member-tabs.css` | Member dashboard tab navigation |
+| `11-bulk-member-list.css` | Bulk member select + actions dock |
+| `12-member-dashboard-new.css` | Member dashboard v2 — coach shell, panels |
+| `13-skeletons.css` | Loading skeleton animations |
+| `14-radix-overrides.css` | Radix UI (Dialog, Dropdown, Select, Popover) overrides |
+| `15-ui-upgrades.css` | Cross-cutting UI upgrades — pills, tags, status indicators |
+| `16-ux-improvements.css` | UX polish — notification badge, dropdown layout, dark mode fixes |
+| `17-profile-metrics.css` | Member profile metrics, body stats, charts |
+| `18-billing-trainers.css` | Billing, packages, payment cards, trainer list (`.pkg-*`, `.payment-*`) |
+| `19-members-redesign.css` | Owner members hybrid view (`.mhv-*`) — action queue, KPI strip, table |
+| `20-owner-dashboard.css` | Owner workspace (`.odp2-*`) — sidebar, nav, full-screen layout |
+| `21-member-redesign.css` | Member sub-pages shell (`.m3d-*`) — sidebar, layout, height chain |
 
 Also: `app/landing.css` for all landing page component styles.
 
@@ -383,6 +418,11 @@ Also: `app/landing.css` for all landing page component styles.
 | Prefix | Scope |
 |---|---|
 | `odp2-` | Owner dashboard workspace (Owner Dashboard v2) |
+| `adm-` | Admin/owner shared UI — page headers, cards, KPIs, staff rows, buttons |
+| `mhv-` | Members hybrid view — action queue, KPI strip, directory table |
+| `m3d-` | Member sub-pages shell — sidebar, layout, content area |
+| `mcv-` | Member coach view (messaging/conversation panel) |
+| `pt-` | Personal training — booking form, session cards, calendar |
 | `lpd-` | Landing page shared components (buttons, modals) |
 | `l1-` | L1 Hero section on the landing page |
 | `lp-modal-` | Landing page modals (login, contact) |
@@ -405,7 +445,16 @@ The owner dashboard uses a **fixed full-viewport workspace** pattern:
 }
 ```
 
-The app topbar (`.topbar`) is suppressed via CSS `:has()` when the workspace is mounted, avoiding z-index battles:
+The app topbar (`AppTopbar`) returns `null` immediately for `/owner/*` paths at the component level — this prevents the topbar HTML from ever being emitted for owner routes, eliminating the flash that a pure CSS `:has()` approach would cause (the browser briefly renders the topbar before encountering `.odp2-workspace` in the DOM):
+
+```tsx
+// components/app-topbar.tsx
+if (pathname === "/" || !role || pathname.startsWith("/owner")) {
+  return null;
+}
+```
+
+A belt-and-suspenders CSS rule also hides it in case of edge cases:
 
 ```css
 body:has(.odp2-workspace) .topbar,

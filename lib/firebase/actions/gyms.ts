@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 "use server";
 
 import { randomUUID } from "crypto";
@@ -10,7 +9,6 @@ import type { FormActionState } from "@/types/action-state";
 import {
   requireFirebase,
   requireFirebaseServices,
-  requireText,
   getActionFormData,
   success,
   failure,
