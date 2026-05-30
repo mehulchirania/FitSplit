@@ -17,7 +17,7 @@ export function OpenDetailsButton({
   className?: string;
   style?: CSSProperties;
 }) {
-  function handleClick(e: React.MouseEvent<HTMLAnchorElement>) {
+  function handleClick() {
     const el = document.getElementById(targetId);
     if (el instanceof HTMLDetailsElement) {
       el.open = true;

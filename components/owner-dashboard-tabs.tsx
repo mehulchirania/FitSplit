@@ -186,7 +186,7 @@ const MIX_COLORS = [
 
 // ── TODAY tab ───────────────────────────────────────────────────────────────
 
-function TodayTab({ d, dismissed, onDismiss, setTab }: {
+function TodayTab({ d, dismissed, setTab }: {
   d: OwnerDashboardData;
   dismissed: Set<string>;
   onDismiss: (id: string) => void;

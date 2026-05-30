@@ -107,19 +107,19 @@ export function MemberSubSidebar({
       <div className="m3d-side__logo">
         {gymLogoUrl ? (
           <div className="m3d-side__cobrand">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icon-512.png" alt="FitSplit" width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
             </div>
             <span className="m3d-side__cobrand-sep">×</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={gymLogoUrl} alt={gymShort} width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
             </div>
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
           <div className="m3d-side__logo-mark">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icon-512.png" alt="FitSplit" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
           </div>
         )}

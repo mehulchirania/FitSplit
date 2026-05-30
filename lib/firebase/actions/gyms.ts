@@ -21,7 +21,6 @@ import {
   archiveAndDeleteGymSubcollections,
   writeAuthProfileIndex,
   mirrorProfileToGym,
-  mirrorGymScopedRecord,
   upsertAuthUser
 } from "./shared";
 import { z } from "zod";
@@ -472,7 +471,7 @@ export async function updateGymDetails(
       try { new URL(trimmedLocationUrl); } catch { throw new Error("Location URL must be a valid URL (e.g. https://maps.google.com/...)."); }
     }
 
-    const updateData: any = {
+    const updateData: Record<string, string | null> = {
       name,
       location: location.trim(),
       locationUrl: trimmedLocationUrl || null,
@@ -594,7 +593,7 @@ export async function setGymStatus(
         try {
           await auth.updateUser(profileDoc.id, { disabled: !isActive });
         } catch (error: unknown) {
-          if ((error as any)?.code !== "auth/user-not-found") {
+          if ((error as { code?: string })?.code !== "auth/user-not-found") {
             throw error;
           }
         }

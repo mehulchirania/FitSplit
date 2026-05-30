@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { StatusBadge } from "@/components/status-badge";
-import { EmptyState } from "@/components/empty-state";
 import { MembershipRequestForm } from "@/components/membership-request-form";
 import { Bell, Calendar } from "@/components/icons";
 import { requireRole } from "@/lib/auth";

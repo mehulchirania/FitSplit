@@ -4,47 +4,49 @@ import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { MemberProgressPanel } from "@/components/member-progress-panel";
 import { MemberHistory } from "@/components/member-history";
 import { WorkoutCalendar } from "@/components/workout-calendar";
-import { ActivityLogForm } from "@/components/activity-log-form";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
 import type { MemberProfile, Member } from "@/types/domain";
-import { useState, useEffect, useTransition, useRef } from "react";
+import React, { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { logoutUser } from "@/lib/auth";
 
 /* ── Inline SVG icon helpers ──────────────────────── */
-const Icon = ({ d, size = 20, fill, stroke = 1.7, ...rest }: any) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill || "none"} stroke="currentColor" strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" {...rest}>
+// Omit conflicting SVG attrs (d is string in SVG spec but we pass ReactNode; strokeWidth handled via sw)
+type IconProps = { d?: React.ReactNode; size?: number; fill?: string; sw?: number } & Omit<React.SVGProps<SVGSVGElement>, "d" | "strokeWidth">;
+const Icon = ({ d, size = 20, fill, sw = 1.7, ...rest }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill || "none"} stroke="currentColor" strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" {...rest}>
     {typeof d === "string" ? <path d={d} /> : d}
   </svg>
 );
 
+type P = IconProps;
 const Icons = {
-  Lightning: (p: any) => <Icon {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" stroke="none" />,
-  Home:      (p: any) => <Icon {...p} d="M3 11l9-7 9 7v9a2 2 0 01-2 2h-3v-7H10v7H7a2 2 0 01-2-2v-9z" />,
-  Dumbbell:  (p: any) => <Icon {...p} d={<><path d="M6.5 6.5l11 11" /><path d="M3 9l3-3 3 3-3 3z" /><path d="M15 15l3-3 3 3-3 3z" /><path d="M2 12.5l1.5-1.5" /><path d="M22 11.5l-1.5 1.5" /></>} />,
-  Chart:     (p: any) => <Icon {...p} d={<><path d="M3 21V3" /><path d="M21 21H3" /><path d="M7 17v-5" /><path d="M12 17v-9" /><path d="M17 17v-12" /></>} />,
-  User:      (p: any) => <Icon {...p} d={<><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4-6 8-6s7 2 8 6" /></>} />,
-  Flame:     (p: any) => <Icon {...p} d={<><path d="M12 3s4 3 4 9a4 4 0 11-8 0c0-1.5.5-3 1.5-4.2C10 6 8.5 4.5 12 3z" /><path d="M12 13a1.5 1.5 0 010 3" /></>} />,
-  Play:      (p: any) => <Icon {...p} fill="currentColor" stroke="none" d="M8 5l12 7-12 7z" />,
-  Check:     (p: any) => <Icon {...p} d="M4 12l5 5L20 6" />,
-  CheckCircle:(p: any) => <Icon {...p} d={<><circle cx="12" cy="12" r="9" /><path d="M8 12l3 3 5-5" /></>} />,
-  Plus:      (p: any) => <Icon {...p} d="M12 5v14M5 12h14" />,
-  ChevR:     (p: any) => <Icon {...p} d="M9 6l6 6-6 6" />,
-  Calendar:  (p: any) => <Icon {...p} d={<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>} />,
-  Mail:      (p: any) => <Icon {...p} d={<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 7 9-7" /></>} />,
-  Bell:      (p: any) => <Icon {...p} d={<><path d="M6 9a6 6 0 0112 0c0 7 3 7 3 9H3c0-2 3-2 3-9z" /><path d="M10 21a2 2 0 004 0" /></>} />,
-  Heart:     (p: any) => <Icon {...p} d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9z" />,
-  Trophy:    (p: any) => <Icon {...p} d={<><path d="M8 4h8v6a4 4 0 01-8 0V4z" /><path d="M6 5H4a2 2 0 002 4" /><path d="M18 5h2a2 2 0 01-2 4" /><path d="M10 14v3l-1 3h6l-1-3v-3" /></>} />,
-  Settings:  (p: any) => <Icon {...p} d={<><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4.9a7 7 0 00-2-1.2L14 3h-4l-.5 2.5a7 7 0 00-2 1.2L5.1 5.8l-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-.9c.6.5 1.3.9 2 1.2L10 21h4l.5-2.5c.7-.3 1.4-.7 2-1.2l2.4.9 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" /></>} />,
-  Note:      (p: any) => <Icon {...p} d={<><path d="M5 4h11l3 3v13a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" /><path d="M8 9h7M8 13h7M8 17h4" /></>} />,
-  Search:    (p: any) => <Icon {...p} d={<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>} />,
-  Send:      (p: any) => <Icon {...p} d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
-  Video:     (p: any) => <Icon {...p} d={<><rect x="2" y="7" width="14" height="10" rx="2" /><path d="M16 11l5-4v10l-5-4" /></>} />,
-  LogOut:    (p: any) => <Icon {...p} d={<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>} />,
+  Lightning: (p: P) => <Icon {...p} d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="currentColor" stroke="none" />,
+  Home:      (p: P) => <Icon {...p} d="M3 11l9-7 9 7v9a2 2 0 01-2 2h-3v-7H10v7H7a2 2 0 01-2-2v-9z" />,
+  Dumbbell:  (p: P) => <Icon {...p} d={<><path d="M6.5 6.5l11 11" /><path d="M3 9l3-3 3 3-3 3z" /><path d="M15 15l3-3 3 3-3 3z" /><path d="M2 12.5l1.5-1.5" /><path d="M22 11.5l-1.5 1.5" /></>} />,
+  Chart:     (p: P) => <Icon {...p} d={<><path d="M3 21V3" /><path d="M21 21H3" /><path d="M7 17v-5" /><path d="M12 17v-9" /><path d="M17 17v-12" /></>} />,
+  User:      (p: P) => <Icon {...p} d={<><circle cx="12" cy="8" r="4" /><path d="M4 21c1-4 4-6 8-6s7 2 8 6" /></>} />,
+  Flame:     (p: P) => <Icon {...p} d={<><path d="M12 3s4 3 4 9a4 4 0 11-8 0c0-1.5.5-3 1.5-4.2C10 6 8.5 4.5 12 3z" /><path d="M12 13a1.5 1.5 0 010 3" /></>} />,
+  Play:      (p: P) => <Icon {...p} fill="currentColor" stroke="none" d="M8 5l12 7-12 7z" />,
+  Check:     (p: P) => <Icon {...p} d="M4 12l5 5L20 6" />,
+  CheckCircle:(p: P) => <Icon {...p} d={<><circle cx="12" cy="12" r="9" /><path d="M8 12l3 3 5-5" /></>} />,
+  Plus:      (p: P) => <Icon {...p} d="M12 5v14M5 12h14" />,
+  ChevR:     (p: P) => <Icon {...p} d="M9 6l6 6-6 6" />,
+  Calendar:  (p: P) => <Icon {...p} d={<><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>} />,
+  Mail:      (p: P) => <Icon {...p} d={<><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 7l9 7 9-7" /></>} />,
+  Bell:      (p: P) => <Icon {...p} d={<><path d="M6 9a6 6 0 0112 0c0 7 3 7 3 9H3c0-2 3-2 3-9z" /><path d="M10 21a2 2 0 004 0" /></>} />,
+  Heart:     (p: P) => <Icon {...p} d="M12 21s-7-4.5-9-9a5 5 0 019-3 5 5 0 019 3c-2 4.5-9 9-9 9z" />,
+  Trophy:    (p: P) => <Icon {...p} d={<><path d="M8 4h8v6a4 4 0 01-8 0V4z" /><path d="M6 5H4a2 2 0 002 4" /><path d="M18 5h2a2 2 0 01-2 4" /><path d="M10 14v3l-1 3h6l-1-3v-3" /></>} />,
+  Settings:  (p: P) => <Icon {...p} d={<><circle cx="12" cy="12" r="3" /><path d="M19 12a7 7 0 00-.1-1.2l2-1.6-2-3.4-2.4.9a7 7 0 00-2-1.2L14 3h-4l-.5 2.5a7 7 0 00-2 1.2L5.1 5.8l-2 3.4 2 1.6A7 7 0 005 12c0 .4 0 .8.1 1.2l-2 1.6 2 3.4 2.4-.9c.6.5 1.3.9 2 1.2L10 21h4l.5-2.5c.7-.3 1.4-.7 2-1.2l2.4.9 2-3.4-2-1.6c.1-.4.1-.8.1-1.2z" /></>} />,
+  Note:      (p: P) => <Icon {...p} d={<><path d="M5 4h11l3 3v13a1 1 0 01-1 1H5a1 1 0 01-1-1V5a1 1 0 011-1z" /><path d="M8 9h7M8 13h7M8 17h4" /></>} />,
+  Search:    (p: P) => <Icon {...p} d={<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>} />,
+  Send:      (p: P) => <Icon {...p} d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
+  Video:     (p: P) => <Icon {...p} d={<><rect x="2" y="7" width="14" height="10" rx="2" /><path d="M16 11l5-4v10l-5-4" /></>} />,
+  LogOut:    (p: P) => <Icon {...p} d={<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>} />,
 };
 
 /* ── Props types ─────────────────────────────────────────────────── */
@@ -149,19 +151,19 @@ function Sidebar({
       <div className="m3d-side__logo">
         {gymLogoUrl ? (
           <div className="m3d-side__cobrand">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src="/icon-512.png" alt="FitSplit" width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
             </div>
             <span className="m3d-side__cobrand-sep">×</span>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={gymLogoUrl} alt={gymShort} width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
             </div>
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element
           <div className="m3d-side__logo-mark">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/icon-512.png" alt="FitSplit" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
           </div>
         )}
@@ -284,10 +286,10 @@ function DesktopTopBar({ onToast }: { onToast: (t: string) => void }) {
 }
 
 /* ── Mobile TopBar ───────────────────────────────────────────────── */
-function MobileTopBar({ firstName, gymName, gymLogoUrl, onNotif }: {
+function MobileTopBar({ firstName, gymName, onNotif }: {
   firstName: string;
   gymName: string;
-  gymLogoUrl?: string | null;
+  gymLogoUrl?: string | null;  // passed by caller, reserved for future co-brand display
   onNotif: () => void;
 }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -388,84 +390,6 @@ function MobileTabBar({ tab, setTab }: { tab: string; setTab: (t: string) => voi
   );
 }
 
-/* ── Coach hero section ──────────────────────────────────────────── */
-function CoachHero({ coachNote, coachNoteFrom, coachNoteUpdatedAt, onToast }: {
-  coachNote?: string | null;
-  coachNoteFrom?: string | null;
-  coachNoteUpdatedAt?: string | null;
-  onToast: (msg: string) => void;
-}) {
-  const [replyText, setReplyText] = useState("");
-
-  const initials = coachNoteFrom
-    ? coachNoteFrom.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
-    : "PT";
-
-  const noteDate = coachNoteUpdatedAt
-    ? new Date(coachNoteUpdatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
-    : null;
-
-  function send(msg?: string) {
-    const text = msg ?? replyText;
-    if (!text.trim()) return;
-    setReplyText("");
-    onToast(`Sent to ${coachNoteFrom ?? "your trainer"}: "${text}"`);
-  }
-
-  return (
-    <section className="m3d-coach">
-      <div className="m3d-coach__bg">
-        <div className="m3d-coach__bg-a" />
-        <div className="m3d-coach__bg-b" />
-      </div>
-      <div className="m3d-coach__inner">
-        <div className="m3d-coach__head">
-          <Avatar initials={initials} size="xl" className="m3d-coach__avatar" />
-          <div className="m3d-coach__info">
-            <span className="m3d-coach__label">Your Coach</span>
-            <strong>{coachNoteFrom ?? "Your Trainer"}</strong>
-            <span className="m3d-coach__online">
-              <span className="m3d-coach__online-dot" /> Online · usually replies in 30 min
-            </span>
-          </div>
-          <Link href="/member/coach" className="m3d-coach__full-thread">
-            <Icons.Mail size={13} /> Full thread
-          </Link>
-        </div>
-
-        <div className="m3d-coach__bubble">
-          <p>{coachNote ?? "No note yet — your trainer will leave you a message here before your session."}</p>
-          <span className="m3d-coach__time">{noteDate ? `Today, ${noteDate}` : "Just now"}</span>
-        </div>
-
-        <div className="m3d-coach__reply">
-          <input
-            type="text"
-            placeholder="Reply to Coach…"
-            className="m3d-coach__input"
-            value={replyText}
-            onChange={(e) => setReplyText(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") send(); }}
-          />
-          <div className="m3d-coach__quick">
-            {["Got it 👍", "On it!", "Quick question…"].map((q) => (
-              <button key={q} className="m3d-coach__quick-btn" onClick={() => send(q)} type="button">{q}</button>
-            ))}
-          </div>
-          <button
-            className={`m3d-coach__send${replyText ? " m3d-coach__send--on" : ""}`}
-            onClick={() => send()}
-            disabled={!replyText}
-            aria-label="Send"
-            type="button"
-          >
-            <Icons.Send size={15} />
-          </button>
-        </div>
-      </div>
-    </section>
-  );
-}
 
 /* ── Compact coach note banner (train tab) ──────────────────────── */
 function CoachNoteBanner({ coachNote, coachNoteFrom }: {
@@ -781,7 +705,7 @@ function PRsCard({ liftLogs, exercises }: { liftLogs: LiftLog[]; exercises: Exer
 }
 
 /* ── Body & Macros card ──────────────────────────────────────────── */
-function BodyMacrosCard({ member, profile, macroLog }: { member: Member; profile: MemberProfile; macroLog?: MacroLog | null }) {
+function BodyMacrosCard({ profile, macroLog }: { member?: Member; profile: MemberProfile; macroLog?: MacroLog | null }) {
   const targetKcal = profile.macroNutritionTarget?.calories ?? 1800;
   const actualKcal = macroLog ? ((macroLog.protein ?? 0) * 4 + (macroLog.carbs ?? 0) * 4 + (macroLog.fat ?? 0) * 9) : 0;
   const kcalPct = Math.min(100, Math.round((actualKcal / targetKcal) * 100));
@@ -854,7 +778,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     firstName, gymName, gymLogoUrl, gymNotices,
     weeklyStreak, daysTrainedThisWeek, liftLogCount,
     membershipStatus, membershipEndDate,
-    coachNote, coachNoteFrom, coachNoteUpdatedAt,
+    coachNote, coachNoteFrom,
     program, currentWeek, exercises, liftLogs, dayLogs, activityLogs,
     macroLogs, macroLog, macroTarget, injuryNote,
     memberId, gymId, todayDate,

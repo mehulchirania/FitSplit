@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { WorkoutProgram, ProgramAssignment } from "@/types/domain";
+import type { WorkoutProgram } from "@/types/domain";
 
 interface MemberProgramsClientProps {
   programs: WorkoutProgram[];

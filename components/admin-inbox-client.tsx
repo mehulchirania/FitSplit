@@ -25,13 +25,6 @@ function threadKind(msg: ContactMessage): { label: string; cls: string } {
   return { label: "SUPPORT", cls: "adm-inbox-tag adm-inbox-tag--danger" };
 }
 
-// Person initials
-function initials(name: string) {
-  return name.trim().split(/\s+/).map(w => w[0]).join("").slice(0, 2).toUpperCase();
-}
-
-const COLORS = ["var(--brand)", "var(--accent)", "#7C3AED", "#D97706", "var(--danger)"];
-
 export function AdminInboxClient({
   messages,
   unreadCount,

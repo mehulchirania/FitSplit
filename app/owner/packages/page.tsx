@@ -1,5 +1,3 @@
-import { EmptyState } from "@/components/empty-state";
-import { Dumbbell } from "@/components/icons";
 import { PackagesClient } from "./packages-client";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";

@@ -1,8 +1,5 @@
 import Link from "next/link";
 import { PaymentRequestCard } from "@/components/payment-request-card";
-import { EmptyState } from "@/components/empty-state";
-import { StatCard } from "@/components/stat-card";
-import { Bell } from "@/components/icons";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { getPaymentRequests } from "@/lib/firebase/read-models";

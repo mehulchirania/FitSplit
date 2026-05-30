@@ -10,12 +10,6 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const STATUS_PILL: Record<string, string> = {
-  scheduled: "status-expiring",
-  active: "status-active",
-  completed: "status-neutral",
-  cancelled: "status-inactive"
-};
 
 export default async function PTSessionConsolePage({
   params

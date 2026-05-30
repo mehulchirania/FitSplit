@@ -133,6 +133,7 @@ export default async function MemberDashboard() {
       dayLogs={dayLogs}
       activityLogs={activityLogs}
       macroLogs={macroLogs}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       macroLog={initialMacroLog as any}
       macroTarget={profile.macroNutritionTarget}
       injuryNote={profile.injuryNotes}
@@ -140,6 +141,7 @@ export default async function MemberDashboard() {
       gymId={gymId}
       todayDate={todayDate}
       member={member}
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       profile={profile as any}
       initialActiveSessionCount={sessions.length}
     />

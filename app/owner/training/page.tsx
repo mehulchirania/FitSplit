@@ -101,7 +101,6 @@ export default async function OwnerTrainingPage({
 
   // Pre-selected member info for context banner
   const preselectedMember = memberId ? members.find((m) => m.id === memberId) : null;
-  const preselectedTrainer = trainerId ? trainers.find((t) => t.id === trainerId) : null;
 
   return (
     <div className={`odp2-scroll pt-page${isBookingMode ? " pt-page--booking" : ""}`}>

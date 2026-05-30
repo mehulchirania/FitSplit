@@ -17,13 +17,6 @@ import type { PTSession, TrainerMemberVisibility } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
 
-const STATUS_PILL: Record<PTSession["status"], string> = {
-  scheduled: "status-expiring",
-  active: "status-active",
-  completed: "status-neutral",
-  cancelled: "status-inactive"
-};
-
 function formatDate(iso: string) {
   try {
     return new Intl.DateTimeFormat("en-IN", {

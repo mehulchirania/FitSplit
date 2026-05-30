@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getContactMessages } from "@/lib/firebase/read-models";
 import { AdminInboxClient } from "@/components/admin-inbox-client";

@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { getGymWorkspaces } from "@/lib/firebase/read-models";
-import { GymArchiveAction } from "@/components/gym-archive-action";
 
 export const dynamic = "force-dynamic";
 
