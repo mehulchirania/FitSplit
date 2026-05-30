@@ -8,6 +8,7 @@ import { EditableMetrics } from "@/components/editable-metrics";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
+import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
 import type { MemberProfile, Member } from "@/types/domain";
 import React, { useState, useEffect, useTransition, useRef } from "react";
@@ -128,6 +129,7 @@ function Sidebar({
     { v: "progress", label: "Progress", icon: <Icons.Chart size={18} /> },
     { v: "calendar", label: "Calendar", icon: <Icons.Calendar size={18} /> },
     { v: "body",     label: "Body",     icon: <Icons.Heart size={18} /> },
+    { v: "coach",    label: "Coach",    icon: <Icons.Mail size={18} /> },
   ];
 
   const gymShort = gymName.split(" · ")[0];
@@ -153,18 +155,18 @@ function Sidebar({
           <div className="m3d-side__cobrand">
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon-512.png" alt="FitSplit" width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+              <img src="/icon-512.png" alt="FitSplit" width={38} height={38} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
             </div>
             <span className="m3d-side__cobrand-sep">×</span>
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={gymLogoUrl} alt={gymShort} width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+              <img src={gymLogoUrl} alt={gymShort} width={38} height={38} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
             </div>
           </div>
         ) : (
           <div className="m3d-side__logo-mark">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-512.png" alt="FitSplit" width={36} height={36} style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: "inherit" }} />
+            <img src="/icon-512.png" alt="FitSplit" width={46} height={46} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "12px" }} />
           </div>
         )}
         <div className="m3d-side__logo-text">
@@ -175,12 +177,6 @@ function Sidebar({
 
       {/* Nav */}
       <nav className="m3d-side__nav">
-        {/* Coach — dedicated full-page thread */}
-        <Link href="/member/coach" className="m3d-side__item">
-          <Icons.Mail size={18} />
-          <span>Coach</span>
-        </Link>
-        {/* Internal tab items */}
         {tabItems.map((it) => (
           <button
             key={it.v}
@@ -192,6 +188,16 @@ function Sidebar({
             <span>{it.label}</span>
           </button>
         ))}
+        {/* Quick links — full-page views for less-frequent actions */}
+        <div className="m3d-side__section-sep" />
+        <Link href="/member/programs" className="m3d-side__item m3d-side__item--link">
+          <Icons.Note size={18} />
+          <span>Programs</span>
+        </Link>
+        <Link href="/member/exercises" className="m3d-side__item m3d-side__item--link">
+          <Icons.Search size={18} />
+          <span>Exercises</span>
+        </Link>
       </nav>
 
       {/* ── Snowflake-style profile footer ── */}
@@ -262,7 +268,17 @@ function Sidebar({
 }
 
 /* ── Desktop TopBar ──────────────────────────────────────────────── */
-function DesktopTopBar({ onToast }: { onToast: (t: string) => void }) {
+function DesktopTopBar({ onToast, unreadCount = 0 }: { onToast: (t: string) => void; unreadCount?: number }) {
+  const [query, setQuery] = React.useState("");
+
+  function handleSearch(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === "Enter" && query.trim()) {
+      // Navigate to exercises page with search query via URL
+      window.location.href = `/member/exercises?q=${encodeURIComponent(query.trim())}`;
+    }
+    if (e.key === "Escape") setQuery("");
+  }
+
   return (
     <header className="m3d-top">
       <div className="m3d-top__crumbs">
@@ -273,12 +289,22 @@ function DesktopTopBar({ onToast }: { onToast: (t: string) => void }) {
       <div className="m3d-top__right">
         <div className="m3d-top__search">
           <Icons.Search size={14} />
-          <input placeholder="Search exercises, lifts…" readOnly />
-          <kbd>⌘K</kbd>
+          <input
+            placeholder="Search exercises…"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={handleSearch}
+            aria-label="Search exercises"
+          />
+          {query ? (
+            <button type="button" onClick={() => setQuery("")} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--text-faint)", padding: "0 2px" }} aria-label="Clear search">×</button>
+          ) : (
+            <kbd>↵</kbd>
+          )}
         </div>
-        <button className="m3d-top__icon" onClick={() => onToast("No new notifications")} type="button" aria-label="Notifications">
+        <button className="m3d-top__icon" onClick={() => unreadCount > 0 ? onToast(`${unreadCount} new notification${unreadCount > 1 ? "s" : ""}`) : onToast("No new notifications")} type="button" aria-label="Notifications">
           <Icons.Bell size={18} />
-          <span className="m3d-top__icon-dot" />
+          {unreadCount > 0 && <span className="m3d-top__icon-dot" />}
         </button>
       </div>
     </header>
@@ -286,10 +312,11 @@ function DesktopTopBar({ onToast }: { onToast: (t: string) => void }) {
 }
 
 /* ── Mobile TopBar ───────────────────────────────────────────────── */
-function MobileTopBar({ firstName, gymName, onNotif }: {
+function MobileTopBar({ firstName, gymName, unreadCount = 0, onNotif }: {
   firstName: string;
   gymName: string;
-  gymLogoUrl?: string | null;  // passed by caller, reserved for future co-brand display
+  gymLogoUrl?: string | null;
+  unreadCount?: number;
   onNotif: () => void;
 }) {
   const [showMenu, setShowMenu] = useState(false);
@@ -313,7 +340,7 @@ function MobileTopBar({ firstName, gymName, onNotif }: {
       <div className="mcr-topbar__right">
         <button className="mcr-topbar__icon" onClick={onNotif} aria-label="Notifications" type="button">
           <Icons.Bell size={18} />
-          <span className="mcr-topbar__dot" />
+          {unreadCount > 0 && <span className="mcr-topbar__dot" />}
         </button>
         <div className="mcr-avatar-wrap">
           <button
@@ -543,22 +570,20 @@ function TodaySessionList({ program, currentWeek, exercises, onStart }: {
                 <small>COACH&apos;S TARGET</small>
                 <strong>—<span>kg</span></strong>
               </div>
-              {videoUrl ? (
-                <a
-                  href={videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="m3d-ex__open m3d-ex__video"
-                  aria-label={`Watch ${dictEx?.name ?? "exercise"} tutorial`}
-                  title="Watch tutorial"
-                >
-                  <Icons.Video size={14} />
-                </a>
-              ) : (
-                <button className="m3d-ex__open" aria-label="Open details" type="button">
-                  <Icons.ChevR size={14} />
-                </button>
-              )}
+              <div className="m3d-ex__video-wrap">
+                {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) ? (
+                  <CatalogVideoPreview
+                    exerciseName={dictEx.name}
+                    gymVideoUrl={dictEx.gymVideoUrl}
+                    muscleGroup={dictEx.muscleGroup ?? ""}
+                    videoUrl={dictEx.videoUrl}
+                  />
+                ) : (
+                  <button className="m3d-ex__open" aria-label="Open details" type="button">
+                    <Icons.ChevR size={14} />
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}
@@ -607,12 +632,17 @@ function MobileTodayCard({ program, currentWeek, exercises, onStart }: {
                 <div className="mcr-ex__name">{dictEx?.name ?? "Unknown"}</div>
                 <div className="mcr-ex__meta">
                   <span>{ex.sets} × {ex.reps}</span>
-                  {videoUrl && (
+                  {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) && (
                     <>
                       <span className="mcr-ex__sep">·</span>
-                      <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="mcr-ex__video-link" aria-label="Watch tutorial">
-                        <Icons.Video size={11} /> tutorial
-                      </a>
+                      <span className="mcr-ex__video-wrap-sm">
+                        <CatalogVideoPreview
+                          exerciseName={dictEx.name}
+                          gymVideoUrl={dictEx.gymVideoUrl}
+                          muscleGroup={dictEx.muscleGroup ?? ""}
+                          videoUrl={dictEx.videoUrl}
+                        />
+                      </span>
                     </>
                   )}
                 </div>
@@ -638,19 +668,16 @@ function PTCard() {
           <Icons.Calendar size={16} />
         </div>
         <div>
-          <span className="m3d-card__eyebrow">UPCOMING PT</span>
-          <strong className="m3d-card__title">Bench technique</strong>
+          <span className="m3d-card__eyebrow">PERSONAL TRAINING</span>
+          <strong className="m3d-card__title">PT History</strong>
         </div>
       </div>
-      <div className="m3d-pt-row">
-        <div><span>When</span><strong>Tomorrow,<br/>6:30 AM</strong></div>
-        <div><span>Duration</span><strong>45<br/>MIN</strong></div>
-        <div><span>With</span><strong>Priya Nair</strong></div>
-      </div>
-      <div className="m3d-pt-actions">
-        <button className="m3d-btn-ghost" type="button">Reschedule</button>
-        <button className="m3d-btn-subtle" type="button">View details</button>
-      </div>
+      <p style={{ fontSize: 13, color: "var(--text-soft)", margin: "0 0 12px", lineHeight: 1.6 }}>
+        View your personal training sessions, session notes, and exercise logs from your trainer.
+      </p>
+      <Link href="/member/pt-history" className="m3d-btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
+        <Icons.Calendar size={13} /> View PT sessions →
+      </Link>
     </section>
   );
 }
@@ -964,6 +991,43 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
               <ProfileMetricsWidget profile={profile} />
               <EditableMetrics member={{ ...member, ...profile }} />
               <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
+            </div>
+          )}
+
+          {/* ── Coach tab (inline) ── */}
+          {tab === "coach" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: 640 }}>
+              <div className="m3d-pagehead" style={{ marginBottom: 0 }}>
+                <div>
+                  <span className="m3d-pagehead__eyebrow">Coach</span>
+                  <h1 className="m3d-pagehead__title" style={{ fontSize: 22 }}>Message your coach</h1>
+                </div>
+              </div>
+              {coachNote ? (
+                <div className="m3d-card" style={{ padding: "20px 22px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+                    <div className="m3d-card__head-icon" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
+                      <Icons.Mail size={15} />
+                    </div>
+                    <div>
+                      <span className="m3d-card__eyebrow">LATEST NOTE FROM YOUR COACH</span>
+                      <strong className="m3d-card__title" style={{ display: "block" }}>{coachNoteFrom ?? "Your trainer"}</strong>
+                    </div>
+                  </div>
+                  <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.7, color: "var(--text)" }}>{coachNote}</p>
+                  <Link href="/member/coach" className="m3d-btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
+                    <Icons.Mail size={13} /> Open full conversation →
+                  </Link>
+                </div>
+              ) : (
+                <div className="m3d-card" style={{ padding: "32px 24px", textAlign: "center" }}>
+                  <Icons.Mail size={28} style={{ color: "var(--text-faint)", marginBottom: 12 }} />
+                  <p style={{ color: "var(--text-soft)", marginBottom: 16 }}>No coach note yet. Your trainer will leave you a message here before your session.</p>
+                  <Link href="/member/coach" className="m3d-btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
+                    <Icons.Mail size={13} /> Open conversation →
+                  </Link>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -35,11 +35,10 @@
   margin-bottom: 14px;
 }
 .m3d-side__logo-mark {
-  width: 38px;
-  height: 38px;
-  border-radius: 11px;
-  background: var(--brand);
-  color: var(--primary-foreground);
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -77,6 +76,17 @@
   color: var(--brand);
 }
 [data-theme="light"] .m3d-side__item--on { color: var(--brand-strong); }
+.m3d-side__section-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 8px 0;
+  opacity: 0.6;
+}
+.m3d-side__item--link {
+  text-decoration: none;
+  color: var(--text-soft);
+}
+.m3d-side__item--link:hover { color: var(--text); }
 .m3d-side__bottom {
   padding-top: 12px;
   border-top: 1px solid var(--border);
@@ -1117,6 +1127,17 @@
 }
 [data-theme="light"] .m3d-ex__video { color: var(--brand-strong); }
 .m3d-ex__video:hover { color: var(--brand-strong); }
+/* Video button wrapper inside exercise rows */
+.m3d-ex__video-wrap .video-indicator,
+.mcr-ex__video-wrap-sm .video-indicator {
+  font-size: 11px;
+  padding: 3px 7px;
+  gap: 4px;
+}
+.mcr-ex__video-wrap-sm {
+  display: inline-flex;
+  align-items: center;
+}
 
 /* ── Avatar ─────────────────────────────────────────────────────────────── */
 .mcr-avatar {
@@ -2116,16 +2137,15 @@ body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex
   gap: 5px;
 }
 .m3d-side__logo-mark--sm {
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: var(--brand);
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
-  border: 1px solid var(--border);
 }
 .m3d-side__cobrand-sep {
   font-size: 10px;

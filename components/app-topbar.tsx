@@ -71,11 +71,11 @@ export function AppTopbar({
     return () => window.removeEventListener("scroll", handleScroll);
   }, [isDrawerOpen]);
 
-  // Owner workspace (/owner/*) has its own full-screen sidebar layout (OdpSidebar)
-  // that handles navigation, branding, and logout. Rendering the topbar on top would
-  // cause it to flash briefly on initial load (before the `:has(.odp2-workspace)`
-  // CSS rule hides it), so we suppress it here at the component level instead.
-  if (pathname === "/" || !role || pathname.startsWith("/owner")) {
+  // Owner and Member workspaces have their own full-screen sidebar layouts that
+  // handle navigation, branding, and logout. Rendering the app topbar would cause
+  // a flash on initial load (before the CSS :has() rule hides it), so we suppress
+  // it at the component level for these routes.
+  if (pathname === "/" || !role || pathname.startsWith("/owner") || pathname.startsWith("/member")) {
     return null;
   }
 
