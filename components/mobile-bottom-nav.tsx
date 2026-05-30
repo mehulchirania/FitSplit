@@ -53,7 +53,9 @@ function isActiveLink(pathname: string, href: string) {
 
 export function MobileBottomNav({ role }: { role?: Role }) {
   const pathname = usePathname();
-  if (!role) {
+  // Member and owner workspaces have their own full-screen layouts that handle
+  // navigation — suppress at component level to prevent flash before CSS :has() fires
+  if (!role || role === "member" || pathname.startsWith("/owner") || pathname.startsWith("/member")) {
     return null;
   }
 

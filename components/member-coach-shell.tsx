@@ -160,7 +160,7 @@ function Sidebar({
           <div className="m3d-side__cobrand">
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon-512.png" alt="FitSplit" width={42} height={42} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
+              <img src="/icon-512.png" alt="FitSplit" width={42} height={42} className="m3d-logo-img" />
             </div>
             <span className="m3d-side__cobrand-sep">×</span>
             <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
@@ -171,7 +171,7 @@ function Sidebar({
         ) : (
           <div className="m3d-side__logo-mark">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-512.png" alt="FitSplit" width={52} height={52} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "12px" }} />
+            <img src="/icon-512.png" alt="FitSplit" width={52} height={52} className="m3d-logo-img" />
           </div>
         )}
         <div className="m3d-side__logo-text">

@@ -54,15 +54,23 @@
   line-height: 1.1;
 }
 .m3d-side__logo-mark {
-  width: 46px;
-  height: 46px;
-  border-radius: 12px;
+  width: 48px;
+  height: 48px;
+  border-radius: 13px;
   background: transparent;
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   flex-shrink: 0;
+}
+/* Crop the black border on the icon-512 image by zooming in slightly */
+.m3d-logo-img {
+  width: 120% !important;
+  height: 120% !important;
+  object-fit: cover !important;
+  border-radius: inherit !important;
+  transform: scale(1.05);
 }
 .m3d-side__nav {
   display: flex;
@@ -1734,12 +1742,218 @@ body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex
    ═══════════════════════════════════════════════════════════════════════════ */
 
 .mset-root {
-  max-width: 540px;
+  max-width: 600px;
   margin: 0 auto;
-  padding: 0 16px 80px;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  padding: 0 4px 80px;
   color: var(--text);
 }
+
+/* ── Tab bar at top of settings ── */
+.mset-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  background: var(--bg-subtle);
+  border-radius: 12px;
+  padding: 4px;
+}
+.mset-tab {
+  flex: 1;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+}
+.mset-tab--on {
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+}
+
+/* ── Profile hero ── */
+.mset-profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 0 20px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 20px;
+}
+.mset-avatar-lg {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 22px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+[data-theme="light"] .mset-avatar-lg { color: var(--brand-strong); }
+.mset-profile-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  line-height: 1.2;
+}
+.mset-profile-meta {
+  font-size: 12px;
+  color: var(--text-faint);
+}
+.mset-edit-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms, color 120ms;
+  flex-shrink: 0;
+}
+.mset-edit-btn:hover { background: var(--bg-elevated); color: var(--text); }
+
+/* ── Edit form ── */
+.mset-edit-form { display: flex; flex-direction: column; gap: 0; }
+.mset-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 12px 0 4px;
+}
+.mset-field-grid--full { grid-template-columns: 1fr; }
+.mset-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.mset-field span {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+}
+.mset-field input,
+.mset-field select {
+  padding: 9px 11px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 120ms;
+  width: 100%;
+}
+.mset-field input:focus,
+.mset-field select:focus { border-color: var(--brand); background: var(--bg-elevated); }
+.mset-field--full { grid-column: 1 / -1; }
+.mset-save-err { color: var(--danger); font-size: 12.5px; margin: 4px 0 0; }
+.mset-save-ok { color: var(--brand); font-size: 12.5px; margin: 4px 0 0; }
+.mset-edit-actions {
+  display: flex;
+  gap: 8px;
+  padding: 16px 0 8px;
+}
+.mset-save-btn {
+  padding: 10px 22px;
+  background: var(--brand);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 9px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.mset-save-btn:hover { background: var(--brand-strong); }
+.mset-save-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.mset-cancel-btn {
+  padding: 10px 16px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.mset-cancel-btn:hover { background: var(--bg-elevated); }
+
+/* ── Stats grid (read-only) ── */
+.mset-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  padding: 12px 0 4px;
+}
+.mset-stat-tile {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.mset-stat-tile span {
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+}
+.mset-stat-tile strong {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.015em;
+}
+
+/* ── PIN form ── */
+.mset-pin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 0;
+}
+.mset-pin-form .mset-field-grid { grid-template-columns: 1fr 1fr 1fr; }
+
+/* ── action inline button ── */
+.mset-action-btn {
+  padding: 6px 14px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.mset-action-btn:hover { background: var(--bg-elevated); color: var(--text); }
 
 .mset-header {
   display: flex;
@@ -2166,9 +2380,9 @@ body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex
   gap: 5px;
 }
 .m3d-side__logo-mark--sm {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 42px;
+  height: 42px;
+  border-radius: 11px;
   background: transparent;
   display: flex;
   align-items: center;
