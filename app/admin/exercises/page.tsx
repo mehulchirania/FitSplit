@@ -6,6 +6,7 @@ import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
 import { ExerciseEditForm } from "@/components/exercise-edit-form";
 import { GymSelector } from "@/components/gym-selector";
+import { AdminExerciseSearch } from "@/components/admin-exercise-search";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
@@ -31,11 +32,11 @@ const ALL_MUSCLE_GROUPS = [
 export default async function AdminExercisesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ gym?: string }>;
+  searchParams: Promise<{ gym?: string; q?: string }>;
 }) {
   await requireRole(["admin"]);
 
-  const { gym: gymParam } = await searchParams;
+  const { gym: gymParam, q = "" } = await searchParams;
   const { gyms } = await getGymWorkspaces();
   const selectedGymId = gymParam ?? gyms[0]?.id ?? PRIMARY_GYM_ID;
   const selectedGym = gyms.find((g) => g.id === selectedGymId) ?? gyms[0];
@@ -56,7 +57,12 @@ export default async function AdminExercisesPage({
   ]);
 
   const { exercises, catalog: exerciseCatalogByMuscle } = selectedCatalog;
-  const predefined = exercises.filter((e) => e.source !== "custom");
+  const qLow = q.toLowerCase();
+  const predefined = exercises.filter((e) => {
+    const base = e.source !== "custom";
+    if (!qLow) return base;
+    return base && (e.name.toLowerCase().includes(qLow) || e.muscleGroup.toLowerCase().includes(qLow));
+  });
   const customByGym = allGymCatalogs
     .map(({ gym, catalog }) => {
       const customExercises = catalog.exercises.filter((e) => e.source === "custom");
@@ -84,13 +90,25 @@ export default async function AdminExercisesPage({
         </div>
         <div className="adm-head-actions">
           <GymSelector gyms={gyms} pathname="/admin/exercises" selectedGymId={selectedGymId} />
-          <a href="#add-exercise" className="adm-btn">+ Add exercise</a>
         </div>
       </div>
 
       <p className="adm-page-desc">
         Review and edit exercise definitions, video links, and coaching notes across all gyms.
       </p>
+
+      {/* ── Search bar (live, client-side debounced) ── */}
+      <div className="adm-filter-bar" style={{ marginBottom: 16 }}>
+        <AdminExerciseSearch initialValue={q} gymParam={gymParam} />
+      </div>
+
+      {/* ── Add new exercise (collapsible, at the top) ── */}
+      <details className="adm-details-panel" style={{ marginBottom: 16 }}>
+        <summary className="adm-details-panel__summary">+ Add new exercise</summary>
+        <div className="adm-details-panel__body">
+          <ExerciseEditForm action={createCatalogExercise} isCreate />
+        </div>
+      </details>
 
       {/* ── KPI row ── */}
       <div className="adm-kpis" style={{ marginBottom: 20 }}>
@@ -177,6 +195,7 @@ export default async function AdminExercisesPage({
         exerciseCatalogByMuscle={exerciseCatalogByMuscle
           .map((g) => ({ ...g, exercises: g.exercises.filter((e) => e.source !== "custom") }))
           .filter((g) => g.exercises.length > 0)}
+        filter={q}
         isDefaultSection
         sectionCount={predefined.length}
         sectionLabel="FitSplit catalog"
@@ -194,6 +213,7 @@ export default async function AdminExercisesPage({
               key={entry.gym.id}
               exercises={entry.exercises}
               exerciseCatalogByMuscle={entry.grouped}
+              filter={q}
               sectionCount={entry.exercises.length}
               sectionLabel={entry.gym.name}
             />
@@ -203,17 +223,9 @@ export default async function AdminExercisesPage({
 
       {exerciseCatalogByMuscle.length === 0 && (
         <div className="adm-card">
-          <div className="adm-empty">No exercises yet. Add the first one below.</div>
+          <div className="adm-empty">No exercises yet. Use &ldquo;+ Add new exercise&rdquo; above to add the first one.</div>
         </div>
       )}
-
-      {/* ── Add new exercise ── */}
-      <details className="adm-details-panel" id="add-exercise" style={{ marginTop: 16 }}>
-        <summary className="adm-details-panel__summary">Add new exercise</summary>
-        <div className="adm-details-panel__body">
-          <ExerciseEditForm action={createCatalogExercise} isCreate />
-        </div>
-      </details>
     </div>
   );
 }
@@ -223,30 +235,53 @@ export default async function AdminExercisesPage({
 function AdminCatalogSection({
   exercises: _exercises,
   exerciseCatalogByMuscle,
+  filter = "",
   isDefaultSection = false,
   sectionCount,
   sectionLabel,
 }: {
   exercises: Exercise[];
   exerciseCatalogByMuscle: Array<{ muscleGroup: string; exercises: Exercise[] }>;
+  filter?: string;
   isDefaultSection?: boolean;
   sectionCount: number;
   sectionLabel: string;
 }) {
-  if (exerciseCatalogByMuscle.length === 0) return null;
+  const filterLow = filter.toLowerCase();
+  const filteredGroups = filterLow
+    ? exerciseCatalogByMuscle
+        .map((g) => ({
+          ...g,
+          exercises: g.exercises.filter(
+            (e) =>
+              e.name.toLowerCase().includes(filterLow) ||
+              e.muscleGroup.toLowerCase().includes(filterLow)
+          ),
+        }))
+        .filter((g) => g.exercises.length > 0)
+    : exerciseCatalogByMuscle;
+
+  if (filteredGroups.length === 0) return null;
+
+  const visibleCount = filteredGroups.reduce((sum, g) => sum + g.exercises.length, 0);
 
   return (
-    <div className="adm-card" style={{ marginBottom: 12 }}>
-      <div className="adm-card__head">
-        <h3>{sectionLabel}</h3>
-        <span className="adm-inbox-tag adm-inbox-tag--ok">{sectionCount} exercises</span>
-      </div>
-      <div className="adm-card__body adm-card__body--flush">
-        {exerciseCatalogByMuscle.map((group, gi) => (
+    <details className="adm-details-panel" style={{ marginBottom: 12 }} open={!isDefaultSection || !!filterLow}>
+      <summary
+        className="adm-details-panel__summary"
+        style={{ fontWeight: 700, color: "var(--text)", fontSize: 13 }}
+      >
+        {sectionLabel}
+        <span className="adm-inbox-tag adm-inbox-tag--ok" style={{ marginLeft: "auto", marginRight: 8 }}>
+          {visibleCount} exercises
+        </span>
+      </summary>
+      <div style={{ borderTop: "1px solid var(--border)" }}>
+        {filteredGroups.map((group, gi) => (
           <details
             key={group.muscleGroup}
             open
-            style={{ borderBottom: gi < exerciseCatalogByMuscle.length - 1 ? "1px solid var(--border)" : "none" }}
+            style={{ borderBottom: gi < filteredGroups.length - 1 ? "1px solid var(--border)" : "none" }}
           >
             <summary className="adm-ex-group-summary">
               <span className="adm-ex-group-name">{group.muscleGroup}</span>
@@ -256,7 +291,7 @@ function AdminCatalogSection({
               <span className="adm-ex-group-chevron">▸</span>
             </summary>
             <div className="adm-ex-list">
-              {group.exercises.map((exercise, ei) => (
+              {group.exercises.map((exercise) => (
                 <div
                   key={exercise.id}
                   style={{ borderTop: "1px solid var(--border)" }}
@@ -316,6 +351,6 @@ function AdminCatalogSection({
           </details>
         ))}
       </div>
-    </div>
+    </details>
   );
 }

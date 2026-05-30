@@ -201,16 +201,32 @@ export function StaffAccessActions({
       {/* Delete confirmation dialog */}
       {confirmDelete && (
         <div className="dialog-backdrop" role="presentation">
-          <div aria-modal="true" className="confirm-dialog" role="dialog">
-            <h2>Delete gym staff?</h2>
-            <p>Delete {fullName}? This removes their Firebase Auth login and staff profile.</p>
-            <div className="quick-actions">
-              <button className="button button-secondary" onClick={() => setConfirmDelete(false)} type="button">
-                Cancel
-              </button>
-              <button className="button button-danger" onClick={deleteStaff} type="button">
-                Delete
-              </button>
+          <div
+            aria-modal="true"
+            className="adm-card"
+            role="dialog"
+            style={{ maxWidth: 400, width: "90vw", position: "fixed", top: "50%", left: "50%", transform: "translate(-50%,-50%)", zIndex: 9999 }}
+          >
+            <div className="adm-card__head">
+              <h3 style={{ fontSize: 14, fontWeight: 700, margin: 0 }}>Delete {fullName}?</h3>
+            </div>
+            <div className="adm-card__body">
+              <p style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 16, lineHeight: 1.5 }}>
+                This removes their Firebase Auth login and staff profile. This action cannot be undone.
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button className="adm-btn adm-btn--ghost adm-btn--sm" onClick={() => setConfirmDelete(false)} type="button">
+                  Cancel
+                </button>
+                <button
+                  className="adm-btn adm-btn--sm"
+                  onClick={deleteStaff}
+                  style={{ background: "var(--danger)", color: "#fff" }}
+                  type="button"
+                >
+                  Delete
+                </button>
+              </div>
             </div>
           </div>
         </div>

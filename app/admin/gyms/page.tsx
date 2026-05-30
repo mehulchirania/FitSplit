@@ -83,9 +83,9 @@ export default async function ManageGymsPage({
       {/* Gyms table */}
       <div className="adm-card">
         {/* Table header */}
-        <div className="adm-gym-table-head">
+        <div className="adm-gym-table-head" style={{ gridTemplateColumns: "30px 1.6fr 1fr 80px 100px 80px" }}>
           <span /><span>GYM</span><span>OWNER</span>
-          <span>MEMBERS</span><span>PLAN</span><span>STATUS</span><span />
+          <span>MEMBERS</span><span>PLAN</span><span>STATUS</span>
         </div>
 
         {gyms.length === 0 ? (
@@ -97,9 +97,11 @@ export default async function ManageGymsPage({
               : gym.status === "paused" ? "adm-tag adm-tag--trial"
               : "adm-tag adm-tag--neutral";
             return (
-              <div
+              <Link
                 key={gym.id}
+                href={`/admin/gyms/${gym.id}`}
                 className={`adm-gym-table-row${gym.status === "inactive" ? " adm-gym-table-row--dim" : ""}${i < gyms.length - 1 ? " adm-gym-table-row--border" : ""}`}
+                style={{ textDecoration: "none", color: "inherit", cursor: "pointer", gridTemplateColumns: "30px 1.6fr 1fr 80px 100px 80px" }}
               >
                 <span
                   className="adm-gym-row__avatar"
@@ -115,14 +117,7 @@ export default async function ManageGymsPage({
                 <strong className="adm-gym-row__count">{gym.memberCount}</strong>
                 <span className={plan.cls}>{plan.label}</span>
                 <span className={statusCls}>{gym.status.toUpperCase()}</span>
-                <div className="adm-gym-table-row__actions">
-                  <Link href={`/admin/gyms/${gym.id}`} className="adm-row-link" aria-label="Open gym">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
-                    </svg>
-                  </Link>
-                </div>
-              </div>
+              </Link>
             );
           })
         )}

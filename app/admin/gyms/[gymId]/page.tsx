@@ -3,11 +3,8 @@ import { notFound } from "next/navigation";
 import { AddStaffForm } from "@/components/add-staff-form";
 import { GymAccessStatusAction } from "@/components/gym-access-status-action";
 import { GymArchiveAction } from "@/components/gym-archive-action";
-import { GymDetailsForm } from "@/components/gym-details-form";
-import { GymLogoManager } from "@/components/gym-logo-manager";
 import { StaffAccessActions } from "@/components/staff-access-actions";
 import { requireRole } from "@/lib/auth";
-import { updateGymLogo } from "@/lib/firebase/actions";
 import { getGymDetail, getMembers, getOwnersForGym } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +58,6 @@ export default async function GymDetailPage({
         </div>
         <div className="adm-head-actions">
           <Link href="/admin/inbox" className="adm-btn adm-btn--ghost">Inbox</Link>
-          <GymAccessStatusAction gymId={gym.id} isEnabled={isActive} />
         </div>
       </div>
 
@@ -82,7 +78,7 @@ export default async function GymDetailPage({
           </div>
         </div>
         <div className="adm-gym-hero__actions">
-          <Link href={`/owner/members`} className="adm-btn adm-btn--ghost">Impersonate owner</Link>
+          <GymAccessStatusAction gymId={gym.id} isEnabled={isActive} />
           <Link href={`/admin/gyms/${gym.id}/edit`} className="adm-btn">Edit details</Link>
         </div>
       </div>
@@ -135,8 +131,14 @@ export default async function GymDetailPage({
                     {staffInitials(s.fullName)}
                   </span>
                   <div className="adm-staff-row__info">
-                    <strong>{s.fullName}</strong>
-                    <small>{s.staffType ? (s.staffType.charAt(0).toUpperCase() + s.staffType.slice(1)) : "Owner"}</small>
+                    <strong>
+                      {s.fullName}
+                      {s.username && <span style={{ color: "var(--text-faint)", fontWeight: 500 }}> (@{s.username})</span>}
+                    </strong>
+                    <small>
+                      {s.staffType ? (s.staffType.charAt(0).toUpperCase() + s.staffType.slice(1)) : "Owner"}
+                      {s.phone && ` · ${s.phone}`}
+                    </small>
                   </div>
                   <StaffAccessActions
                     fullName={s.fullName}
@@ -189,9 +191,11 @@ export default async function GymDetailPage({
           ) : (
             <div style={{ maxHeight: 400, overflowY: "auto" }}>
               {members.map((m, i) => (
-                <div
+                <Link
                   key={m.id}
+                  href={`/owner/members/${m.id}`}
                   className={`adm-staff-row${i < members.length - 1 ? " adm-staff-row--border" : ""}`}
+                  style={{ textDecoration: "none", color: "inherit" }}
                 >
                   <span
                     className="adm-staff-row__avatar"
@@ -200,36 +204,48 @@ export default async function GymDetailPage({
                     {staffInitials(m.fullName)}
                   </span>
                   <div className="adm-staff-row__info">
-                    <strong>{m.fullName}</strong>
-                    <small>{m.email || m.phone || "No contact info"}</small>
+                    <strong>
+                      {m.fullName}
+                      {m.username && <span style={{ color: "var(--text-faint)", fontWeight: 500 }}> (@{m.username})</span>}
+                    </strong>
+                    <small>{m.phone || m.email || "No contact info"}</small>
                   </div>
-                  <div style={{ marginLeft: "auto", fontSize: 12 }}>
+                  <div style={{ marginLeft: "auto", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
                     <span className={`adm-tag ${m.isActive ? "adm-tag--ok" : "adm-tag--neutral"}`}>
                       {m.isActive ? "ACTIVE" : "INACTIVE"}
                     </span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6"/></svg>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}
         </div>
       </div>
 
-      {/* Edit sections — preserved with anchor */}
-      <details className="adm-details-panel" id="edit-gym">
-        <summary className="adm-details-panel__summary">Edit gym details &amp; logo</summary>
-        <div className="adm-details-panel__body">
-          <GymDetailsForm gym={gym} />
-          <GymLogoManager action={updateGymLogo} currentLogoUrl={gym.logoUrl} gymId={gym.id} gymName={gym.name} />
-        </div>
-      </details>
+      {/* Edit & Staff actions */}
+      <div className="adm-grid-2" style={{ marginBottom: 16 }}>
+        <Link
+          href={`/admin/gyms/${gym.id}/edit`}
+          className="adm-card"
+          style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px" }}
+        >
+          <div>
+            <strong style={{ fontSize: 13, fontWeight: 700 }}>Edit gym details &amp; logo</strong>
+            <p style={{ fontSize: 12, color: "var(--text-soft)", margin: "3px 0 0" }}>
+              Name, location, contact info, social links, logo
+            </p>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6"/></svg>
+        </Link>
 
-      <details className="adm-details-panel">
-        <summary className="adm-details-panel__summary">Add staff member</summary>
-        <div className="adm-details-panel__body">
-          <AddStaffForm gymId={gym.id} />
-        </div>
-      </details>
+        <details className="adm-details-panel" style={{ margin: 0 }}>
+          <summary className="adm-details-panel__summary" style={{ borderRadius: 14 }}>Add staff member</summary>
+          <div className="adm-details-panel__body">
+            <AddStaffForm gymId={gym.id} />
+          </div>
+        </details>
+      </div>
 
       {/* Danger zone */}
       {gym.id !== "shg" && (

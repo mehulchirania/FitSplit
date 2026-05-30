@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import { Dumbbell, X } from "@/components/icons";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { X } from "@/components/icons";
 import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { deleteCustomWorkoutProgram } from "@/lib/firebase/actions";
@@ -68,15 +68,14 @@ function assignmentNames(
     .sort((left, right) => left.localeCompare(right));
 }
 
-function ProgramCard({
+function ProgramRow({
   assignedNames,
-  exerciseNames,
   isCustom,
   onDelete,
   onEdit,
   onView,
   program,
-  showAssignments = true
+  showAssignments = true,
 }: {
   assignedNames: string[];
   exerciseNames: Map<string, string>;
@@ -87,96 +86,50 @@ function ProgramCard({
   program: WorkoutProgram;
   showAssignments?: boolean;
 }) {
-  const activeDays = trainingDays(program);
-  const previewDays = activeDays.slice(0, 3);
-
+  const days = trainingDays(program);
   return (
-    <article className="program-card program-card-compact">
-      <div className="program-card-body">
-        <div className="program-card-topline">
-          <p className="eyebrow">{splitLabels[program.splitType]}</p>
-          <span className="status-pill status-neutral">
-            {isCustom ? "Custom" : "Predefined"}
-          </span>
-        </div>
-        <h2>
-          <Dumbbell className="program-title-icon" /> {program.title}
-        </h2>
-        <p>{program.description}</p>
-        <div className="program-pick-card">
-          <span>{program.source === "gym" ? "Gym plan" : "Split guide"}</span>
-          <strong>{programInsight(program)}</strong>
-          <small>
-            {program.selectionHints?.frequency ?? `${program.daysPerWeek} training days`} · {program.difficulty}
-            {program.weeklyVariations?.length ? ` · ${program.weeklyVariations.length}-week rotation` : ""}
-          </small>
-        </div>
-        {program.tags?.length ? (
-          <div className="program-tag-row">
-            {program.tags.slice(0, 4).map((tag) => (
-              <span key={tag}>{tag}</span>
-            ))}
-          </div>
-        ) : null}
-        <div className="program-stat-row">
-          <span>
-            <strong>{activeDays.length}</strong>
-            training days
-          </span>
-          <span>
-            <strong>{exerciseCount(program)}</strong>
-            exercises
-          </span>
-          {showAssignments ? (
-            <span>
-              <strong>{assignedNames.length}</strong>
-              members
-            </span>
-          ) : null}
-        </div>
-
-        <div className="program-day-preview">
-          {previewDays.length ? (
-            previewDays.map((day) => (
-              <div className="program-day-line" key={day.id}>
-                <strong>{day.title}</strong>
-                <span>{dayExerciseNames(day, exerciseNames).slice(0, 4).join(", ")}</span>
-              </div>
-            ))
-          ) : (
-            <p className="program-empty-copy">No exercises have been added to this plan yet.</p>
-          )}
-        </div>
-
-        {showAssignments ? (
-          <div className="assigned-preview">
-            <span>Assigned members</span>
-            <strong>
-              {assignedNames.length ? assignedNames.slice(0, 3).join(", ") : "None yet"}
-              {assignedNames.length > 3 ? ` +${assignedNames.length - 3}` : ""}
-            </strong>
-          </div>
-        ) : null}
-
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
-          <button className="button button-primary" onClick={onView} type="button" style={{ flex: 1 }}>
-            View plan
-          </button>
-          {isCustom && onEdit && (
-            <button className="button button-secondary" onClick={onEdit} type="button" style={{ flex: 1 }}>
-              Edit
-            </button>
-          )}
-          {isCustom && onDelete && (
-            <button className="button button-secondary" onClick={onDelete} type="button"
-              style={{ background: "color-mix(in srgb,var(--danger) 10%,var(--bg-elevated))", color: "var(--danger)", border: "1px solid color-mix(in srgb,var(--danger) 25%,transparent)", flex: "0 0 auto" }}
-            >
-              Delete
-            </button>
-          )}
-        </div>
+    <div className="adm-prog-row" role="row">
+      <div className="adm-prog-row__title">
+        <strong>{program.title}</strong>
+        <span>{splitLabels[program.splitType] ?? program.splitType}</span>
       </div>
-    </article>
+      <span style={{ fontSize: 12, color: "var(--text-soft)" }}>
+        {days.length} days · {exerciseCount(program)} exercises
+      </span>
+      <span style={{ fontSize: 12, color: "var(--text-soft)" }}>{program.difficulty}</span>
+      {showAssignments ? (
+        <span style={{ fontSize: 12 }}>
+          {assignedNames.length > 0
+            ? `${assignedNames.length} member${assignedNames.length > 1 ? "s" : ""}`
+            : <span style={{ color: "var(--text-faint)" }}>—</span>}
+        </span>
+      ) : (
+        <span />
+      )}
+      <span className={isCustom ? "adm-tag adm-tag--ok" : "adm-tag adm-tag--neutral"}>
+        {isCustom ? "Custom" : "Preset"}
+      </span>
+      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+        <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={onView}>
+          View
+        </button>
+        {isCustom && onEdit && (
+          <button type="button" className="adm-btn adm-btn--ghost adm-btn--sm" onClick={onEdit}>
+            Edit
+          </button>
+        )}
+        {isCustom && onDelete && (
+          <button
+            type="button"
+            className="adm-btn adm-btn--sm"
+            style={{ background: "color-mix(in srgb,var(--danger) 12%,transparent)", color: "var(--danger)", border: "1px solid color-mix(in srgb,var(--danger) 25%,transparent)" }}
+            onClick={onDelete}
+          >
+            Delete
+          </button>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -201,6 +154,7 @@ export function WorkoutProgramGallery({
   const [selectedProgramContext, setSelectedProgramContext] = useState<ProgramContext | null>(null);
   const [editProgram, setEditProgram] = useState<WorkoutProgram | null>(null);
   const [showPredefined, setShowPredefined] = useState(readOnly);
+  const editDirtyRef = useRef(false); // track unsaved edits in the edit dialog
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [isDeleting, startDelete] = useTransition();
@@ -216,6 +170,35 @@ export function WorkoutProgramGallery({
     ? visibleCustomGroups.flatMap((group) => group.programs)
     : customPrograms;
   const activeContext = selectedProgramContext ?? { assignments, exercises, members };
+
+  // ESC closes whichever dialog is open; edit dialog warns if dirty
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key !== "Escape") return;
+      if (editProgram) {
+        if (editDirtyRef.current) {
+          if (!window.confirm("You have unsaved changes. Discard and close?")) return;
+        }
+        setEditProgram(null);
+        editDirtyRef.current = false;
+      } else if (selectedProgram) {
+        setSelectedProgram(null);
+        setSelectedProgramContext(null);
+      } else if (confirmDeleteId) {
+        setConfirmDeleteId(null);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [editProgram, selectedProgram, confirmDeleteId]);
+
+  function closeEditDialog() {
+    if (editDirtyRef.current) {
+      if (!window.confirm("You have unsaved changes. Discard and close?")) return;
+    }
+    setEditProgram(null);
+    editDirtyRef.current = false;
+  }
 
   function viewProgram(program: WorkoutProgram, context?: ProgramContext) {
     setSelectedProgram(program);
@@ -242,46 +225,49 @@ export function WorkoutProgramGallery({
 
   function renderCustomSection() {
     return (
-      <section className="list-panel program-library-section">
-        <div className="panel-title">
+      <div style={{ marginBottom: 16 }}>
+        <div className="adm-card__head" style={{ padding: "14px 0 10px" }}>
           <div>
-            <h2>Custom gym plans</h2>
-            <p className="member-meta">
+            <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--text)" }}>Custom gym plans</h2>
+            <p style={{ fontSize: 12, color: "var(--text-soft)", margin: "3px 0 0" }}>
               {readOnly
                 ? "Gym-created plans available in your workspace."
                 : "Programs created by gyms, grouped by workspace so defaults never mix with custom plans."}
             </p>
           </div>
-          <span className="status-pill status-neutral">
+          <span className="adm-tag adm-tag--neutral">
             {totalCustomPrograms} plan{totalCustomPrograms === 1 ? "" : "s"}
           </span>
         </div>
         {deleteStatus && (
-          <p style={{ padding: "8px 20px", fontSize: "0.82rem", color: "var(--brand-strong)", fontWeight: 600 }}>
+          <p style={{ padding: "6px 0", fontSize: 12, color: "var(--brand)", fontWeight: 600 }}>
             {deleteStatus}
           </p>
         )}
         {visibleCustomGroups.length ? (
-          <div className="program-gym-groups">
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             {visibleCustomGroups.map((group) => {
               const groupExerciseNames = exerciseNameById(group.exercises);
               const groupContext = {
                 assignments: group.assignments,
                 exercises: group.exercises,
-                members: group.members
+                members: group.members,
               };
-
               return (
-                <section className="program-gym-group" key={group.gymId}>
-                  <div className="program-gym-group-header">
-                    <div>
-                      <h3>{group.gymName}</h3>
-                      <p>{group.programs.length} custom plan{group.programs.length === 1 ? "" : "s"}</p>
-                    </div>
+                <div key={group.gymId}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <h3 style={{ fontSize: 13, fontWeight: 700, margin: 0, color: "var(--text)" }}>{group.gymName}</h3>
+                    <span style={{ fontSize: 11, color: "var(--text-soft)" }}>
+                      {group.programs.length} custom plan{group.programs.length === 1 ? "" : "s"}
+                    </span>
                   </div>
-                  <div className="program-grid program-grid-compact">
+                  <div className="adm-card" style={{ overflow: "hidden" }}>
+                    <div className="adm-prog-head" role="rowgroup">
+                      <span>Program</span><span>Structure</span><span>Level</span>
+                      <span>Assigned</span><span>Type</span><span />
+                    </div>
                     {group.programs.map((program) => (
-                      <ProgramCard
+                      <ProgramRow
                         assignedNames={assignmentNames(program, group.assignments, group.members)}
                         exerciseNames={groupExerciseNames}
                         isCustom
@@ -294,14 +280,18 @@ export function WorkoutProgramGallery({
                       />
                     ))}
                   </div>
-                </section>
+                </div>
               );
             })}
           </div>
         ) : customPrograms.length ? (
-          <div className="program-grid program-grid-compact">
+          <div className="adm-card" style={{ overflow: "hidden" }}>
+            <div className="adm-prog-head" role="rowgroup">
+              <span>Program</span><span>Structure</span><span>Level</span>
+              <span>Assigned</span><span>Type</span><span />
+            </div>
             {customPrograms.map((program) => (
-              <ProgramCard
+              <ProgramRow
                 assignedNames={assignmentNames(program, assignments, members)}
                 exerciseNames={exerciseNames}
                 isCustom
@@ -315,44 +305,47 @@ export function WorkoutProgramGallery({
             ))}
           </div>
         ) : (
-          <div className="empty-state">
-            <p>
+          <div className="adm-card">
+            <div className="adm-empty">
               {readOnly
                 ? "No gym-created custom plans are available yet."
                 : "No gym-created custom plans saved yet. Owners can create gym-specific plans from their programs page."}
-            </p>
+            </div>
           </div>
         )}
-      </section>
+      </div>
     );
   }
 
   function renderPredefinedSection() {
     return (
-      <section className="list-panel program-library-section">
-        <div className="panel-title">
+      <div style={{ marginBottom: 16 }}>
+        <div className="adm-card__head" style={{ padding: "14px 0 10px" }}>
           <div>
-            <h2>Predefined workout plans</h2>
-            <p className="member-meta">
+            <h2 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "var(--text)" }}>Predefined workout plans</h2>
+            <p style={{ fontSize: 12, color: "var(--text-soft)", margin: "3px 0 0" }}>
               Built-in FitSplit splits such as PPL, Bro Split, and Arnold Split. These are read-only reference plans.
             </p>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="status-pill status-neutral">{predefinedPrograms.length} plans</span>
+            <span className="adm-tag adm-tag--neutral">{predefinedPrograms.length} plans</span>
             <button
               type="button"
-              className="button button-secondary"
+              className="adm-btn adm-btn--ghost adm-btn--sm"
               onClick={() => setShowPredefined((v) => !v)}
-              style={{ fontSize: "0.78rem", padding: "4px 10px", minHeight: 28 }}
             >
               {showPredefined ? "Hide" : "Show"}
             </button>
           </div>
         </div>
         {showPredefined && (
-          <div className="program-grid program-grid-compact">
+          <div className="adm-card" style={{ overflow: "hidden" }}>
+            <div className="adm-prog-head" role="rowgroup">
+              <span>Program</span><span>Structure</span><span>Level</span>
+              <span>Assigned</span><span>Type</span><span />
+            </div>
             {predefinedPrograms.map((program) => (
-              <ProgramCard
+              <ProgramRow
                 assignedNames={assignmentNames(program, assignments, members)}
                 exerciseNames={exerciseNames}
                 isCustom={false}
@@ -364,13 +357,13 @@ export function WorkoutProgramGallery({
             ))}
           </div>
         )}
-      </section>
+      </div>
     );
   }
 
   return (
     <>
-      <div className="program-library">
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
         {/* Custom plans at top — what the owner built */}
         {renderCustomSection()}
         {/* Predefined plans collapsed by default */}
@@ -380,11 +373,16 @@ export function WorkoutProgramGallery({
       {/* View full plan dialog */}
       {selectedProgram && !editProgram ? (
         <div className="dialog-backdrop" role="presentation">
-          <div aria-modal="true" className="program-dialog" role="dialog">
-            <div className="panel-title">
+          <div
+            aria-modal="true"
+            className="program-dialog adm-card"
+            role="dialog"
+            style={{ maxWidth: 740, width: "90vw", maxHeight: "85vh", overflowY: "auto", position: "relative" }}
+          >
+            <div className="adm-card__head" style={{ position: "sticky", top: 0, background: "var(--bg-elevated)", zIndex: 1 }}>
               <div>
-                <h2>{selectedProgram.title}</h2>
-                <p className="member-meta">
+                <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{selectedProgram.title}</h3>
+                <p style={{ fontSize: 12, color: "var(--text-soft)", margin: "3px 0 0" }}>
                   {trainingDays(selectedProgram).length} training days · {exerciseCount(selectedProgram)} exercises
                   {!readOnly
                     ? ` · ${assignmentNames(selectedProgram, activeContext.assignments, activeContext.members).length} assigned members`
@@ -393,59 +391,102 @@ export function WorkoutProgramGallery({
               </div>
               <button
                 aria-label="Close program"
-                className="icon-button neutral-icon-button"
+                className="adm-btn adm-btn--ghost adm-btn--sm"
                 onClick={() => { setSelectedProgram(null); setSelectedProgramContext(null); }}
                 type="button"
               >
-                <X />
+                ✕ Close
               </button>
             </div>
-            <p>{selectedProgram.description}</p>
-            {selectedProgram.bestFor?.length || selectedProgram.selectionHints ? (
-              <div className="program-selection-guide">
-                <div>
-                  <span>Best for</span>
-                  <strong>{selectedProgram.bestFor?.join(" / ") ?? selectedProgram.goal}</strong>
+            <div className="adm-card__body">
+              <p style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 12 }}>{selectedProgram.description}</p>
+              {selectedProgram.bestFor?.length || selectedProgram.selectionHints ? (
+                <div className="program-selection-guide">
+                  <div>
+                    <span>Best for</span>
+                    <strong>{selectedProgram.bestFor?.join(" / ") ?? selectedProgram.goal}</strong>
+                  </div>
+                  <div>
+                    <span>Training rhythm</span>
+                    <strong>{selectedProgram.selectionHints?.frequency ?? `${selectedProgram.daysPerWeek} days per week`}</strong>
+                  </div>
+                  <div>
+                    <span>Weekly variety</span>
+                    <strong>
+                      {selectedProgram.weeklyVariations?.length
+                        ? `${selectedProgram.weeklyVariations.length} rotating exercise weeks`
+                        : "Fixed weekly schedule"}
+                    </strong>
+                  </div>
                 </div>
-                <div>
-                  <span>Training rhythm</span>
-                  <strong>{selectedProgram.selectionHints?.frequency ?? `${selectedProgram.daysPerWeek} days per week`}</strong>
-                </div>
-                <div>
-                  <span>Weekly variety</span>
-                  <strong>
-                    {selectedProgram.weeklyVariations?.length
-                      ? `${selectedProgram.weeklyVariations.length} rotating exercise weeks`
-                      : "Fixed weekly schedule"}
-                  </strong>
-                </div>
-              </div>
-            ) : null}
-            <WeeklyProgramSchedule exercises={activeContext.exercises} program={selectedProgram} />
+              ) : null}
+              <WeeklyProgramSchedule exercises={activeContext.exercises} program={selectedProgram} />
+            </div>
           </div>
         </div>
       ) : null}
 
-      {/* Edit program dialog */}
+      {/* Edit program dialog — fully opaque, no CSS-variable transparency */}
       {editProgram && catalog.length > 0 ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div aria-modal="true" className="program-dialog" role="dialog" style={{ maxWidth: 680, overflow: "auto", maxHeight: "90vh" }}>
-            <div className="panel-title" style={{ marginBottom: 0 }}>
-              <h2>Edit plan</h2>
+        <div
+          role="presentation"
+          style={{
+            position: "fixed", inset: 0, zIndex: 9900,
+            background: "rgba(0,0,0,0.88)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 16,
+          }}
+        >
+          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+          <div
+            aria-modal="true"
+            role="dialog"
+            onKeyDown={() => { editDirtyRef.current = true; }}
+            onChange={() => { editDirtyRef.current = true; }}
+            style={{
+              width: "min(900px, 96vw)",
+              maxHeight: "90vh",
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: 14,
+              border: "1px solid rgba(255,255,255,0.10)",
+              overflow: "hidden",
+              /* Explicit solid colours — bypasses any CSS-variable alpha inheritance */
+              background: "#181c1b",
+              boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
+            }}
+          >
+            {/* Header */}
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.09)",
+              background: "#1e2422", flexShrink: 0,
+            }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "#e8f0ec", letterSpacing: "-0.01em" }}>
+                Edit plan: {editProgram.title}
+              </h3>
               <button
                 aria-label="Close editor"
-                className="icon-button neutral-icon-button"
-                onClick={() => setEditProgram(null)}
+                onClick={closeEditDialog}
                 type="button"
+                style={{
+                  background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)",
+                  borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600,
+                  color: "#9ba8a2", cursor: "pointer", fontFamily: "inherit",
+                  display: "flex", alignItems: "center", gap: 5,
+                }}
               >
-                <X />
+                ✕ Close
               </button>
             </div>
-            <CustomPlanBuilder
-              catalog={catalog}
-              initialProgram={editProgram}
-              onSuccess={() => setEditProgram(null)}
-            />
+            {/* Builder body */}
+            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
+              <CustomPlanBuilder
+                catalog={catalog}
+                initialProgram={editProgram}
+                onSuccess={() => { setEditProgram(null); editDirtyRef.current = false; }}
+              />
+            </div>
           </div>
         </div>
       ) : null}
@@ -453,30 +494,40 @@ export function WorkoutProgramGallery({
       {/* Delete confirmation dialog */}
       {confirmDeleteId && (
         <div className="dialog-backdrop" role="presentation">
-          <div aria-modal="true" className="confirm-dialog" role="dialog">
-            <h2>Delete this plan?</h2>
-            <p style={{ color: "var(--text-soft)", fontSize: "0.9rem" }}>
-              This will permanently remove the plan. Members currently assigned to it will lose their assignment.
-            </p>
-            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 16 }}>
-              <button
-                className="button button-secondary"
-                onClick={() => setConfirmDeleteId(null)}
-                type="button"
-              >
-                Cancel
-              </button>
-              <button
-                className="button button-danger"
-                disabled={isDeleting}
-                onClick={() => {
-                  const program = deleteProgramPool.find((p) => p.id === confirmDeleteId);
-                  if (program) handleDelete(program.id, program.title);
-                }}
-                type="button"
-              >
-                {isDeleting ? "Deleting..." : "Delete plan"}
-              </button>
+          <div
+            aria-modal="true"
+            className="confirm-dialog adm-card"
+            role="dialog"
+            style={{ maxWidth: 420, width: "90vw", position: "relative" }}
+          >
+            <div className="adm-card__head">
+              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0 }}>Delete this plan?</h3>
+            </div>
+            <div className="adm-card__body">
+              <p style={{ color: "var(--text-soft)", fontSize: 13, marginBottom: 16 }}>
+                This will permanently remove the plan. Members currently assigned to it will lose their assignment.
+              </p>
+              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                <button
+                  className="adm-btn adm-btn--ghost"
+                  onClick={() => setConfirmDeleteId(null)}
+                  type="button"
+                >
+                  Cancel
+                </button>
+                <button
+                  className="adm-btn"
+                  disabled={isDeleting}
+                  onClick={() => {
+                    const program = deleteProgramPool.find((p) => p.id === confirmDeleteId);
+                    if (program) handleDelete(program.id, program.title);
+                  }}
+                  style={{ background: "var(--danger)", color: "#fff" }}
+                  type="button"
+                >
+                  {isDeleting ? "Deleting..." : "Delete plan"}
+                </button>
+              </div>
             </div>
           </div>
         </div>

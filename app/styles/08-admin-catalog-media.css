@@ -244,11 +244,47 @@
   background: var(--bg-subtle);
 }
 .exercise-edit-panel {
-  background: var(--bg);
+  background: var(--bg-elevated);
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 20px 16px;
+  margin: 0;
+}
+.exercise-edit-panel .exercise-form-section {
+  padding: 14px 0;
+}
+.exercise-edit-panel .exercise-form-section:first-of-type {
+  padding-top: 0;
+}
+.exercise-edit-panel label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.exercise-edit-panel input[type="text"],
+.exercise-edit-panel input[type="url"],
+.exercise-edit-panel select,
+.exercise-edit-panel textarea {
+  background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 16px;
-  margin: 0 0 12px;
+  border-radius: 8px;
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.exercise-edit-panel input[type="text"]:focus,
+.exercise-edit-panel input[type="url"]:focus,
+.exercise-edit-panel select:focus,
+.exercise-edit-panel textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--brand) 40%, transparent);
+  border-color: var(--brand);
+}
+.exercise-edit-panel .exercise-form-actions {
+  padding-top: 12px;
 }
 .catalog-exercise-copy {
   flex: 1;
@@ -1596,9 +1632,9 @@
 }
 .adm-chip:hover { background: var(--bg-subtle); color: var(--text); }
 .adm-chip--on {
-  background: var(--text);
-  color: var(--bg-elevated);
-  border-color: var(--text);
+  background: var(--brand);
+  color: var(--primary-foreground);
+  border-color: var(--brand);
 }
 
 /* ── Gym workspaces table ─────────────────────────────────────────────────── */
@@ -1945,3 +1981,52 @@ details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(
 .adm-ex-row__copy strong { font-size: 12.5px; font-weight: 700; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .adm-ex-row__copy p { font-size: 11px; color: var(--text-soft); margin: 1px 0 0; }
 .adm-ex-row__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* ── Program table rows (admin programs page) ─────────────────────────────── */
+.adm-prog-head {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 0.8fr 0.8fr 88px 160px;
+  gap: 12px;
+  padding: 7px 16px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  font-size: 9.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+  align-items: center;
+}
+.adm-prog-row {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr 0.8fr 0.8fr 88px 160px;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  align-items: center;
+  transition: background 80ms;
+  overflow: hidden;
+}
+/* contain badge inside its column */
+.adm-prog-row > *:nth-child(5) {
+  overflow: hidden;
+  justify-self: start;
+  max-width: 88px;
+}
+.adm-prog-row:last-child { border-bottom: none; }
+.adm-prog-row:hover { background: var(--bg-subtle); }
+.adm-prog-row__title { min-width: 0; }
+.adm-prog-row__title strong {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.adm-prog-row__title span {
+  font-size: 11px;
+  color: var(--text-soft);
+  display: block;
+}
