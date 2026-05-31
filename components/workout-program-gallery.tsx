@@ -426,68 +426,27 @@ export function WorkoutProgramGallery({
         </div>
       ) : null}
 
-      {/* Edit program dialog — fully opaque, no CSS-variable transparency */}
+      {/* Edit program dialog — ep-modal shell (scoped dark tokens, fully opaque) */}
       {editProgram && catalog.length > 0 ? (
         <div
           role="presentation"
           style={{
             position: "fixed", inset: 0, zIndex: 9900,
-            background: "rgba(0,0,0,0.88)",
+            background: "rgba(0,0,0,0.82)",
+            backdropFilter: "blur(4px)",
             display: "flex", alignItems: "center", justifyContent: "center",
-            padding: 16,
+            padding: 24, overflow: "hidden",
           }}
+          /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
+          onKeyDown={() => { editDirtyRef.current = true; }}
+          onChange={() => { editDirtyRef.current = true; }}
         >
-          {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
-          <div
-            aria-modal="true"
-            role="dialog"
-            onKeyDown={() => { editDirtyRef.current = true; }}
-            onChange={() => { editDirtyRef.current = true; }}
-            style={{
-              width: "min(900px, 96vw)",
-              maxHeight: "90vh",
-              display: "flex",
-              flexDirection: "column",
-              borderRadius: 14,
-              border: "1px solid rgba(255,255,255,0.10)",
-              overflow: "hidden",
-              /* Explicit solid colours — bypasses any CSS-variable alpha inheritance */
-              background: "#181c1b",
-              boxShadow: "0 32px 80px rgba(0,0,0,0.6)",
-            }}
-          >
-            {/* Header */}
-            <div style={{
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.09)",
-              background: "#1e2422", flexShrink: 0,
-            }}>
-              <h3 style={{ fontSize: 15, fontWeight: 700, margin: 0, color: "#e8f0ec", letterSpacing: "-0.01em" }}>
-                Edit plan: {editProgram.title}
-              </h3>
-              <button
-                aria-label="Close editor"
-                onClick={closeEditDialog}
-                type="button"
-                style={{
-                  background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.10)",
-                  borderRadius: 8, padding: "5px 12px", fontSize: 12, fontWeight: 600,
-                  color: "#9ba8a2", cursor: "pointer", fontFamily: "inherit",
-                  display: "flex", alignItems: "center", gap: 5,
-                }}
-              >
-                ✕ Close
-              </button>
-            </div>
-            {/* Builder body */}
-            <div style={{ flex: 1, overflowY: "auto", minHeight: 0 }}>
-              <CustomPlanBuilder
-                catalog={catalog}
-                initialProgram={editProgram}
-                onSuccess={() => { setEditProgram(null); editDirtyRef.current = false; }}
-              />
-            </div>
-          </div>
+          <CustomPlanBuilder
+            catalog={catalog}
+            initialProgram={editProgram}
+            onSuccess={() => { setEditProgram(null); editDirtyRef.current = false; }}
+            onCancel={closeEditDialog}
+          />
         </div>
       ) : null}
 

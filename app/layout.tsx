@@ -28,6 +28,7 @@ import "./styles/05-theme-polish.css";
 import "./styles/06-programs-mobile-legacy-landing.css";
 import "./styles/07-member-dashboard-legacy.css";
 import "./styles/08-admin-catalog-media.css";
+import "./styles/ep-modal.css";
 import "./styles/09-profile-history-notices-loader.css";
 import "./styles/forms.css";
 import "./styles/member.css";
