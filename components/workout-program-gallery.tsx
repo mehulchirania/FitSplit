@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { X } from "@/components/icons";
-import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
+import { ProgramViewModal } from "@/components/program-view-modal";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { deleteCustomWorkoutProgram } from "@/lib/firebase/actions";
 import { callArchiveCustomProgram } from "@/lib/firebase/functions";
@@ -372,57 +372,23 @@ export function WorkoutProgramGallery({
 
       {/* View full plan dialog */}
       {selectedProgram && !editProgram ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div
-            aria-modal="true"
-            className="program-dialog adm-card"
-            role="dialog"
-            style={{ maxWidth: 740, width: "90vw", maxHeight: "85vh", overflowY: "auto", position: "relative" }}
-          >
-            <div className="adm-card__head" style={{ position: "sticky", top: 0, background: "var(--bg-elevated)", zIndex: 1 }}>
-              <div>
-                <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>{selectedProgram.title}</h3>
-                <p style={{ fontSize: 12, color: "var(--text-soft)", margin: "3px 0 0" }}>
-                  {trainingDays(selectedProgram).length} training days · {exerciseCount(selectedProgram)} exercises
-                  {!readOnly
-                    ? ` · ${assignmentNames(selectedProgram, activeContext.assignments, activeContext.members).length} assigned members`
-                    : ""}
-                </p>
-              </div>
-              <button
-                aria-label="Close program"
-                className="adm-btn adm-btn--ghost adm-btn--sm"
-                onClick={() => { setSelectedProgram(null); setSelectedProgramContext(null); }}
-                type="button"
-              >
-                ✕ Close
-              </button>
-            </div>
-            <div className="adm-card__body">
-              <p style={{ fontSize: 13, color: "var(--text-soft)", marginBottom: 12 }}>{selectedProgram.description}</p>
-              {selectedProgram.bestFor?.length || selectedProgram.selectionHints ? (
-                <div className="program-selection-guide">
-                  <div>
-                    <span>Best for</span>
-                    <strong>{selectedProgram.bestFor?.join(" / ") ?? selectedProgram.goal}</strong>
-                  </div>
-                  <div>
-                    <span>Training rhythm</span>
-                    <strong>{selectedProgram.selectionHints?.frequency ?? `${selectedProgram.daysPerWeek} days per week`}</strong>
-                  </div>
-                  <div>
-                    <span>Weekly variety</span>
-                    <strong>
-                      {selectedProgram.weeklyVariations?.length
-                        ? `${selectedProgram.weeklyVariations.length} rotating exercise weeks`
-                        : "Fixed weekly schedule"}
-                    </strong>
-                  </div>
-                </div>
-              ) : null}
-              <WeeklyProgramSchedule exercises={activeContext.exercises} program={selectedProgram} />
-            </div>
-          </div>
+        <div
+          role="presentation"
+          style={{
+            position: "fixed", inset: 0, zIndex: 9900,
+            background: "rgba(0,0,0,0.82)",
+            backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 24, overflow: "hidden",
+          }}
+        >
+          <ProgramViewModal
+            program={selectedProgram}
+            exercises={activeContext.exercises}
+            assignedCount={readOnly ? undefined : assignmentNames(selectedProgram, activeContext.assignments, activeContext.members).length}
+            readOnly={readOnly}
+            onClose={() => { setSelectedProgram(null); setSelectedProgramContext(null); }}
+          />
         </div>
       ) : null}
 
