@@ -64,9 +64,16 @@ export default async function GymDetailPage({
 
       {/* Gym hero card */}
       <div className="adm-card adm-gym-hero">
-        <div className="adm-gym-hero__avatar" style={{ background: "linear-gradient(135deg, #D97706, color-mix(in srgb, #D97706 60%, transparent))" }}>
-          {initials}
-        </div>
+        {gym.logoUrl ? (
+          <div className="adm-gym-hero__avatar" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", padding: 6 }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={gym.logoUrl} alt={gym.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+          </div>
+        ) : (
+          <div className="adm-gym-hero__avatar" style={{ background: "linear-gradient(135deg, #D97706, color-mix(in srgb, #D97706 60%, transparent))" }}>
+            {initials}
+          </div>
+        )}
         <div className="adm-gym-hero__info">
           <h2 className="adm-gym-hero__name">{gym.name}</h2>
           <p className="adm-gym-hero__meta">

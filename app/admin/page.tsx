@@ -113,10 +113,17 @@ export default async function AdminPage() {
                   href={`/admin/gyms/${gym.id}`}
                   className={`adm-gym-row${i < topGyms.length - 1 ? " adm-gym-row--border" : ""}`}
                 >
-                  {/* Avatar */}
-                  <span className="adm-gym-row__avatar" style={{ background: PALETTE[i % PALETTE.length] }}>
-                    {gymInitials(gym.name)}
-                  </span>
+                  {/* Avatar / logo */}
+                  {gym.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <span className="adm-gym-row__avatar" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", padding: 2 }}>
+                      <img src={gym.logoUrl} alt={gym.name} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 5 }} />
+                    </span>
+                  ) : (
+                    <span className="adm-gym-row__avatar" style={{ background: PALETTE[i % PALETTE.length] }}>
+                      {gymInitials(gym.name)}
+                    </span>
+                  )}
                   {/* Name + location */}
                   <div className="adm-gym-row__info">
                     <strong>{gym.name}</strong>
