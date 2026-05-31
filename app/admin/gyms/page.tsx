@@ -103,12 +103,16 @@ export default async function ManageGymsPage({
                 className={`adm-gym-table-row${gym.status === "inactive" ? " adm-gym-table-row--dim" : ""}${i < gyms.length - 1 ? " adm-gym-table-row--border" : ""}`}
                 style={{ textDecoration: "none", color: "inherit", cursor: "pointer", gridTemplateColumns: "30px 1.6fr 1fr 80px 100px 80px" }}
               >
-                <span
-                  className="adm-gym-row__avatar"
-                  style={{ background: PALETTE[i % PALETTE.length] }}
-                >
-                  {gymInitials(gym.name)}
-                </span>
+                {gym.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <span className="adm-gym-row__avatar" style={{ background: "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", padding: 2 }}>
+                    <img src={gym.logoUrl} alt={gym.name} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 6 }} />
+                  </span>
+                ) : (
+                  <span className="adm-gym-row__avatar" style={{ background: PALETTE[i % PALETTE.length] }}>
+                    {gymInitials(gym.name)}
+                  </span>
+                )}
                 <div className="adm-gym-row__info">
                   <strong>{gym.name}</strong>
                   <small>{gym.location ?? "—"}</small>

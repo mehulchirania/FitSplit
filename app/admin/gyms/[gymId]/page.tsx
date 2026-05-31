@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddStaffForm } from "@/components/add-staff-form";
+import { AdminGymMemberList } from "@/components/admin-gym-member-list";
 import { GymAccessStatusAction } from "@/components/gym-access-status-action";
 import { GymArchiveAction } from "@/components/gym-archive-action";
 import { StaffAccessActions } from "@/components/staff-access-actions";
@@ -186,40 +187,7 @@ export default async function GymDetailPage({
           <span className="adm-card__link">{members.length} member{members.length !== 1 ? "s" : ""}</span>
         </div>
         <div className="adm-card__body adm-card__body--flush">
-          {members.length === 0 ? (
-            <div className="adm-empty">No members joined this gym yet.</div>
-          ) : (
-            <div style={{ maxHeight: 400, overflowY: "auto" }}>
-              {members.map((m, i) => (
-                <Link
-                  key={m.id}
-                  href={`/owner/members/${m.id}`}
-                  className={`adm-staff-row${i < members.length - 1 ? " adm-staff-row--border" : ""}`}
-                  style={{ textDecoration: "none", color: "inherit" }}
-                >
-                  <span
-                    className="adm-staff-row__avatar"
-                    style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
-                  >
-                    {staffInitials(m.fullName)}
-                  </span>
-                  <div className="adm-staff-row__info">
-                    <strong>
-                      {m.fullName}
-                      {m.username && <span style={{ color: "var(--text-faint)", fontWeight: 500 }}> (@{m.username})</span>}
-                    </strong>
-                    <small>{m.phone || m.email || "No contact info"}</small>
-                  </div>
-                  <div style={{ marginLeft: "auto", fontSize: 12, display: "flex", alignItems: "center", gap: 8 }}>
-                    <span className={`adm-tag ${m.isActive ? "adm-tag--ok" : "adm-tag--neutral"}`}>
-                      {m.isActive ? "ACTIVE" : "INACTIVE"}
-                    </span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6"/></svg>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          )}
+          <AdminGymMemberList members={members} gymId={gymId} />
         </div>
       </div>
 

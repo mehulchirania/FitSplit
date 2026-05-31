@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const protectedRoutes = [
   { prefix: "/admin", roles: ["admin"] },
-  { prefix: "/owner", roles: ["owner"] },
+  { prefix: "/owner", roles: ["owner", "admin"] },
   { prefix: "/trainer", roles: ["trainer", "owner"] },
   { prefix: "/member", roles: ["member"] },
   { prefix: "/profile", roles: ["admin", "owner", "trainer", "member"] },
