@@ -527,15 +527,15 @@ function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDa
                 style={{
                   padding: '6px 14px',
                   borderRadius: '20px',
-                  border: selectedDayIndex === i ? '1px solid transparent' : '1px solid var(--border)',
-                  background: selectedDayIndex === i ? 'var(--brand)' : 'transparent',
-                  color: selectedDayIndex === i ? '#fff' : 'var(--text-soft)',
+                  border: selectedDayIndex === i ? '1px solid color-mix(in srgb, var(--brand) 38%, var(--border))' : '1px solid var(--border)',
+                  background: selectedDayIndex === i ? 'color-mix(in srgb, var(--brand) 12%, var(--bg-elevated))' : 'transparent',
+                  color: selectedDayIndex === i ? 'var(--text)' : 'var(--text-soft)',
                   fontSize: '13px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
                   whiteSpace: 'nowrap',
-                  boxShadow: selectedDayIndex === i ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                  boxShadow: selectedDayIndex === i ? 'inset 0 0 0 1px color-mix(in srgb, var(--brand) 12%, transparent)' : 'none'
                 }}
               >
                 Day {d.dayNumber}: {d.title}
@@ -621,15 +621,15 @@ function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDay
             style={{
               padding: '6px 14px',
               borderRadius: '20px',
-              border: selectedDayIndex === i ? '1px solid transparent' : '1px solid var(--border)',
-              background: selectedDayIndex === i ? 'var(--brand)' : 'transparent',
-              color: selectedDayIndex === i ? '#fff' : 'var(--text-soft)',
+              border: selectedDayIndex === i ? '1px solid color-mix(in srgb, var(--brand) 38%, var(--border))' : '1px solid var(--border)',
+              background: selectedDayIndex === i ? 'color-mix(in srgb, var(--brand) 12%, var(--bg-elevated))' : 'transparent',
+              color: selectedDayIndex === i ? 'var(--text)' : 'var(--text-soft)',
               fontSize: '13px',
               fontWeight: 600,
               cursor: 'pointer',
               transition: 'all 0.2s ease',
               whiteSpace: 'nowrap',
-              boxShadow: selectedDayIndex === i ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+              boxShadow: selectedDayIndex === i ? 'inset 0 0 0 1px color-mix(in srgb, var(--brand) 12%, transparent)' : 'none'
             }}
           >
             Day {d.dayNumber}: {d.title}
