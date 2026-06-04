@@ -85,6 +85,31 @@ async function resolveMemberUsername(
   }
 }
 
+function getMockMember(memberId: string) {
+  return mockMembers.find((member) => member.id === memberId) ?? null;
+}
+
+function getFallbackProfile(memberId: string): ProfileMetrics {
+  const fallbackMember = getMockMember(memberId);
+
+  return {
+    fullName: fallbackMember?.fullName ?? "FitSplit member",
+    email: fallbackMember?.email ?? "",
+    phone: fallbackMember?.phone ?? "",
+    age: fallbackMember?.age,
+    gender: "",
+    dob: "",
+    heightCm: fallbackMember?.heightCm,
+    weightKg: fallbackMember?.weightKg,
+    fitnessGoals: fallbackMember?.goal ?? "",
+    medicalNotes: "",
+    primarySlot: "A",
+    secondarySlot: "D",
+    injuryNotes: "",
+    assignedTrainer: ""
+  };
+}
+
 export const getMemberDetail = cache(async function getMemberDetail(memberId: string): Promise<{
   member: Member | null;
   isPersisted: boolean;
@@ -97,7 +122,7 @@ async function getMemberDetailUncached(memberId: string): Promise<{
   isPersisted: boolean;
 }> {
   if (!hasFirebaseAdminConfig()) {
-    const member = mockMembers.find((item) => item.id === memberId) ?? null;
+    const member = getMockMember(memberId);
     return {
       member,
       isPersisted: false
@@ -111,24 +136,22 @@ async function getMemberDetailUncached(memberId: string): Promise<{
     db = getFirebaseAdminServices().db;
     profileDoc = await getMemberProfileDocument(db, memberId);
   } catch {
-    const member = mockMembers.find((item) => item.id === memberId) ?? null;
     return {
-      member,
+      member: null,
       isPersisted: false
     };
   }
 
   if (!profileDoc.exists) {
-    const member = mockMembers.find((item) => item.id === memberId) ?? null;
     return {
-      member,
+      member: null,
       isPersisted: false
     };
   }
 
   const data = profileDoc.data() ?? {};
 
-  if (data.role !== "member") {
+  if (data.role && data.role !== "member") {
     return { member: null, isPersisted: true };
   }
 
@@ -160,23 +183,7 @@ async function getProfileMetricsUncached(memberId: string): Promise<{
   profile: ProfileMetrics;
   isPersisted: boolean;
 }> {
-  const fallbackMember = mockMembers.find((member) => member.id === memberId) ?? mockMembers[0];
-  const fallback: ProfileMetrics = {
-    fullName: fallbackMember.fullName,
-    email: fallbackMember.email,
-    phone: fallbackMember.phone,
-    age: fallbackMember.age ?? 29,
-    gender: "",
-    dob: "",
-    heightCm: fallbackMember.heightCm ?? 174,
-    weightKg: fallbackMember.weightKg ?? 72,
-    fitnessGoals: fallbackMember.goal,
-    medicalNotes: "",
-    primarySlot: "A",
-    secondarySlot: "D",
-    injuryNotes: "",
-    assignedTrainer: ""
-  };
+  const fallback = getFallbackProfile(memberId);
 
   if (!hasFirebaseAdminConfig()) {
     return { profile: fallback, isPersisted: false };
@@ -187,7 +194,7 @@ async function getProfileMetricsUncached(memberId: string): Promise<{
     const doc = await getMemberProfileDocument(db, memberId);
 
     if (!doc.exists) {
-      return { profile: fallback, isPersisted: !hasFirebaseAdminConfig() };
+      return { profile: fallback, isPersisted: false };
     }
 
     const data = doc.data() ?? {};
@@ -231,23 +238,8 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
   profile: ProfileMetrics;
   isPersisted: boolean;
 }> {
-  const fallbackMember = mockMembers.find((m) => m.id === memberId) ?? mockMembers[0];
-  const fallbackProfile: ProfileMetrics = {
-    fullName: fallbackMember.fullName,
-    email: fallbackMember.email,
-    phone: fallbackMember.phone,
-    age: fallbackMember.age ?? 29,
-    gender: "",
-    dob: "",
-    heightCm: fallbackMember.heightCm ?? 174,
-    weightKg: fallbackMember.weightKg ?? 72,
-    fitnessGoals: fallbackMember.goal,
-    medicalNotes: "",
-    primarySlot: "A",
-    secondarySlot: "D",
-    injuryNotes: "",
-    assignedTrainer: ""
-  };
+  const fallbackMember = getMockMember(memberId);
+  const fallbackProfile = getFallbackProfile(memberId);
 
   if (!hasFirebaseAdminConfig()) {
     return {
@@ -262,11 +254,11 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     const { db } = getFirebaseAdminServices();
     doc = await getMemberProfileDocument(db, memberId);
   } catch {
-    return { member: fallbackMember, profile: fallbackProfile, isPersisted: false };
+    return { member: null, profile: fallbackProfile, isPersisted: false };
   }
 
   if (!doc.exists) {
-    return { member: fallbackMember, profile: fallbackProfile, isPersisted: false };
+    return { member: null, profile: fallbackProfile, isPersisted: false };
   }
 
   const data = doc.data() ?? {};

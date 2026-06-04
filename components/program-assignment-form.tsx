@@ -80,6 +80,7 @@ function PickPlanForm({
     <form className="inline-action-form" onSubmit={handleAssign}>
       <input name="memberId" type="hidden" value={member.id} />
       <input name="memberName" type="hidden" value={member.fullName} />
+      <input name="programId" type="hidden" value={selected?.id ?? ""} />
       <input name="programTitle" type="hidden" value={selected?.title ?? ""} />
       <div style={{ marginBottom: "12px" }}>
         <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", marginBottom: "8px", fontWeight: 600 }}>1. Select a Plan</p>

@@ -1,0 +1,323 @@
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (154kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (139kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (138kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\server\\app-paths-manifest.json',
+  page: '/member'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (154kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (139kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+<w> [webpack.cache.PackFileCacheStrategy] Serializing big strings (138kiB) impacts deserialization performance (consider using Buffer instead and decode when needed)
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\server\\app-paths-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json',
+  page: '/member'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ Error: Cannot find module './7637.js'
+Require stack:
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\webpack-runtime.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\pages\_document.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\require.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\load-components.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\utils.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\options.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\index.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\parse-module.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\get-page-static-info.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-utils\setup-dev-bundler.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-server.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+    at Object.<anonymous> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+> 1 | module.exports = require("zlib");
+    | ^ {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+Error: Cannot find module './7637.js'
+Require stack:
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\webpack-runtime.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\pages\_document.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\require.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\load-components.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\utils.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\options.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\index.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\parse-module.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\get-page-static-info.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-utils\setup-dev-bundler.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-server.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+    at Object.<anonymous> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+> 1 | module.exports = require("zlib");
+    | ^ {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+ ⨯ Error: Cannot find module './7637.js'
+Require stack:
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\webpack-runtime.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\pages\_document.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\require.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\load-components.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\utils.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\options.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\index.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\parse-module.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\get-page-static-info.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-utils\setup-dev-bundler.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-server.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+    at Object.<anonymous> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+> 1 | module.exports = require("zlib");
+    | ^ {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+Error: Cannot find module './7637.js'
+Require stack:
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\webpack-runtime.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\server\pages\_document.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\require.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\load-components.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\utils.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\options.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\swc\index.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\parse-module.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\build\analysis\get-page-static-info.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-utils\setup-dev-bundler.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\router-server.js
+- C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\node_modules\next\dist\server\lib\start-server.js
+    at <unknown> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+    at Object.<anonymous> (webpack://fitsplit/external%20commonjs2%20%22zlib%22:1:1)
+> 1 | module.exports = require("zlib");
+    | ^ {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [Array],
+  page: '/'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\routes-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\Users\\mehul\\Documents\\Codex\\2026-05-03\\FitSplit\\.next\\routes-manifest.json'
+}
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\cache\webpack\server-development\4.pack.gz_' -> 'C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\.next\cache\webpack\server-development\4.pack.gz'

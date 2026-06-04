@@ -22,6 +22,7 @@ export function MemberWorkoutConsole({
   initialLiftLogs,
   memberId,
   program,
+  initialSelectedDayIndex,
   showLiftLogger = false
 }: {
   exercises: Exercise[];
@@ -32,6 +33,7 @@ export function MemberWorkoutConsole({
   initialLiftLogs: LiftLog[];
   memberId: string;
   program: WorkoutProgram;
+  initialSelectedDayIndex?: number;
   showLiftLogger?: boolean;
 }) {
   const {
@@ -53,7 +55,7 @@ export function MemberWorkoutConsole({
     handleLiftLog, retryOfflineSync
   } = useWorkoutConsole({
     exercises, gymId, initialDayLogs, initialInjuryNote,
-    initialLiftLogs, memberId, program
+    initialLiftLogs, memberId, program, initialSelectedDayIndex
   });
 
   return (

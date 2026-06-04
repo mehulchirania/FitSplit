@@ -379,13 +379,21 @@ export async function getGymScopedProfileDoc(
     if (directDoc.exists) return directDoc;
   }
 
-  const memberSnapshot = await db.collectionGroup("members").where("id", "==", profileId).limit(1).get();
-  if (!memberSnapshot.empty) return memberSnapshot.docs[0];
+  const authDoc = await getAuthProfileDoc(db, profileId);
+  if (authDoc.exists) return authDoc;
 
-  const staffSnapshot = await db.collectionGroup("staff").where("id", "==", profileId).limit(1).get();
-  if (!staffSnapshot.empty) return staffSnapshot.docs[0];
+  try {
+    const memberSnapshot = await db.collectionGroup("members").where("id", "==", profileId).limit(1).get();
+    if (!memberSnapshot.empty) return memberSnapshot.docs[0];
 
-  return getAuthProfileDoc(db, profileId);
+    const staffSnapshot = await db.collectionGroup("staff").where("id", "==", profileId).limit(1).get();
+    if (!staffSnapshot.empty) return staffSnapshot.docs[0];
+  } catch {
+    // Direct scoped/auth profile reads above are the primary path. Collection
+    // group scans are only for legacy mirrors and can fail if an index is absent.
+  }
+
+  return authDoc;
 }
 
 export async function mirrorGymScopedRecord(

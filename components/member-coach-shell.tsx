@@ -497,33 +497,58 @@ function MembershipRow({ membershipStatus, membershipEndDate }: {
 }
 
 /* ── Today's session — desktop table view ───────────────────────── */
-function TodaySessionList({ program, currentWeek, exercises, onStart }: {
+function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
   onStart: () => void;
+  selectedDayIndex: number;
+  onSelectDay: (idx: number) => void;
 }) {
-  const day = program.days?.[0];
-  const totalSets = (program.days ?? []).reduce(
-    (acc, d) => acc + (d.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0), 0
-  );
+  const day = program.days?.[selectedDayIndex];
+  const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const liftsCount = day?.exercises?.length ?? 0;
   const estMin = liftsCount * 8;
 
   return (
     <section className="m3d-today">
       <div className="m3d-today__head">
-        <div>
-          <div className="m3d-today__eyebrow">
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div className="m3d-today__eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <Icons.Note size={13} />
-            Your coach&apos;s plan for today
+            Your coach&apos;s plan
           </div>
-          <h2 className="m3d-today__title">{day?.title ?? program.title}</h2>
+          
+          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }} className="hide-scrollbar">
+            {program.days?.map((d, i) => (
+              <button
+                key={d.id}
+                onClick={() => onSelectDay(i)}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '20px',
+                  border: selectedDayIndex === i ? '1px solid transparent' : '1px solid var(--border)',
+                  background: selectedDayIndex === i ? 'var(--brand)' : 'transparent',
+                  color: selectedDayIndex === i ? '#fff' : 'var(--text-soft)',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  whiteSpace: 'nowrap',
+                  boxShadow: selectedDayIndex === i ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+                }}
+              >
+                Day {d.dayNumber}: {d.title}
+              </button>
+            ))}
+          </div>
+
+          <h2 className="m3d-today__title" style={{ marginTop: 0 }}>{day?.title ?? program.title}</h2>
           <span className="m3d-today__sub">
             Week {currentWeek ?? 1} · {liftsCount} lifts · {totalSets} sets · est. {estMin} min
           </span>
         </div>
-        <div className="m3d-today__cta">
+        <div className="m3d-today__cta" style={{ alignSelf: 'flex-start', marginTop: '45px' }}>
           <button className="m3d-today__start-btn" onClick={onStart} type="button">
             <Icons.Play size={16} /> Start workout
           </button>
@@ -568,23 +593,50 @@ function TodaySessionList({ program, currentWeek, exercises, onStart }: {
 }
 
 /* ── Mobile Today card ───────────────────────────────────────────── */
-function MobileTodayCard({ program, currentWeek, exercises, onStart }: {
+function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
   onStart: () => void;
+  selectedDayIndex: number;
+  onSelectDay: (idx: number) => void;
 }) {
-  const day = program.days?.[0];
+  const day = program.days?.[selectedDayIndex];
   const liftsCount = day?.exercises?.length ?? 0;
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const estMin = liftsCount * 8;
 
   return (
     <section className="mcr-today">
-      <div className="mcr-today__eyebrow">
+      <div className="mcr-today__eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
         <Icons.Note size={13} />
-        Your coach&apos;s plan for today
+        Your coach&apos;s plan
       </div>
+
+      <div style={{ display: 'flex', gap: '8px', marginTop: '12px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }} className="hide-scrollbar">
+        {program.days?.map((d, i) => (
+          <button
+            key={d.id}
+            onClick={() => onSelectDay(i)}
+            style={{
+              padding: '6px 14px',
+              borderRadius: '20px',
+              border: selectedDayIndex === i ? '1px solid transparent' : '1px solid var(--border)',
+              background: selectedDayIndex === i ? 'var(--brand)' : 'transparent',
+              color: selectedDayIndex === i ? '#fff' : 'var(--text-soft)',
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              whiteSpace: 'nowrap',
+              boxShadow: selectedDayIndex === i ? '0 2px 8px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            Day {d.dayNumber}: {d.title}
+          </button>
+        ))}
+      </div>
+
       <div className="mcr-today__head">
         <div>
           <h2 className="mcr-today__title">{day?.title ?? program.title}</h2>
@@ -790,6 +842,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
   const [tab, setTab] = useState("train");
   const [toast, setToast] = useState<string | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
+  const [selectedPreviewDay, setSelectedPreviewDay] = useState(0);
 
   function handleToast(msg: string) {
     setToast(msg);
@@ -890,6 +943,8 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                             currentWeek={currentWeek}
                             exercises={exercises}
                             onStart={() => setIsWorkoutActive(true)}
+                            selectedDayIndex={selectedPreviewDay}
+                            onSelectDay={setSelectedPreviewDay}
                           />
                         </div>
                         {/* Mobile view: card layout */}
@@ -899,6 +954,8 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                             currentWeek={currentWeek}
                             exercises={exercises}
                             onStart={() => setIsWorkoutActive(true)}
+                            selectedDayIndex={selectedPreviewDay}
+                            onSelectDay={setSelectedPreviewDay}
                           />
                         </div>
                       </>

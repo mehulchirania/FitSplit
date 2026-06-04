@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
+import { headers } from "next/headers";
 import { AppTopbar } from "@/components/app-topbar";
 import { FcmSetup } from "@/components/fcm-setup";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -67,7 +68,10 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const currentUser = await getCurrentUser();
+  const headerList = await headers();
+  const pathname = headerList.get("x-pathname") ?? "";
+  const isPublicLanding = pathname === "/";
+  const currentUser = isPublicLanding ? null : await getCurrentUser();
 
   let initials = "";
   let gymName: string | undefined;
@@ -136,7 +140,7 @@ export default async function RootLayout({
       <body>
         <div className="app-shell">
           <ScrollReveal />
-          <PwaInstallPrompt />
+          {!isPublicLanding && <PwaInstallPrompt />}
           <SessionTimeout isAuthenticated={Boolean(currentUser)} />
           <AppTopbar
             gymLogoUrl={gymLogoUrl}

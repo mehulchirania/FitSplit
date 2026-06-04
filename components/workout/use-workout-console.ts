@@ -25,6 +25,7 @@ export function useWorkoutConsole({
   initialDayLogs,
   initialInjuryNote,
   initialLiftLogs,
+  initialSelectedDayIndex,
   memberId,
   program
 }: {
@@ -35,6 +36,7 @@ export function useWorkoutConsole({
   initialLiftLogs: LiftLog[];
   memberId: string;
   program: WorkoutProgram;
+  initialSelectedDayIndex?: number;
 }) {
   const router = useRouter();
   const store = useWorkoutStore();
@@ -72,9 +74,9 @@ export function useWorkoutConsole({
       liftLogs: initialLiftLogs,
       dayLogs: initialDayLogs,
       injury: initialInjuryNote,
-      selectedDayIndex: getDefaultDayIndex(program.days.length)
+      selectedDayIndex: initialSelectedDayIndex ?? getDefaultDayIndex(program.days.length)
     });
-  }, [initialLiftLogs, initialDayLogs, initialInjuryNote, program.days.length]);
+  }, [initialLiftLogs, initialDayLogs, initialInjuryNote, program.days.length, initialSelectedDayIndex]);
 
   // Restore session from localStorage
   useEffect(() => {

@@ -45,19 +45,36 @@ export function mapProfileToMember(docId: string, data: Record<string, unknown>)
 }
 
 export async function getMemberProfileDocument(db: FirestoreDb, memberId: string) {
-  const scopedSnapshot = await db
-    .collectionGroup(gymScopedCollectionPaths.members)
-    .where("id", "==", memberId)
-    .limit(1)
-    .get();
+  const authDoc = await db.collection(collectionPaths.authProfiles).doc(memberId).get();
+  const authData = authDoc.data() ?? {};
+  const gymId = String(authData.defaultGymId ?? authData.gymId ?? "").trim();
 
-  if (!scopedSnapshot.empty) {
-    return scopedSnapshot.docs[0];
+  if (gymId) {
+    const scopedDoc = await db.collection(gymCollectionPath(gymId, "members")).doc(memberId).get();
+    if (scopedDoc.exists) return scopedDoc;
   }
+
+  if (authDoc.exists) return authDoc;
 
   const legacyDoc = await db.collection(collectionPaths.profiles).doc(memberId).get();
   if (legacyDoc.exists) return legacyDoc;
-  return db.collection(collectionPaths.authProfiles).doc(memberId).get();
+
+  try {
+    const scopedSnapshot = await db
+      .collectionGroup(gymScopedCollectionPaths.members)
+      .where("id", "==", memberId)
+      .limit(1)
+      .get();
+
+    if (!scopedSnapshot.empty) {
+      return scopedSnapshot.docs[0];
+    }
+  } catch {
+    // Collection-group indexes can lag in local/dev projects. Direct profile
+    // lookups above are the canonical path; this is only a compatibility scan.
+  }
+
+  return authDoc;
 }
 
 export function normalizeGymStatus(status: unknown): GymWorkspace["status"] {

@@ -11,9 +11,7 @@ import {
 import type { FormEvent, MouseEvent as ReactMouseEvent } from "react";
 import {
   AnimatePresence,
-  m as motion,
-  LazyMotion,
-  domAnimation,
+  motion,
 } from "framer-motion";
 import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
 
@@ -731,7 +729,7 @@ export function LandingPageClient() {
   }, []);
 
   return (
-    <LazyMotion features={domAnimation}>
+    <>
       <div className="lpd l1">
         <L1_Nav onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
 
@@ -764,6 +762,6 @@ export function LandingPageClient() {
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <EnquiryModal open={enquiryOpen} onClose={() => setEnquiryOpen(false)} />
-    </LazyMotion>
+    </>
   );
 }
