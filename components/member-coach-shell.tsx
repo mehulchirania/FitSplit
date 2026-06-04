@@ -47,6 +47,7 @@ const Icons = {
   Search:    (p: P) => <Icon {...p} d={<><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></>} />,
   Send:      (p: P) => <Icon {...p} d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />,
   Video:     (p: P) => <Icon {...p} d={<><rect x="2" y="7" width="14" height="10" rx="2" /><path d="M16 11l5-4v10l-5-4" /></>} />,
+  Swap:      (p: P) => <Icon {...p} d={<><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></>} />,
   LogOut:    (p: P) => <Icon {...p} d={<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>} />,
 };
 
@@ -497,6 +498,35 @@ function MembershipRow({ membershipStatus, membershipEndDate }: {
 }
 
 /* ── Today's session — desktop table view ───────────────────────── */
+function normalizeMuscleToken(value?: string | null) {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function getAlternateExercises(original: Exercise | undefined, exercises: Exercise[]) {
+  if (!original) return [];
+
+  const originalGroup = normalizeMuscleToken(original.muscleGroup);
+
+  return exercises
+    .filter((candidate) => {
+      if (candidate.id === original.id) return false;
+      return normalizeMuscleToken(candidate.muscleGroup) === originalGroup;
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function getNextExerciseSwap(original: Exercise | undefined, currentExerciseId: string, exercises: Exercise[]) {
+  const alternates = getAlternateExercises(original, exercises);
+  if (!alternates.length) return null;
+
+  const currentIndex = alternates.findIndex((candidate) => candidate.id === currentExerciseId);
+  return alternates[(currentIndex + 1) % alternates.length] ?? alternates[0];
+}
+
+function getExerciseSwapKey(dayId: string | undefined, selectedDayIndex: number, exerciseId: string, index: number) {
+  return `${dayId ?? `day-${selectedDayIndex}`}:${exerciseId}:${index}`;
+}
+
 function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
@@ -509,6 +539,7 @@ function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDa
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const liftsCount = day?.exercises?.length ?? 0;
   const estMin = liftsCount * 8;
+  const [exerciseSwaps, setExerciseSwaps] = useState<Record<string, string>>({});
 
   return (
     <section className="m3d-today">
@@ -557,32 +588,56 @@ function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDa
 
       <div className="m3d-today__exercises">
         {(day?.exercises ?? []).map((ex, idx) => {
-          const dictEx = exercises.find((e) => e.id === ex.exerciseId);
-          const videoUrl = dictEx?.gymVideoUrl || dictEx?.videoUrl;
+          const rowKey = getExerciseSwapKey(day?.id, selectedDayIndex, ex.exerciseId, idx);
+          const originalEx = exercises.find((e) => e.id === ex.exerciseId);
+          const activeExerciseId = exerciseSwaps[rowKey] ?? ex.exerciseId;
+          const dictEx = exercises.find((e) => e.id === activeExerciseId) ?? originalEx;
+          const nextSwap = getNextExerciseSwap(originalEx, activeExerciseId, exercises);
+          const isSwapped = Boolean(exerciseSwaps[rowKey]) && Boolean(originalEx) && dictEx?.id !== originalEx?.id;
           return (
             <div key={ex.exerciseId + idx} className="m3d-ex">
               <div className="m3d-ex__num">{idx + 1}</div>
               <div className="m3d-ex__body">
                 <span className="m3d-ex__name">{dictEx?.name ?? "Unknown"}</span>
-                <div className="m3d-ex__group">{dictEx?.muscleGroup ?? "—"}</div>
+                <div className="m3d-ex__group">
+                  <span>{dictEx?.muscleGroup ?? "—"}</span>
+                  {isSwapped && originalEx ? (
+                    <span className="m3d-ex__swap-note">Alternative for {originalEx.name}</span>
+                  ) : null}
+                </div>
               </div>
               <div className="m3d-ex__sets">
                 <small>SETS × REPS</small>
                 <strong>{ex.sets} × {ex.reps}</strong>
               </div>
-              <div className="m3d-ex__video-wrap">
-                {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) ? (
-                  <CatalogVideoPreview
-                    exerciseName={dictEx.name}
-                    gymVideoUrl={dictEx.gymVideoUrl}
-                    muscleGroup={dictEx.muscleGroup ?? ""}
-                    videoUrl={dictEx.videoUrl}
-                  />
-                ) : (
-                  <button className="m3d-ex__open" aria-label="Open details" type="button">
-                    <Icons.ChevR size={14} />
-                  </button>
-                )}
+              <div className="m3d-ex__actions">
+                <button
+                  className="m3d-ex__swap"
+                  disabled={!nextSwap}
+                  title={nextSwap ? `Swap with ${nextSwap.name}` : "No same-muscle alternative found"}
+                  type="button"
+                  onClick={() => {
+                    if (!nextSwap) return;
+                    setExerciseSwaps((current) => ({ ...current, [rowKey]: nextSwap.id }));
+                  }}
+                >
+                  <Icons.Swap size={13} />
+                  <span>{nextSwap ? "Swap" : "No swap"}</span>
+                </button>
+                <div className="m3d-ex__video-wrap">
+                  {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) ? (
+                    <CatalogVideoPreview
+                      exerciseName={dictEx.name}
+                      gymVideoUrl={dictEx.gymVideoUrl}
+                      muscleGroup={dictEx.muscleGroup ?? ""}
+                      videoUrl={dictEx.videoUrl}
+                    />
+                  ) : (
+                    <button className="m3d-ex__open" aria-label="Open details" type="button">
+                      <Icons.ChevR size={14} />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           );
@@ -605,6 +660,7 @@ function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDay
   const liftsCount = day?.exercises?.length ?? 0;
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const estMin = liftsCount * 8;
+  const [exerciseSwaps, setExerciseSwaps] = useState<Record<string, string>>({});
 
   return (
     <section className="mcr-today">
@@ -650,8 +706,12 @@ function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDay
 
       <div className="mcr-today__exercises">
         {(day?.exercises ?? []).slice(0, 6).map((ex, idx) => {
-          const dictEx = exercises.find((e) => e.id === ex.exerciseId);
-          const videoUrl = dictEx?.gymVideoUrl || dictEx?.videoUrl;
+          const rowKey = getExerciseSwapKey(day?.id, selectedDayIndex, ex.exerciseId, idx);
+          const originalEx = exercises.find((e) => e.id === ex.exerciseId);
+          const activeExerciseId = exerciseSwaps[rowKey] ?? ex.exerciseId;
+          const dictEx = exercises.find((e) => e.id === activeExerciseId) ?? originalEx;
+          const nextSwap = getNextExerciseSwap(originalEx, activeExerciseId, exercises);
+          const isSwapped = Boolean(exerciseSwaps[rowKey]) && Boolean(originalEx) && dictEx?.id !== originalEx?.id;
           return (
             <div key={ex.exerciseId + idx} className="mcr-ex">
               <div className="mcr-ex__num">{idx + 1}</div>
@@ -672,6 +732,24 @@ function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDay
                       </span>
                     </>
                   )}
+                </div>
+                {isSwapped && originalEx ? (
+                  <div className="mcr-ex__swap-note">Alternative for {originalEx.name}</div>
+                ) : null}
+                <div className="mcr-ex__actions">
+                  <button
+                    className="mcr-ex__swap"
+                    disabled={!nextSwap}
+                    title={nextSwap ? `Swap with ${nextSwap.name}` : "No same-muscle alternative found"}
+                    type="button"
+                    onClick={() => {
+                      if (!nextSwap) return;
+                      setExerciseSwaps((current) => ({ ...current, [rowKey]: nextSwap.id }));
+                    }}
+                  >
+                    <Icons.Swap size={12} />
+                    <span>{nextSwap ? "Swap" : "No swap"}</span>
+                  </button>
                 </div>
               </div>
             </div>
