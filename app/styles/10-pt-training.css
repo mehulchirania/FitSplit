@@ -1152,7 +1152,7 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
 .odp-ql-badge {
   background: var(--brand);
   border-radius: 99px;
-  color: #fff;
+  color: var(--primary-foreground);
   font-size: 0.68rem;
   font-style: normal;
   font-weight: 700;

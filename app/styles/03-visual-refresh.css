@@ -578,7 +578,7 @@ p {
 .button-primary {
   background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--accent) 42%, var(--brand)));
   box-shadow: 0 14px 34px color-mix(in srgb, var(--brand) 25%, transparent);
-  color: #ffffff;
+  color: var(--primary-foreground);
 }
 
 

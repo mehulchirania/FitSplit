@@ -130,7 +130,14 @@ const exerciseAliases: Record<string, string> = {
   "triceps pushdown": "Tricep Pushdown (Straight Bar)",
   "weighted abs": "Cable Crunch",
   "weighted pull-up": "Pull-Ups",
-  "walking lunges": "Walking Lunges"
+  "walking lunges": "Walking Lunges",
+  "lateral raise": "Dumbbell Lateral Raise",
+  "front raise": "Dumbbell Front Raise",
+  "rear delt fly": "Reverse Pec Deck",
+  "shrugs": "Barbell Shrugs",
+  "preacher curl": "EZ Bar Preacher Curl",
+  "hip thrust": "Romanian Deadlift",
+  "standing calf raise": "Standing Calf Raises"
 };
 
 const exercisesByName = new Map<string, CatalogExercise>();

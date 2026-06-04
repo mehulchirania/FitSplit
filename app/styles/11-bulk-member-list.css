@@ -139,7 +139,7 @@
 .bml-avatar {
   background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 60%, black));
   border-radius: 50%;
-  color: white;
+  color: var(--primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;

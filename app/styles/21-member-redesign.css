@@ -1180,7 +1180,7 @@
 .mcr-avatar {
   background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 55%, black), color-mix(in srgb, var(--brand) 30%, black));
   border-radius: 50%;
-  color: #fff;
+  color: var(--primary-foreground);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2211,7 +2211,7 @@ body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex
   height: 38px;
   border-radius: 50%;
   background: linear-gradient(135deg, color-mix(in srgb, var(--brand) 55%, black), color-mix(in srgb, var(--brand) 30%, black));
-  color: #fff;
+  color: var(--primary-foreground);
   display: inline-flex;
   align-items: center;
   justify-content: center;

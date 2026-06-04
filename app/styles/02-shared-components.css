@@ -230,7 +230,7 @@
   background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 80%, #000));
   border: 1px solid transparent;
   border-radius: 999px;
-  color: #ffffff;
+  color: var(--primary-foreground);
   display: inline-flex;
   height: 40px;
   justify-content: center;
@@ -690,7 +690,7 @@ textarea {
 .timer-presets button.is-selected {
   background: var(--brand);
   border-color: var(--brand);
-  color: #ffffff;
+  color: var(--primary-foreground);
 }
 
 .lift-log-form {
