@@ -8,28 +8,22 @@
 
 ## Critical issues (do first)
 
-### R1 · Trainer role can't establish a session — **Sev: High · Effort: M · Risk: M**
-`createStaffAccount`/`createTrainer` create real `role:"trainer"` Auth users, but
-`toProfile` (`src/lib/auth.ts:306`) and the cookie fallback (`src/lib/auth.ts:909`) only accept
-`admin|owner|member`. A pure trainer therefore can't log in via the app session path. Today this
-is masked because demo trainers are `role:"owner"`+`staffType:"trainer"`.
-**Fix:** add `"trainer"` to the accepted-role checks in `src/lib/auth.ts` (and audit
-`authUserFromProfile`/`redirectForRole`, which already handle trainer). Test the `/trainer` routes
-end-to-end. (See [DISCREPANCIES](DISCREPANCIES.md) B1.)
+> **R1–R3 RESOLVED (2026-06-05).** See the per-item notes below; kept for history.
 
-### R2 · Root-level PT collections leak across members — **Sev: Med-High · Effort: S · Risk: L**
-Root `ptSessions`/`ptLiftLogs` rules let any member of a gym read **any** PT session/lift log in
-that gym (`firestore.rules:424,432`). The gym-scoped path is correctly restricted to the owning
-member (`:252,261`).
-**Fix:** tighten the root rules to `resource.data.memberId == memberId()` for members, or deprecate
-the root PT mirror entirely (see R4).
+### R1 · ~~Trainer role can't establish a session~~ — **RESOLVED**
+`toProfile` (`src/lib/auth.ts:306`) and the cookie fallback (`src/lib/auth.ts:893`) now accept
+`admin|owner|trainer|member`, so a pure `role:"trainer"` account logs in normally. Demo trainers
+remain `role:"owner"`+`staffType:"trainer"` in seed data. (Was [DISCREPANCIES](DISCREPANCIES.md) B1.)
 
-### R3 · Lockout key mismatch weakens brute-force defense — **Sev: Med · Effort: S · Risk: L**
-Identifier-based locks are written to `loginAttempts/{rawIdentifier}` (`src/lib/auth.ts:589`) but the
-Auth blocking trigger reads `loginAttempts/{email}` (`functions/src/index.ts:1912`). Direct-SDK
-sign-ins may bypass identifier locks.
-**Fix:** standardize on a single key (email, lowercased) across both paths, or have the trigger
-also check the normalized identifier.
+### R2 · ~~Root-level PT collections leak across members~~ — **RESOLVED**
+Root `ptSessions`/`ptLiftLogs` rules now restrict members to their own data
+(`resource.data.memberId == memberId()`), matching the gym-scoped path. (Was DISCREPANCIES B3.)
+
+### R3 · ~~Lockout key mismatch~~ — **RESOLVED (not a real gap)**
+The login flow increments **both** `loginAttempts/{email}` (`auth.ts:813`) and
+`loginAttempts/{identifier}` (`auth.ts:814`) on each failure, so the email-keyed doc the blocking
+trigger reads is maintained. The two-key design is intentional. (Residual, separate: failed
+direct-SDK sign-ins aren't counted — Firebase per-IP throttling is the backstop.)
 
 ## Architecture / tech debt
 
@@ -50,10 +44,10 @@ the action writes notifications inline).
 as dead code (R7) except where genuine client-callable privilege is needed. Document the decision
 in `00_AI_CONTEXT.md`.
 
-### R6 · Notification `type` union drift — **Sev: Low-Med · Effort: S · Risk: L**
-Billing code emits `payment_request_pending`/`payment_request_rejected` not in
-`Notification.type` (`src/types/domain.ts:352-368`). UI icon/styling keyed on type may fall through.
-**Fix:** extend the union and the notification-list icon map, or normalize emitted types.
+### R6 · ~~Notification `type` union drift~~ — **RESOLVED (2026-06-05)**
+`payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` were added to
+the `Notification.type` union (`src/types/domain.ts`) and given dedicated icons in
+`notification-list.tsx`. No emitted type now falls through to the default bell.
 
 ## Dead / orphaned code
 
@@ -65,10 +59,17 @@ Billing code emits `payment_request_pending`/`payment_request_rejected` not in
 - Legacy `profiles` collection — read-only fallback; plan removal with R4.
 **Fix:** remove after confirming zero references; keep `profiles` until migration done.
 
-### R8 · Legacy CSS — **Sev: Low · Effort: M · Risk: M**
-README flags superseded files (`01-owner-members.css` ⊃ by `19-members-redesign.css`,
-`07-member-dashboard-legacy.css`, `06-…-legacy-landing.css`). Undocumented `ep-modal.css` exists.
-**Fix:** audit usage per prefix, delete superseded selectors, document or remove `ep-modal.css`.
+### R8 · Legacy CSS + old card components — **Sev: Low-Med · Effort: L · Risk: M**
+The owner dashboard/listing pages were migrated to the `adm-card` design system, but **~26 files
+still use the old `list-panel` / `panel-title` / `stat-card` cards** (defined in
+`01-owner-members.css`, `07-member-dashboard-legacy.css`, `02-shared-components.css`): the trainer
+pages (`/trainer`, `/trainer/members`), member sub-pages (`membership`, `pt-history`, `exercises`),
+`profile`/`activity`, `owner/members/[memberId]`, and ~15 shared components
+(`body-weight-logger`, `gym-floor-load-map`, `muscle-radar-chart`, `member-history`,
+`member-progress-panel`, `member-context-editor`, `owner-ai-capacity-panel`, etc.). The legacy CSS
+files can't be deleted until these are migrated. Undocumented `ep-modal.css` also exists.
+**Fix:** migrate per-area to `adm-card` (owner/admin) or `m3d-`/`mset-` (member) card shells, then
+delete superseded selectors and document/remove `ep-modal.css`.
 
 ## Testing & quality
 
@@ -95,10 +96,13 @@ collection-group scans as gyms grow.
 
 ## Suggested order
 
-1. **R1** (trainer login) — small, unblocks a documented role.
-2. **R3** (lockout key) + **R2** (PT privacy) — security, small.
-3. **R6** (notification types) — small cleanup.
-4. **R9** (tests around the invariants you're about to touch).
-5. **R5** (decide action vs CF) → enables **R7** dead-code removal.
-6. **R4** (dual-write consolidation) — largest, do per-collection behind tests.
-7. **R10/R11/R8** (perf + CSS) opportunistically.
+~~1. R1 (trainer login)~~ · ~~2. R3 (lockout) + R2 (PT privacy)~~ · ~~3. R6 (notification types)~~ — **all done 2026-06-05.**
+
+Remaining:
+1. **R9** (tests around the invariants you're about to touch).
+2. **R5** (decide action vs CF) → enables **R7** dead-code removal.
+3. **R4** (dual-write consolidation) — largest, do per-collection behind tests.
+4. **R8** (legacy CSS) — blocked on migrating the ~26 files still using the old
+   `list-panel`/`panel-title`/`stat-card` cards to `adm-card`/`m3d-` (trainer pages, member
+   sub-pages, profile/activity, and ~15 shared components). See the card-migration plan.
+5. **R10/R11** (perf) opportunistically.

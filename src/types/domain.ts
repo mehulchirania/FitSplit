@@ -434,7 +434,10 @@ export type Notification = {
     | "pt_session_started"
     | "pt_session_completed"
     | "pt_session_cancelled"
-    | "pt_session_rescheduled";
+    | "pt_session_rescheduled"
+    | "payment_request_pending"
+    | "payment_request_rejected"
+    | "data_deletion_request";
   title: string;
   body: string;
   createdAt: string;

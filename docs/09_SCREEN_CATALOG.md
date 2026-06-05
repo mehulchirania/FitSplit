@@ -145,9 +145,9 @@ loads `getGymDetail`, `getMemberWithProfile`, `MemberSubSidebar`).
 | `/trainer` | `src/app/trainer/page.tsx` | `requireRole[owner,trainer]` | Trainer PT schedule | `getPTSessionsForTrainer` (via gym) | ptSessions |
 | `/trainer/members` | `src/app/trainer/members/page.tsx` | `requireRole[owner,trainer]` | Trainer's visible members | `getGymDetail`, `getMembersForTrainer` | members |
 
-> ⚠️ `/trainer` routes are gated `requireRole[owner,trainer]`, but a true `role:"trainer"` account
-> cannot establish a session (`src/lib/auth.ts:306`). In practice trainers are demo `role:"owner"` +
-> `staffType:"trainer"`. See [DISCREPANCIES](DISCREPANCIES.md).
+> `/trainer` routes are gated `requireRole[owner,trainer]`. As of 2026-06-05 a true `role:"trainer"`
+> account **can** establish a session (`src/lib/auth.ts:306,893` accept `trainer`). Demo trainers are
+> still `role:"owner"` + `staffType:"trainer"` in seed data. (Was a [DISCREPANCIES](DISCREPANCIES.md) item.)
 
 ## Loading / error boundaries
 

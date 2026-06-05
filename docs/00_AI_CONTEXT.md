@@ -38,15 +38,14 @@ Router PWA deployed on Firebase App Hosting. One platform, many gyms; the pilot 
 |---|---|---|
 | `admin` | platform-wide | manages gyms, global catalog/programs, inbox |
 | `owner` | one gym | members, programs, PT, billing, settings. `staffType` distinguishes `owner`/`trainer`/`staff` |
-| `trainer` | one gym | first-class role in rules/middleware/Functions, BUT `src/lib/auth.ts` session resolution does **not** accept role `trainer` (see ⚠️ below) |
+| `trainer` | one gym | first-class role in rules/middleware/Functions; session resolution now accepts role `trainer` (fixed 2026-06-05, see note below) |
 | `member` | self | workout console, logging, progress, PT history |
 
-⚠️ **Trainer role caveat.** Demo trainers are modelled as `role:"owner"` + `staffType:"trainer"`
-(`src/lib/auth.ts:78-95`). `createStaffAccount`/`createTrainer` create real `role:"trainer"`
-accounts (`functions/src/index.ts:449,1291`), but `toProfile` (`src/lib/auth.ts:299-323`) and the
-cookie fallback (`src/lib/auth.ts:909`) only accept `admin|owner|member` — so a pure
-`role:"trainer"` account currently cannot establish a session. Tracked in
-[DISCREPANCIES](DISCREPANCIES.md) / [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
+**Trainer role (fixed 2026-06-05).** A pure `role:"trainer"` account **can now establish a
+session** — `toProfile` (`src/lib/auth.ts:306`) and the cookie fallback (`src/lib/auth.ts:893`)
+accept `admin|owner|trainer|member`. Demo trainers are still modelled as `role:"owner"` +
+`staffType:"trainer"` (`src/lib/auth.ts:78-95`) for historical reasons, but that's no longer a
+hard requirement. (Was DISCREPANCIES B1 / roadmap R1.)
 
 ## Auth & sessions
 

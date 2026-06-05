@@ -42,7 +42,8 @@ flowchart TB
 `admin | owner | trainer | member` (`src/types/domain.ts:3`). `owner` has a `staffType`
 (`owner|trainer|staff`). Demo "trainers" are `role:"owner"` + `staffType:"trainer"`
 (`src/lib/auth.ts:78-95`); `createStaffAccount`/`createTrainer` mint real `role:"trainer"` accounts
-(`functions/src/index.ts:449,1291`).
+(`functions/src/index.ts:449,1291`). **As of 2026-06-05 a pure `role:"trainer"` account can log in**
+— `toProfile`/cookie fallback accept `trainer` (`src/lib/auth.ts:306,893`).
 
 ## Route access (middleware.ts:3-11)
 
@@ -56,7 +57,8 @@ flowchart TB
 | `/about`,`/privacy`,`/terms` | public | public | public | public | not in `middleware.ts` protectedRoutes (public) |
 
 \* trainers (demo) are `role:"owner"`, so they pass `/owner` middleware; pages themselves call
-`requireRole(["admin","owner"])`. A true `role:"trainer"` would be redirected from `/owner`.
+`requireRole(["admin","owner"])`. A true `role:"trainer"` would be redirected from `/owner` to
+`/trainer` (and, since 2026-06-05, can establish a session to reach it).
 
 ## Feature matrix
 
