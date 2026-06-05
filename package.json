@@ -67,7 +67,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@firebase/rules-unit-testing": "^3.0.4",
-    "@next/bundle-analyzer": "^15.5.18",
+    "@next/bundle-analyzer": "^16.2.7",
     "@sentry/nextjs": "^9.47.1",
     "@types/node": "^25.9.1",
     "@types/react": "^19.0.12",
