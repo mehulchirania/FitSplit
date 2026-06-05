@@ -421,7 +421,7 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (signedIn() && (role() == "owner" || role() == "trainer")
             && currentGymId() == resource.data.gymId)
-        || (signedIn() && role() == "member" && currentGymId() == resource.data.gymId);
+        || (signedIn() && role() == "member" && resource.data.memberId == memberId());
       allow write: if isAdmin()
         || (signedIn() && (role() == "owner" || role() == "trainer")
             && currentGymId() == resource.data.gymId);
@@ -431,7 +431,7 @@ service cloud.firestore {
       allow read: if isAdmin()
         || (signedIn() && (role() == "owner" || role() == "trainer")
             && currentGymId() == resource.data.gymId)
-        || (signedIn() && role() == "member" && currentGymId() == resource.data.gymId);
+        || (signedIn() && role() == "member" && resource.data.memberId == memberId());
       allow write: if isAdmin()
         || (signedIn() && (role() == "owner" || role() == "trainer")
             && currentGymId() == resource.data.gymId);

@@ -14,8 +14,7 @@
 `admin | owner | trainer | member` (`src/types/domain.ts:3`). `owner` has a `staffType`
 (`owner|trainer|staff`). Demo "trainers" are `role:"owner"` + `staffType:"trainer"`
 (`src/lib/auth.ts:78-95`); `createStaffAccount`/`createTrainer` mint real `role:"trainer"` accounts
-(`functions/src/index.ts:449,1291`). ⚠️ `src/lib/auth.ts` session resolution does not accept role
-`trainer` (`src/lib/auth.ts:306,909`) — see [DISCREPANCIES](DISCREPANCIES.md).
+(`functions/src/index.ts:449,1291`).
 
 ## Route access (middleware.ts:3-11)
 
@@ -51,7 +50,7 @@
 | Approve/reject exercise request | ✅ | ❌ | ❌ | ❌ | `requireRole[admin]` `actions/exercises.ts:105,185` |
 | Book/manage PT session | ✅ | ✅ | ✅ (as staff) | ❌ | `requireGymStaff` `actions/pt.ts:51`; rules staff `:253` |
 | Log PT lift set | ✅ | ✅ | ✅ | ❌ | `requireGymStaff` `actions/pt.ts:199` |
-| View PT session | ✅ | ✅ | ✅ | own only (scoped) | rules `:249-252`; root allows any member in gym `:424` ⚠️ |
+| View PT session | ✅ | ✅ | ✅ | own only | rules gym-scoped `:249-252`; root `:424` |
 | Assign trainer to member | ✅ | ✅ | ❌ | ❌ | `requireRole[admin,owner]` `actions/members.ts:683`; CF `:1314` |
 | Trainer visibility setting | ✅ | ✅ | ❌ | ❌ | `requireOwner` `actions/billing.ts:191`; CF `:1360` |
 | Package CRUD | ✅ | ✅ | ❌ | ❌ | `requireOwner` `actions/billing.ts:34`; rules `:271`; trainers no access `:272` |
@@ -85,9 +84,7 @@
 
 ## Notable enforcement gaps (see [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md))
 
-- **Root PT collections**: members can read *any* PT session/lift log in their gym at the root
-  path (`firestore.rules:424,432`), not just their own. Gym-scoped path is correctly restricted
-  (`:252`). Privacy gap if clients read the root copy.
+- **Root PT collections**: Members are restricted to their own PT data at both the gym-scoped path (`firestore.rules:252`) and the root path (`firestore.rules:424,432`).
 - **Trainer write breadth**: any gym staff (incl. trainers) can read/write any member's PT data
   for "cover" (`firestore.rules:253`, `actions/shared.ts:564-569`). Intentional but broad.
 - **macroLogs / activityLogs** have no root-level rule block (`firestore.rules`) though a root

@@ -6,20 +6,7 @@
 
 ## High Priority Bugs
 
-1. **Trainer Role Authentication Failures**
-   - **Issue:** `createStaffAccount` and `createTrainer` create `role:"trainer"` users, but the session authentication middleware (`src/lib/auth.ts:306`) and cookie fallback only accept `admin|owner|member`.
-   - **Impact:** A pure trainer cannot log in via the app session path. (Currently masked because demo trainers are `role:"owner"` + `staffType:"trainer"`).
-   - **Fix Required:** Add `"trainer"` to accepted-role checks in `src/lib/auth.ts` and ensure `/trainer` routes work end-to-end.
-
-2. **Root PT Collections Privacy Leak**
-   - **Issue:** Root `ptSessions` and `ptLiftLogs` Firestore rules (`firestore.rules:424,432`) let any gym member read **any** PT session/lift log in that gym. 
-   - **Impact:** Privacy leak. (The gym-scoped path is correctly restricted to the owning member).
-   - **Fix Required:** Tighten root rules to `resource.data.memberId == memberId()` or deprecate the root PT mirror entirely.
-
-3. **Lockout Key Mismatch Weakens Brute-Force Defense**
-   - **Issue:** Identifier-based locks are written to `loginAttempts/{rawIdentifier}` (`src/lib/auth.ts:589`), but the Auth blocking trigger reads `loginAttempts/{email}` (`functions/src/index.ts:1912`).
-   - **Impact:** Direct-SDK sign-ins may bypass identifier locks.
-   - **Fix Required:** Standardize on a single key (lowercased email) across both paths.
+*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) were resolved on 2026-06-05.*
 
 ## Incomplete Functionalities
 

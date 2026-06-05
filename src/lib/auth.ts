@@ -303,7 +303,7 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
 
   const role = String(data.role) as Role;
 
-  if (!["admin", "owner", "member"].includes(role)) {
+  if (!["admin", "owner", "trainer", "member"].includes(role)) {
     return null;
   }
 
@@ -513,9 +513,12 @@ async function findProfileRefAndDataByEmail(email: string) {
 }
 
 async function checkLoginLockout(email: string): Promise<{ locked: boolean; minutesRemaining?: number }> {
-  const result = await findProfileRefAndDataByEmail(email);
-  if (!result) return { locked: false };
-  const data = result.data ?? {};
+  if (!hasFirebaseAdminConfig()) return { locked: false };
+  const { db } = getFirebaseAdminServices();
+  const normalized = email.trim().toLowerCase();
+  const doc = await db.collection("loginAttempts").doc(normalized).get();
+  const data = doc.data() ?? {};
+  
   const lockedUntil = data.lockedUntil ? new Date(String(data.lockedUntil)) : null;
   if (lockedUntil && lockedUntil.getTime() > Date.now()) {
     const minutesRemaining = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000));
@@ -525,15 +528,19 @@ async function checkLoginLockout(email: string): Promise<{ locked: boolean; minu
 }
 
 async function incrementLoginFailure(email: string) {
-  const result = await findProfileRefAndDataByEmail(email);
-  if (!result) return;
-  const { ref, data } = result;
+  if (!hasFirebaseAdminConfig()) return;
+  const { db } = getFirebaseAdminServices();
+  const normalized = email.trim().toLowerCase();
+  const ref = db.collection("loginAttempts").doc(normalized);
+  const data = (await ref.get()).data() ?? {};
+  
   const current = Number(data.failedLoginAttempts ?? 0);
   const next = current + 1;
   const update: Record<string, unknown> = {
     failedLoginAttempts: next,
     lastFailedLoginAt: new Date().toISOString()
   };
+  
   if (next >= MAX_FAILED_ATTEMPTS) {
     const lockedUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60_000);
     update.lockedUntil = lockedUntil.toISOString();
@@ -542,9 +549,10 @@ async function incrementLoginFailure(email: string) {
 }
 
 async function clearLoginAttempts(email: string) {
-  const result = await findProfileRefAndDataByEmail(email);
-  if (!result) return;
-  await result.ref.set(
+  if (!hasFirebaseAdminConfig()) return;
+  const { db } = getFirebaseAdminServices();
+  const normalized = email.trim().toLowerCase();
+  await db.collection("loginAttempts").doc(normalized).set(
     { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
     { merge: true }
   );
@@ -897,7 +905,7 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
     const gymId = cookieStore.get("fitsplit-gym-id")?.value;
     const memberId = cookieStore.get("fitsplit-member-id")?.value;
 
-    if (!role || !email || !gymId || !["admin", "owner", "member"].includes(role)) {
+    if (!role || !email || !gymId || !["admin", "owner", "trainer", "member"].includes(role)) {
       return null;
     }
 

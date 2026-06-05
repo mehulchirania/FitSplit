@@ -37,7 +37,7 @@ Lockout: 5 fails → 15 min (`src/lib/auth.ts:509-510`); also enforced by `block
 ## 2. Member login (PIN)
 
 Same path, `mode="member"`. Firebase password = `pin-${PIN}` (`src/lib/auth.ts:812`). Identifier
-resolves username/phone/email → synthetic `@members.fitsplit.app` email. Demo members fall back
+intelligently resolves to either `username` or `phone` (bypassing emails) → synthetic `@members.fitsplit.app` email. Demo members fall back
 to compatibility-cookie session (`src/lib/auth.ts:772`).
 
 ## 3. Member creation (owner)
