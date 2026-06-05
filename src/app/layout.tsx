@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import { headers } from "next/headers";
+import { headers, cookies } from "next/headers";
 import { AppTopbar } from "@/components/app-topbar";
+import { TermsConsentGate } from "@/components/terms-consent-gate";
 import { FcmSetup } from "@/components/fcm-setup";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
@@ -76,6 +77,12 @@ export default async function RootLayout({
   const isPublicLanding = pathname === "/";
   const currentUser = isPublicLanding ? null : await getCurrentUser();
 
+  // First-login consent gate: show until the user has accepted Terms + Privacy.
+  // Real users are remembered via their profile flag; the cookie covers the
+  // current session (and mock-mode demo users with no persisted profile).
+  const termsAck = (await cookies()).get("fitsplit-terms-ack")?.value === "1";
+  const needsConsent = Boolean(currentUser) && !currentUser?.termsAcceptedAt && !termsAck;
+
   let initials = "";
   let gymName: string | undefined;
   let gymLogoUrl: string | undefined;
@@ -143,6 +150,7 @@ export default async function RootLayout({
       </head>
       <body>
         <div className="app-shell">
+          {needsConsent && <TermsConsentGate />}
           <ScrollReveal />
           {!isPublicLanding && <PwaInstallPrompt />}
           <SessionTimeout isAuthenticated={Boolean(currentUser)} />

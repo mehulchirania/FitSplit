@@ -51,5 +51,5 @@
 
 - `next.config.mjs` CSP/security header specifics (existence confirmed; lines not cited).
 - Service worker / PWA manifest files.
-- `src/lib/ai.ts`, `src/lib/split-library.ts`, `src/lib/workout-utils.ts` internals (referenced, not line-cited).
+- `src/lib/split-library.ts`, `src/lib/workout-utils.ts` internals (referenced, not line-cited).
 - Seed/migration scripts referenced in README `package.json` scripts.

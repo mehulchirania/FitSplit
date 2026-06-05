@@ -1,9 +1,43 @@
 "use server";
 
-import { requireRole } from "@/lib/auth";
+import { cookies } from "next/headers";
+import { requireRole, requireAuth } from "@/lib/auth";
 import { gymCollectionPath } from "../collections";
 import type { FormActionState } from "@/types/action-state";
 import { requireFirebase, success, failure } from "./shared";
+
+const TERMS_ACK_COOKIE = "fitsplit-terms-ack";
+
+/**
+ * Records that the signed-in user accepted the Terms of Service and Privacy Policy.
+ * Sets a long-lived cookie (read by the layout's first-login consent gate) and,
+ * best-effort, stamps `termsAcceptedAt` on the user's auth profile for an audit trail.
+ */
+export async function acceptTerms(): Promise<{ status: "success" } | { status: "error"; message: string }> {
+  try {
+    const user = await requireAuth();
+    const cookieStore = await cookies();
+    cookieStore.set(TERMS_ACK_COOKIE, "1", {
+      httpOnly: true,
+      path: "/",
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 365, // 1 year
+    });
+    try {
+      const db = requireFirebase();
+      await db
+        .collection("authProfiles")
+        .doc(user.uid)
+        .set({ termsAcceptedAt: new Date().toISOString() }, { merge: true });
+    } catch {
+      // Mock mode / no Admin SDK — the cookie alone is sufficient to clear the gate.
+    }
+    return { status: "success" };
+  } catch {
+    return { status: "error", message: "Could not record your acceptance. Please try again." };
+  }
+}
 import {
   getMemberWithProfile,
   getBodyMetricLogsForMember,

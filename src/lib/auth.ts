@@ -31,6 +31,7 @@ type ProfileRecord = {
   defaultGymId: string;
   isActive: boolean;
   mustChangePassword?: boolean;
+  termsAcceptedAt?: string;
 };
 
 export type AuthenticatedUser = {
@@ -46,6 +47,9 @@ export type AuthenticatedUser = {
    * before using the rest of the app. Set on staff creation, cleared by
    * changeStaffPassword. Only applies to role === "owner" (gym staff). */
   mustChangePassword?: boolean;
+  /** ISO timestamp of when the user accepted the Terms + Privacy Policy.
+   * Undefined until first acceptance; drives the first-login consent gate. */
+  termsAcceptedAt?: string;
 };
 
 type DemoLogin = {
@@ -318,7 +322,8 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
     staffType: data.staffType ? String(data.staffType) : undefined,
     defaultGymId: String(data.defaultGymId ?? ""),
     isActive: data.isActive !== false,
-    mustChangePassword: data.mustChangePassword === true
+    mustChangePassword: data.mustChangePassword === true,
+    termsAcceptedAt: data.termsAcceptedAt ? String(data.termsAcceptedAt) : undefined
   };
 }
 
@@ -425,6 +430,9 @@ async function setSessionCompatibilityCookies(user: AuthenticatedUser, rememberM
 async function clearAuthCookies() {
   const cookieStore = await cookies();
   cookieStore.delete(sessionCookieName);
+  // Clear the terms-acceptance cookie so a different user on the same browser
+  // is re-prompted (real users are still covered by their profile flag).
+  cookieStore.delete("fitsplit-terms-ack");
 
   for (const cookieName of legacyCookieNames) {
     cookieStore.delete(cookieName);
@@ -441,7 +449,8 @@ function authUserFromProfile(profile: ProfileRecord): AuthenticatedUser {
     staffType: profile.staffType,
     gymId: profile.defaultGymId,
     memberId: profile.role === "member" ? profile.id : undefined,
-    mustChangePassword: profile.mustChangePassword === true
+    mustChangePassword: profile.mustChangePassword === true,
+    termsAcceptedAt: profile.termsAcceptedAt
   };
 }
 

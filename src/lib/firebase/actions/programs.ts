@@ -44,37 +44,6 @@ const DeleteProgramSchema = z.object({
   programId: ZodHelpers.textRequired("Program ID")
 });
 
-function pickProgramWithoutAi(programs: WorkoutProgram[], memberGoal: string) {
-  const assignablePrograms = programs.filter((program) =>
-    program.days.some((day) => day.exercises.length > 0)
-  );
-  const programPool = assignablePrograms.length ? assignablePrograms : programs;
-  const goal = memberGoal.toLowerCase();
-
-  if (goal.includes("strength")) {
-    return programPool.find((program) => program.title.toLowerCase().includes("ppl")) ?? programPool[0];
-  }
-
-  if (goal.includes("fat") || goal.includes("loss") || goal.includes("weight")) {
-    return (
-      programPool.find((program) => program.daysPerWeek <= 4) ??
-      programPool.find((program) => program.splitType === "ppl_upper_lower") ??
-      programPool[0]
-    );
-  }
-
-  if (goal.includes("muscle") || goal.includes("hypertrophy") || goal.includes("bulk")) {
-    return (
-      programPool.find((program) => program.splitType === "ppl_x2") ??
-      programPool.find((program) => program.splitType === "combo_x2") ??
-      programPool[0]
-    );
-  }
-
-  return programPool.find((program) => program.splitType === "ppl_upper_lower") ?? programPool[0];
-}
-
-
 async function resolveExerciseRecordId(sourceExerciseId: string) {
   const db = requireFirebase();
   const sourceExercise = await db
@@ -185,43 +154,6 @@ export async function assignProgramToMember(
   } catch (error) {
     console.error("Unable to assign program to member", error);
     return failure(error, "Unable to assign workout program. Please try again.");
-  }
-}
-
-const GenerateAssignSchema = z.object({
-  memberId: ZodHelpers.textRequired("Member"),
-  memberName: ZodHelpers.textRequired("Member name"),
-  memberGoal: z.string().optional()
-});
-
-export async function generateAndAssignProgram(
-  previousStateOrFormData: FormActionState | FormData,
-  maybeFormData?: FormData
-): Promise<FormActionState> {
-  try {
-    const currentUser = await requireRole(["admin", "owner"]);
-    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    const parsed = parseActionData(formData, GenerateAssignSchema);
-    if (!parsed.success) return parsed.state;
-
-    const { memberId, memberName, memberGoal: rawGoal = "General fitness" } = parsed.data;
-    const memberGoal = rawGoal.trim() || "General fitness";
-    const { programs } = await getWorkoutPrograms(currentUser.gymId);
-    const selectedProgram = pickProgramWithoutAi(programs, memberGoal);
-
-    if (!selectedProgram) {
-      throw new Error("No workout programs are available to assign.");
-    }
-
-    const assignmentData = new FormData();
-    assignmentData.set("memberId", memberId);
-    assignmentData.set("memberName", memberName);
-    assignmentData.set("programId", selectedProgram.id);
-    assignmentData.set("programTitle", selectedProgram.title);
-    return assignProgramToMember(previousStateOrFormData, assignmentData);
-  } catch (error) {
-    console.error("Unable to generate and assign program", error);
-    return failure(error, "Unable to generate a workout assignment.");
   }
 }
 

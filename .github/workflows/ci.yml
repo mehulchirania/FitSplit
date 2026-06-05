@@ -31,9 +31,8 @@ jobs:
       - name: Test
         run: npm test
         env:
-          # Server actions and AI calls are skipped in CI — unit tests only
+          # Server actions are skipped in CI — unit tests only
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: test-project
-          GEMINI_API_KEY: ""
 
   build:
     name: Build

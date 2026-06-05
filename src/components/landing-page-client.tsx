@@ -39,7 +39,6 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [accepted, setAccepted] = useState(false);
   const [isPending, start] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const isMember = mode === "member";
@@ -70,7 +69,6 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (!u) { setError(isMember ? "Enter your mobile number or username." : "Enter your username."); return; }
     if (isMember && !/^\d{4}$/.test(p)) { setError("PIN must be exactly 4 numeric digits."); return; }
     if (!isMember && !p) { setError("Enter your password."); return; }
-    if (!accepted) { setError("Please accept the Terms of Service and Privacy Policy to continue."); return; }
 
     start(async () => {
       try {
@@ -199,34 +197,6 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               </label>
               {error && <p className="lp-form-error" role="alert">{error}</p>}
               {message && <p className="lp-form-success" role="status">{message}</p>}
-
-              <label
-                style={{
-                  display: "flex",
-                  gap: "10px",
-                  alignItems: "flex-start",
-                  fontSize: "0.85rem",
-                  color: "var(--fg-dim)",
-                  lineHeight: 1.45,
-                  margin: "4px 0 2px",
-                  cursor: "pointer",
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={accepted}
-                  onChange={(e) => setAccepted(e.target.checked)}
-                  style={{ marginTop: "3px", flexShrink: 0, accentColor: "var(--accent)" }}
-                  aria-label="Accept Terms of Service and Privacy Policy"
-                />
-                <span>
-                  I agree to the{" "}
-                  <Link href="/terms" target="_blank" style={{ color: "var(--accent)" }}>Terms of Service</Link>{" "}
-                  and{" "}
-                  <Link href="/privacy" target="_blank" style={{ color: "var(--accent)" }}>Privacy Policy</Link>,
-                  including the processing of my fitness data.
-                </span>
-              </label>
 
               <button className="lp-btn-primary lp-w-full" disabled={isPending} type="submit">
                 {isPending ? "Logging in..." : "Log in"}

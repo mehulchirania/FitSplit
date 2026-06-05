@@ -258,9 +258,9 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `memberName`, `createdBy`, `sideEffectsMode` (CF trigger flag, `functions/src/index.ts:784`).
 - **Reads:** `getProgramAssignmentForMember`/`getActiveProgramAssignments`
   (`read-models/programs.ts:148,219`).
-- **Writes:** `assignProgramToMember`/`bulkAssignProgram`/`generateAndAssignProgram`/
-  `createAndAssignCustomProgram` (`actions/programs.ts:88,232,197,545`) and CF equivalents
-  (`functions/src/index.ts:744,841`). New assignment cancels prior active ones.
+- **Writes:** `assignProgramToMember`/`bulkAssignProgram`/`createAndAssignCustomProgram`
+  (`actions/programs.ts:88,232,545`) and CF equivalents (`functions/src/index.ts:744,841`).
+  New assignment cancels prior active ones.
 - **Security rules:** read admin/owner/member/trainer; create/update/delete `allow:false`
   (`firestore.rules:190-194`, root `:364-367`).
 - **Tenant isolation:** path-scoped + `assertMemberBelongsToCallerGym`.

@@ -92,7 +92,6 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | Name | Source | Role gate | Collections | Side effects |
 |---|---|---|---|---|
 | `assignProgramToMember` | `:88` | `requireRole[admin,owner]` + member-belongs | programAssignments, notifications, activityEvents (W scoped+root) | FCM push; cancels prior active |
-| `generateAndAssignProgram` | `:197` | `requireRole[admin,owner]` | reads programs, delegates to assign | heuristic pick (`pickProgramWithoutAi`) |
 | `bulkAssignProgram` | `:232` | `requireRole[admin,owner]` | programAssignments (W) | JSON memberIds |
 | `deleteCustomWorkoutProgram` | `:289` | `requireOwner` | workoutPrograms (archive+delete) | |
 | `updateCustomWorkoutProgram` | `:336` | `requireOwner` | workoutPrograms (W) | resolves exercise ids |
