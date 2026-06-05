@@ -3,45 +3,10 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
 
-// CSP sources that the app actually needs:
-// - Firebase Auth / Firestore / Hosting → *.googleapis.com, *.gstatic.com, *.firebaseio.com,
-//   apis.google.com, identitytoolkit.googleapis.com, *.firebaseapp.com,
-//   firestore.googleapis.com, *.cloudfunctions.net
-// - YouTube embeds (exercise videos) → www.youtube.com, i.ytimg.com
-// - Unsplash placeholder images → images.unsplash.com
-//
-// 'unsafe-inline' is required for the inline styles used heavily across the app.
-// 'unsafe-eval' is required by Next.js dev mode for hot reload. We allow it in
-// development only via the NODE_ENV check below.
-//
-// TODO(security): script-src still carries 'unsafe-inline' in production, which
-// weakens XSS defense. Migrate to a per-request nonce + 'strict-dynamic' (generate
-// the nonce in middleware, reference it here) and drop 'unsafe-inline' for scripts.
-const isDev = process.env.NODE_ENV !== "production";
-
-const cspDirectives = [
-  "default-src 'self'",
-  // Scripts: self, eval only in dev, inline only because of Next.js bootstrapping
-  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://apis.google.com https://*.firebaseapp.com`,
-  // Styles: unsafe-inline needed for the inline style={{...}} pattern used throughout
-  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-  "font-src 'self' data: https://fonts.gstatic.com",
-  // No http: — avoid mixed content. https: covers YouTube thumbnails, Unsplash, gym logos.
-  "img-src 'self' data: blob: https:",
-  // Firebase Firestore/RTDB/Functions + Identity Toolkit (Auth REST)
-  "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.cloudfunctions.net wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
-  // YouTube iframe embeds for exercise videos
-  "frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com",
-  // Lock everything else down
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "upgrade-insecure-requests"
-].join("; ");
-
+// NOTE: Content-Security-Policy is set in `src/middleware.ts`, not here, because it
+// needs a fresh per-request nonce ('nonce-…' + 'strict-dynamic' in production). The
+// static headers below have no per-request component and are applied to every path.
 const securityHeaders = [
-  { key: "Content-Security-Policy", value: cspDirectives },
   { key: "X-Frame-Options", value: "DENY" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

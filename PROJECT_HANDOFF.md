@@ -9,7 +9,8 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 ### Security posture
 - **Firestore RLS hardening** (`firestore.rules`): fixed a cross-tenant leak where root `/exerciseRequests` was readable/creatable by any `signedIn()` user (now `isGymUser(resource.data.gymId)`-scoped); added explicit root `match` blocks for `macroLogs`, `activityLogs`, `memberships` (previously relied on implicit default-deny). Closed `DISCREPANCIES` B3 + B4.
 - **Storage rules** (`storage.rules`): were `allow read,write: if request.auth != null` — any authed user could read/write any gym's files with no limits. Now gym-scoped via `request.auth.token.gymId`/`role` custom claims: reads = gym users, writes = owner/admin of that gym + content-type + size caps, plus a default-deny catch-all.
-- **Security headers** (`next.config.mjs`): dropped `http:` from `img-src` (+`upgrade-insecure-requests`), removed stale Gemini origin, added `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `X-DNS-Prefetch-Control: off`, `X-Permitted-Cross-Domain-Policies: none`, expanded `Permissions-Policy`. **Open item:** `script-src` still has `'unsafe-inline'` in prod — nonce migration is TODO (marked in `next.config.mjs`).
+- **Security headers**: static headers in `next.config.mjs` (dropped `http:` from `img-src` +`upgrade-insecure-requests`, removed stale Gemini origin, added `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `X-DNS-Prefetch-Control: off`, `X-Permitted-Cross-Domain-Policies: none`, expanded `Permissions-Policy`).
+- **Nonce-based CSP (DONE)**: CSP moved to `src/middleware.ts` and now uses a **fresh per-request nonce + `'strict-dynamic'`** for `script-src` in production (no `'unsafe-inline'`/`'unsafe-eval'` in effect). Next.js applies the nonce to every script; the inline theme script in `layout.tsx` reads it via `headers()` (`x-nonce`). Dev keeps the loose CSP (no nonce) for HMR. Verified against a production build: per-request nonce differs across requests, 41 scripts nonced, `strict-dynamic` present, zero CSP violations in-browser.
 - **Rules tests** (`scripts/test-firestore-rules.mjs`): fixed two latent harness bugs (type-only `RulesTestEnvironment` import; `makeAuth` `uid` claim) and added 8 root-isolation tests. All 34 pass against the Firestore emulator (needs Java).
 
 ### Legal & compliance
@@ -22,7 +23,6 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 - Fill the **legal-entity name + address** placeholder in `/privacy` and `/terms` before production.
 - Sign a **DPA** with gyms (FitSplit is their processor) + rely on Google's DPA.
 - Consider storing **consent once per user** rather than gating every login.
-- The **`script-src` nonce CSP** migration.
 
 ---
 

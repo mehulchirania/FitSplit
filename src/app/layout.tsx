@@ -70,6 +70,9 @@ export default async function RootLayout({
 }>) {
   const headerList = await headers();
   const pathname = headerList.get("x-pathname") ?? "";
+  // Per-request CSP nonce set by middleware (production only). Inline scripts must
+  // carry it to be allowed under the strict nonce CSP.
+  const nonce = headerList.get("x-nonce") ?? undefined;
   const isPublicLanding = pathname === "/";
   const currentUser = isPublicLanding ? null : await getCurrentUser();
 
@@ -128,6 +131,7 @@ export default async function RootLayout({
         <link rel="shortcut icon" href="/favicon-32x32.png?v=11" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=11" />
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: `
               try {
