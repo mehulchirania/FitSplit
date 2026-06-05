@@ -332,7 +332,7 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 ## ⚖️ Legal & Compliance
 
 - **Public legal pages**: `/privacy` (GDPR + CCPA/CPRA) and `/terms` (incl. a health/fitness "not medical advice" disclaimer). `/about` is public too. All three are linked from the landing footer, login modal, and member settings.
-- **Consent**: the login modal requires a checkbox accepting the Terms and Privacy Policy (including processing of fitness data) before sign-in.
+- **Consent**: a blocking **first-login gate** (`components/terms-consent-gate.tsx`) requires every user to accept the Terms and Privacy Policy (incl. fitness-data processing) before using the app — accept to proceed, decline to log out. Acceptance is recorded per-user (`termsAcceptedAt` on the auth profile) plus a session cookie, via the `acceptTerms` server action.
 - **Data subject rights (DSAR)**: members can **export all their data as JSON** and **request account deletion** from Settings → *Privacy & your data* (`src/lib/firebase/actions/privacy.ts`). Deletion requests notify the gym owner, who performs the erasure.
 - **Still required before production**: fill the legal-entity name/address placeholder in the policies, and sign a DPA with gyms (FitSplit acts as their processor). See `PROJECT_HANDOFF.md`.
 

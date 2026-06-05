@@ -74,7 +74,7 @@ flowchart LR
 
 | Route | File | Role | Purpose | Data |
 |---|---|---|---|---|
-| `/` | `src/app/page.tsx` | public | Landing page + login/contact modals (login modal has a required Terms+Privacy consent checkbox) | `loginWithCredentials`, `submitContactMessage` |
+| `/` | `src/app/page.tsx` | public | Landing page + login/contact modals | `loginWithCredentials`, `submitContactMessage` |
 | `/about` | `src/app/about/page.tsx` | **public** | Static about (credits collaboration with Blume Labs) | — |
 | `/privacy` | `src/app/privacy/page.tsx` | public | Privacy Policy (GDPR + CCPA/CPRA) | — |
 | `/terms` | `src/app/terms/page.tsx` | public | Terms of Service (incl. health/fitness disclaimer) | — |
@@ -83,7 +83,10 @@ flowchart LR
 | `/suspended` | `src/app/suspended/page.tsx` | (any) | Shown when profile inactive | — |
 
 Root layout `src/app/layout.tsx` loads CSS in order, reads `getGymDetail` + `getActiveWorkoutSessions`
-for the shell, and renders topbar/nav (topbar hidden for `/owner/*`).
+for the shell, reads the per-request CSP nonce (`x-nonce`), and renders topbar/nav (topbar hidden for
+`/owner/*`). It also renders the **first-login consent gate** (`TermsConsentGate`) for any authed user
+who hasn't yet accepted Terms + Privacy (`!currentUser.termsAcceptedAt` and no `fitsplit-terms-ack`
+cookie) — accept (→ `acceptTerms`) to proceed, decline (→ `logoutUser`) to log out.
 
 ## Admin
 

@@ -29,7 +29,7 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ### Legal & compliance
 - **New public pages**: `/privacy` (GDPR + CCPA/CPRA) and `/terms` (`src/app/privacy|terms/page.tsx`), linked from the landing footer, login modal, enquiry form, About page, and member settings.
-- **Consent**: login modal now has a **required checkbox** (Terms + Privacy, incl. fitness-data processing) gating submit.
+- **Consent**: a blocking **first-login gate** (`TermsConsentGate`, rendered by the root layout) requires every user to accept Terms + Privacy (incl. fitness-data processing) — accept → `acceptTerms` (records `termsAcceptedAt` + cookie), decline → logout. (Replaced the earlier login-modal checkbox.)
 - **DSAR** (`src/lib/firebase/actions/privacy.ts`): members can **export all their data as JSON** (`exportMyData`) and **request account deletion** (`requestAccountDeletion`, which notifies the gym owner) from the member Settings → "Privacy & your data" section.
 - **`/about` is now public** (removed from `middleware.ts` `protectedRoutes` + matcher) — it was auth-gated and unreachable to visitors. Content now credits collaboration with [Blume Labs](https://blumelabs.in); landing footer carries the same credit.
 

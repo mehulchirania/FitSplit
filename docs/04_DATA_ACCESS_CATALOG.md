@@ -152,6 +152,7 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 |---|---|---|---|---|
 | `exportMyData` | `privacy.ts` | `requireRole[member]` (self) | reads member-owned data across liftLogs, bodyMetricLogs, dayLogs, macroLogs, activityLogs, attendanceRecords, ptSessions, memberships, paymentRequests, notifications, activityEvents (R) | returns serializable JSON; memberId from session |
 | `requestAccountDeletion` | `privacy.ts` | `requireRole[member]` (self) | notifications (W) | notifies gym owner; guards duplicate open request; erasure actioned by owner/admin |
+| `acceptTerms` | `privacy.ts` | `requireAuth` (any role) | authProfiles (W `termsAcceptedAt`, best-effort) | sets `fitsplit-terms-ack` cookie; powers the first-login consent gate |
 
 ### contact / notifications
 | Name | Source | Role gate | Collections | Side effects |
