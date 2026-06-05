@@ -18,13 +18,14 @@
  *  8. Member can read own payment request; cannot read others'.
  *  9. Owner can read summaries; trainer cannot.
  * 10. PT session: trainer can read/write; member can only read own session.
+ * 11. Root-level tenant isolation: root exerciseRequests are gym-scoped (no cross-tenant
+ *     read/create); root macroLogs/activityLogs/memberships enforce member-self + gym scope.
  */
 
 import {
   assertFails,
   assertSucceeds,
   initializeTestEnvironment,
-  RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
@@ -43,8 +44,11 @@ const MEMBER_B = "member-beta";
 
 let testEnv;
 
-function makeAuth(uid, role, gymId, memberId) {
-  return { uid, token: { role, gymId, ...(memberId ? { memberId } : {}) } };
+// Returns the custom-claim token options for authenticatedContext(userId, options).
+// The user id / `sub` claim comes from the first arg to authenticatedContext, so `uid`
+// must NOT appear here (newer @firebase/rules-unit-testing rejects a `uid` claim).
+function makeAuth(_uid, role, gymId, memberId) {
+  return { role, gymId, ...(memberId ? { memberId } : {}) };
 }
 
 async function setup() {
@@ -80,6 +84,12 @@ async function setup() {
 
     // PT session.
     await db.doc(`gyms/${GYM_A}/ptSessions/sess-01`).set({ gymId: GYM_A, memberId: MEMBER_A, trainerId: TRAINER_A, status: "scheduled" });
+
+    // Root mirrors (dual-write) used by the root-level rule tests below.
+    await db.doc(`exerciseRequests/exreq-01`).set({ gymId: GYM_A, requestedBy: MEMBER_A, name: "Hack Squat", status: "pending" });
+    await db.doc(`macroLogs/macro-01`).set({ gymId: GYM_A, memberId: MEMBER_A, date: "2026-06-05", calories: 2200 });
+    await db.doc(`activityLogs/act-01`).set({ gymId: GYM_A, memberId: MEMBER_A, type: "cardio", durationMin: 30 });
+    await db.doc(`memberships/mem-01`).set({ gymId: GYM_A, memberId: MEMBER_A, status: "active", endDate: "2026-12-31" });
 
     // authProfiles.
     await db.doc(`authProfiles/${OWNER_A}`).set({ role: "owner", defaultGymId: GYM_A, fullName: "Owner Alpha" });
@@ -254,6 +264,50 @@ async function runTests() {
   await it("Trainer can update PT session (cover trainer support)", async () => {
     const db = testEnv.authenticatedContext(TRAINER_A, makeAuth(TRAINER_A, "trainer", GYM_A)).firestore();
     await assertSucceeds(db.doc(`gyms/${GYM_A}/ptSessions/sess-01`).update({ status: "active" }));
+  });
+
+  console.log("\n── Root-level tenant isolation (RLS hardening) ───────────");
+
+  await it("Owner can read root exerciseRequest in own gym", async () => {
+    const db = testEnv.authenticatedContext(OWNER_A, makeAuth(OWNER_A, "owner", GYM_A)).firestore();
+    await assertSucceeds(db.doc(`exerciseRequests/exreq-01`).get());
+  });
+
+  await it("Owner from another gym CANNOT read root exerciseRequest (was a cross-tenant leak)", async () => {
+    const db = testEnv.authenticatedContext(OWNER_B, makeAuth(OWNER_B, "owner", GYM_B)).firestore();
+    await assertFails(db.doc(`exerciseRequests/exreq-01`).get());
+  });
+
+  await it("User from another gym CANNOT create a root exerciseRequest for someone else's gym", async () => {
+    const db = testEnv.authenticatedContext(OWNER_B, makeAuth(OWNER_B, "owner", GYM_B)).firestore();
+    await assertFails(db.doc(`exerciseRequests/exreq-spoof`).set({ gymId: GYM_A, name: "Spoofed", status: "pending" }));
+  });
+
+  await it("Member can read own root macroLog", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`macroLogs/macro-01`).get());
+  });
+
+  await it("Member CANNOT read another member's root macroLog", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_B, makeAuth(MEMBER_B, "member", GYM_A, MEMBER_B)).firestore();
+    await assertFails(db.doc(`macroLogs/macro-01`).get());
+  });
+
+  await it("Member can read own root activityLog", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`activityLogs/act-01`).get());
+  });
+
+  await it("Member can read own root membership; trainer cannot", async () => {
+    const memberDb = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(memberDb.doc(`memberships/mem-01`).get());
+    const trainerDb = testEnv.authenticatedContext(TRAINER_A, makeAuth(TRAINER_A, "trainer", GYM_A)).firestore();
+    await assertFails(trainerDb.doc(`memberships/mem-01`).get());
+  });
+
+  await it("Member CANNOT write root membership (privileged/Functions only)", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertFails(db.doc(`memberships/mem-01`).update({ status: "cancelled" }));
   });
 }
 

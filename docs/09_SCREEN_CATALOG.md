@@ -6,6 +6,70 @@
 > touched. Role gate = the `requireRole/requireAuth` call in the page (or middleware for routes
 > that delegate). `(pages)` is a route group (shared layout, no URL segment).
 
+## Route sitemap
+
+Routes grouped by the middleware gate that protects them (`middleware.ts:3-11`). Wrong-role
+or unauthenticated users are redirected to their `roleHome` or `/` (`middleware.ts:40-46`).
+
+```mermaid
+flowchart LR
+  ROOT([" / "]):::pub
+
+  subgraph PUB[Public / any authed]
+    direction TB
+    ABOUT["/about"]
+    ACT["/activity"]
+    PROF["/profile"]
+    SUSP["/suspended"]
+  end
+
+  subgraph ADMIN["/admin · requireRole[admin]"]
+    direction TB
+    A0["/admin"]
+    A1["/admin/gyms<br/>· [gymId] · [gymId]/edit"]
+    A2["/admin/exercises"]
+    A3["/admin/programs"]
+    A4["/admin/inbox"]
+    A5["/admin/billing (placeholder)"]
+  end
+
+  subgraph OWNER["/owner · requireRole[admin, owner]"]
+    direction TB
+    O0["/owner"]
+    O1["/owner/members<br/>· [memberId]"]
+    O2["/owner/training<br/>· session/[id] · trainer/[id]"]
+    O3["/owner/programs"]
+    O4["/owner/exercises"]
+    O5["/owner/trainers"]
+    O6["/owner/billing · /packages"]
+    O7["/owner/reports"]
+    O8["/owner/notifications"]
+    O9["/owner/settings"]
+  end
+
+  subgraph TRAINER["/trainer · requireRole[owner, trainer]"]
+    direction TB
+    T0["/trainer"]
+    T1["/trainer/members"]
+  end
+
+  subgraph MEMBER["/member · requireRole[member]"]
+    direction TB
+    M0["/member (dashboard)"]
+    M1["/member/programs/[id]/day/[dayId]"]
+    M2["(pages): coach · exercises · programs"]
+    M3["(pages): membership · pt-history · settings"]
+  end
+
+  ROOT -->|login → roleHome| ADMIN & OWNER & TRAINER & MEMBER
+  ROOT --> PUB
+
+  classDef pub fill:#128d65,stroke:#0c5f46,color:#fff;
+```
+
+> ⚠️ A true `role:"trainer"` account cannot establish a session today, so `/trainer` is reached
+> by demo `role:"owner"` + `staffType:"trainer"` staff. See [DISCREPANCIES](DISCREPANCIES.md).
+
 ## Public / shared
 
 | Route | File | Role | Purpose | Data |

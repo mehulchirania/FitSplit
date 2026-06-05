@@ -2,14 +2,45 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.role == 'admin';
+    }
+
+    // Members and staff carry a `gymId` custom claim on their Auth token.
+    function inGym(gymId) {
+      return isSignedIn() && request.auth.token.gymId == gymId;
+    }
+
+    // Only the gym owner (or a platform admin) may upload/replace catalog media.
+    // Server-side writes use the Admin SDK and bypass these rules entirely.
+    function canManageGymMedia(gymId) {
+      return isAdmin() || (inGym(gymId) && request.auth.token.role == 'owner');
+    }
+
     match /gyms/{gymId}/exercise-videos/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if isAdmin() || inGym(gymId);
+      allow write: if canManageGymMedia(gymId)
+        && request.resource.size < 200 * 1024 * 1024
+        && request.resource.contentType.matches('video/.*');
+      allow delete: if canManageGymMedia(gymId);
     }
 
     match /gyms/{gymId}/exercise-thumbnails/{allPaths=**} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if isAdmin() || inGym(gymId);
+      allow write: if canManageGymMedia(gymId)
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      allow delete: if canManageGymMedia(gymId);
+    }
+
+    // Default deny for every other path. Privileged server-side writes go
+    // through the Admin SDK, which is not subject to these rules.
+    match /{allPaths=**} {
+      allow read, write: if false;
     }
   }
 }

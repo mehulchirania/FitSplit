@@ -28,8 +28,13 @@ export default function AboutPage() {
           <p style={{ marginBottom: "20px" }}>
             Developed with ❤️ by <strong>Mehul</strong>.
           </p>
-          <p>
+          <p style={{ marginBottom: "20px" }}>
             For any enquiries, please write to us at <a href="mailto:fitsplit.in@gmail.com" style={{ color: "var(--accent)" }}>fitsplit.in@gmail.com</a>.
+          </p>
+          <p>
+            Read our <Link href="/privacy" style={{ color: "var(--accent)" }}>Privacy Policy</Link> and{" "}
+            <Link href="/terms" style={{ color: "var(--accent)" }}>Terms of Service</Link> to learn how
+            we handle your data and the rules for using FitSplit.
           </p>
         </div>
       </main>

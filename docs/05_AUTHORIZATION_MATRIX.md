@@ -9,6 +9,34 @@
 > 3. **Function guard** (`getCallableUser`/`assertCanManageGym`, `functions/src/index.ts:133,152`).
 > 4. **Firestore rules** (`firestore.rules`) — last line, for any direct client SDK write.
 
+## Enforcement layers (outermost → innermost)
+
+The nesting mirrors the order above: a request must clear each layer to reach the data.
+Note the **two write paths** — Server Actions (the app's real path) use the Admin SDK and
+**bypass Firestore rules**, so layers 1–3 are what protect them; rules (layer 4) only guard
+*direct* client-SDK writes.
+
+```mermaid
+flowchart TB
+  REQ([Request / write]) --> L1
+
+  subgraph L1[1 · middleware.ts — route redirect by fitsplit-role cookie]
+    direction TB
+    subgraph L2["2 · requireRole / requireOwner — server guard (auth.ts:962,988)"]
+      direction TB
+      subgraph L3["3 · Function guard — getCallableUser / assertCanManageGym (index.ts:133,152)"]
+        direction TB
+        subgraph L4["4 · firestore.rules — last line, direct client SDK only"]
+          DATA[("Firestore data")]
+        end
+      end
+    end
+  end
+
+  SA["Server Action (Admin SDK)"] -. bypasses rules, gated by 1–3 .-> L3
+  CSDK["Direct client SDK"] -. gated by rules .-> L4
+```
+
 ## Roles
 
 `admin | owner | trainer | member` (`src/types/domain.ts:3`). `owner` has a `staffType`
@@ -87,8 +115,15 @@
 - **Root PT collections**: Members are restricted to their own PT data at both the gym-scoped path (`firestore.rules:252`) and the root path (`firestore.rules:424,432`).
 - **Trainer write breadth**: any gym staff (incl. trainers) can read/write any member's PT data
   for "cover" (`firestore.rules:253`, `actions/shared.ts:564-569`). Intentional but broad.
-- **macroLogs / activityLogs** have no root-level rule block (`firestore.rules`) though a root
-  mirror is written by actions — those root writes rely on Admin SDK only.
+- ~~**macroLogs / activityLogs** have no root-level rule block~~ — **closed.** Explicit root
+  `match` blocks now exist for `macroLogs`, `activityLogs`, and `memberships`
+  (`firestore.rules`), scoped like root `liftLogs` (admin / owner-of-gym / member-self);
+  writes on root `memberships` are `allow:false` (privileged). Previously these relied on
+  implicit default-deny, inconsistent with their sibling root mirrors.
+- ~~**Root `exerciseRequests`** readable/creatable by any `signedIn()` user~~ — **closed.**
+  Root `/exerciseRequests` is now gym-scoped via `isGymUser(resource.data.gymId)` for read and
+  `isGymUser(request.resource.data.gymId)` for create, matching the gym-scoped block. This
+  removed a cross-tenant leak where a member of one gym could read/create another gym's requests.
 - **Server Actions bypass Firestore rules** entirely (Admin SDK). Authz for the app's real write
   path is therefore `requireRole`/`requireOwner` + `assertMemberBelongsToCallerGym`, not rules.
   Rules only protect against direct client SDK access.

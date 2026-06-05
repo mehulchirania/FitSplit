@@ -14,6 +14,73 @@
 
 ---
 
+## Documentation map
+
+How the docs relate, by tier and reading order. Nodes are clickable on GitHub.
+
+```mermaid
+flowchart TD
+  START([New session / new dev]):::entry --> AI
+
+  subgraph T0[Tier 0 · load every session]
+    AI[00 · AI_CONTEXT]
+  end
+
+  subgraph T1[Tier 1 · current-state facts · the SSoT]
+    ARCH[01 · ARCHITECTURE]
+    DATA[02 · DATA_DICTIONARY]
+    ERD[03 · FIRESTORE_ERD]
+    ACCESS[04 · DATA_ACCESS_CATALOG]
+    AUTHZ[05 · AUTHORIZATION_MATRIX]
+    JOURNEY[06 · USER_JOURNEYS]
+    MODULE[07 · MODULE_BREAKDOWN]
+    BRULES[08 · BUSINESS_RULES]
+    SCREENS[09 · SCREEN_CATALOG]
+  end
+
+  subgraph T2[Tier 2 · opinion / volatile / backlog]
+    ROADMAP[10 · REFACTORING_ROADMAP]
+    ISSUES[11 · KNOWN_ISSUES_AND_GAPS]
+    STYLE[12 · UI_STYLE_GUIDE]
+  end
+
+  subgraph META[Meta · drift control]
+    DISC[DISCREPANCIES]
+  end
+
+  AI ==> T1
+  T1 ==> T2
+  T1 -. conflicts logged in .-> DISC
+
+  %% find-by-question shortcuts
+  Q1{{"Data model?"}}:::q --> DATA & ERD
+  Q2{{"How is X read/written?"}}:::q --> ACCESS
+  Q3{{"Who can do X?"}}:::q --> AUTHZ
+  Q4{{"End-to-end flow?"}}:::q --> JOURNEY
+  Q5{{"Where do I change module Y?"}}:::q --> MODULE
+  Q6{{"Which screen / route?"}}:::q --> SCREENS
+
+  classDef entry fill:#128d65,stroke:#0c5f46,color:#fff;
+  classDef q fill:#fff3cd,stroke:#c8a93a,color:#5a4a00;
+
+  click AI "00_AI_CONTEXT.md" "Open 00 · AI_CONTEXT"
+  click ARCH "01_ARCHITECTURE.md" "Open 01 · ARCHITECTURE"
+  click DATA "02_DATA_DICTIONARY.md" "Open 02 · DATA_DICTIONARY"
+  click ERD "03_FIRESTORE_ERD.md" "Open 03 · FIRESTORE_ERD"
+  click ACCESS "04_DATA_ACCESS_CATALOG.md" "Open 04 · DATA_ACCESS_CATALOG"
+  click AUTHZ "05_AUTHORIZATION_MATRIX.md" "Open 05 · AUTHORIZATION_MATRIX"
+  click JOURNEY "06_USER_JOURNEYS.md" "Open 06 · USER_JOURNEYS"
+  click MODULE "07_MODULE_BREAKDOWN.md" "Open 07 · MODULE_BREAKDOWN"
+  click BRULES "08_BUSINESS_RULES.md" "Open 08 · BUSINESS_RULES"
+  click SCREENS "09_SCREEN_CATALOG.md" "Open 09 · SCREEN_CATALOG"
+  click ROADMAP "10_REFACTORING_ROADMAP.md" "Open 10 · REFACTORING_ROADMAP"
+  click ISSUES "11_KNOWN_ISSUES_AND_GAPS.md" "Open 11 · KNOWN_ISSUES_AND_GAPS"
+  click STYLE "12_UI_STYLE_GUIDE.md" "Open 12 · UI_STYLE_GUIDE"
+  click DISC "DISCREPANCIES.md" "Open DISCREPANCIES"
+```
+
+---
+
 ## Tier map
 
 | Tier | When loaded | Files |

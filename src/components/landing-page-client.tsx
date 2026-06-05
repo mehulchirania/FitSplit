@@ -39,6 +39,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [accepted, setAccepted] = useState(false);
   const [isPending, start] = useTransition();
   const formRef = useRef<HTMLFormElement>(null);
   const isMember = mode === "member";
@@ -69,6 +70,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
     if (!u) { setError(isMember ? "Enter your mobile number or username." : "Enter your username."); return; }
     if (isMember && !/^\d{4}$/.test(p)) { setError("PIN must be exactly 4 numeric digits."); return; }
     if (!isMember && !p) { setError("Enter your password."); return; }
+    if (!accepted) { setError("Please accept the Terms of Service and Privacy Policy to continue."); return; }
 
     start(async () => {
       try {
@@ -198,6 +200,34 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
               {error && <p className="lp-form-error" role="alert">{error}</p>}
               {message && <p className="lp-form-success" role="status">{message}</p>}
 
+              <label
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  alignItems: "flex-start",
+                  fontSize: "0.85rem",
+                  color: "var(--fg-dim)",
+                  lineHeight: 1.45,
+                  margin: "4px 0 2px",
+                  cursor: "pointer",
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={accepted}
+                  onChange={(e) => setAccepted(e.target.checked)}
+                  style={{ marginTop: "3px", flexShrink: 0, accentColor: "var(--accent)" }}
+                  aria-label="Accept Terms of Service and Privacy Policy"
+                />
+                <span>
+                  I agree to the{" "}
+                  <Link href="/terms" target="_blank" style={{ color: "var(--accent)" }}>Terms of Service</Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" target="_blank" style={{ color: "var(--accent)" }}>Privacy Policy</Link>,
+                  including the processing of my fitness data.
+                </span>
+              </label>
+
               <button className="lp-btn-primary lp-w-full" disabled={isPending} type="submit">
                 {isPending ? "Logging in..." : "Log in"}
               </button>
@@ -319,6 +349,10 @@ function EnquiryModal({ open, onClose }: { open: boolean; onClose: () => void })
                 />
               </label>
               <button type="submit" className="lpd-btn lpd-btn--brand lpd-btn--lg" style={{ marginTop: "16px", width: "100%" }}>Send Enquiry</button>
+              <p className="lp-modal-note" style={{ marginTop: "12px" }}>
+                We use your details only to respond to your enquiry. See our{" "}
+                <Link href="/privacy" style={{ color: "var(--accent)" }}>Privacy Policy</Link>.
+              </p>
             </form>
           </motion.section>
         </motion.div>
@@ -343,7 +377,7 @@ function featIcon(icon: string) {
 }
 
 // ─── Nav ─────────────────────────────────────────────────────────────────────
-function L1_Nav({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => void }) {
+function L1_Nav({ onLogin }: { onLogin: () => void }) {
   return (
     <header className="lpd-nav">
       <div className="lpd-container lpd-nav__inner">
@@ -362,7 +396,6 @@ function L1_Nav({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => 
         </nav>
         <div className="lpd-nav__cta">
           <button className="lpd-btn lpd-btn--ghost" onClick={onLogin}>Log in</button>
-          <button className="lpd-btn lpd-btn--brand" onClick={onEnquiry}>Start free trial</button>
         </div>
       </div>
     </header>
@@ -446,7 +479,7 @@ function L1_MockPhone() {
 }
 
 // ─── Hero ─────────────────────────────────────────────────────────────────────
-function L1_Hero({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => void }) {
+function L1_Hero({ onLogin }: { onLogin: () => void }) {
   const { hero } = LANDING_MOCK;
   return (
     <section className="l1-hero" id="top">
@@ -464,11 +497,8 @@ function L1_Hero({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () =>
           </h1>
           <p className="l1-hero__sub">{hero.sub}</p>
           <div className="l1-hero__cta">
-            <button className="lpd-btn lpd-btn--primary lpd-btn--lg" onClick={onEnquiry}>
-              {hero.ctaPrimary} <IcArrow />
-            </button>
-            <button className="lpd-btn lpd-btn--ghost lpd-btn--lg" onClick={onLogin}>
-              Log in
+            <button className="lpd-btn lpd-btn--primary lpd-btn--lg" onClick={onLogin}>
+              Log in <IcArrow />
             </button>
           </div>
         </div>
@@ -631,7 +661,7 @@ function L1_FAQ() {
 }
 
 // ─── CTA banner ───────────────────────────────────────────────────────────────
-function L1_CTA({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => void }) {
+function L1_CTA({ onLogin }: { onLogin: () => void }) {
   return (
     <section className="l1-cta">
       <div className="lpd-container">
@@ -641,11 +671,8 @@ function L1_CTA({ onLogin, onEnquiry }: { onLogin: () => void; onEnquiry: () => 
             <p className="lpd-sub">14 days free. No card required. Live in under a week.</p>
           </div>
           <div className="l1-cta__btns">
-            <button className="lpd-btn lpd-btn--brand lpd-btn--lg" onClick={onEnquiry}>
-              Start free trial <IcArrow />
-            </button>
-            <button className="lpd-btn lpd-btn--ghost lpd-btn--lg" onClick={onLogin}>
-              Log in
+            <button className="lpd-btn lpd-btn--brand lpd-btn--lg" onClick={onLogin}>
+              Log in <IcArrow />
             </button>
           </div>
         </div>
@@ -672,7 +699,7 @@ function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
           {[
             { h: "Product", items: ["Owner dashboard", "Trainer console", "Member app"] },
             { h: "Company", items: ["About"] },
-            { h: "Support", items: ["Help center", "Contact", "Status", "Privacy"] }
+            { h: "Support", items: ["Help center", "Contact", "Status", "Privacy", "Terms"] }
           ].map((col) => (
             <div key={col.h} className="lpd-foot__col">
               <h4>{col.h}</h4>
@@ -681,7 +708,8 @@ function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
                   if (item === "Help center") return <li key={item}><button className="lp-foot-btn" onClick={onEnquiry}>{item}</button></li>;
                   if (item === "Contact") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("Write to: fitsplit.in@gmail.com")}>{item}</button></li>;
                   if (item === "Status") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("All systems operational.")}>{item}</button></li>;
-                  if (item === "Privacy") return <li key={item}><button className="lp-foot-btn" onClick={() => window.alert("Mock Privacy Policy:\n\nWe do not sell your data. We secure it with industry standard practices.")}>{item}</button></li>;
+                  if (item === "Privacy") return <li key={item}><Link href="/privacy">{item}</Link></li>;
+                  if (item === "Terms") return <li key={item}><Link href="/terms">{item}</Link></li>;
                   if (item === "About") return <li key={item}><Link href="/about">{item}</Link></li>;
                   return <li key={item}><a href="#">{item}</a></li>;
                 })}
@@ -731,10 +759,10 @@ export function LandingPageClient() {
   return (
     <>
       <div className="lpd l1">
-        <L1_Nav onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
+        <L1_Nav onLogin={() => setLoginOpen(true)} />
 
         {/* Hero is immediately visible — no scroll-reveal wrapper */}
-        <L1_Hero onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
+        <L1_Hero onLogin={() => setLoginOpen(true)} />
 
 
 
@@ -755,7 +783,7 @@ export function LandingPageClient() {
         </div>
 
         <div data-reveal>
-          <L1_CTA onLogin={() => setLoginOpen(true)} onEnquiry={() => setEnquiryOpen(true)} />
+          <L1_CTA onLogin={() => setLoginOpen(true)} />
         </div>
 
         <L1_Footer onEnquiry={() => setEnquiryOpen(true)} />

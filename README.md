@@ -319,11 +319,13 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 
 ## 🔒 Security
 
-- **CSP headers**: Strict Content-Security-Policy covering Firebase, YouTube, and Google Fonts. `unsafe-eval` only in development.
-- **Security headers**: HSTS (2 years), `X-Frame-Options: DENY`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`.
-- **Firestore rules**: Role-based rules (`isAdmin()`, `isOwnerForGym()`, `isStaffForGym()`, `isGymMember()`). Privileged writes are `allow: false` — must go through Cloud Functions.
+- **CSP headers**: Strict Content-Security-Policy covering Firebase, YouTube, and Google Fonts. `img-src` is `https:` only (no mixed content) and `upgrade-insecure-requests` is set; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. `unsafe-eval` only in development. _Known weakness:_ `script-src` still allows `'unsafe-inline'` in production — see the nonce-migration TODO in `next.config.mjs`.
+- **Security headers**: HSTS (2 years, `preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, a locked-down `Permissions-Policy` (camera/mic/payment/usb off, geolocation self), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`, `X-DNS-Prefetch-Control: off`, `X-Permitted-Cross-Domain-Policies: none`.
+- **Firestore rules**: Role-based rules (`isAdmin()`, `isOwnerForGym()`, `isStaffForGym()`, `isGymMember()`), gym-scoped at root and per-gym. Privileged writes are `allow: false` — must go through Cloud Functions. Tested via `npm run test:rules` (Firestore emulator).
+- **Storage rules**: Catalog media is gym-scoped — reads limited to users of the owning gym, writes to that gym's owner/admin only, with content-type and size caps. Default-deny for all other paths.
 - **Login lockout**: 5 failed attempts triggers a 15-minute lockout, enforced via a Firebase Auth blocking trigger.
-- **Session cookies**: 2-hour secure HttpOnly cookies. Role and gymId stored separately for middleware routing.
+- **Session cookies**: 2-hour secure HttpOnly cookies (`SameSite=Lax`, `Secure` in production). Role and gymId stored separately for middleware routing.
+- **Secrets**: only public `NEXT_PUBLIC_FIREBASE_*` values are committed (`apphosting.yaml`); the Firebase Admin private key is supplied via Secret Manager, never committed.
 
 ---
 

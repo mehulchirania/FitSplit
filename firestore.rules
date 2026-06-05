@@ -361,6 +361,29 @@ service cloud.firestore {
       allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
     }
 
+    // Root mirror of macroLogs (dual-write). Scoped like liftLogs; written via Admin SDK.
+    match /macroLogs/{macroLogId} {
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+    }
+
+    // Root mirror of activityLogs (dual-write). Scoped like liftLogs; written via Admin SDK.
+    match /activityLogs/{activityLogId} {
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+    }
+
+    // Root mirror of per-member membership records. Owner and member-self read;
+    // writes are privileged (Functions/Admin SDK) — mirrors the gym-scoped rule.
+    match /memberships/{membershipId} {
+      allow read: if isAdmin()
+        || ownerScoped(resource.data)
+        || (isGymMember(resource.data.gymId) && resource.data.memberId == memberId());
+      allow create, update, delete: if false;
+    }
+
     match /programAssignments/{assignmentId} {
       allow read: if adminOrOwnerOrMemberScoped(resource.data);
       allow create, update, delete: if false;
@@ -412,8 +435,10 @@ service cloud.firestore {
     }
 
     match /exerciseRequests/{requestId} {
-      allow read: if signedIn();
-      allow create: if signedIn();
+      // Gym-scoped: only users of the request's own gym may read/create it.
+      // (Previously `signedIn()`, which leaked requests across tenants.)
+      allow read: if isGymUser(resource.data.gymId);
+      allow create: if isGymUser(request.resource.data.gymId);
       allow update, delete: if isAdmin() || ownerScoped(resource.data);
     }
 
