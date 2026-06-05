@@ -8,6 +8,7 @@ const muscleFallbacks: Record<MuscleGroup, string> = {
   Shoulders: `${WGER}/123/dumbbell-shoulder-press-large-1.png`,
   Biceps: `${WGER}/81/Biceps-curl-1.png`,
   Triceps: `${WGER}/805/7a437824-e2cc-46e1-804a-674f0ea31d25.png`,
+  Forearms: `${WGER}/51/f1730f56-7aca-4566-8338-3e42b1bee6e1.webp`,
   Legs: `${WGER}/371/d2136f96-3a43-4d4c-9944-1919c4ca1ce1.webp`,
   Core: `${WGER}/91/Crunches-1.png`,
   Cardio: `${WGER}/1903/6ec66efd-e74f-4142-bed1-0a0ac74e3294.png`

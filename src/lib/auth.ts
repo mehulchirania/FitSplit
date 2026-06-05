@@ -496,21 +496,6 @@ function validateExpectedRole(role: Role, expectedRole?: "member" | "staff") {
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
-async function findProfileRefAndDataByEmail(email: string) {
-  if (!hasFirebaseAdminConfig()) return null;
-  const { db } = getFirebaseAdminServices();
-  const normalized = email.trim().toLowerCase();
-  
-  const [authSnap, emailSnap] = await Promise.all([
-    db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalized).limit(1).get(),
-    db.collection(collectionPaths.authProfiles).where("email", "==", normalized).limit(1).get()
-  ]);
-
-  if (!authSnap.empty) return { ref: authSnap.docs[0].ref, data: authSnap.docs[0].data() };
-  if (!emailSnap.empty) return { ref: emailSnap.docs[0].ref, data: emailSnap.docs[0].data() };
-  
-  return null;
-}
 
 async function checkLoginLockout(email: string): Promise<{ locked: boolean; minutesRemaining?: number }> {
   if (!hasFirebaseAdminConfig()) return { locked: false };
