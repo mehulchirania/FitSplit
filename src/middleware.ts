@@ -6,8 +6,8 @@ const protectedRoutes = [
   { prefix: "/trainer", roles: ["trainer", "owner"] },
   { prefix: "/member", roles: ["member"] },
   { prefix: "/profile", roles: ["admin", "owner", "trainer", "member"] },
-  { prefix: "/activity", roles: ["admin", "owner", "trainer", "member"] },
-  { prefix: "/about", roles: ["admin", "owner", "trainer", "member"] }
+  { prefix: "/activity", roles: ["admin", "owner", "trainer", "member"] }
+  // Note: /about, /privacy, /terms are public (no auth) and intentionally omitted.
 ] as const;
 
 const roleHome: Record<string, string> = {
@@ -56,7 +56,6 @@ export const config = {
     "/trainer/:path*",
     "/member/:path*",
     "/profile",
-    "/activity",
-    "/about"
+    "/activity"
   ]
 };

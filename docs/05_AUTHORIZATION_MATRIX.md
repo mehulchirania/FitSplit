@@ -52,7 +52,8 @@ flowchart TB
 | `/owner` | ✅ | ✅ | ❌* | ❌ | `middleware.ts:5` |
 | `/trainer` | ❌ | ✅ | ✅ | ❌ | `middleware.ts:6` |
 | `/member` | ❌ | ❌ | ❌ | ✅ | `middleware.ts:7` |
-| `/profile`,`/activity`,`/about` | ✅ | ✅ | ✅ | ✅ | `middleware.ts:8-10` |
+| `/profile`,`/activity` | ✅ | ✅ | ✅ | ✅ | `middleware.ts:8-9` |
+| `/about`,`/privacy`,`/terms` | public | public | public | public | not in `middleware.ts` protectedRoutes (public) |
 
 \* trainers (demo) are `role:"owner"`, so they pass `/owner` middleware; pages themselves call
 `requireRole(["admin","owner"])`. A true `role:"trainer"` would be redirected from `/owner`.
@@ -92,6 +93,8 @@ flowchart TB
 | Gym dashboard stats | ✅ | ✅ | ❌ | ❌ | CF manage-gym `index.ts:1601` |
 | Mark own notifications read | ✅ | ✅ | (owner-role) | ✅ | `clearUserNotifications` `actions/notifications.ts:38-46`; rules `:152` |
 | Submit contact message | public | public | public | public | rules create `true` `:232` |
+| Export own data (DSAR) | ❌ | ❌ | ❌ | ✅ self | `requireRole[member]` `actions/privacy.ts` `exportMyData`; reads scoped to session `memberId` |
+| Request account deletion (DSAR) | ❌ | ❌ | ❌ | ✅ self | `requireRole[member]` `actions/privacy.ts` `requestAccountDeletion`; notifies gym owner, who actions erasure |
 
 ## Firestore rule helper functions (firestore.rules:5-97)
 

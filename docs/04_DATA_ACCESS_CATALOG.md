@@ -147,6 +147,12 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | `updateTrainerVisibilityAction` | `billing.ts:186` | `requireOwner` | gyms (W) | |
 | `submitPaymentRequestAction` | `member-billing.ts:12` | `requireRole[member]` | paymentRequests, notifications (W) | guards duplicate pending |
 
+### privacy / DSAR (actions/privacy.ts — member self-service, GDPR/CCPA)
+| Name | Source | Role gate | Collections | Side effects |
+|---|---|---|---|---|
+| `exportMyData` | `privacy.ts` | `requireRole[member]` (self) | reads member-owned data across liftLogs, bodyMetricLogs, dayLogs, macroLogs, activityLogs, attendanceRecords, ptSessions, memberships, paymentRequests, notifications, activityEvents (R) | returns serializable JSON; memberId from session |
+| `requestAccountDeletion` | `privacy.ts` | `requireRole[member]` (self) | notifications (W) | notifies gym owner; guards duplicate open request; erasure actioned by owner/admin |
+
 ### contact / notifications
 | Name | Source | Role gate | Collections | Side effects |
 |---|---|---|---|---|

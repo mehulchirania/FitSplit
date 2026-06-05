@@ -26,7 +26,16 @@ export default function AboutPage() {
             to assign plans, guide sessions, and track progress without stitching together spreadsheets and messaging apps.
           </p>
           <p style={{ marginBottom: "20px" }}>
-            Developed with ❤️ by <strong>Mehul</strong>.
+            Developed with ❤️ by <strong>Mehul</strong>, in collaboration with{" "}
+            <a
+              href="https://blumelabs.in"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "var(--accent)" }}
+            >
+              Blume Labs
+            </a>
+            .
           </p>
           <p style={{ marginBottom: "20px" }}>
             For any enquiries, please write to us at <a href="mailto:fitsplit.in@gmail.com" style={{ color: "var(--accent)" }}>fitsplit.in@gmail.com</a>.

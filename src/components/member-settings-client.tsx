@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition, useActionState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
-import { updateProfileMetrics, changeMemberPin } from "@/lib/firebase/actions";
+import { updateProfileMetrics, changeMemberPin, exportMyData, requestAccountDeletion } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member, ProfileMetrics } from "@/types/domain";
 
@@ -263,7 +263,7 @@ function ProfileTab({ member, profile, memberId }: {
 
 /* ── Settings tab ────────────────────────────────────────────────────────── */
 
-function SettingsTab({ member }: { member: Member }) {
+function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg");
   const [heightUnit, setHeightUnit] = useState<"cm" | "ft">("cm");
   const [workoutReminders, setWorkoutReminders] = useState(true);
@@ -272,6 +272,41 @@ function SettingsTab({ member }: { member: Member }) {
   // PIN change
   const [showPin, setShowPin] = useState(false);
   const [pinState, pinAction] = useActionState(changeMemberPin, initialFormActionState);
+
+  // Privacy / DSAR
+  const [exporting, setExporting] = useState(false);
+  const [exportMsg, setExportMsg] = useState("");
+  const [showDelete, setShowDelete] = useState(false);
+  const [delState, delAction] = useActionState(
+    requestAccountDeletion.bind(null, gymId),
+    initialFormActionState
+  );
+
+  async function handleExport() {
+    setExportMsg("");
+    setExporting(true);
+    try {
+      const res = await exportMyData(gymId);
+      if (res.status === "success") {
+        const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = res.filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        setExportMsg("Your data download has started.");
+      } else {
+        setExportMsg(res.message);
+      }
+    } catch {
+      setExportMsg("Couldn't export right now. Please try again.");
+    } finally {
+      setExporting(false);
+    }
+  }
 
   const [isPending, startTransition] = useTransition();
 
@@ -381,6 +416,55 @@ function SettingsTab({ member }: { member: Member }) {
         )}
       </Section>
 
+      {/* Privacy & your data (GDPR/CCPA) */}
+      <Section title="PRIVACY &amp; YOUR DATA">
+        <Link href="/privacy" className="mset-row mset-row--link">
+          <div className="mset-row__text">
+            <span className="mset-row__label">Privacy Policy</span>
+            <span className="mset-row__sub">How we use and protect your data</span>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </Link>
+        <Link href="/terms" className="mset-row mset-row--link">
+          <div className="mset-row__text">
+            <span className="mset-row__label">Terms of Service</span>
+            <span className="mset-row__sub">The rules for using FitSplit</span>
+          </div>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </Link>
+        <div className="mset-row">
+          <div className="mset-row__text">
+            <span className="mset-row__label">Download my data</span>
+            <span className="mset-row__sub">{exportMsg || "Export a copy of your FitSplit data (JSON)"}</span>
+          </div>
+          <button type="button" className="mset-action-btn" onClick={handleExport} disabled={exporting}>
+            {exporting ? "Preparing…" : "Download"}
+          </button>
+        </div>
+        {!showDelete ? (
+          <div className="mset-row mset-row--last">
+            <div className="mset-row__text">
+              <span className="mset-row__label">Request account deletion</span>
+              <span className="mset-row__sub">Ask your gym to erase your account and data</span>
+            </div>
+            <button type="button" className="mset-action-btn" onClick={() => setShowDelete(true)}>Request</button>
+          </div>
+        ) : (
+          <form action={delAction} className="mset-pin-form">
+            <label className="mset-field">
+              <span>Reason (optional)</span>
+              <input type="text" name="reason" maxLength={500} placeholder="Tell your gym why (optional)" />
+            </label>
+            {delState.status === "error" && <p className="mset-save-err">{delState.message}</p>}
+            {delState.status === "success" && <p className="mset-save-ok">{delState.message}</p>}
+            <div className="mset-edit-actions">
+              <button type="submit" className="mset-save-btn">Submit request</button>
+              <button type="button" className="mset-cancel-btn" onClick={() => setShowDelete(false)}>Cancel</button>
+            </div>
+          </form>
+        )}
+      </Section>
+
       {/* Logout */}
       <button
         type="button"
@@ -429,7 +513,7 @@ export function MemberSettingsClient({ member, profile, gymId, memberId }: Membe
       {tab === "profile" ? (
         <ProfileTab member={member} profile={profile} memberId={memberId} />
       ) : (
-        <SettingsTab member={member} />
+        <SettingsTab member={member} gymId={gymId} />
       )}
     </div>
   );

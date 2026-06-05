@@ -64,7 +64,7 @@ cookie fallback (`src/lib/auth.ts:909`) only accept `admin|owner|member` — so 
 ## Routing (`middleware.ts`)
 
 `/admin`→admin · `/owner`→owner+admin · `/trainer`→trainer+owner · `/member`→member ·
-`/profile`,`/activity`,`/about`→any authed (`middleware.ts:3-11`). Role home redirects
+`/profile`,`/activity`→any authed; `/about`,`/privacy`,`/terms`→public (`middleware.ts:3-11`). Role home redirects
 `middleware.ts:13-18`. Owner topbar is suppressed for `/owner/*` (component-level).
 
 ## Collections (names only — detail in [02_DATA_DICTIONARY](02_DATA_DICTIONARY.md))

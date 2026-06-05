@@ -329,6 +329,15 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 
 ---
 
+## ⚖️ Legal & Compliance
+
+- **Public legal pages**: `/privacy` (GDPR + CCPA/CPRA) and `/terms` (incl. a health/fitness "not medical advice" disclaimer). `/about` is public too. All three are linked from the landing footer, login modal, and member settings.
+- **Consent**: the login modal requires a checkbox accepting the Terms and Privacy Policy (including processing of fitness data) before sign-in.
+- **Data subject rights (DSAR)**: members can **export all their data as JSON** and **request account deletion** from Settings → *Privacy & your data* (`src/lib/firebase/actions/privacy.ts`). Deletion requests notify the gym owner, who performs the erasure.
+- **Still required before production**: fill the legal-entity name/address placeholder in the policies, and sign a DPA with gyms (FitSplit acts as their processor). See `PROJECT_HANDOFF.md`.
+
+---
+
 ## 🎨 Design System & UI Patterns
 
 FitSplit uses a custom design system with comprehensive design tokens (dark mode by default), CSS architecture, and reusable layouts (like the owner workspace `.odp2-workspace` and member hybrid view). 
@@ -341,4 +350,4 @@ For the complete UI style guide, including color palettes, critical button rules
 
 For architectural logs, dated updates, and next milestones, see **`PROJECT_HANDOFF.md`**.
 
-This project is jointly developed by **Claude** and **Codex**. Update the handoff log after implementing significant changes.
+This project is jointly developed by **Claude** and **Codex**, in collaboration with **[Blume Labs](https://blumelabs.in)**. Update the handoff log after implementing significant changes.

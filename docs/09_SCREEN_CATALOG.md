@@ -74,8 +74,10 @@ flowchart LR
 
 | Route | File | Role | Purpose | Data |
 |---|---|---|---|---|
-| `/` | `src/app/page.tsx` | public | Landing page + login/contact modals | `loginWithCredentials`, `submitContactMessage` |
-| `/about` | `src/app/about/page.tsx` | any authed (middleware) | Static about | — |
+| `/` | `src/app/page.tsx` | public | Landing page + login/contact modals (login modal has a required Terms+Privacy consent checkbox) | `loginWithCredentials`, `submitContactMessage` |
+| `/about` | `src/app/about/page.tsx` | **public** | Static about (credits collaboration with Blume Labs) | — |
+| `/privacy` | `src/app/privacy/page.tsx` | public | Privacy Policy (GDPR + CCPA/CPRA) | — |
+| `/terms` | `src/app/terms/page.tsx` | public | Terms of Service (incl. health/fitness disclaimer) | — |
 | `/activity` | `src/app/activity/page.tsx` | `requireAuth` | Activity feed | `getActivityEvents` |
 | `/profile` | `src/app/profile/page.tsx` | `requireAuth` | Account settings; staff password / PIN / admin email | `changeMemberPin`, `changeStaffPassword`, `changeAdminEmail`, `updateAdminDisplayName` |
 | `/suspended` | `src/app/suspended/page.tsx` | (any) | Shown when profile inactive | — |
@@ -134,7 +136,7 @@ loads `getGymDetail`, `getMemberWithProfile`, `MemberSubSidebar`).
 | `/member/programs` | `src/app/member/(pages)/programs/page.tsx` | Read-only program library | `getWorkoutPrograms` | workoutPrograms |
 | `/member/membership` | `src/app/member/(pages)/membership/page.tsx` | Membership status, request package, payment history | `getPackages`, `getMembershipsForMember`, `getPaymentRequestsForMember`, `submitPaymentRequestAction` | packages, memberships, paymentRequests |
 | `/member/pt-history` | `src/app/member/(pages)/pt-history/page.tsx` | PT session history + logged sets | `getPTSessionsForMember`, `getPTLiftLogsForSession` | ptSessions, ptLiftLogs |
-| `/member/settings` | `src/app/member/(pages)/settings/page.tsx` | Units, PIN change, notifications | `getMemberWithProfile`, `changeMemberPin`, `saveFcmToken` | members, authProfiles |
+| `/member/settings` | `src/app/member/(pages)/settings/page.tsx` | Units, PIN change, notifications, **Privacy & your data** (DSAR: export JSON + request deletion) | `getMemberWithProfile`, `changeMemberPin`, `saveFcmToken`, `exportMyData`, `requestAccountDeletion` | members, authProfiles, notifications |
 
 ## Trainer
 

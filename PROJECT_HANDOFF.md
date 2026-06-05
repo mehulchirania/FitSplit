@@ -4,6 +4,28 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## 🔒 Latest Milestone — Security Hardening, Legal/Compliance & DSAR (2026-06-05)
+
+### Security posture
+- **Firestore RLS hardening** (`firestore.rules`): fixed a cross-tenant leak where root `/exerciseRequests` was readable/creatable by any `signedIn()` user (now `isGymUser(resource.data.gymId)`-scoped); added explicit root `match` blocks for `macroLogs`, `activityLogs`, `memberships` (previously relied on implicit default-deny). Closed `DISCREPANCIES` B3 + B4.
+- **Storage rules** (`storage.rules`): were `allow read,write: if request.auth != null` — any authed user could read/write any gym's files with no limits. Now gym-scoped via `request.auth.token.gymId`/`role` custom claims: reads = gym users, writes = owner/admin of that gym + content-type + size caps, plus a default-deny catch-all.
+- **Security headers** (`next.config.mjs`): dropped `http:` from `img-src` (+`upgrade-insecure-requests`), removed stale Gemini origin, added `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, `X-DNS-Prefetch-Control: off`, `X-Permitted-Cross-Domain-Policies: none`, expanded `Permissions-Policy`. **Open item:** `script-src` still has `'unsafe-inline'` in prod — nonce migration is TODO (marked in `next.config.mjs`).
+- **Rules tests** (`scripts/test-firestore-rules.mjs`): fixed two latent harness bugs (type-only `RulesTestEnvironment` import; `makeAuth` `uid` claim) and added 8 root-isolation tests. All 34 pass against the Firestore emulator (needs Java).
+
+### Legal & compliance
+- **New public pages**: `/privacy` (GDPR + CCPA/CPRA) and `/terms` (`src/app/privacy|terms/page.tsx`), linked from the landing footer, login modal, enquiry form, About page, and member settings.
+- **Consent**: login modal now has a **required checkbox** (Terms + Privacy, incl. fitness-data processing) gating submit.
+- **DSAR** (`src/lib/firebase/actions/privacy.ts`): members can **export all their data as JSON** (`exportMyData`) and **request account deletion** (`requestAccountDeletion`, which notifies the gym owner) from the member Settings → "Privacy & your data" section.
+- **`/about` is now public** (removed from `middleware.ts` `protectedRoutes` + matcher) — it was auth-gated and unreachable to visitors. Content now credits collaboration with [Blume Labs](https://blumelabs.in); landing footer carries the same credit.
+
+### Still open (needs input / larger effort)
+- Fill the **legal-entity name + address** placeholder in `/privacy` and `/terms` before production.
+- Sign a **DPA** with gyms (FitSplit is their processor) + rely on Google's DPA.
+- Consider storing **consent once per user** rather than gating every login.
+- The **`script-src` nonce CSP** migration.
+
+---
+
 ## 🚀 Latest Milestone — Full Workflow Audit, Bug Fixes & UI Revamp (2026-05-30)
 
 ### Summary

@@ -719,7 +719,10 @@ function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
         </div>
         <div className="lpd-foot__bar">
           <span>© 2026 FitSplit · fitsplit.in</span>
-          <span>Built in India · for everyone serious about strength</span>
+          <span>
+            Built in India · in collaboration with{" "}
+            <a href="https://blumelabs.in" target="_blank" rel="noopener noreferrer" style={{ color: "var(--accent)", textDecoration: "none" }}>Blume Labs</a>
+          </span>
         </div>
       </div>
     </footer>
