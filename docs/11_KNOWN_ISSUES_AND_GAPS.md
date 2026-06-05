@@ -6,7 +6,7 @@
 
 ## High Priority Bugs
 
-*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) were resolved on 2026-06-05.*
+*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) and all High/Moderate dependency vulnerabilities (Next.js, UUID, PostCSS, etc.) were resolved on 2026-06-05.*
 
 ## Incomplete Functionalities
 
