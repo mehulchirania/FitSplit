@@ -2,9 +2,9 @@
 
 `Generated: 2026-06-05 · Commit: c0e1f4b`
 
-> Replaces a REST "API catalog". Three surfaces: **Server Actions** (`lib/firebase/actions/*`,
+> Replaces a REST "API catalog". Three surfaces: **Server Actions** (`src/lib/firebase/actions/*`,
 > `"use server"`), **Cloud Functions** (`functions/src/index.ts`, callable via
-> `lib/firebase/functions.ts`), and **Read-Models** (`lib/firebase/read-models/*`).
+> `src/lib/firebase/functions.ts`), and **Read-Models** (`src/lib/firebase/read-models/*`).
 > R = reads, W = writes. "scoped+root" = dual-write to gym-scoped path and root mirror.
 
 ## Action vs Function overlap (read this first)
@@ -39,7 +39,7 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 
 # A. Server Actions
 
-### auth (lib/auth.ts — `"use server"`)
+### auth (src/lib/auth.ts — `"use server"`)
 | Name | Source | Role gate | Collections | Notes |
 |---|---|---|---|---|
 | `resolveLoginIdentifier` | `:612` | public | authProfiles/profiles (R) | resolve identifier→email/role |
@@ -216,7 +216,7 @@ All callables resolve the caller via `getCallableUser` (requires auth + valid ro
 
 ---
 
-# C. Read-Models (lib/firebase/read-models/*)
+# C. Read-Models (src/lib/firebase/read-models/*)
 
 All fall back to mock data / empty when `hasFirebaseAdminConfig()` is false. Cached via
 `unstable_cache` (tag `gym:{gymId}:{collection}`) and/or `react.cache`.

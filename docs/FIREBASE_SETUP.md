@@ -101,7 +101,7 @@ After `.env.local` is configured:
 npm.cmd run seed:firebase
 ```
 
-This imports `lib/workouts.json` into Firestore.
+This imports `src/lib/workouts.json` into Firestore.
 
 ## Blaze Upgrade
 

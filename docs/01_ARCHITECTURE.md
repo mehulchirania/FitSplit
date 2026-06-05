@@ -7,7 +7,7 @@
 FitSplit is a multi-tenant gym-operations + personal-training platform. A single
 deployment hosts many gyms; each gym is an isolated tenant under `gyms/{gymId}`. The pilot
 tenant is **Sri Shakthi Hanuman Gym** (`shg`, `collections.ts:68`). Four roles —
-`admin`, `owner`, `trainer`, `member` (`types/domain.ts:3`) — see different surfaces.
+`admin`, `owner`, `trainer`, `member` (`src/types/domain.ts:3`) — see different surfaces.
 
 ## 2. Tech stack (verified)
 
@@ -15,37 +15,37 @@ tenant is **Sri Shakthi Hanuman Gym** (`shg`, `collections.ts:68`). Four roles �
 |---|---|---|
 | Framework | Next.js 15 App Router, React 19 | `package.json` deps `next ^15.3.1`, `react ^19.0.0` |
 | Language | TypeScript | repo-wide `.ts/.tsx` |
-| DB | Cloud Firestore (gym-scoped) | `lib/firebase/admin.ts`, `collections.ts` |
-| Auth | Firebase Auth (email/password + session cookies) | `lib/auth.ts` |
+| DB | Cloud Firestore (gym-scoped) | `src/lib/firebase/admin.ts`, `collections.ts` |
+| Auth | Firebase Auth (email/password + session cookies) | `src/lib/auth.ts` |
 | Privileged backend | Cloud Functions v2, region `asia-south1` | `functions/src/index.ts:20` |
 | Storage | Firebase Storage (gym logos) | `actions/gyms.ts:514-527`, `functions/src/index.ts:591-604` |
 | Push | Firebase Cloud Messaging | `actions/shared.ts:616-663`, `functions/src/index.ts:263-279` |
-| Client state | Zustand | `package.json` `zustand ^5` (`lib/stores/workout-store.ts`) |
-| Offline | Dexie.js (IndexedDB) | `package.json` `dexie ^4` (`lib/offline-db.ts`) |
+| Client state | Zustand | `package.json` `zustand ^5` (`src/lib/stores/workout-store.ts`) |
+| Offline | Dexie.js (IndexedDB) | `package.json` `dexie ^4` (`src/lib/offline-db.ts`) |
 | Charts | Recharts | `package.json` `recharts ^3` |
 | Calendar | FullCalendar | `package.json` `@fullcalendar/*` |
 | UI primitives | Radix UI | `package.json` `@radix-ui/*` |
 | Animation | Framer Motion | `package.json` `framer-motion ^12` |
 | Toasts | Sonner | `package.json` `sonner ^2` |
 | Validation | Zod | `actions/validation.ts:1`, `package.json` `zod ^4` |
-| Testing | Vitest | `vitest.config.ts` (include `lib/**/*.test.ts`); only 2 test files exist |
+| Testing | Vitest | `vitest.config.ts` (include `src/lib/**/*.test.ts`); only 2 test files exist |
 
 > Testing note: Vitest is configured but coverage is minimal — only
-> `lib/__tests__/validation.test.ts` and `lib/__tests__/workout-utils.test.ts`. See
+> `src/lib/__tests__/validation.test.ts` and `src/lib/__tests__/workout-utils.test.ts`. See
 > [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
 
 ## 3. Architecture pattern — no REST
 
 There are **no `/api` route handlers**. Two data paths:
 
-- **Reads:** Server Components import read-models from `lib/firebase/read-models/*`. Read-models
+- **Reads:** Server Components import read-models from `src/lib/firebase/read-models/*`. Read-models
   use the Admin SDK and wrap results in `unstable_cache` (tag-based revalidation) and
   `react.cache` (per-request dedupe). Example: `read-models/members.ts:52-60`.
 - **Writes:** two surfaces.
-  1. **Server Actions** (`"use server"`, `lib/firebase/actions/*`) — invoked directly from
+  1. **Server Actions** (`"use server"`, `src/lib/firebase/actions/*`) — invoked directly from
      client components / `<form action>`. They use the Admin SDK directly and call
      `requireRole`/`requireOwner` for authz. This is the **primary write path used by the UI**.
-  2. **Cloud Functions callables** (`functions/src/index.ts`, wrapped by `lib/firebase/functions.ts`)
+  2. **Cloud Functions callables** (`functions/src/index.ts`, wrapped by `src/lib/firebase/functions.ts`)
      — the canonical "privileged write" surface enforced by `allow:false` rules. Several mirror
      the Server Actions; not all are wired to UI yet. See
      [04_DATA_ACCESS_CATALOG](04_DATA_ACCESS_CATALOG.md).
@@ -54,7 +54,7 @@ There are **no `/api` route handlers**. Two data paths:
 graph TD
   subgraph Client[Browser / PWA]
     SC[Server Component page] --> RM[read-model]
-    UI[Client component / form] -->|Server Action| SA[lib/firebase/actions/*]
+    UI[Client component / form] -->|Server Action| SA[src/lib/firebase/actions/*]
     UI -->|httpsCallable| CF[functions/src/index.ts]
     UI -->|offline| DX[(Dexie IndexedDB)]
   end
@@ -76,8 +76,8 @@ graph TD
 sequenceDiagram
   participant B as Browser
   participant MW as middleware.ts
-  participant L as app/layout.tsx + role layout
-  participant G as requireRole (lib/auth.ts)
+  participant L as src/app/layout.tsx + role layout
+  participant G as requireRole (src/lib/auth.ts)
   participant RM as read-model
   participant FS as Firestore
   B->>MW: GET /owner/members
@@ -146,7 +146,7 @@ to `asia-south1` (`functions/src/index.ts:20`). CSP/security headers configured 
 
 ## 9. Styling
 
-CSS is modular under `app/styles/` loaded in numeric order. The directory contains the 21
+CSS is modular under `src/app/styles/` loaded in numeric order. The directory contains the 21
 numbered files plus `forms.css`, `member.css`, **and `ep-modal.css`** (the last is not in the
 README CSS table — see [DISCREPANCIES](DISCREPANCIES.md)). Class-prefix conventions
 (`odp2-`, `adm-`, `mhv-`, `m3d-`, `mcv-`, `pt-`, `lpd-`, `l1-`, `lp-modal-`, `nlist-`, `ntf-`)

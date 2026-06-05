@@ -8,17 +8,17 @@
 
 | Rule | Source | Impact |
 |---|---|---|
-| Short session = 2 hours | `lib/auth.ts:19` | default cookie lifetime |
-| "Remember me" session = 14 days (Firebase max) | `lib/auth.ts:20` | extended cookie |
-| Login lockout after 5 failed attempts | `lib/auth.ts:509` | brute-force protection |
-| Lockout duration = 15 minutes | `lib/auth.ts:510` | |
-| Dual lockout: profile-embedded (by email) + identifier-based (by phone/username) | `lib/auth.ts:528-609` | phone/username attacks gated before email resolution |
+| Short session = 2 hours | `src/lib/auth.ts:19` | default cookie lifetime |
+| "Remember me" session = 14 days (Firebase max) | `src/lib/auth.ts:20` | extended cookie |
+| Login lockout after 5 failed attempts | `src/lib/auth.ts:509` | brute-force protection |
+| Lockout duration = 15 minutes | `src/lib/auth.ts:510` | |
+| Dual lockout: profile-embedded (by email) + identifier-based (by phone/username) | `src/lib/auth.ts:528-609` | phone/username attacks gated before email resolution |
 | Blocking trigger re-checks lockout at Auth layer (keyed by email) | `functions/src/index.ts:1905-1935` | gates direct SDK sign-in; fails open on error |
-| Firebase sign-in REST timeout = 10 s | `lib/auth.ts:824` | server action can't hang |
-| New staff forced to change password on first login (`mustChangePassword`) | `actions/staff.ts:135`, `lib/auth.ts:972-978` | redirect to `/profile?forceChange=1` |
-| `requireOwner` blocks staff whose `staffType !== "owner"` from owner actions | `lib/auth.ts:991` | trainers can't do destructive owner ops |
-| Member Firebase password format = `pin-<4digits>` | `lib/auth.ts:812`, `actions/members.ts:74` | PIN auth |
-| Inactive/missing profile → redirect `/suspended` | `lib/auth.ts:935-943` | access revocation |
+| Firebase sign-in REST timeout = 10 s | `src/lib/auth.ts:824` | server action can't hang |
+| New staff forced to change password on first login (`mustChangePassword`) | `actions/staff.ts:135`, `src/lib/auth.ts:972-978` | redirect to `/profile?forceChange=1` |
+| `requireOwner` blocks staff whose `staffType !== "owner"` from owner actions | `src/lib/auth.ts:991` | trainers can't do destructive owner ops |
+| Member Firebase password format = `pin-<4digits>` | `src/lib/auth.ts:812`, `actions/members.ts:74` | PIN auth |
+| Inactive/missing profile → redirect `/suspended` | `src/lib/auth.ts:935-943` | access revocation |
 
 ## Validation
 
@@ -53,7 +53,7 @@
 | Check-in blocked if distance > radius | `actions/shared.ts:470-472` | |
 | Geofence status `inside` / `not_configured` / `location_not_provided` | `actions/shared.ts:461-477` | recorded on attendance |
 | Geofence requires valid lat/lng or throws | `actions/shared.ts:456-458` | |
-| dayLog id deterministic `memberId_dayId_weekStart` (upsert) | `actions/progress.ts:299`, `types/domain.ts:571-590` | one record per week slot |
+| dayLog id deterministic `memberId_dayId_weekStart` (upsert) | `actions/progress.ts:299`, `src/types/domain.ts:571-590` | one record per week slot |
 | macroLog id deterministic `memberId_date` (upsert) | `actions/progress.ts:395` | one per day |
 | Members can only act on their own data (`assertCanManageMember`) | `actions/shared.ts:497-504` | self-scope |
 | Owner actions verify member belongs to caller's gym | `actions/shared.ts:515-536` | tenant guard |
@@ -85,7 +85,7 @@
 | Approval denormalises status/endDate/packageName onto member + authProfiles | `actions/billing.ts:121-129`, `functions/src/index.ts:1508-1510` | fast list filtering |
 | Membership expiry warning default = 7 days | `actions/gyms.ts:151`, `read-models/shared.ts:113` | gym setting |
 | Daily expiry sweep flips `expiring_soon`/`expired`, notifies once per transition | `functions/src/index.ts:1688-1748` | uses fixed 7-day window |
-| Card/UPI is integration-ready placeholder; does not auto-activate | `types/domain.ts:193-196` | manual owner confirm |
+| Card/UPI is integration-ready placeholder; does not auto-activate | `src/types/domain.ts:193-196` | manual owner confirm |
 | Trainers have no access to billing collections | `firestore.rules:272,281,294` | |
 
 ## Catalog / exercises
@@ -128,4 +128,4 @@
 | Functions region | `asia-south1` | `functions/src/index.ts:20` |
 | Member auth email domain | `@members.fitsplit.app` | `actions/shared.ts:103` |
 | Staff auth email domain | `@staff.fitsplit.app` | `actions/staff.ts:102` |
-| Demo staff password / member PIN | `password` / `1234` | `lib/auth.ts:685` |
+| Demo staff password / member PIN | `password` / `1234` | `src/lib/auth.ts:685` |

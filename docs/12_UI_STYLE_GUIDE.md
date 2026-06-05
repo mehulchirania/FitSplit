@@ -4,7 +4,7 @@
 
 > **Purpose.** This document contains the complete FitSplit design system, design tokens, CSS architecture, and reusable UI paradigms.
 
-## Design Tokens (`app/styles/00-base-shell.css`)
+## Design Tokens (`src/app/styles/00-base-shell.css`)
 
 The app ships in **dark mode by default** (`data-theme="dark"` on `<html>`), with light mode available via a toggle.
 
@@ -67,7 +67,7 @@ Always reset `<button>` default UA styles for custom-styled buttons:
 
 ## CSS Architecture
 
-CSS is modularized under `app/styles/`, loaded in numeric order via `app/layout.tsx`.
+CSS is modularized under `src/app/styles/`, loaded in numeric order via `src/app/layout.tsx`.
 
 | Prefix/File | Scope |
 |---|---|
@@ -111,5 +111,5 @@ Used in member lists and activity feeds:
 
 ### Components & UI Patterns
 - **Members Hybrid View (D4)**: Combines a horizontal Action Queue (snooze/view CTAs), KPI strip (filters the directory), refined Directory Table (checkboxes, avatar status dots), and a Dark Bulk Action Dock.
-- **`<details>` Auto-Open Navigation**: Use `components/open-details-button.tsx` instead of native `<a href="#id">` anchor links to ensure `<details>` elements expand before the browser scrolls to them.
+- **`<details>` Auto-Open Navigation**: Use `src/components/open-details-button.tsx` instead of native `<a href="#id">` anchor links to ensure `<details>` elements expand before the browser scrolls to them.
 - **Member Sub-Pages Shell**: Uses `m3d-*` prefix. Ensures consistent height chain (`body → .app-shell → .m3d-root → .m3d-main → .m3d-content`).

@@ -3,7 +3,7 @@
 `Generated: 2026-06-05 · Commit: c0e1f4b`
 
 > Supersedes `FIRESTORE_STRUCTURE.md`. One entry per Firestore collection / subcollection.
-> Field tables list **observed** fields (from write sites + read mappers + `types/domain.ts`).
+> Field tables list **observed** fields (from write sites + read mappers + `src/types/domain.ts`).
 > **Declared vs used:** a collection key in `collections.ts` is *declared*; "Reads/Writes"
 > sections show whether it is *actually used*.
 >
@@ -25,7 +25,7 @@ exerciseCatalog, exerciseRequests, workoutPrograms, notifications, workoutSplitT
 liftLogs, programAssignments, activityEvents, workoutSessions, contactMessages, siteLinks,
 attendanceRecords, bodyMetricLogs, dayLogs, archives, ptSessions, ptLiftLogs, macroLogs,
 activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, not in
-`collections.ts` — `lib/auth.ts:575`, `firestore.rules:441`).
+`collections.ts` — `src/lib/auth.ts:575`, `firestore.rules:441`).
 
 ---
 
@@ -45,10 +45,10 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   "notices": [{ "id": "…", "type": "tip", "title": "…", "body": "…", "isActive": true, "order": 1, "createdAt": "…" }]
 }
 ```
-- **Fields:** `GymWorkspace` type (`types/domain.ts:41-74`). Key: `status` `active|paused|inactive`;
-  `trainerMemberVisibility` `assigned_only|all_pt_members|all_members` (`types/domain.ts:13`);
+- **Fields:** `GymWorkspace` type (`src/types/domain.ts:41-74`). Key: `status` `active|paused|inactive`;
+  `trainerMemberVisibility` `assigned_only|all_pt_members|all_members` (`src/types/domain.ts:13`);
   `expiryWarningDays` (default 7); geofence `latitude/longitude/radiusMeters`; `notices[]`
-  (embedded `GymNotice`, `types/domain.ts:31-39`).
+  (embedded `GymNotice`, `src/types/domain.ts:31-39`).
 - **Relationships:** parent of all gym-scoped subcollections; `ownerUserId`/`ownerId` → `authProfiles`.
 - **Reads:** `read-models/gyms.ts:18-120` (`getGymWorkspaces`, `getGymDetail`, `getPrimaryWorkspace`);
   geofence read `actions/shared.ts:481-495`.
@@ -79,10 +79,10 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `membershipStatus`, `membershipEndDate`, `currentPackageName` (`functions/src/index.ts:1508-1510`),
   `assignedTrainerId`, `isPT` (`functions/src/index.ts:1337-1339`), `fcmToken`/`fcmTokenUpdatedAt`
   (`actions/notifications.ts:81`), `primarySlot`/`secondarySlot`, body metrics, coach note, lockout
-  fields `failedLoginAttempts`/`lockedUntil`/`lastFailedLoginAt` (`lib/auth.ts:540-564`),
+  fields `failedLoginAttempts`/`lockedUntil`/`lastFailedLoginAt` (`src/lib/auth.ts:540-564`),
   soft-delete `isDeleted`/`deletedAt` (`actions/members.ts:743`).
 - **Relationships:** `defaultGymId` → `gyms`; mirrors `gyms/{gymId}/members|staff`.
-- **Reads:** login (`lib/auth.ts:325-420`), `getMemberProfileDocument` (`read-models/shared.ts:47`),
+- **Reads:** login (`src/lib/auth.ts:325-420`), `getMemberProfileDocument` (`read-models/shared.ts:47`),
   trainers/owners/floor-load reads (`read-models/members.ts`, `read-models/gyms.ts`).
 - **Writes:** `writeAuthProfileIndex` (`actions/shared.ts:357`), `authProfilePayload`
   (`actions/shared.ts:335`); many actions + CFs (member/staff create, toggle, billing approve).
@@ -98,7 +98,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## profiles  *(root, legacy)*
 - **Scope:** root `profiles/{uid}` (`collections.ts:3-5`).
 - **Purpose:** legacy profile collection. Kept only as a migration fallback.
-- **Reads:** fallback in login & profile resolution (`lib/auth.ts:331`, `read-models/shared.ts:59`).
+- **Reads:** fallback in login & profile resolution (`src/lib/auth.ts:331`, `read-models/shared.ts:59`).
 - **Writes:** none active (delete-only cleanup, e.g. `actions/members.ts:803`).
 - **Security rules:** read admin/owner/self; all writes `allow:false` (`firestore.rules:321-326`).
 - **Tenant isolation:** via `profileGym`.
@@ -115,8 +115,8 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## loginAttempts  *(root)* ⚠️ not in collections.ts
 - **Scope:** root `loginAttempts/{normalizedIdentifier-or-email}`.
 - **Purpose:** identifier-based login lockout counter (fires before email resolution).
-- **Fields:** `failedLoginAttempts`, `lockedUntil`, `lastFailedLoginAt` (`lib/auth.ts:585-609`).
-- **Reads/Writes:** `lib/auth.ts:569-609`; read by `blockLockedAccounts` CF keyed on email
+- **Fields:** `failedLoginAttempts`, `lockedUntil`, `lastFailedLoginAt` (`src/lib/auth.ts:585-609`).
+- **Reads/Writes:** `src/lib/auth.ts:569-609`; read by `blockLockedAccounts` CF keyed on email
   (`functions/src/index.ts:1912`).
 - **Security rules:** `allow:false` (`firestore.rules:441`).
 - **Note:** the server-action path keys lockout docs by raw identifier; the blocking trigger keys
@@ -161,7 +161,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   "primarySlot": "A", "secondarySlot": "D", "coachNote": "…", "macroNutritionTarget": { "calories": 2200 }
 }
 ```
-- **Fields:** `MemberProfile` (`types/domain.ts:85-135`). Self-editable subset: `age, heightCm,
+- **Fields:** `MemberProfile` (`src/types/domain.ts:85-135`). Self-editable subset: `age, heightCm,
   weightKg, goal, fitnessGoals, phone, updatedAt` (`firestore.rules:116-117`).
 - **Relationships:** child of `gyms`; `assignedTrainerId` → staff; mirrored to `authProfiles`.
 - **Reads:** `read-models/members.ts` (`getMembers`, `getMemberDetail`, `getMemberWithProfile`,
@@ -202,7 +202,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Scope:** `gyms/{gymId}/exerciseCatalog/{id}` (gym custom) AND root `exerciseCatalog/{id}`
   (FitSplit global, `gymId:"global"`, `scope:"default"`) (`collections.ts:11,38`).
 - **Purpose:** exercise definitions (name, muscle group, equipment, instructions, videos).
-- **Fields:** `Exercise` (`types/domain.ts:264-288`) + `scope` `default|custom`, `gymId`,
+- **Fields:** `Exercise` (`src/types/domain.ts:264-288`) + `scope` `default|custom`, `gymId`,
   `isActive`, `showTutorial`, `gymVideoUrl/gymVideoSource`, `approvedFromRequestId`
   (`actions/exercises.ts:135-153, 253-270`).
 - **Reads:** `getExerciseCatalog`/`getExerciseCatalogUncached` (`read-models/exercises.ts:15`) —
@@ -219,7 +219,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## exerciseRequests  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/exerciseRequests/{id}` + root mirror (`collections.ts:12,39`).
 - **Purpose:** owner-submitted requests for new catalog exercises; admin approves/rejects.
-- **Fields:** `ExerciseRequest` (`types/domain.ts:382-394`): `gymId`, `gymName`, `requestedBy`,
+- **Fields:** `ExerciseRequest` (`src/types/domain.ts:382-394`): `gymId`, `gymName`, `requestedBy`,
   `name`, `muscleGroup`, `equipment?`, `instructions?`, `status` `pending|approved|rejected`.
 - **Reads:** `getPendingExerciseRequests` (`read-models/exercises.ts:132`).
 - **Writes:** `requestCatalogExercise` (`actions/exercises.ts:30`); approve/reject
@@ -231,11 +231,11 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## workoutPrograms  *(gym-scoped + root global)*
 - **Scope:** `gyms/{gymId}/workoutPrograms/{id}` (custom) + root global (`collections.ts:12,40`).
 - **Purpose:** multi-day workout program definitions.
-- **Fields:** `WorkoutProgram` (`types/domain.ts:308-338`): `splitType`
+- **Fields:** `WorkoutProgram` (`src/types/domain.ts:308-338`): `splitType`
   `ppl_x2|ppl_upper_lower|bro_split|combo_x2|custom`, `days[]` (`WorkoutDay`→`WorkoutExercise`),
   `source` `predefined|gym`, `isActive`, `scope`.
 - **Reads:** `getWorkoutPrograms`/`Uncached` (`read-models/programs.ts:14`) — merges predefined
-  (`lib/workouts.json` via `mock-data`/`split-library`) + gym custom, dedupes.
+  (`src/lib/workouts.json` via `mock-data`/`split-library`) + gym custom, dedupes.
 - **Writes:** `createCustomWorkoutProgram`/`updateCustomWorkoutProgram`/`createAndAssignCustomProgram`
   (`actions/programs.ts:427,336,545`).
 - **Deletes:** `deleteCustomWorkoutProgram` (`actions/programs.ts:289`), `archiveCustomProgram` CF
@@ -246,7 +246,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## workoutSplitTemplates  *(gym-scoped + root)* — declared, low usage
 - **Scope:** `gyms/{gymId}/workoutSplitTemplates/{id}` + root (`collections.ts:14,41`).
 - **Purpose:** split templates. **Declared** in collections + rules; no active read/write site
-  found in this pass (split logic lives in `lib/split-library.ts` / `workouts.json`). ⚠️ likely
+  found in this pass (split logic lives in `src/lib/split-library.ts` / `workouts.json`). ⚠️ likely
   orphaned — see [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
 - **Security rules (gym):** read `isGymUser`; write admin/owner (`firestore.rules:138-141`).
   **(root):** read signed-in; write admin (`firestore.rules:338-341`).
@@ -254,7 +254,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## programAssignments  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/programAssignments/{id}` + root (`collections.ts:16,42`).
 - **Purpose:** which program a member is currently assigned. One active per member.
-- **Fields:** `ProgramAssignment` (`types/domain.ts:340-346`) + `gymId`, `programTitle`,
+- **Fields:** `ProgramAssignment` (`src/types/domain.ts:340-346`) + `gymId`, `programTitle`,
   `memberName`, `createdBy`, `sideEffectsMode` (CF trigger flag, `functions/src/index.ts:784`).
 - **Reads:** `getProgramAssignmentForMember`/`getActiveProgramAssignments`
   (`read-models/programs.ts:148,219`).
@@ -268,7 +268,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## liftLogs  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/liftLogs/{id}` + root (`collections.ts:15,43`).
 - **Purpose:** individual logged sets. Member self-logged or trainer-logged (PT dual-write).
-- **Fields:** `LiftLog` (`types/domain.ts:396-411`): `memberId`, `exerciseId`, `weight`, `sets`,
+- **Fields:** `LiftLog` (`src/types/domain.ts:396-411`): `memberId`, `exerciseId`, `weight`, `sets`,
   `reps`, `sessionId`, `loggedAt`, `source` `member|trainer`, `ptSessionId?`, `loggedByTrainerId?`.
 - **Reads:** `getLiftLogsForMember` (`read-models/progress.ts:103`), calendar
   (`read-models/progress.ts:168`).
@@ -282,7 +282,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## bodyMetricLogs  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/bodyMetricLogs/{id}` + root (`collections.ts:23,49`).
 - **Purpose:** weight / body-fat entries.
-- **Fields:** `BodyMetricLog` (`types/domain.ts:413-421`): `weightKg`, `bodyFatPct?`, `notes?`,
+- **Fields:** `BodyMetricLog` (`src/types/domain.ts:413-421`): `weightKg`, `bodyFatPct?`, `notes?`,
   `loggedAt`.
 - **Reads:** `getBodyMetricLogsForMember` (`read-models/progress.ts:7`).
 - **Writes:** `logBodyWeight` (`actions/progress.ts:154`) — also mirrors `weightKg` onto profile.
@@ -292,7 +292,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## dayLogs  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/dayLogs/{memberId_dayId_weekStart}` + root (`collections.ts:23,50`).
 - **Purpose:** per-week skip/modify record for a program day; deterministic id = upsert.
-- **Fields:** `DayLog` (`types/domain.ts:571-590`): `status` `skipped|modified`, `skipReason?`,
+- **Fields:** `DayLog` (`src/types/domain.ts:571-590`): `status` `skipped|modified`, `skipReason?`,
   `note?`, `makeupExerciseIds?`, `makeupStatus?` `pending|added|dismissed`, `makeupTargetDayId?`.
 - **Reads:** `getDayLogsForMember`/calendar (`read-models/progress.ts:47,168`).
 - **Writes:** `logDayStatus`/`clearDayLog`/`updateMakeupStatus` (`actions/progress.ts:267,337,422`).
@@ -302,7 +302,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## workoutSessions  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/workoutSessions/{id}` + root (`collections.ts:18,47`).
 - **Purpose:** a member workout session (start→end), with embedded attendance/geofence snapshot.
-- **Fields:** `WorkoutSession` (`types/domain.ts:518-529`): `status` `active|completed`,
+- **Fields:** `WorkoutSession` (`src/types/domain.ts:518-529`): `status` `active|completed`,
   `startedAt`, `endedAt?`, `programDayId?`, `programId?`, `dayTitle?`, plus embedded `attendance`
   object on write (`actions/progress.ts:564-571`).
 - **Reads:** `getActiveWorkoutSessions`/`getRecentSessionCounts` (`read-models/sessions.ts:8,55`).
@@ -314,7 +314,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## attendanceRecords  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/attendanceRecords/{id}` + root (`collections.ts:21,48`). Id == sessionId.
 - **Purpose:** check-in/out + geofence audit for a session.
-- **Fields:** `AttendanceRecord` (`types/domain.ts:531-544`): `checkInAt`, `checkOutAt?`,
+- **Fields:** `AttendanceRecord` (`src/types/domain.ts:531-544`): `checkInAt`, `checkOutAt?`,
   `latitude/longitude`, `distanceMeters?`, `geofenceStatus` `inside|not_configured|location_not_provided`,
   `radiusMeters?`.
 - **Reads:** `getAttendanceRecords` (`read-models/sessions.ts:108`).
@@ -326,7 +326,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## macroLogs  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/macroLogs/{memberId_date}` + root (`collections.ts:27,54`).
 - **Purpose:** daily macro/water log (one per member per day; upsert).
-- **Fields:** `MacroLog` (`types/domain.ts:453-465`): `date`, `protein`, `carbs`, `fat`, `water`,
+- **Fields:** `MacroLog` (`src/types/domain.ts:453-465`): `date`, `protein`, `carbs`, `fat`, `water`,
   `loggedAt`.
 - **Reads:** `getMacroLogForMember`/`getMacroLogsForMember` (`read-models/progress.ts:227,259`).
 - **Writes:** `saveMacroLog` (`actions/progress.ts:375`).
@@ -337,7 +337,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## activityLogs  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/activityLogs/{id}` + root (`collections.ts:28,55`).
 - **Purpose:** stretch/cardio session log.
-- **Fields:** `ActivityLog` (`types/domain.ts:471-490`): `type` `stretch|cardio`, `name`,
+- **Fields:** `ActivityLog` (`src/types/domain.ts:471-490`): `type` `stretch|cardio`, `name`,
   `duration?`, `distance?`, `notes?`, `source`, `loggedByTrainerId?`, `ptSessionId?`.
 - **Reads:** `getActivityLogsForMember` (`read-models/progress.ts:296`).
 - **Writes:** `logActivity` (`actions/progress.ts:466`).
@@ -347,7 +347,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## activityEvents  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/activityEvents/{id}` + root (`collections.ts:17,46`).
 - **Purpose:** system audit/activity feed for owner & member dashboards.
-- **Fields:** `ActivityEvent` (`types/domain.ts:423-431`): `audience` `owner|member`, `memberId?`,
+- **Fields:** `ActivityEvent` (`src/types/domain.ts:423-431`): `audience` `owner|member`, `memberId?`,
   `title`, `detail`, `icon` `activity|bell|dumbbell|users`, `createdAt`.
 - **Reads:** `getActivityEvents` (`read-models/activity.ts:7`).
 - **Writes:** system-generated by many actions/CFs (member create/toggle/delete, program assign,
@@ -358,7 +358,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## notifications  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/notifications/{id}` + root (`collections.ts:13,42`).
 - **Purpose:** role-scoped notifications with deep-link `actionHref`.
-- **Fields:** `Notification` (`types/domain.ts:348-380`): `recipientRole`, `recipientId`,
+- **Fields:** `Notification` (`src/types/domain.ts:348-380`): `recipientRole`, `recipientId`,
   `type` (16 union values incl. PT + membership), `title`, `body`, `createdAt`, `readAt?`,
   `actionHref?`, `memberId?`, `ptSessionId?`, `exerciseRequestId?`. Some writes use
   `recipientUserId` (rules accept both, `firestore.rules:147-148`). Billing CFs add
@@ -377,7 +377,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## ptSessions  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/ptSessions/{id}` + root mirror (`collections.ts:25,52`).
 - **Purpose:** PT booking/plan between trainer and member; also drives live PT console.
-- **Fields:** `PTSession` (`types/domain.ts:610-634`): `trainerId`, `memberId`, `scheduledAt`,
+- **Fields:** `PTSession` (`src/types/domain.ts:610-634`): `trainerId`, `memberId`, `scheduledAt`,
   `durationMinutes`, `planStartDate/EndDate/DurationDays`, `status`
   `scheduled|active|completed|cancelled`, `plannedExercises[]`, `notes?`, `cancelReason?`,
   reminder flags `notified24h/notified1h`, `sideEffectsMode`.
@@ -396,7 +396,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## ptLiftLogs  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/ptLiftLogs/{id}` + root (`collections.ts:26,53`).
 - **Purpose:** sets logged by a trainer during a PT session. Dual-written to `liftLogs`.
-- **Fields:** `PTLiftLog` (`types/domain.ts:646-659`): `ptSessionId`, `memberId`, `trainerId`,
+- **Fields:** `PTLiftLog` (`src/types/domain.ts:646-659`): `ptSessionId`, `memberId`, `trainerId`,
   `exerciseId`, `exerciseName?`, `weight`, `sets`, `reps`, `notes?`, `loggedAt`.
 - **Reads:** `getPTLiftLogsForSession` (`read-models/pt.ts:147`).
 - **Writes:** `logPTLiftSet` (`actions/pt.ts:248`).
@@ -407,7 +407,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## packages  *(gym-scoped)*
 - **Scope:** `gyms/{gymId}/packages/{id}` (`collections.ts:57`).
 - **Purpose:** membership package definitions set by owner.
-- **Fields:** `Package` (`types/domain.ts:172-188`): `name`, `durationMonths`, `price`, `currency`,
+- **Fields:** `Package` (`src/types/domain.ts:172-188`): `name`, `durationMonths`, `price`, `currency`,
   `includesPT?`, `ptSessionsIncluded?`, `isActive`.
 - **Reads:** `getPackages` (`read-models/billing.ts:69`).
 - **Writes:** `savePackage`/`archivePackage` (`actions/billing.ts:28,67`); `createOrUpdatePackage`
@@ -419,7 +419,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Scope:** `gyms/{gymId}/memberships/{id}` (`collections.ts:59`; root key declared `:9` but
   active path is gym-scoped).
 - **Purpose:** one record per membership period; denormalised snapshot kept on member doc.
-- **Fields:** `Membership` (`types/domain.ts:226-243`): `planName`, `startDate`, `endDate`,
+- **Fields:** `Membership` (`src/types/domain.ts:226-243`): `planName`, `startDate`, `endDate`,
   `durationMonths`, `status`, `paymentRequestId?`, `activatedAt?`.
 - **Reads:** `getMembershipsForMember` (`read-models/billing.ts:128`).
 - **Writes:** created on approval `approvePaymentRequestAction` (`actions/billing.ts:113`) /
@@ -431,7 +431,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## paymentRequests  *(gym-scoped)*
 - **Scope:** `gyms/{gymId}/paymentRequests/{id}` (`collections.ts:61`).
 - **Purpose:** member-raised payment/renewal requests; owner approves to activate membership.
-- **Fields:** `PaymentRequest` (`types/domain.ts:198-217`): `memberId`, `packageId`, `amount`,
+- **Fields:** `PaymentRequest` (`src/types/domain.ts:198-217`): `memberId`, `packageId`, `amount`,
   `currency`, `method` `cash|card|upi|other`, `status` `pending|approved|rejected|cancelled`,
   `requestedAt`, `resolvedAt?`, `membershipId?`.
 - **Reads:** `getPaymentRequests`/`getPendingPaymentRequests`/`getPaymentRequestsForMember`
@@ -447,7 +447,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## summaries  *(gym-scoped)*
 - **Scope:** `gyms/{gymId}/summaries/dashboard` (single doc) (`collections.ts:63`).
 - **Purpose:** pre-computed owner dashboard stats.
-- **Fields:** `DashboardSummary` (`types/domain.ts:250-262`): totals, expiring/expired counts,
+- **Fields:** `DashboardSummary` (`src/types/domain.ts:250-262`): totals, expiring/expired counts,
   pending payments, revenue MTD, `lastComputedAt`.
 - **Reads:** `getGymDashboardSummary` (`read-models/billing.ts:150`).
 - **Writes:** `generateGymDashboardStats` CF → `computeGymDashboard` (`functions/src/index.ts:1598,1606`).
@@ -456,7 +456,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## contactMessages  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/contactMessages/{id}` + root (`collections.ts:19,51`).
 - **Purpose:** landing-page contact form submissions → admin inbox.
-- **Fields:** `ContactMessage` (`types/domain.ts:546-555`): `name`, `mobile`, `email?`, `body`,
+- **Fields:** `ContactMessage` (`src/types/domain.ts:546-555`): `name`, `mobile`, `email?`, `body`,
   `status` `unread|read`.
 - **Reads:** `getContactMessages`/`getUnreadContactMessageCount` (`read-models/notifications.ts:203,176`),
   `getUnreadMessageCount` (`actions/contact.ts:120`).
@@ -469,7 +469,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## siteLinks  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/siteLinks/{id}` + root (`collections.ts:20,48`).
 - **Purpose:** public social/site links.
-- **Fields:** `SiteLink` (`types/domain.ts:433-437`): `label`, `href`.
+- **Fields:** `SiteLink` (`src/types/domain.ts:433-437`): `label`, `href`.
 - **Reads:** `getSiteLinks` (`read-models/misc.ts:6`).
 - **Writes:** ⚠️ no write site found in this pass (likely seeded/manual). 
 - **Security rules:** read `true`; write admin or owner (`firestore.rules:236-239`, root `:397-400`).

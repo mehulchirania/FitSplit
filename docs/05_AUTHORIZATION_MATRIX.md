@@ -5,17 +5,17 @@
 > Roles × features. The **Enforced by** column names what actually blocks the action and where.
 > Enforcement layers, outermost → innermost:
 > 1. **middleware** (`middleware.ts`) — route-level redirect by `fitsplit-role` cookie.
-> 2. **requireRole / requireOwner** (`lib/auth.ts:962,988`) — server-side guard in page/action.
+> 2. **requireRole / requireOwner** (`src/lib/auth.ts:962,988`) — server-side guard in page/action.
 > 3. **Function guard** (`getCallableUser`/`assertCanManageGym`, `functions/src/index.ts:133,152`).
 > 4. **Firestore rules** (`firestore.rules`) — last line, for any direct client SDK write.
 
 ## Roles
 
-`admin | owner | trainer | member` (`types/domain.ts:3`). `owner` has a `staffType`
+`admin | owner | trainer | member` (`src/types/domain.ts:3`). `owner` has a `staffType`
 (`owner|trainer|staff`). Demo "trainers" are `role:"owner"` + `staffType:"trainer"`
-(`lib/auth.ts:78-95`); `createStaffAccount`/`createTrainer` mint real `role:"trainer"` accounts
-(`functions/src/index.ts:449,1291`). ⚠️ `lib/auth.ts` session resolution does not accept role
-`trainer` (`lib/auth.ts:306,909`) — see [DISCREPANCIES](DISCREPANCIES.md).
+(`src/lib/auth.ts:78-95`); `createStaffAccount`/`createTrainer` mint real `role:"trainer"` accounts
+(`functions/src/index.ts:449,1291`). ⚠️ `src/lib/auth.ts` session resolution does not accept role
+`trainer` (`src/lib/auth.ts:306,909`) — see [DISCREPANCIES](DISCREPANCIES.md).
 
 ## Route access (middleware.ts:3-11)
 
@@ -34,7 +34,7 @@
 
 | Feature | admin | owner | trainer | member | Enforced by (file:line) |
 |---|:--:|:--:|:--:|:--:|---|
-| View all gyms | ✅ | ❌ | ❌ | ❌ | `requireRole[admin]` `app/admin/gyms/page.tsx`; rules `firestore.rules:103` |
+| View all gyms | ✅ | ❌ | ❌ | ❌ | `requireRole[admin]` `src/app/admin/gyms/page.tsx`; rules `firestore.rules:103` |
 | Create/update/delete gym | ✅ | update own only | ❌ | ❌ | CF admin-only `index.ts:485,541`; action `actions/gyms.ts:464`; rules `:104` |
 | Create member | ✅ | ✅ | ❌ | ❌ | `requireOwner` `actions/members.ts:50`; CF `assertCanManageGym` `index.ts:349`; rules create `false` `:111` |
 | Edit member profile | ✅ | ✅ | ❌ | self subset | `requireRole[admin,owner]` `actions/members.ts:178`; self via rules whitelist `:116` |
@@ -60,7 +60,7 @@
 | Log own workout / metrics | ❌ | ❌ | ❌ | ✅ | `requireAuth`+`assertCanManageMember` `actions/progress.ts:73` |
 | Coach note on member | ✅ | ✅ | ❌(action) | read-only | `requireRole[admin,owner]` `actions/progress.ts:228` |
 | Geofenced check-in | ❌ | ❌ | ❌ | ✅ | `validateGymGeofence` `actions/progress.ts:556` |
-| View contact inbox | ✅ | (gym staff via rules) | ❌ | ❌ | `requireRole[admin]` `app/admin/inbox`; rules `:233` |
+| View contact inbox | ✅ | (gym staff via rules) | ❌ | ❌ | `requireRole[admin]` `src/app/admin/inbox`; rules `:233` |
 | Platform/admin dashboard stats | ✅ | ❌ | ❌ | ❌ | CF admin-only `index.ts:1657` |
 | Gym dashboard stats | ✅ | ✅ | ❌ | ❌ | CF manage-gym `index.ts:1601` |
 | Mark own notifications read | ✅ | ✅ | (owner-role) | ✅ | `clearUserNotifications` `actions/notifications.ts:38-46`; rules `:152` |

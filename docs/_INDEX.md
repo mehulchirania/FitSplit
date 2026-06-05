@@ -65,30 +65,30 @@ See the bottom of this file. Audit run `2026-06-05` against commit `c0e1f4b`.
 
 ### 1. Coverage checklist
 
-- **Collections** — all keys in `lib/firebase/collections.ts:1-64` and every `match`
+- **Collections** — all keys in `src/lib/firebase/collections.ts:1-64` and every `match`
   block in `firestore.rules` appear in `02_DATA_DICTIONARY.md`. ✅
 - **Cloud Functions** — all 33 exported functions in `functions/src/index.ts`
   (grep `^export const … = (onCall|onDocument|onSchedule|beforeUserSignedIn)`) appear in
   `04_DATA_ACCESS_CATALOG.md`. ✅
-- **Server Actions** — every exported function in `lib/firebase/actions/*` appears in `04`. ✅
-- **Read-models** — every exported function in `lib/firebase/read-models/*` appears in `04`. ✅
-- **Routes** — every route under `app/` (from the `app/**/page.tsx` glob) appears in
+- **Server Actions** — every exported function in `src/lib/firebase/actions/*` appears in `04`. ✅
+- **Read-models** — every exported function in `src/lib/firebase/read-models/*` appears in `04`. ✅
+- **Routes** — every route under `src/app/` (from the `src/app/**/page.tsx` glob) appears in
   `09_SCREEN_CATALOG.md`. ✅
 
 ### 2. Citation spot-check (10 random)
 
 | # | Citation | Claim | Result |
 |---|---|---|---|
-| 1 | `lib/auth.ts:509-510` | `MAX_FAILED_ATTEMPTS = 5`, `LOCKOUT_MINUTES = 15` | PASS |
-| 2 | `lib/auth.ts:19` | 2-hour short session cookie | PASS |
+| 1 | `src/lib/auth.ts:509-510` | `MAX_FAILED_ATTEMPTS = 5`, `LOCKOUT_MINUTES = 15` | PASS |
+| 2 | `src/lib/auth.ts:19` | 2-hour short session cookie | PASS |
 | 3 | `functions/src/index.ts:1862` | 6-hour abandoned PT cutoff | PASS |
-| 4 | `lib/firebase/actions/shared.ts:232` | 60-day archive retention | PASS |
-| 5 | `lib/firebase/actions/shared.ts:452-454` | default geofence radius 150m | PASS |
-| 6 | `lib/firebase/actions/pt.ts:81` | PT plan end = start + duration − 1 | PASS |
+| 4 | `src/lib/firebase/actions/shared.ts:232` | 60-day archive retention | PASS |
+| 5 | `src/lib/firebase/actions/shared.ts:452-454` | default geofence radius 150m | PASS |
+| 6 | `src/lib/firebase/actions/pt.ts:81` | PT plan end = start + duration − 1 | PASS |
 | 7 | `firestore.rules:111` | `members` create/delete = `false` | PASS |
-| 8 | `types/domain.ts:13` | `TrainerMemberVisibility` union | PASS |
-| 9 | `lib/firebase/actions/members.ts:74` | member default password `pin-1234` | PASS |
-| 10 | `lib/auth.ts:306` | `toProfile` rejects role `trainer` | PASS |
+| 8 | `src/types/domain.ts:13` | `TrainerMemberVisibility` union | PASS |
+| 9 | `src/lib/firebase/actions/members.ts:74` | member default password `pin-1234` | PASS |
+| 10 | `src/lib/auth.ts:306` | `toProfile` rejects role `trainer` | PASS |
 
 ### 3. Tier-0 size
 

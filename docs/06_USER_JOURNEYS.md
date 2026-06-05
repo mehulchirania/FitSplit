@@ -11,9 +11,9 @@
 sequenceDiagram
   participant U as Owner/Admin
   participant LP as Landing login form
-  participant A as loginWithCredentials (lib/auth.ts:707)
+  participant A as loginWithCredentials (src/lib/auth.ts:707)
   participant FB as Identity Toolkit REST
-  participant CS as createSession (lib/auth.ts:853)
+  participant CS as createSession (src/lib/auth.ts:853)
   U->>LP: username/phone + password (Staff tab)
   LP->>A: FormData(mode="staff")
   A->>A: findDemoLogin? else checkIdentifierLockout (:777)
@@ -30,15 +30,15 @@ sequenceDiagram
     CS-->>U: set fitsplit-session + compat cookies → redirect roleHome
   end
 ```
-Lockout: 5 fails → 15 min (`lib/auth.ts:509-510`); also enforced by `blockLockedAccounts`
+Lockout: 5 fails → 15 min (`src/lib/auth.ts:509-510`); also enforced by `blockLockedAccounts`
 (`functions/src/index.ts:1905`). New staff with `mustChangePassword` are forced to `/profile`
-(`lib/auth.ts:972-978`).
+(`src/lib/auth.ts:972-978`).
 
 ## 2. Member login (PIN)
 
-Same path, `mode="member"`. Firebase password = `pin-${PIN}` (`lib/auth.ts:812`). Identifier
+Same path, `mode="member"`. Firebase password = `pin-${PIN}` (`src/lib/auth.ts:812`). Identifier
 resolves username/phone/email → synthetic `@members.fitsplit.app` email. Demo members fall back
-to compatibility-cookie session (`lib/auth.ts:772`).
+to compatibility-cookie session (`src/lib/auth.ts:772`).
 
 ## 3. Member creation (owner)
 
@@ -197,5 +197,5 @@ In-app: read-models `getOwner/Admin/MemberNotifications` feed the bell + `/owner
 
 Owner toggles → `toggleMemberAccess` sets `isActive:false` on authProfiles + member + disables
 Auth user (`actions/members.ts:579`). On next request, `getCurrentUser` finds inactive profile
-and redirects to `/suspended` (`lib/auth.ts:935-943`). Admin `setGymStatus` cascades the flag to
+and redirects to `/suspended` (`src/lib/auth.ts:935-943`). Admin `setGymStatus` cascades the flag to
 every profile in the gym (`actions/gyms.ts:544`).

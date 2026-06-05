@@ -15,8 +15,8 @@ Router PWA deployed on Firebase App Hosting. One platform, many gyms; the pilot 
 ## Hard constraints (do not violate)
 
 1. **No REST / no `/api` routes.** All reads = Server Components calling read-models
-   (`lib/firebase/read-models/*`). All mutations = Server Actions (`lib/firebase/actions/*`)
-   **or** Cloud Functions callables (`lib/firebase/functions.ts` → `functions/src/index.ts`).
+   (`src/lib/firebase/read-models/*`). All mutations = Server Actions (`src/lib/firebase/actions/*`)
+   **or** Cloud Functions callables (`src/lib/firebase/functions.ts` → `functions/src/index.ts`).
 2. **Privileged writes go through Cloud Functions (Admin SDK).** Member/staff creation,
    program assignment, access toggles, billing approval, gym archive. Firestore rules set
    the corresponding direct client writes to `allow: false`.
@@ -25,40 +25,40 @@ Router PWA deployed on Firebase App Hosting. One platform, many gyms; the pilot 
    collections (dual-write legacy) — see [02_DATA_DICTIONARY](02_DATA_DICTIONARY.md) and the
    debt note in [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
 4. **Server Actions are the actual write path in the app today.** Most UI calls Server
-   Actions in `lib/firebase/actions/*` (which use the Admin SDK directly), not the callable
+   Actions in `src/lib/firebase/actions/*` (which use the Admin SDK directly), not the callable
    Cloud Functions. The callables in `functions/src/index.ts` mirror many of the same
    operations and are the canonical "privileged write" surface, but several are not yet
    wired to UI. See [04_DATA_ACCESS_CATALOG](04_DATA_ACCESS_CATALOG.md) §"Action vs Function overlap".
 
 ## Roles
 
-`Role = "admin" | "owner" | "trainer" | "member"` — `types/domain.ts:3`.
+`Role = "admin" | "owner" | "trainer" | "member"` — `src/types/domain.ts:3`.
 
 | Role | Scope | Notes |
 |---|---|---|
 | `admin` | platform-wide | manages gyms, global catalog/programs, inbox |
 | `owner` | one gym | members, programs, PT, billing, settings. `staffType` distinguishes `owner`/`trainer`/`staff` |
-| `trainer` | one gym | first-class role in rules/middleware/Functions, BUT `lib/auth.ts` session resolution does **not** accept role `trainer` (see ⚠️ below) |
+| `trainer` | one gym | first-class role in rules/middleware/Functions, BUT `src/lib/auth.ts` session resolution does **not** accept role `trainer` (see ⚠️ below) |
 | `member` | self | workout console, logging, progress, PT history |
 
 ⚠️ **Trainer role caveat.** Demo trainers are modelled as `role:"owner"` + `staffType:"trainer"`
-(`lib/auth.ts:78-95`). `createStaffAccount`/`createTrainer` create real `role:"trainer"`
-accounts (`functions/src/index.ts:449,1291`), but `toProfile` (`lib/auth.ts:299-323`) and the
-cookie fallback (`lib/auth.ts:909`) only accept `admin|owner|member` — so a pure
+(`src/lib/auth.ts:78-95`). `createStaffAccount`/`createTrainer` create real `role:"trainer"`
+accounts (`functions/src/index.ts:449,1291`), but `toProfile` (`src/lib/auth.ts:299-323`) and the
+cookie fallback (`src/lib/auth.ts:909`) only accept `admin|owner|member` — so a pure
 `role:"trainer"` account currently cannot establish a session. Tracked in
 [DISCREPANCIES](DISCREPANCIES.md) / [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
 
 ## Auth & sessions
 
-- Login: `loginWithCredentials` (`lib/auth.ts:707`). Demo accounts hard-coded
-  (`lib/auth.ts:61-240`); password `password` (staff) / PIN `1234` (members, stored as
+- Login: `loginWithCredentials` (`src/lib/auth.ts:707`). Demo accounts hard-coded
+  (`src/lib/auth.ts:61-240`); password `password` (staff) / PIN `1234` (members, stored as
   `pin-1234`). Real auth via Firebase Identity Toolkit REST → session cookie.
-- Session cookie `fitsplit-session`: 2h default, 14d "remember me" (`lib/auth.ts:19-20`).
+- Session cookie `fitsplit-session`: 2h default, 14d "remember me" (`src/lib/auth.ts:19-20`).
 - Compatibility cookies `fitsplit-role|username|gym-id|member-id` drive middleware routing
-  (`lib/auth.ts:422-436`, `middleware.ts:37-46`).
-- Guards: `requireAuth`, `requireRole`, `requireOwner` (`lib/auth.ts:952-996`). `requireOwner`
-  blocks `staffType !== "owner"` from destructive owner actions (`lib/auth.ts:991`).
-- Login lockout: 5 fails → 15 min (`lib/auth.ts:509-510`), enforced both server-side and via
+  (`src/lib/auth.ts:422-436`, `middleware.ts:37-46`).
+- Guards: `requireAuth`, `requireRole`, `requireOwner` (`src/lib/auth.ts:952-996`). `requireOwner`
+  blocks `staffType !== "owner"` from destructive owner actions (`src/lib/auth.ts:991`).
+- Login lockout: 5 fails → 15 min (`src/lib/auth.ts:509-510`), enforced both server-side and via
   the `blockLockedAccounts` Auth blocking trigger (`functions/src/index.ts:1905`).
 
 ## Routing (`middleware.ts`)
@@ -111,7 +111,7 @@ cookie fallback (`lib/auth.ts:909`) only accept `admin|owner|member` — so a pu
 
 ## Terminology
 
-- **read-model** = server-side cached Firestore read (`lib/firebase/read-models/*`,
+- **read-model** = server-side cached Firestore read (`src/lib/firebase/read-models/*`,
   uses `unstable_cache` + `react.cache`).
 - **dual-write / mirror** = same doc written to both root and `gyms/{gymId}/…`
   (`mirrorGymScopedRecord`, `mirrorProfileToGym`).

@@ -2,7 +2,7 @@
 
 `Generated: 2026-06-05 · Commit: c0e1f4b`
 
-> Relationships derived from code (write sites, read mappers, `types/domain.ts`). References
+> Relationships derived from code (write sites, read mappers, `src/types/domain.ts`). References
 > are by **field**, not Firestore document references. Most gym-scoped collections also have a
 > root mirror (omitted from the diagram for clarity — see [02_DATA_DICTIONARY](02_DATA_DICTIONARY.md)).
 
@@ -89,18 +89,18 @@ erDiagram
 
 | From | Field | To | Source |
 |---|---|---|---|
-| member | `assignedTrainerId` | staff (trainer) | `types/domain.ts:119`, `functions/src/index.ts:1335` |
+| member | `assignedTrainerId` | staff (trainer) | `src/types/domain.ts:119`, `functions/src/index.ts:1335` |
 | staff (trainer) | `assignedMemberIds[]` | member | `functions/src/index.ts:1298,1345` |
-| programAssignment | `programId` | workoutProgram | `types/domain.ts:343` |
-| programAssignment | `memberId` | member | `types/domain.ts:342` |
-| liftLog | `exerciseId` / `sessionId` / `ptSessionId` | exercise / workoutSession / ptSession | `types/domain.ts:399-408` |
-| ptSession | `trainerId` / `memberId` | staff / member | `types/domain.ts:615-617` |
-| ptLiftLog | `ptSessionId` / `exerciseId` | ptSession / exercise | `types/domain.ts:649-651` |
-| paymentRequest | `packageId` / `membershipId` | package / membership | `types/domain.ts:204,215` |
-| membership | `packageId` / `paymentRequestId` | package / paymentRequest | `types/domain.ts:230,238` |
-| notification | `recipientId` / `memberId` / `ptSessionId` | authProfile / member / ptSession | `types/domain.ts:350,377,379` |
+| programAssignment | `programId` | workoutProgram | `src/types/domain.ts:343` |
+| programAssignment | `memberId` | member | `src/types/domain.ts:342` |
+| liftLog | `exerciseId` / `sessionId` / `ptSessionId` | exercise / workoutSession / ptSession | `src/types/domain.ts:399-408` |
+| ptSession | `trainerId` / `memberId` | staff / member | `src/types/domain.ts:615-617` |
+| ptLiftLog | `ptSessionId` / `exerciseId` | ptSession / exercise | `src/types/domain.ts:649-651` |
+| paymentRequest | `packageId` / `membershipId` | package / membership | `src/types/domain.ts:204,215` |
+| membership | `packageId` / `paymentRequestId` | package / paymentRequest | `src/types/domain.ts:230,238` |
+| notification | `recipientId` / `memberId` / `ptSessionId` | authProfile / member / ptSession | `src/types/domain.ts:350,377,379` |
 | authProfile | `defaultGymId` | gym | `actions/shared.ts:336` |
-| dayLog | `programId` / `dayId` | workoutProgram / WorkoutDay | `types/domain.ts:574-576` |
+| dayLog | `programId` / `dayId` | workoutProgram / WorkoutDay | `src/types/domain.ts:574-576` |
 
 ## 4. Denormalisation (intentional snapshots)
 

@@ -7,9 +7,9 @@
 ## High Priority Bugs
 
 1. **Trainer Role Authentication Failures**
-   - **Issue:** `createStaffAccount` and `createTrainer` create `role:"trainer"` users, but the session authentication middleware (`lib/auth.ts:306`) and cookie fallback only accept `admin|owner|member`.
+   - **Issue:** `createStaffAccount` and `createTrainer` create `role:"trainer"` users, but the session authentication middleware (`src/lib/auth.ts:306`) and cookie fallback only accept `admin|owner|member`.
    - **Impact:** A pure trainer cannot log in via the app session path. (Currently masked because demo trainers are `role:"owner"` + `staffType:"trainer"`).
-   - **Fix Required:** Add `"trainer"` to accepted-role checks in `lib/auth.ts` and ensure `/trainer` routes work end-to-end.
+   - **Fix Required:** Add `"trainer"` to accepted-role checks in `src/lib/auth.ts` and ensure `/trainer` routes work end-to-end.
 
 2. **Root PT Collections Privacy Leak**
    - **Issue:** Root `ptSessions` and `ptLiftLogs` Firestore rules (`firestore.rules:424,432`) let any gym member read **any** PT session/lift log in that gym. 
@@ -17,19 +17,19 @@
    - **Fix Required:** Tighten root rules to `resource.data.memberId == memberId()` or deprecate the root PT mirror entirely.
 
 3. **Lockout Key Mismatch Weakens Brute-Force Defense**
-   - **Issue:** Identifier-based locks are written to `loginAttempts/{rawIdentifier}` (`lib/auth.ts:589`), but the Auth blocking trigger reads `loginAttempts/{email}` (`functions/src/index.ts:1912`).
+   - **Issue:** Identifier-based locks are written to `loginAttempts/{rawIdentifier}` (`src/lib/auth.ts:589`), but the Auth blocking trigger reads `loginAttempts/{email}` (`functions/src/index.ts:1912`).
    - **Impact:** Direct-SDK sign-ins may bypass identifier locks.
    - **Fix Required:** Standardize on a single key (lowercased email) across both paths.
 
 ## Incomplete Functionalities
 
 1. **Muscle Target Descriptions in Mock Data**
-   - **Issue:** `lib/workouts.json` has 66 exercises, but they lack the `muscleTargetDescription` field. 
+   - **Issue:** `src/lib/workouts.json` has 66 exercises, but they lack the `muscleTargetDescription` field. 
    - **Impact:** The exercise detail UI pill won't render descriptions for mock exercises, only for those manually patched in Firestore.
    - **Fix Required:** One-pass fill of all 66 entries with specific muscle focus (e.g. "Targets the lateral and long head of the triceps…").
 
 2. **Exercise JSON Catalog Deep Cleanup**
-   - **Issue:** Mock data in `lib/workouts.json` lacks normalized `muscleGroup`, `equipment`, or `movementPattern` fields on individual entries.
+   - **Issue:** Mock data in `src/lib/workouts.json` lacks normalized `muscleGroup`, `equipment`, or `movementPattern` fields on individual entries.
    - **Impact:** Slower parsing; relies on top-level keys. 
    - **Fix Required:** Add per-entry fields, deduplicate across groups, and cross-reference every `exerciseId` in `gyms/*/workoutPrograms` against the JSON IDs.
 
@@ -65,7 +65,7 @@
    - **Fix Required:** Move to a subcollection or use array-union transactions.
 
 5. **Notification Type Union Drift**
-   - **Issue:** Billing code emits `payment_request_pending`/`payment_request_rejected` which aren't in `types/domain.ts` union.
+   - **Issue:** Billing code emits `payment_request_pending`/`payment_request_rejected` which aren't in `src/types/domain.ts` union.
    - **Impact:** UI may fall back to default icons or fail to render properly.
    - **Fix Required:** Add types to union and notification-list icon map.
 

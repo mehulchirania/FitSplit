@@ -10,10 +10,10 @@
 
 ### R1 · Trainer role can't establish a session — **Sev: High · Effort: M · Risk: M**
 `createStaffAccount`/`createTrainer` create real `role:"trainer"` Auth users, but
-`toProfile` (`lib/auth.ts:306`) and the cookie fallback (`lib/auth.ts:909`) only accept
+`toProfile` (`src/lib/auth.ts:306`) and the cookie fallback (`src/lib/auth.ts:909`) only accept
 `admin|owner|member`. A pure trainer therefore can't log in via the app session path. Today this
 is masked because demo trainers are `role:"owner"`+`staffType:"trainer"`.
-**Fix:** add `"trainer"` to the accepted-role checks in `lib/auth.ts` (and audit
+**Fix:** add `"trainer"` to the accepted-role checks in `src/lib/auth.ts` (and audit
 `authUserFromProfile`/`redirectForRole`, which already handle trainer). Test the `/trainer` routes
 end-to-end. (See [DISCREPANCIES](DISCREPANCIES.md) B1.)
 
@@ -25,7 +25,7 @@ member (`:252,261`).
 the root PT mirror entirely (see R4).
 
 ### R3 · Lockout key mismatch weakens brute-force defense — **Sev: Med · Effort: S · Risk: L**
-Identifier-based locks are written to `loginAttempts/{rawIdentifier}` (`lib/auth.ts:589`) but the
+Identifier-based locks are written to `loginAttempts/{rawIdentifier}` (`src/lib/auth.ts:589`) but the
 Auth blocking trigger reads `loginAttempts/{email}` (`functions/src/index.ts:1912`). Direct-SDK
 sign-ins may bypass identifier locks.
 **Fix:** standardize on a single key (email, lowercased) across both paths, or have the trigger
@@ -52,7 +52,7 @@ in `00_AI_CONTEXT.md`.
 
 ### R6 · Notification `type` union drift — **Sev: Low-Med · Effort: S · Risk: L**
 Billing code emits `payment_request_pending`/`payment_request_rejected` not in
-`Notification.type` (`types/domain.ts:352-368`). UI icon/styling keyed on type may fall through.
+`Notification.type` (`src/types/domain.ts:352-368`). UI icon/styling keyed on type may fall through.
 **Fix:** extend the union and the notification-list icon map, or normalize emitted types.
 
 ## Dead / orphaned code
@@ -61,7 +61,7 @@ Billing code emits `payment_request_pending`/`payment_request_rejected` not in
 - `workoutSplitTemplates` collection: declared + has rules, no read/write site
   ([DISCREPANCIES](DISCREPANCIES.md) C1).
 - Root `memberships` key unused (gym-scoped only).
-- Several callable wrappers in `lib/firebase/functions.ts` with no confirmed UI caller (C5).
+- Several callable wrappers in `src/lib/firebase/functions.ts` with no confirmed UI caller (C5).
 - Legacy `profiles` collection — read-only fallback; plan removal with R4.
 **Fix:** remove after confirming zero references; keep `profiles` until migration done.
 
@@ -73,7 +73,7 @@ README flags superseded files (`01-owner-members.css` ⊃ by `19-members-redesig
 ## Testing & quality
 
 ### R9 · Near-zero test coverage — **Sev: Med · Effort: L · Risk: L**
-Only `lib/__tests__/validation.test.ts` and `lib/__tests__/workout-utils.test.ts` exist. The
+Only `src/lib/__tests__/validation.test.ts` and `src/lib/__tests__/workout-utils.test.ts` exist. The
 entire data-access layer (actions, read-models, CFs), authz guards, geofence math, billing date
 math, and dual-write mirroring are untested.
 **Priority targets:** `assertMemberBelongsToCallerGym`, `validateGymGeofence`/`distanceInMeters`,

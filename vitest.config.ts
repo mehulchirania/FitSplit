@@ -5,11 +5,11 @@ export default defineConfig({
   test: {
     environment: "node",
     globals: true,
-    include: ["lib/**/*.test.ts", "lib/**/*.spec.ts"]
+    include: ["src/lib/**/*.test.ts", "src/lib/**/*.spec.ts"]
   },
   resolve: {
     alias: {
-      "@": path.resolve(__dirname, ".")
+      "@": path.resolve(__dirname, "./src")
     }
   }
 });
