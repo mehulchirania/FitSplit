@@ -12,8 +12,9 @@
 | "Remember me" session = 14 days (Firebase max) | `src/lib/auth.ts:20` | extended cookie |
 | Login lockout after 5 failed attempts | `src/lib/auth.ts:509` | brute-force protection |
 | Lockout duration = 15 minutes | `src/lib/auth.ts:510` | |
-| Dual lockout: profile-embedded (by email) + identifier-based (by phone/username) | `src/lib/auth.ts:528-609` | phone/username attacks gated before email resolution |
-| Blocking trigger re-checks lockout at Auth layer (keyed by email) | `functions/src/index.ts:1905-1935` | gates direct SDK sign-in; fails open on error |
+| Email login is completely disabled | `src/lib/auth.ts:592-647` | Only username or phone are allowed |
+| Dual lockout: profile-embedded (by synthetic email) + identifier-based (by phone/username) | `src/lib/auth.ts:528-609` | phone/username attacks gated before synthetic email resolution |
+| Blocking trigger re-checks lockout at Auth layer (keyed by synthetic email) | `functions/src/index.ts:1905-1935` | gates direct SDK sign-in; fails open on error |
 | Firebase sign-in REST timeout = 10 s | `src/lib/auth.ts:824` | server action can't hang |
 | New staff forced to change password on first login (`mustChangePassword`) | `actions/staff.ts:135`, `src/lib/auth.ts:972-978` | redirect to `/profile?forceChange=1` |
 | `requireOwner` blocks staff whose `staffType !== "owner"` from owner actions | `src/lib/auth.ts:991` | trainers can't do destructive owner ops |
