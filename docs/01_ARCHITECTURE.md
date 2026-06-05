@@ -16,7 +16,7 @@ tenant is **Sri Shakthi Hanuman Gym** (`shg`, `collections.ts:68`). Four roles â
 | Framework | Next.js 15 App Router, React 19 | `package.json` deps `next ^15.3.1`, `react ^19.0.0` |
 | Language | TypeScript | repo-wide `.ts/.tsx` |
 | DB | Cloud Firestore (gym-scoped) | `src/lib/firebase/admin.ts`, `collections.ts` |
-| Auth | Firebase Auth (email/password + session cookies) | `src/lib/auth.ts` |
+| Auth | Firebase Auth (username/phone + password + session cookies) | `src/lib/auth.ts` |
 | Privileged backend | Cloud Functions v2, region `asia-south1` | `functions/src/index.ts:20` |
 | Storage | Firebase Storage (gym logos) | `actions/gyms.ts:514-527`, `functions/src/index.ts:591-604` |
 | Push | Firebase Cloud Messaging | `actions/shared.ts:616-663`, `functions/src/index.ts:263-279` |

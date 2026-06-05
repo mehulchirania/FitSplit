@@ -5,7 +5,7 @@
 > End-to-end flows. Each: Screen → Action/Function → Firestore write → Notification → Analytics.
 > Citations point to the controlling code.
 
-## 1. Staff login (email/password)
+## 1. Staff login (username/phone + password)
 
 ```mermaid
 sequenceDiagram
@@ -37,7 +37,7 @@ Lockout: 5 fails → 15 min (`src/lib/auth.ts:509-510`); also enforced by `block
 ## 2. Member login (PIN)
 
 Same path, `mode="member"`. Firebase password = `pin-${PIN}` (`src/lib/auth.ts:812`). Identifier
-intelligently resolves to either `username` or `phone` (bypassing emails) → synthetic `@members.fitsplit.app` email. Demo members fall back
+intelligently resolves to either `username` or `phone` (bypassing emails entirely, email login is disabled for both staff and members). Demo members fall back
 to compatibility-cookie session (`src/lib/auth.ts:772`).
 
 ## 3. Member creation (owner)
