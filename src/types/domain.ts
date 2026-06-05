@@ -24,7 +24,72 @@ export type MuscleGroup =
   | "Triceps"
   | "Legs"
   | "Core"
-  | "Cardio";
+  | "Cardio"
+  | "Forearms";
+
+export type MuscleTargetId =
+  | "chest.upper"
+  | "chest.mid"
+  | "chest.lower"
+  | "chest.pec_minor"
+  | "chest.serratus"
+  | "back.lats"
+  | "back.teres_major"
+  | "back.rhomboids"
+  | "back.mid_traps"
+  | "back.lower_traps"
+  | "back.upper_traps"
+  | "back.rear_delt"
+  | "back.spinal_erectors"
+  | "back.scapular_stabilizers"
+  | "shoulders.front_delt"
+  | "shoulders.side_delt"
+  | "shoulders.rear_delt"
+  | "shoulders.rotator_cuff"
+  | "shoulders.supraspinatus"
+  | "shoulders.infraspinatus"
+  | "shoulders.teres_minor"
+  | "shoulders.subscapularis"
+  | "biceps.long_head"
+  | "biceps.short_head"
+  | "biceps.brachialis"
+  | "biceps.brachioradialis"
+  | "forearms.flexors"
+  | "forearms.extensors"
+  | "forearms.grip"
+  | "triceps.long_head"
+  | "triceps.lateral_head"
+  | "triceps.medial_head"
+  | "triceps.full"
+  | "legs.quads_rectus_femoris"
+  | "legs.quads_vastus_lateralis"
+  | "legs.quads_vastus_medialis"
+  | "legs.quads_vastus_intermedius"
+  | "legs.hamstrings_biceps_femoris"
+  | "legs.hamstrings_semitendinosus"
+  | "legs.hamstrings_semimembranosus"
+  | "legs.glute_max"
+  | "legs.glute_med"
+  | "legs.glute_min"
+  | "legs.adductors"
+  | "legs.abductors"
+  | "legs.hip_flexors"
+  | "legs.calves_gastrocnemius"
+  | "legs.calves_soleus"
+  | "core.rectus_abdominis"
+  | "core.transverse_abdominis"
+  | "core.external_obliques"
+  | "core.internal_obliques"
+  | "core.spinal_erectors"
+  | "core.multifidus"
+  | "core.ql"
+  | "cardio.steady_state"
+  | "cardio.incline_walk"
+  | "cardio.hiit"
+  | "cardio.cycling"
+  | "cardio.rowing"
+  | "cardio.sled"
+  | "cardio.full_body_conditioning";
 
 export type GymNoticeType = "rule" | "tip" | "reminder" | "announcement";
 
@@ -285,6 +350,10 @@ export type Exercise = {
    * Displayed as an informational pill in the exercise detail view during workouts.
    */
   muscleTargetDescription?: string;
+  primaryTargets?: MuscleTargetId[];
+  secondaryTargets?: MuscleTargetId[];
+  movementPattern?: string;
+  targetNotes?: string;
 };
 
 export type WorkoutExercise = {

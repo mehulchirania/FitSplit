@@ -324,16 +324,19 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
 
 async function getProfileById(uid: string) {
   const { db } = getFirebaseAdminServices();
-  const doc = await db.collection(collectionPaths.authProfiles).doc(uid).get();
+  
+  const [doc, legacyDoc] = await Promise.all([
+    db.collection(collectionPaths.authProfiles).doc(uid).get(),
+    db.collection(collectionPaths.profiles).doc(uid).get()
+  ]);
+
   if (doc.exists) {
     return toProfile(doc.id, doc.data());
   }
-  const legacyDoc = await db.collection(collectionPaths.profiles).doc(uid).get();
   if (legacyDoc.exists) {
     return toProfile(legacyDoc.id, legacyDoc.data());
   }
-  // Collection-group queries require collection-group-scope indexes. Guard with
-  // try/catch so a missing or still-building index doesn't crash the login path.
+
   try {
     const [memberSnapshot, staffSnapshot] = await Promise.all([
       db.collectionGroup("members").where("id", "==", uid).limit(1).get(),
@@ -350,22 +353,17 @@ async function getProfileByEmail(email: string) {
   const { db } = getFirebaseAdminServices();
   const normalizedEmail = email.trim().toLowerCase();
 
-  // B5: Run queries sequentially with early exit — common case hits authProfiles.authEmail
-  // and returns after 1 read instead of always firing all 4 in parallel.
-  const queries: (() => Promise<FirebaseFirestore.QuerySnapshot>)[] = [
-    () => db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
-    () => db.collection(collectionPaths.authProfiles).where("email", "==", normalizedEmail).limit(1).get(),
-    () => db.collection(collectionPaths.profiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
-    () => db.collection(collectionPaths.profiles).where("email", "==", normalizedEmail).limit(1).get()
-  ];
+  const [snap1, snap2, snap3, snap4] = await Promise.all([
+    db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
+    db.collection(collectionPaths.authProfiles).where("email", "==", normalizedEmail).limit(1).get(),
+    db.collection(collectionPaths.profiles).where("authEmail", "==", normalizedEmail).limit(1).get(),
+    db.collection(collectionPaths.profiles).where("email", "==", normalizedEmail).limit(1).get()
+  ]);
 
-  for (const query of queries) {
-    const snapshot = await query();
-    if (!snapshot.empty) {
-      const doc = snapshot.docs[0];
-      return toProfile(doc.id, doc.data());
-    }
-  }
+  if (!snap1.empty) return toProfile(snap1.docs[0].id, snap1.docs[0].data());
+  if (!snap2.empty) return toProfile(snap2.docs[0].id, snap2.docs[0].data());
+  if (!snap3.empty) return toProfile(snap3.docs[0].id, snap3.docs[0].data());
+  if (!snap4.empty) return toProfile(snap4.docs[0].id, snap4.docs[0].data());
 
   return null;
 }
@@ -383,35 +381,24 @@ async function resolveProfileForIdentifier(identifier: string) {
     return getProfileById(demoLogin.uid);
   }
 
-  for (const key of keys) {
-    const byId = await getProfileById(key);
-    if (byId) {
-      return byId;
+  if (keys.length > 0) {
+    const promises = [];
+    const isPhone = /^\+?[\d\s-]+$/.test(identifier.trim());
+    const fieldsToQuery = isPhone ? ["phone"] as const : ["username"] as const;
+
+    for (const field of fieldsToQuery) {
+      const uniqueKeys = Array.from(new Set(keys)).slice(0, 30);
+      
+      promises.push(
+        db.collection(collectionPaths.authProfiles).where(field, "in", uniqueKeys).limit(1).get().then(snap => ({ snap, isLegacy: false })),
+        db.collection(collectionPaths.profiles).where(field, "in", uniqueKeys).limit(1).get().then(snap => ({ snap, isLegacy: true }))
+      );
     }
-  }
-
-  for (const field of ["username", "authEmail", "email", "phone"] as const) {
-    for (const key of keys) {
-      const snapshot = await db
-        .collection(collectionPaths.authProfiles)
-        .where(field, "==", field.includes("email") ? key.toLowerCase() : key)
-        .limit(1)
-        .get();
-
-      if (!snapshot.empty) {
-        const doc = snapshot.docs[0];
-        return toProfile(doc.id, doc.data());
-      }
-
-      const legacySnapshot = await db
-        .collection(collectionPaths.profiles)
-        .where(field, "==", field.includes("email") ? key.toLowerCase() : key)
-        .limit(1)
-        .get();
-
-      if (!legacySnapshot.empty) {
-        const doc = legacySnapshot.docs[0];
-        return toProfile(doc.id, doc.data());
+    
+    const results = await Promise.all(promises);
+    for (const { snap } of results) {
+      if (!snap.empty) {
+        return toProfile(snap.docs[0].id, snap.docs[0].data());
       }
     }
   }
@@ -509,26 +496,26 @@ function validateExpectedRole(role: Role, expectedRole?: "member" | "staff") {
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_MINUTES = 15;
 
-async function findProfileRefByEmail(email: string) {
+async function findProfileRefAndDataByEmail(email: string) {
   if (!hasFirebaseAdminConfig()) return null;
   const { db } = getFirebaseAdminServices();
   const normalized = email.trim().toLowerCase();
-  // Check authEmail first (most common), then fall back to email.
-  for (const field of ["authEmail", "email"] as const) {
-    const snap = await db
-      .collection(collectionPaths.authProfiles)
-      .where(field, "==", normalized)
-      .limit(1)
-      .get();
-    if (!snap.empty) return snap.docs[0].ref;
-  }
+  
+  const [authSnap, emailSnap] = await Promise.all([
+    db.collection(collectionPaths.authProfiles).where("authEmail", "==", normalized).limit(1).get(),
+    db.collection(collectionPaths.authProfiles).where("email", "==", normalized).limit(1).get()
+  ]);
+
+  if (!authSnap.empty) return { ref: authSnap.docs[0].ref, data: authSnap.docs[0].data() };
+  if (!emailSnap.empty) return { ref: emailSnap.docs[0].ref, data: emailSnap.docs[0].data() };
+  
   return null;
 }
 
 async function checkLoginLockout(email: string): Promise<{ locked: boolean; minutesRemaining?: number }> {
-  const ref = await findProfileRefByEmail(email);
-  if (!ref) return { locked: false };
-  const data = (await ref.get()).data() ?? {};
+  const result = await findProfileRefAndDataByEmail(email);
+  if (!result) return { locked: false };
+  const data = result.data ?? {};
   const lockedUntil = data.lockedUntil ? new Date(String(data.lockedUntil)) : null;
   if (lockedUntil && lockedUntil.getTime() > Date.now()) {
     const minutesRemaining = Math.max(1, Math.ceil((lockedUntil.getTime() - Date.now()) / 60_000));
@@ -538,9 +525,9 @@ async function checkLoginLockout(email: string): Promise<{ locked: boolean; minu
 }
 
 async function incrementLoginFailure(email: string) {
-  const ref = await findProfileRefByEmail(email);
-  if (!ref) return;
-  const data = (await ref.get()).data() ?? {};
+  const result = await findProfileRefAndDataByEmail(email);
+  if (!result) return;
+  const { ref, data } = result;
   const current = Number(data.failedLoginAttempts ?? 0);
   const next = current + 1;
   const update: Record<string, unknown> = {
@@ -555,9 +542,9 @@ async function incrementLoginFailure(email: string) {
 }
 
 async function clearLoginAttempts(email: string) {
-  const ref = await findProfileRefByEmail(email);
-  if (!ref) return;
-  await ref.set(
+  const result = await findProfileRefAndDataByEmail(email);
+  if (!result) return;
+  await result.ref.set(
     { failedLoginAttempts: 0, lockedUntil: null, lastFailedLoginAt: null },
     { merge: true }
   );
@@ -613,7 +600,7 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
   const cleanIdentifier = identifier.trim();
 
   if (!cleanIdentifier) {
-    return { status: "error" as const, message: "Enter your username, mobile number, or email." };
+    return { status: "error" as const, message: "Enter your username or mobile number." };
   }
 
   const demoLogin = findDemoLogin(cleanIdentifier);
@@ -661,7 +648,8 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
     status: "success" as const,
     email: profile.authEmail ?? profile.email ?? "",
     phone: profile.phone,
-    role: profile.role
+    role: profile.role,
+    profile
   };
 }
 
@@ -843,14 +831,16 @@ async function _loginWithCredentials(formData: FormData) {
     return { status: "error" as const, message: "Unable to sign in. Please try again." };
   }
 
-  // Successful auth — wipe both failure counters so a future wrong PIN starts fresh.
-  try { await clearLoginAttempts(resolved.email); } catch {}
-  try { await clearIdentifierAttempts(identifier); } catch {}
+  // Successful auth — wipe both failure counters in parallel
+  await Promise.all([
+    clearLoginAttempts(resolved.email).catch(() => {}),
+    clearIdentifierAttempts(identifier).catch(() => {})
+  ]);
 
-  return createSession(payload.idToken, rememberMe);
+  return createSession(payload.idToken, rememberMe, resolved.profile);
 }
 
-export async function createSession(idToken: string, rememberMe = false) {
+export async function createSession(idToken: string, rememberMe = false, preFetchedProfile?: ProfileRecord | null) {
   if (!hasFirebaseAdminConfig()) {
     return { status: "error" as const, message: "Firebase Admin is not configured on the server yet." };
   }
@@ -859,8 +849,9 @@ export async function createSession(idToken: string, rememberMe = false) {
     const { auth } = getFirebaseAdminServices();
     const decodedToken = await auth.verifyIdToken(idToken);
     const profile =
-      (await getProfileById(decodedToken.uid)) ??
-      (decodedToken.email ? await getProfileByEmail(decodedToken.email) : null);
+      preFetchedProfile ??
+      ((await getProfileById(decodedToken.uid)) ??
+      (decodedToken.email ? await getProfileByEmail(decodedToken.email) : null));
 
     if (!profile || !profile.isActive) {
       await clearAuthCookies();
