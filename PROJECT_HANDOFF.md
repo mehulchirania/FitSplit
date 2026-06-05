@@ -4,6 +4,20 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## 🎨 Latest Milestone — Owner-workspace UI fixes + PT page redesign (2026-06-05)
+
+### Members page (`members-hybrid-view` / `19-members-redesign.css`)
+- **White action buttons fixed.** `.mhv-qcard__action` (and 2 sibling buttons) used `color: var(--bg-elevated)` as text on a `var(--text)` (white) background; `--bg-elevated` is now a translucent `rgba(255,255,255,0.03)` overlay → invisible text. Changed text colour to solid `var(--bg)`.
+- **Empty directory fixed.** The directory `.mhv-panel` was flex-compressed by `.mhv-root` and its `overflow: hidden` clipped the table rows. Added `flex-shrink: 0`.
+- **Oversized checkbox fixed.** `.mhv-check` now has hard min/max 16px size locks.
+
+### Personal Training (`/owner/training`) — redesigned + bug fix
+- **Activate/Complete/Cancel/Reschedule "PT session not found." — FIXED e2e.** The four lifecycle actions (`actions/pt.ts`) looked the session up in the **root** `ptSessions` collection, but the UI lists from the **gym-scoped** path. New `loadPTSessionForWrite` helper resolves gym-scoped first, falls back to root, and `applyPatch` updates only the copies that exist (no partial-doc writes).
+- **Page rebuilt on the `adm-card` design system** (`ptx-` namespace, `10-pt-training.css`): list-first **two-column manage view** — controls/actions rail (KPIs, Assign CTA, trainer/status filters, List/Calendar toggle) on the left, **plan lists grouped by status** (Scheduled / Active / Completed / Cancelled) on the right. "+ Assign PT plan" opens a **focused booking mode** (`?book=1`). Booking-form fields now styled (the type-less inputs had no matching selector). Old `pt-workspace`/`pt-session-card`/`pt-command-*` styles are now dead.
+- **Open:** the `?book=1` Assign-PT-plan form page still needs a layout pass (oversized head icon, long single-flow form) — tracked as a backlog task.
+
+---
+
 ## 🔒 Latest Milestone — Security Hardening, Legal/Compliance & DSAR (2026-06-05)
 
 ### Security posture

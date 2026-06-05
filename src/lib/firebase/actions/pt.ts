@@ -134,6 +134,40 @@ const SessionIdSchema = z.object({
   ptSessionId: ZodHelpers.textRequired("Session ID")
 });
 
+/**
+ * Resolve a PT session for a lifecycle write. The UI lists sessions from the
+ * gym-scoped path (`gyms/{gymId}/ptSessions`), but legacy data may live only
+ * there OR only in the root mirror — so look up the gym-scoped copy first and
+ * fall back to root. Returns an `applyPatch` that updates whichever copies
+ * exist (never creating a partial doc), keeping both mirrors in sync.
+ */
+async function loadPTSessionForWrite(
+  db: ReturnType<typeof requireFirebase>,
+  ptSessionId: string,
+  currentUser: { role: string; gymId?: string }
+) {
+  const fallbackGym = currentUser.gymId ?? PRIMARY_GYM_ID;
+  const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
+
+  let snap = await scopedGymDoc(db, fallbackGym, "ptSessions", ptSessionId).get();
+  if (!snap.exists) {
+    snap = await rootRef.get();
+  }
+  if (!snap.exists) return null;
+
+  const session = snap.data()!;
+  const gymId = String(session.gymId ?? fallbackGym);
+
+  async function applyPatch(patch: Record<string, unknown>) {
+    // `.update()` throws on a missing doc — catch so we only touch existing
+    // copies and never write an incomplete mirror.
+    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch).catch(() => {});
+    await rootRef.update(patch).catch(() => {});
+  }
+
+  return { session, gymId, applyPatch };
+}
+
 export async function startPTSession(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
@@ -148,12 +182,9 @@ export async function startPTSession(
     const db = requireFirebase();
     const now = new Date().toISOString();
 
-    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
-    const snap = await rootRef.get();
-    if (!snap.exists) throw new Error("PT session not found.");
-
-    const session = snap.data()!;
-    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    const loaded = await loadPTSessionForWrite(db, ptSessionId, currentUser);
+    if (!loaded) throw new Error("PT session not found.");
+    const { session, gymId, applyPatch } = loaded;
     if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
       throw new Error("This PT session belongs to another gym.");
     }
@@ -161,9 +192,7 @@ export async function startPTSession(
       throw new Error(`Cannot start a session with status "${session.status}".`);
     }
 
-    const patch = { status: "active", startedAt: now, updatedAt: now };
-    await rootRef.update(patch);
-    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+    await applyPatch({ status: "active", startedAt: now, updatedAt: now });
 
     return success("Session started.", gymId, ["pt-sessions", "pt-lift-logs"]);
   } catch (error) {
@@ -294,12 +323,9 @@ export async function completePTSession(
     const db = requireFirebase();
     const now = new Date().toISOString();
 
-    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
-    const snap = await rootRef.get();
-    if (!snap.exists) throw new Error("PT session not found.");
-
-    const session = snap.data()!;
-    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    const loaded = await loadPTSessionForWrite(db, ptSessionId, currentUser);
+    if (!loaded) throw new Error("PT session not found.");
+    const { session, gymId, applyPatch } = loaded;
     if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
       throw new Error("This PT session belongs to another gym.");
     }
@@ -307,9 +333,7 @@ export async function completePTSession(
       throw new Error(`Cannot complete a session with status "${session.status}".`);
     }
 
-    const patch = { status: "completed", endedAt: now, updatedAt: now };
-    await rootRef.update(patch);
-    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+    await applyPatch({ status: "completed", endedAt: now, updatedAt: now });
 
     // Notify the member
     const notifId = randomUUID();
@@ -371,12 +395,9 @@ export async function cancelPTSession(
     const db = requireFirebase();
     const now = new Date().toISOString();
 
-    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
-    const snap = await rootRef.get();
-    if (!snap.exists) throw new Error("PT session not found.");
-
-    const session = snap.data()!;
-    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    const loaded = await loadPTSessionForWrite(db, ptSessionId, currentUser);
+    if (!loaded) throw new Error("PT session not found.");
+    const { session, gymId, applyPatch } = loaded;
     if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
       throw new Error("This PT session belongs to another gym.");
     }
@@ -384,9 +405,7 @@ export async function cancelPTSession(
       throw new Error(`Session is already ${session.status}.`);
     }
 
-    const patch = { status: "cancelled", cancelReason, updatedAt: now };
-    await rootRef.update(patch);
-    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+    await applyPatch({ status: "cancelled", cancelReason, updatedAt: now });
 
     // Notify the member
     const notifId = randomUUID();
@@ -451,12 +470,9 @@ export async function reschedulePTSession(
     const db = requireFirebase();
     const now = new Date().toISOString();
 
-    const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
-    const snap = await rootRef.get();
-    if (!snap.exists) throw new Error("PT session not found.");
-
-    const session = snap.data()!;
-    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    const loaded = await loadPTSessionForWrite(db, ptSessionId, currentUser);
+    if (!loaded) throw new Error("PT session not found.");
+    const { session, gymId, applyPatch } = loaded;
     if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
       throw new Error("This PT session belongs to another gym.");
     }
@@ -485,8 +501,7 @@ export async function reschedulePTSession(
     const notes = (rawNotes || "").trim();
     if (notes) patch.notes = notes;
 
-    await rootRef.update(patch);
-    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
+    await applyPatch(patch);
 
     // Notify the member
     const notifId = randomUUID();

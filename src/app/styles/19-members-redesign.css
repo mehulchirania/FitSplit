@@ -545,8 +545,18 @@
 /* Checkbox */
 .mhv-check {
   appearance: none;
-  width: 17px;
-  height: 17px;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  /* Hard size lock — min/max defeat any stray global input padding/min-height
+     that would otherwise inflate the checkbox. */
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  max-width: 16px;
+  min-height: 16px;
+  max-height: 16px;
+  padding: 0;
+  margin: 0;
   border: 1.5px solid var(--border-strong);
   border-radius: 5px;
   background: var(--bg-elevated);
@@ -554,7 +564,8 @@
   position: relative;
   flex-shrink: 0;
   transition: all 100ms;
-  display: block;
+  display: inline-block;
+  vertical-align: middle;
 }
 .mhv-check:hover { border-color: var(--brand); }
 .mhv-check:checked {

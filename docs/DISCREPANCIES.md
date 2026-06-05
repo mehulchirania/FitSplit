@@ -27,6 +27,7 @@
 | B5 | `submitPaymentRequest` notification type | Emits `payment_request_pending` (not in `Notification.type` union); read-model maps unknown types verbatim so UI may lack an icon | `actions/member-billing.ts:70`, `read-models/notifications.ts:22` | Low |
 | B6 | Action vs CF duplication | Most privileged writes exist as both a Server Action (used) and a Cloud Function (often unused). Drift risk: e.g. CF `assignProgramToMember` uses trigger-based side effects; the action writes them inline | see [04](04_DATA_ACCESS_CATALOG.md) | Medium |
 | B7 | `computeGymDashboard` 7-day window | `expiringThisWeek` uses a hardcoded 7-day window, ignoring per-gym `expiryWarningDays` | `functions/src/index.ts:1609,1690` vs `actions/gyms.ts:151` | Low |
+| B8 | ~~PT lifecycle actions can't find gym-scoped sessions~~ — **resolved (2026-06-05)** | `startPTSession`/`complete`/`cancel`/`reschedule` looked sessions up only in the **root** `ptSessions` collection and threw "PT session not found." for sessions that exist only in the **gym-scoped** path (where the UI lists from). Now `loadPTSessionForWrite` resolves gym-scoped → root and updates only existing copies | `actions/pt.ts` `loadPTSessionForWrite` | Resolved |
 
 ## C. Declared-but-unused / orphaned
 

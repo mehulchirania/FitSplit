@@ -130,11 +130,12 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | Name | Source | Collections | Side effects |
 |---|---|---|---|
 | `bookPTSession` | `:46` | ptSessions (W scoped+root, `sideEffectsMode:"trigger"`) | FCM push; notification via `onPTPlanCreated` trigger |
-| `startPTSession` | `:137` | ptSessions (W) | status→active; same-gym check |
+| `startPTSession` | `:137` | ptSessions (W) | status→active; same-gym check. Resolves session via `loadPTSessionForWrite` (gym-scoped→root) |
 | `logPTLiftSet` | `:194` | ptLiftLogs (W) + **liftLogs dual-write** `source:"trainer"` | session must be active |
-| `completePTSession` | `:283` | ptSessions, notifications (W) | FCM push |
-| `cancelPTSession` | `:359` | ptSessions, notifications (W) | |
-| `reschedulePTSession` | `:435` | ptSessions, notifications (W) | resets `notified24h/1h` |
+| `completePTSession` | `:283` | ptSessions, notifications (W) | FCM push; `loadPTSessionForWrite` resolution |
+| `cancelPTSession` | `:359` | ptSessions, notifications (W) | `loadPTSessionForWrite` resolution |
+| `reschedulePTSession` | `:435` | ptSessions, notifications (W) | resets `notified24h/1h`; `loadPTSessionForWrite` resolution |
+| `loadPTSessionForWrite` (helper) | `actions/pt.ts` | ptSessions (R both paths) | resolves gym-scoped→root; `applyPatch` updates only existing mirrors |
 
 ### billing (actions/billing.ts — owner; member-billing.ts — member)
 | Name | Source | Role gate | Collections | Side effects |
