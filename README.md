@@ -29,6 +29,19 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 ---
 
+## 📚 Documentation
+
+The **`docs/`** directory is the single source of truth for this codebase. Start at **[`docs/_INDEX.md`](docs/_INDEX.md)** for navigation and the maintenance protocol; load **[`docs/00_AI_CONTEXT.md`](docs/00_AI_CONTEXT.md)** for a fast, condensed context dump.
+
+The docs follow a three-tier model:
+- **Tier 0** — `00_AI_CONTEXT.md`: always-loaded condensed overview.
+- **Tier 1** — `01_ARCHITECTURE.md` … `09_SCREEN_CATALOG.md`: verified facts (architecture, data model, actions, functions, roles, routes, screens).
+- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_UI_STYLE_GUIDE.md`, and `DISCREPANCIES.md`.
+
+This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
+
+---
+
 ## ✨ Features
 
 ### 🏋️ Workout & Program Management
@@ -314,165 +327,11 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 
 ---
 
-## 🎨 Design System
+## 🎨 Design System & UI Patterns
 
-### Design Tokens
+FitSplit uses a custom design system with comprehensive design tokens (dark mode by default), CSS architecture, and reusable layouts (like the owner workspace `.odp2-workspace` and member hybrid view). 
 
-All tokens live in `app/styles/00-base-shell.css`. The app ships in **dark mode by default** (`data-theme="dark"` on `<html>`), with light mode available via toggle.
-
-#### Color Tokens
-
-| Token | Light | Dark | Usage |
-|---|---|---|---|
-| `--brand` | `#4f46e5` (indigo) | `#C8F135` (lime) | Primary action fills |
-| `--brand-strong` | `#4338ca` | `#b8e028` | Hover state of brand fills |
-| `--brand-soft` | `#e0e7ff` | `rgba(200,241,53,.12)` | Tinted backgrounds, badges |
-| `--primary-foreground` | `#ffffff` | `#0A0A0A` | **Text on brand-filled elements** |
-| `--bg` | `#ffffff` | `#111111` | Page background |
-| `--bg-card` | `#f9f9f9` | `#1a1a1a` | Card/panel backgrounds |
-| `--bg-hover` | `#f2f2f2` | `#222222` | Hover state backgrounds |
-| `--text` | `#0a0a0a` | `#f5f5f5` | Primary body text |
-| `--text-soft` | `#737373` | `#a3a3a3` | Secondary/muted text |
-| `--border` | `rgba(0,0,0,.09)` | `rgba(255,255,255,.09)` | Dividers, card borders |
-| `--accent` | `#737373` | `#a3a3a3` | Icon tints, subtle labels |
-| `--accent-soft` | `#f1f1f1` | `#1f1f1f` | Soft background fills |
-| `--danger` | `#dc2626` | `#ef4444` | Error states, destructive actions |
-| `--danger-soft` | `#fee2e2` | `rgba(239,68,68,.12)` | Error backgrounds |
-| `--warning` | `#d97706` | `#f59e0b` | Warning states |
-
-#### Critical Button Rule
-
-> ⚠️ `--brand` is **lime (#C8F135)** in dark mode — NEVER pair it with `color: white`. Always use `color: var(--primary-foreground)`.
-
-```css
-/* ✅ Correct — works in both themes */
-.my-button {
-  background: var(--brand);
-  color: var(--primary-foreground);
-}
-
-/* ❌ Wrong — unreadable on lime in dark mode */
-.my-button {
-  background: var(--brand);
-  color: white;
-}
-```
-
-#### Button Variants
-
-| Variant | Class | Background | Text | Use for |
-|---|---|---|---|---|
-| Primary | `.lpd-btn--brand` / `.lpd-btn--primary` | `var(--brand)` | `var(--primary-foreground)` | Main CTAs |
-| Ghost | `.lpd-btn--ghost` | transparent | `var(--text)` | Secondary actions |
-| Danger | — | `var(--danger)` | `#ffffff` | Destructive actions |
-| Subtle | — | `var(--accent-soft)` | `var(--text-soft)` | Tertiary/icon-only |
-
-Always reset `<button>` default UA styles for custom-styled buttons:
-```css
-.my-button {
-  background: transparent;
-  border: none;
-  font: inherit;
-  cursor: pointer;
-}
-```
-
----
-
-### CSS Architecture
-
-CSS is split into modular files under `app/styles/`, loaded in order via `app/layout.tsx`. Each file has a numeric prefix defining load order:
-
-| File | Scope |
-|---|---|
-| `00-base-shell.css` | Design tokens (all CSS variables), base reset, app-shell layout |
-| `01-owner-members.css` | Legacy owner member table styles (superseded by `19-members-redesign.css`) |
-| `02-shared-components.css` | Shared components — cards, badges, buttons, inputs, modals |
-| `03-visual-refresh.css` | Visual refresh tokens, elevation scale |
-| `04-loader-animation.css` | FitnessLoader barbell animation |
-| `05-theme-polish.css` | Theme refinements, dark-mode overrides |
-| `06-programs-mobile-legacy-landing.css` | Legacy program cards + mobile landing |
-| `07-member-dashboard-legacy.css` | Legacy member dashboard styles (kept for fallback) |
-| `08-admin-catalog-media.css` | Admin UI (`.adm-*`), exercise catalog table, media embeds |
-| `09-profile-history-notices-loader.css` | Profile metrics, workout history, gym notices |
-| `forms.css` | Form panels, field layouts, error/success messages |
-| `member.css` | Core member shell styles |
-| `10-pt-training.css` | PT scheduling, booking, session cards (`.pt-*`) |
-| `11-member-tabs.css` | Member dashboard tab navigation |
-| `11-bulk-member-list.css` | Bulk member select + actions dock |
-| `12-member-dashboard-new.css` | Member dashboard v2 — coach shell, panels |
-| `13-skeletons.css` | Loading skeleton animations |
-| `14-radix-overrides.css` | Radix UI (Dialog, Dropdown, Select, Popover) overrides |
-| `15-ui-upgrades.css` | Cross-cutting UI upgrades — pills, tags, status indicators |
-| `16-ux-improvements.css` | UX polish — notification badge, dropdown layout, dark mode fixes |
-| `17-profile-metrics.css` | Member profile metrics, body stats, charts |
-| `18-billing-trainers.css` | Billing, packages, payment cards, trainer list (`.pkg-*`, `.payment-*`) |
-| `19-members-redesign.css` | Owner members hybrid view (`.mhv-*`) — action queue, KPI strip, table |
-| `20-owner-dashboard.css` | Owner workspace (`.odp2-*`) — sidebar, nav, full-screen layout |
-| `21-member-redesign.css` | Member sub-pages shell (`.m3d-*`) — sidebar, layout, height chain |
-
-Also: `app/landing.css` for all landing page component styles.
-
-#### Class Prefix Conventions
-
-| Prefix | Scope |
-|---|---|
-| `odp2-` | Owner dashboard workspace (Owner Dashboard v2) |
-| `adm-` | Admin/owner shared UI — page headers, cards, KPIs, staff rows, buttons |
-| `mhv-` | Members hybrid view — action queue, KPI strip, directory table |
-| `m3d-` | Member sub-pages shell — sidebar, layout, content area |
-| `mcv-` | Member coach view (messaging/conversation panel) |
-| `pt-` | Personal training — booking form, session cards, calendar |
-| `lpd-` | Landing page shared components (buttons, modals) |
-| `l1-` | L1 Hero section on the landing page |
-| `lp-modal-` | Landing page modals (login, contact) |
-| `nlist-` | Notification list component |
-| `ntf-` | Notification bell topbar dropdown |
-
----
-
-### Owner Dashboard Layout
-
-The owner dashboard uses a **fixed full-viewport workspace** pattern:
-
-```css
-.odp2-workspace {
-  position: fixed;
-  inset: 0;           /* top:0 right:0 bottom:0 left:0 */
-  z-index: 1000;
-  display: flex;
-  overflow: hidden;
-}
-```
-
-The app topbar (`AppTopbar`) returns `null` immediately for `/owner/*` paths at the component level — this prevents the topbar HTML from ever being emitted for owner routes, eliminating the flash that a pure CSS `:has()` approach would cause (the browser briefly renders the topbar before encountering `.odp2-workspace` in the DOM):
-
-```tsx
-// components/app-topbar.tsx
-if (pathname === "/" || !role || pathname.startsWith("/owner")) {
-  return null;
-}
-```
-
-A belt-and-suspenders CSS rule also hides it in case of edge cases:
-
-```css
-body:has(.odp2-workspace) .topbar,
-body:has(.odp2-workspace) .mobile-bottom-nav {
-  display: none !important;
-}
-```
-
-#### Priority Row Color Coding (Owner Tables)
-
-Used in member lists and activity feeds to surface urgency:
-
-| Status | Token | Meaning |
-|---|---|---|
-| 🔴 Urgent / Expired | `var(--danger)` / `var(--danger-soft)` | Membership expired, overdue |
-| 🟡 Warning | `var(--warning)` | Expiring soon (≤7 days) |
-| 🟢 Active / Normal | `var(--brand-soft)` | Current, healthy |
-| ⚪ Neutral | `var(--bg-card)` | No action needed |
+For the complete UI style guide, including color palettes, critical button rules, and CSS prefixes, see **[`docs/12_UI_STYLE_GUIDE.md`](docs/12_UI_STYLE_GUIDE.md)**.
 
 ---
 

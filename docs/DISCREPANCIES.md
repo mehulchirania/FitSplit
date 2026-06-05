@@ -1,0 +1,55 @@
+# DISCREPANCIES (Meta)
+
+`Generated: 2026-06-05 · Commit: c0e1f4b`
+
+> Every place the legacy `README.md` / `FIRESTORE_STRUCTURE.md` disagree with code, plus
+> dead/orphaned references and internal inconsistencies. **Code wins.** Severity is the doc
+> author's assessment, not a code label.
+
+## A. README / docs vs code
+
+| # | Topic | README/docs say | Code says | Source | Severity |
+|---|---|---|---|---|---|
+| A1 | CSS file count | "21 modular CSS files" + lists `forms.css`, `member.css` | `app/styles/` also contains **`ep-modal.css`** (undocumented), and two `11-` files (`11-bulk-member-list.css`, `11-member-tabs.css`) | `ls app/styles/` | Low |
+| A2 | Trainer role | "trainer (staffType)" + first-class `trainer` role in rules/middleware | Session layer (`toProfile`) rejects role `trainer`; demo trainers are `role:"owner"`+`staffType:"trainer"` | `lib/auth.ts:306`, `:78-95` | **High** (see B1) |
+| A3 | Notification types | README lists a fixed set; `types/domain.ts` union has 16 | Billing code emits `payment_request_pending` / `payment_request_rejected` not in the union | `actions/member-billing.ts:70`, `actions/billing.ts:171`, vs `types/domain.ts:352-368` | Medium |
+| A4 | `FIRESTORE_STRUCTURE.md` collection list | (root doc, treated as map) | `collections.ts` adds `macroLogs`, `activityLogs`, `packages`, `paymentRequests`, `summaries`, `usernames`, `platformSummaries`; `loginAttempts` used but not declared | `collections.ts:1-64`, `lib/auth.ts:575` | Medium |
+| A5 | Demo member logins table | README lists `mehulchirania`, `9688227039`, etc. | Matches `demoLogins`, but README omits `aarav`, `meera`, `kabir`, `nisha` which also exist | `lib/auth.ts:112-240` | Low |
+
+## B. Internal code inconsistencies (potential bugs)
+
+| # | Issue | Detail | Source | Severity |
+|---|---|---|---|---|
+| B1 | Trainer role can't log in | `createStaffAccount`/`createTrainer` mint `role:"trainer"` accounts, but `toProfile` (`["admin","owner","member"]`) and the cookie fallback reject `trainer`, so session resolution returns null → such a user can't authenticate via the app session path | `functions/src/index.ts:449,1291` vs `lib/auth.ts:306,909` | **High** |
+| B2 | Lockout key mismatch | Server-action identifier lockout writes `loginAttempts/{rawIdentifier}` (`lib/auth.ts:589`), but the `blockLockedAccounts` trigger reads `loginAttempts/{email}` (`functions/src/index.ts:1912`). Different doc keys → the blocking trigger may not see identifier-based locks | `lib/auth.ts:566-609`, `functions/src/index.ts:1912` | Medium |
+| B3 | Root PT read access too broad | Root `ptSessions`/`ptLiftLogs` rules let any member of the gym read **any** session, not just their own; gym-scoped path is correctly restricted | `firestore.rules:424,432` vs `:252,261` | Medium (privacy) |
+| B4 | macroLogs/activityLogs root mirror has no rules | Actions dual-write a root `macroLogs`/`activityLogs` copy, but `firestore.rules` has no root match block for them (only gym-scoped) — root copy is Admin-SDK-only by omission | `actions/progress.ts:409-410,502-503`; absent in `firestore.rules` | Low |
+| B5 | `submitPaymentRequest` notification type | Emits `payment_request_pending` (not in `Notification.type` union); read-model maps unknown types verbatim so UI may lack an icon | `actions/member-billing.ts:70`, `read-models/notifications.ts:22` | Low |
+| B6 | Action vs CF duplication | Most privileged writes exist as both a Server Action (used) and a Cloud Function (often unused). Drift risk: e.g. CF `assignProgramToMember` uses trigger-based side effects; the action writes them inline | see [04](04_DATA_ACCESS_CATALOG.md) | Medium |
+| B7 | `computeGymDashboard` 7-day window | `expiringThisWeek` uses a hardcoded 7-day window, ignoring per-gym `expiryWarningDays` | `functions/src/index.ts:1609,1690` vs `actions/gyms.ts:151` | Low |
+
+## C. Declared-but-unused / orphaned
+
+| # | Item | Status | Source |
+|---|---|---|---|
+| C1 | `workoutSplitTemplates` collection | Declared in `collections.ts` + has rules, but no read/write site found; split logic lives in `lib/split-library.ts`/`workouts.json` | `collections.ts:14,41`, `firestore.rules:138,338` |
+| C2 | `siteLinks` writes | Read by `getSiteLinks` and rules allow owner/admin write, but no write call site found (seeded/manual) | `read-models/misc.ts:6` |
+| C3 | root `memberships` key | Declared at root (`collections.ts:9`) but active path is gym-scoped only | `collections.ts:9` vs `:59` |
+| C4 | `profiles` (legacy) | Read-only fallback; no active writes | `firestore.rules:325` |
+| C5 | Several Cloud Functions | `createTrainer`, `assignTrainerToPTMember`, `updateTrainerVisibility`, `activateOrRenewMembership`, `generate*DashboardStats` — callable wrappers exist (`functions.ts`) but UI wiring not confirmed in this pass | `lib/firebase/functions.ts:345-391` |
+
+## D. Verified accurate (README claims confirmed)
+
+- No `/api` routes — confirmed (no route handlers found). ✅
+- Privileged writes `allow:false` for members/staff/programAssignments/etc. ✅ (`firestore.rules`)
+- App Hosting config 0–10 inst / 512 MB / 80 concurrency — ✅ (`apphosting.yaml:3-8`).
+- Login lockout 5/15min, session 2h — ✅ (`lib/auth.ts:509-510,19`).
+- Vitest present — ✅ (`vitest.config.ts`) but only 2 test files exist.
+- Region `asia-south1` — ✅ (`functions/src/index.ts:20`).
+
+## E. Not inspected this pass (verify before relying)
+
+- `next.config.mjs` CSP/security header specifics (existence confirmed; lines not cited).
+- Service worker / PWA manifest files.
+- `lib/ai.ts`, `lib/split-library.ts`, `lib/workout-utils.ts` internals (referenced, not line-cited).
+- Seed/migration scripts referenced in README `package.json` scripts.
