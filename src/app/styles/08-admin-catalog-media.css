@@ -1388,6 +1388,20 @@
   transition: background 120ms;
 }
 .adm-btn:hover { background: var(--brand-strong); }
+.adm-btn:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.adm-btn--ghost:focus-visible {
+  outline: 2px solid var(--text-soft);
+  outline-offset: 2px;
+}
+.adm-btn:disabled,
+.adm-btn[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 .adm-btn--ghost {
   background: transparent;
   color: var(--text);
@@ -1410,6 +1424,14 @@
 }
 @media (max-width: 900px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px) { .adm-kpis { grid-template-columns: 1fr; } }
+.adm-kpis--3 { grid-template-columns: repeat(3, 1fr); }
+.adm-kpis--4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 900px) {
+  .adm-kpis--3, .adm-kpis--4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 500px) {
+  .adm-kpis--3, .adm-kpis--4 { grid-template-columns: 1fr; }
+}
 
 .adm-kpi {
   background: var(--bg-elevated);
@@ -1767,6 +1789,43 @@
 .adm-billing-row span { color: var(--text-soft); }
 .adm-billing-row strong { color: var(--text); font-weight: 600; }
 
+/* ── Form input ─────────────────────────────────────────────────────────── */
+.adm-input {
+  width: 100%;
+  padding: 7px 10px;
+  font-size: 12.5px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-family: inherit;
+  box-sizing: border-box;
+  transition: border-color var(--fast);
+}
+.adm-input:focus {
+  outline: none;
+  border-color: var(--brand);
+}
+.adm-input:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 1px;
+}
+.adm-input::placeholder { color: var(--text-faint); }
+.adm-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: var(--bg-subtle);
+}
+.adm-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-faint);
+  margin-bottom: 3px;
+}
+
 /* ── Collapsible detail panels ───────────────────────────────────────────── */
 .adm-details-panel {
   background: var(--bg-elevated);
@@ -1786,6 +1845,10 @@
   align-items: center;
   gap: 8px;
   user-select: none;
+}
+.adm-details-panel__summary:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: -2px;
 }
 .adm-details-panel__summary::-webkit-details-marker { display: none; }
 .adm-details-panel__summary::before {

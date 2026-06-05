@@ -1,12 +1,12 @@
 # 11 · KNOWN ISSUES & GAPS (Tier 2)
 
-`Generated: 2026-06-05`
+`Generated: 2026-06-05 · Last updated: 2026-06-06`
 
 > **Purpose.** This file aggregates all known bugs, incomplete functionalities, and technical debt across the FitSplit platform. It serves as the backlog for future maintenance and refactoring.
 
 ## High Priority Bugs
 
-*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) and all High/Moderate dependency vulnerabilities (Next.js, UUID, PostCSS, etc.) were resolved on 2026-06-05.*
+*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) and all High/Moderate dependency vulnerabilities (Next.js, UUID, PostCSS, etc.) were resolved on 2026-06-05. T&C gate showing on every login (not first-time-only) resolved 2026-06-06.*
 
 ## Incomplete Functionalities
 

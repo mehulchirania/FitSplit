@@ -126,7 +126,7 @@ export default async function AdminMemberDetailPage({
       </div>
 
       {/* ── KPI row ── */}
-      <div className="adm-kpis" style={{ gridTemplateColumns: "repeat(4, 1fr)", margin: "16px 0" }}>
+      <div className="adm-kpis adm-kpis--4" style={{ margin: "16px 0" }}>
         <div className={`adm-kpi ${member.isActive ? "adm-kpi--brand" : ""}`}>
           <small>ACCOUNT</small>
           <strong style={{ fontSize: 18, fontWeight: 800 }}>

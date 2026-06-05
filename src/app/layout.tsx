@@ -25,7 +25,6 @@ import "./styles/00-base-shell.css";
 import "./styles/01-owner-members.css";
 import "./styles/02-shared-components.css";
 import "./styles/03-visual-refresh.css";
-import "./styles/04-loader-animation.css";
 import "./styles/05-theme-polish.css";
 import "./styles/06-programs-mobile-legacy-landing.css";
 import "./styles/07-member-dashboard-legacy.css";

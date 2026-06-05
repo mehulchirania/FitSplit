@@ -463,7 +463,8 @@ function authUserFromDemo(demoLogin: DemoLogin): AuthenticatedUser {
     role: demoLogin.role,
     staffType: demoLogin.staffType,
     gymId: demoLogin.gymId,
-    memberId: demoLogin.role === "member" ? demoLogin.uid : undefined
+    memberId: demoLogin.role === "member" ? demoLogin.uid : undefined,
+    termsAcceptedAt: "2026-01-01T00:00:00.000Z"
   };
 }
 
@@ -914,7 +915,8 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
       fullName: demoLogin?.fullName ?? "FitSplit user",
       role,
       gymId,
-      memberId: role === "member" ? memberId : undefined
+      memberId: role === "member" ? memberId : undefined,
+      termsAcceptedAt: "2026-01-01T00:00:00.000Z"
     };
   }
 
