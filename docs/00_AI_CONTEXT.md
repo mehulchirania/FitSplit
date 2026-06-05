@@ -1,6 +1,6 @@
 # 00 · AI CONTEXT (Tier 0 — load this every session)
 
-`Generated: 2026-06-05 · Commit: 6f00a89`
+`Generated: 2026-06-05 · Commit: a0be3a8`
 
 > Condensed everything. Hard cap ~8k tokens. Links out to deeper docs — does not
 > duplicate their detail. If a fact here matters to your task, confirm it in the

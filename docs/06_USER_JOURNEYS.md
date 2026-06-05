@@ -1,6 +1,6 @@
 # 06 · USER JOURNEYS (Tier 1)
 
-`Generated: 2026-06-05 · Commit: 6f00a89`
+`Generated: 2026-06-05 · Commit: a0be3a8`
 
 > End-to-end flows. Each: Screen → Action/Function → Firestore write → Notification → Analytics.
 > Citations point to the controlling code.

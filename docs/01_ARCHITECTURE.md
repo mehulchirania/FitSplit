@@ -1,6 +1,6 @@
 # 01 · ARCHITECTURE (Tier 1)
 
-`Generated: 2026-06-05 · Commit: 6f00a89`
+`Generated: 2026-06-05 · Commit: a0be3a8`
 
 ## 1. Product overview
 

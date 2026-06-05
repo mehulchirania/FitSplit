@@ -1,6 +1,6 @@
 # 07 · MODULE BREAKDOWN (Tier 1)
 
-`Generated: 2026-06-05 · Commit: 6f00a89`
+`Generated: 2026-06-05 · Commit: a0be3a8`
 
 > Module-by-module map for working on FitSplit without loading the whole repo. For each module:
 > its screens, the collections it touches, the actions/functions/read-models it uses, supporting
