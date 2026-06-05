@@ -82,5 +82,9 @@
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": "eslint"
+  },
+  "overrides": {
+    "uuid": "^11.1.1",
+    "postcss": "^8.5.10"
   }
 }
