@@ -471,6 +471,11 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Phone uniqueness index — Admin SDK only (same pattern as usernames).
+    match /phones/{id} {
+      allow read, write: if false;
+    }
+
     // Admin-only platform summary.
     match /platformSummaries/{id} {
       allow read: if isAdmin();

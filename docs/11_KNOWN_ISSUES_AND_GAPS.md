@@ -29,6 +29,8 @@
    - **Issue:** Need `@firebase/rules-unit-testing` and an emulator in CI to test Firestore rules before deploy. Husky baseline is added but ESLint warnings need cleanup.
    - **Impact:** CI/CD pipeline does not validate Firestore rules automatically.
 
+5. ~~**`phones` collection missing Firestore security rule**~~ — Fixed 2026-06-05: explicit `allow read, write: if false` block added to `firestore.rules` alongside the `usernames` rule.
+
 ## Architecture & Tech Debt
 
 1. **Dual-Write Dominant Complexity (Root vs Gym-Scoped)**

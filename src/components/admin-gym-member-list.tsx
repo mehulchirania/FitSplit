@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { callToggleMemberAccess, callResetMemberPin } from "@/lib/firebase/functions";
@@ -250,7 +251,15 @@ export function AdminGymMemberList({ members, gymId }: { members: Member[]; gymI
             </span>
             <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
               <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)", display: "flex", alignItems: "center", gap: 6 }}>
-                {m.fullName}
+                <Link
+                  href={`/admin/gyms/${gymId}/members/${m.id}`}
+                  onClick={(e) => e.stopPropagation()}
+                  style={{ color: "inherit", textDecoration: "none" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "var(--brand)"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLAnchorElement).style.color = "inherit"; }}
+                >
+                  {m.fullName}
+                </Link>
                 {m.username && <span style={{ fontSize: 11, fontWeight: 500, color: "var(--text-faint)" }}>@{m.username}</span>}
               </div>
               <div style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 1 }}>

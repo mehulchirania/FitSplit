@@ -37,6 +37,7 @@ graph TD
 
   ROOT["root collections"] --> AP["authProfiles/{uid}"]
   ROOT --> USR["usernames/{name}"]
+  ROOT --> PHN["phones/{gymId:normalizedPhone}"]
   ROOT --> ARC["archives/{id}"]
   ROOT --> PS["platformSummaries/main"]
   ROOT --> LA["loginAttempts/{id}"]

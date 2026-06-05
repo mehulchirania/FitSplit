@@ -65,6 +65,21 @@ export function assertValidUsername(username: string) {
   }
 }
 
+/** Strips all non-digit characters then normalizes to `91XXXXXXXXXX`. Returns "" for empty input. */
+export function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  if (!digits) return "";
+  // Strip leading country code if present (91...) for 12-digit numbers
+  if (digits.length === 12 && digits.startsWith("91")) return digits;
+  if (digits.length === 10) return `91${digits}`;
+  return digits;
+}
+
+/** Composite key scoping phone uniqueness to a single gym: `gymId:normalizedPhone`. */
+export function phoneIndexKey(gymId: string, normalizedPhone: string) {
+  return `${gymId}:${normalizedPhone}`;
+}
+
 export async function assertUsernameAvailable(
   db: ReturnType<typeof getFirebaseAdminServices>["db"],
   username: string,

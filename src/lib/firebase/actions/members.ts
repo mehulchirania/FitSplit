@@ -11,6 +11,8 @@ import {
   normalizeUsername,
   assertValidUsername,
   assertUsernameAvailable,
+  normalizePhone,
+  phoneIndexKey,
   authProfilePayload,
   memberAuthEmail,
   upsertAuthUser,
@@ -107,11 +109,14 @@ export async function createMemberProfile(
       createdAt: now
     };
 
-    // Atomically reserve the username and write all profile documents in a single
-    // transaction. Prevents the race condition where two concurrent requests both
-    // see the username as available and both succeed.
+    // Atomically reserve the username (and phone if provided) and write all profile
+    // documents in a single transaction to prevent concurrent duplicate registrations.
     const normalizedUsername = normalizeUsername(username);
+    const normalizedPhone = normalizePhone(phone);
     const usernameIndexRef = db.collection(collectionPaths.usernames).doc(normalizedUsername);
+    const phoneIndexRef = normalizedPhone
+      ? db.collection(collectionPaths.phones).doc(phoneIndexKey(gymId, normalizedPhone))
+      : null;
 
     await db.runTransaction(async (txn) => {
       // Read must come before any write in a Firestore transaction.
@@ -119,9 +124,18 @@ export async function createMemberProfile(
       if (usernameDoc.exists) {
         throw new Error("That username is already in use.");
       }
+      if (phoneIndexRef) {
+        const phoneDoc = await txn.get(phoneIndexRef);
+        if (phoneDoc.exists) {
+          throw new Error("That phone number is already registered at this gym.");
+        }
+      }
 
-      // Reserve username
+      // Reserve username (and phone)
       txn.set(usernameIndexRef, { profileId: memberId, reservedAt: now });
+      if (phoneIndexRef) {
+        txn.set(phoneIndexRef, { profileId: memberId, reservedAt: now });
+      }
 
       // Write profile docs (was a batch — transactions support the same ops)
       txn.set(
@@ -235,10 +249,14 @@ export async function updateMemberProfile(
     const existingUsername = normalizeUsername(String(existingProfile.username ?? ""));
     const usernameChanged = normalizedUsername !== existingUsername;
 
+    const normalizedPhone = normalizePhone(phone.trim());
+    const existingPhone = normalizePhone(String(existingProfile.phone ?? ""));
+    const phoneChanged = normalizedPhone !== existingPhone;
+
     const authProfileRef = db.collection(collectionPaths.authProfiles).doc(memberId);
     const gymProfileRef = scopedGymDoc(db, gymId, "members", memberId);
 
-    // Atomically check+reserve username (if changed) and write profile docs.
+    // Atomically check+reserve username and phone (if changed) and write profile docs.
     await db.runTransaction(async (txn) => {
       // --- reads before writes ---
       if (usernameChanged) {
@@ -253,6 +271,21 @@ export async function updateMemberProfile(
           txn.delete(db.collection(collectionPaths.usernames).doc(existingUsername));
         }
         txn.set(newUsernameRef, { profileId: memberId, reservedAt: now });
+      }
+
+      if (phoneChanged) {
+        if (normalizedPhone) {
+          const newPhoneRef = db.collection(collectionPaths.phones).doc(phoneIndexKey(gymId, normalizedPhone));
+          const newPhoneDoc = await txn.get(newPhoneRef);
+          if (newPhoneDoc.exists && newPhoneDoc.data()?.profileId !== memberId) {
+            throw new Error("That phone number is already registered at this gym.");
+          }
+          txn.set(newPhoneRef, { profileId: memberId, reservedAt: now });
+        }
+        // Release old phone reservation (harmless if never indexed — older members)
+        if (existingPhone) {
+          txn.delete(db.collection(collectionPaths.phones).doc(phoneIndexKey(gymId, existingPhone)));
+        }
       }
 
       // Profile writes

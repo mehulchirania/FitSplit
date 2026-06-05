@@ -28,6 +28,8 @@ export const collectionPaths = {
   activityLogs: "activityLogs",
   // Sparse index for atomic username uniqueness. Doc ID = normalized username.
   usernames: "usernames",
+  // Sparse index for atomic phone uniqueness within a gym. Doc ID = gymId:normalizedPhone.
+  phones: "phones",
   // Cross-gym admin aggregate. Single doc: platformSummaries/main.
   platformSummaries: "platformSummaries"
 } as const;

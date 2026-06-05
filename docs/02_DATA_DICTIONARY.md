@@ -112,6 +112,14 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   (`actions/members.ts:114-148, 244-256`).
 - **Security rules:** read/write `allow:false` (`firestore.rules:445`) — Admin SDK only.
 
+## phones  *(root)*
+- **Scope:** root `phones/{gymId:normalizedPhone}` (`collections.ts:31-32`).
+- **Purpose:** atomic phone-uniqueness index scoped per gym. Doc id = `gymId:91XXXXXXXXXX`.
+- **Fields:** `profileId`, `reservedAt` (`actions/members.ts`).
+- **Normalization:** `normalizePhone()` strips non-digits and pads to `91XXXXXXXXXX`; composite key via `phoneIndexKey(gymId, phone)` in `actions/shared.ts`.
+- **Writes:** reserved on member create; swapped (old released, new reserved) on member update if phone changed. All inside the existing member Firestore transaction.
+- **Security rules:** should be `allow:false` (Admin SDK only) — add to `firestore.rules` when next updating rules.
+
 ## loginAttempts  *(root)* ⚠️ not in collections.ts
 - **Scope:** root `loginAttempts/{normalizedIdentifier-or-email}`.
 - **Purpose:** identifier-based login lockout counter (fires before email resolution).

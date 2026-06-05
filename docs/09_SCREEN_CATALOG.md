@@ -26,7 +26,7 @@ flowchart LR
   subgraph ADMIN["/admin · requireRole[admin]"]
     direction TB
     A0["/admin"]
-    A1["/admin/gyms<br/>· [gymId] · [gymId]/edit"]
+    A1["/admin/gyms<br/>· [gymId] · [gymId]/edit<br/>· [gymId]/members/[memberId]"]
     A2["/admin/exercises"]
     A3["/admin/programs"]
     A4["/admin/inbox"]
@@ -99,6 +99,7 @@ cookie) — accept (→ `acceptTerms`) to proceed, decline (→ `logoutUser`) to
 | `/admin/gyms` | `src/app/admin/gyms/page.tsx` | `requireRole[admin]` | Gym list + create | `getGymWorkspaces`, `createGymWorkspace` | gyms |
 | `/admin/gyms/[gymId]` | `src/app/admin/gyms/[gymId]/page.tsx` | `requireRole[admin]` | Gym detail + staff/owner mgmt | `getGymDetail`, `getMembers`, `getOwnersForGym` | gyms, members, staff |
 | `/admin/gyms/[gymId]/edit` | `src/app/admin/gyms/[gymId]/edit/page.tsx` | `requireRole[admin]` | Edit gym details + logo | `getGymDetail`, `updateGymDetails`, `updateGymLogo` | gyms, Storage |
+| `/admin/gyms/[gymId]/members/[memberId]` | `src/app/admin/gyms/[gymId]/members/[memberId]/page.tsx` | `requireRole[admin]` | Admin member detail — `adm-gym-hero` hero, 4-KPI strip, edit profile, member info rows, account access toggle + PIN reset, collapsible danger zone | `getMemberDetail`, `getGymDetail`, `updateMemberProfile`, `toggleMemberAccess`, `resetPassword`, `deleteMemberProfile` | authProfiles, gyms/members, phones |
 | `/admin/inbox` | `src/app/admin/inbox/page.tsx` | `requireRole[admin]` | Contact messages inbox | `getContactMessages`, `markContactMessageRead` | contactMessages |
 | `/admin/programs` | `src/app/admin/programs/page.tsx` | `requireRole[admin]` | Admin program gallery | `getWorkoutPrograms`, program actions | workoutPrograms |
 
