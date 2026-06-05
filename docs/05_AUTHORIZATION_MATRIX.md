@@ -1,6 +1,6 @@
 # 05 · AUTHORIZATION MATRIX (Tier 1)
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > Roles × features. The **Enforced by** column names what actually blocks the action and where.
 > Enforcement layers, outermost → innermost:

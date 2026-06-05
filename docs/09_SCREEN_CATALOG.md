@@ -1,6 +1,6 @@
 # 09 · SCREEN CATALOG (Tier 1)
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > Per route under `src/app/`: purpose, role required, key data (read-models/actions), collections
 > touched. Role gate = the `requireRole/requireAuth` call in the page (or middleware for routes

@@ -1,6 +1,6 @@
 # 04 · DATA ACCESS CATALOG (Tier 1)
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > Replaces a REST "API catalog". Three surfaces: **Server Actions** (`src/lib/firebase/actions/*`,
 > `"use server"`), **Cloud Functions** (`functions/src/index.ts`, callable via

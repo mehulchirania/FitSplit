@@ -1,6 +1,6 @@
 # 10 · REFACTORING ROADMAP (Tier 2 — point-in-time opinion)
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > ⚠️ **This is dated opinion, not fact.** Unlike Tier-0/1 docs, this file is NOT kept in sync
 > with every PR — regenerate on demand. It captures the author's assessment as of the commit

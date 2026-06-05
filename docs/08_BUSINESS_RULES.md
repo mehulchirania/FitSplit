@@ -1,6 +1,6 @@
 # 08 · BUSINESS RULES (Tier 1)
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > Every business rule traceable to code. Columns: Rule | Source `file:line` | Impact.
 

@@ -1,6 +1,6 @@
 # FitSplit Technical Knowledge Repository — Index
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > **Purpose.** This `/docs` tree is the single source of truth (SSoT) for the FitSplit
 > codebase. It is built so a new developer (or AI session) can understand and modify

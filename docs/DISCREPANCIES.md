@@ -1,6 +1,6 @@
 # DISCREPANCIES (Meta)
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > Every place the legacy `README.md` / `FIRESTORE_STRUCTURE.md` disagree with code, plus
 > dead/orphaned references and internal inconsistencies. **Code wins.** Severity is the doc

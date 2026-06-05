@@ -1,6 +1,6 @@
 # 02 · DATA DICTIONARY (Tier 1) — THE core doc
 
-`Generated: 2026-06-05 · Commit: c0e1f4b`
+`Generated: 2026-06-05 · Commit: 6f00a89`
 
 > Supersedes `FIRESTORE_STRUCTURE.md`. One entry per Firestore collection / subcollection.
 > Field tables list **observed** fields (from write sites + read mappers + `src/types/domain.ts`).
