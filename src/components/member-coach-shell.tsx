@@ -1,6 +1,5 @@
 "use client";
 
-import { MemberWorkoutConsole } from "@/components/member-workout-console";
 import { MemberProgressPanel } from "@/components/member-progress-panel";
 import { MemberHistory } from "@/components/member-history";
 import { WorkoutCalendar } from "@/components/workout-calendar";
@@ -49,6 +48,7 @@ const Icons = {
   Video:     (p: P) => <Icon {...p} d={<><rect x="2" y="7" width="14" height="10" rx="2" /><path d="M16 11l5-4v10l-5-4" /></>} />,
   Swap:      (p: P) => <Icon {...p} d={<><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></>} />,
   LogOut:    (p: P) => <Icon {...p} d={<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>} />,
+  Square:    (p: P) => <Icon {...p} d={<rect x="6" y="6" width="12" height="12" rx="2" />} fill="currentColor" stroke="none" />,
 };
 
 /* ── Props types ─────────────────────────────────────────────────── */
@@ -527,11 +527,12 @@ function getExerciseSwapKey(dayId: string | undefined, selectedDayIndex: number,
   return `${dayId ?? `day-${selectedDayIndex}`}:${exerciseId}:${index}`;
 }
 
-function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDayIndex, onSelectDay }: {
+function TodaySessionList({ program, currentWeek, exercises, isWorkoutActive, onToggleWorkout, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
-  onStart: () => void;
+  isWorkoutActive: boolean;
+  onToggleWorkout: () => void;
   selectedDayIndex: number;
   onSelectDay: (idx: number) => void;
 }) {
@@ -580,8 +581,14 @@ function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDa
           </span>
         </div>
         <div className="m3d-today__cta" style={{ alignSelf: 'flex-start', marginTop: '45px' }}>
-          <button className="m3d-today__start-btn" onClick={onStart} type="button">
-            <Icons.Play size={16} /> Start workout
+          <button 
+            className="m3d-today__start-btn" 
+            onClick={onToggleWorkout} 
+            type="button"
+            style={isWorkoutActive ? { background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-soft)' } : undefined}
+          >
+            {isWorkoutActive ? <Icons.Square size={14} /> : <Icons.Play size={16} />} 
+            {isWorkoutActive ? "Stop workout" : "Start workout"}
           </button>
         </div>
       </div>
@@ -648,11 +655,12 @@ function TodaySessionList({ program, currentWeek, exercises, onStart, selectedDa
 }
 
 /* ── Mobile Today card ───────────────────────────────────────────── */
-function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDayIndex, onSelectDay }: {
+function MobileTodayCard({ program, currentWeek, exercises, isWorkoutActive, onToggleWorkout, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
-  onStart: () => void;
+  isWorkoutActive: boolean;
+  onToggleWorkout: () => void;
   selectedDayIndex: number;
   onSelectDay: (idx: number) => void;
 }) {
@@ -757,8 +765,14 @@ function MobileTodayCard({ program, currentWeek, exercises, onStart, selectedDay
         })}
       </div>
 
-      <button className="mcr-today__start" onClick={onStart} type="button">
-        <Icons.Play size={16} /> Start workout
+      <button 
+        className="mcr-today__start" 
+        onClick={onToggleWorkout} 
+        type="button"
+        style={isWorkoutActive ? { background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-soft)' } : undefined}
+      >
+        {isWorkoutActive ? <Icons.Square size={14} /> : <Icons.Play size={16} />} 
+        {isWorkoutActive ? "Stop workout" : "Start workout"}
       </button>
     </section>
   );
@@ -932,6 +946,30 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     return () => document.body.classList.remove("member-desktop-full");
   }, []);
 
+  useEffect(() => {
+    const startedAt = window.localStorage.getItem("fitsplit-workout-start");
+    if (startedAt) {
+      const startMs = parseInt(startedAt, 10);
+      if (Date.now() - startMs < 4 * 60 * 60 * 1000) {
+        setIsWorkoutActive(true);
+      } else {
+        window.localStorage.removeItem("fitsplit-workout-start");
+      }
+    }
+  }, []);
+
+  const handleToggleWorkout = () => {
+    if (isWorkoutActive) {
+      setIsWorkoutActive(false);
+      window.localStorage.removeItem("fitsplit-workout-start");
+      handleToast("Workout ended");
+    } else {
+      setIsWorkoutActive(true);
+      window.localStorage.setItem("fitsplit-workout-start", Date.now().toString());
+      handleToast("Workout started! Your streak is active.");
+    }
+  };
+
   return (
     <div className="m3d-root">
       {/* ── Desktop Sidebar ── */}
@@ -999,45 +1037,32 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                   />
 
                   {program ? (
-                    isWorkoutActive ? (
-                      <div className="mcr-workout-wrapper">
-                        <MemberWorkoutConsole
-                          exercises={exercises}
-                          gymId={gymId}
-                          initialActiveSessionCount={initialActiveSessionCount}
-                          initialDayLogs={dayLogs}
-                          initialInjuryNote={injuryNote ?? undefined}
-                          initialLiftLogs={liftLogs}
-                          memberId={memberId}
+                    <>
+                      {/* Desktop view: table layout */}
+                      <div className="mcr-desktop-only">
+                        <TodaySessionList
                           program={program}
+                          currentWeek={currentWeek}
+                          exercises={exercises}
+                          isWorkoutActive={isWorkoutActive}
+                          onToggleWorkout={handleToggleWorkout}
+                          selectedDayIndex={selectedPreviewDay}
+                          onSelectDay={setSelectedPreviewDay}
                         />
                       </div>
-                    ) : (
-                      <>
-                        {/* Desktop view: table layout */}
-                        <div className="mcr-desktop-only">
-                          <TodaySessionList
-                            program={program}
-                            currentWeek={currentWeek}
-                            exercises={exercises}
-                            onStart={() => setIsWorkoutActive(true)}
-                            selectedDayIndex={selectedPreviewDay}
-                            onSelectDay={setSelectedPreviewDay}
-                          />
-                        </div>
-                        {/* Mobile view: card layout */}
-                        <div className="mcr-mobile-only">
-                          <MobileTodayCard
-                            program={program}
-                            currentWeek={currentWeek}
-                            exercises={exercises}
-                            onStart={() => setIsWorkoutActive(true)}
-                            selectedDayIndex={selectedPreviewDay}
-                            onSelectDay={setSelectedPreviewDay}
-                          />
-                        </div>
-                      </>
-                    )
+                      {/* Mobile view: card layout */}
+                      <div className="mcr-mobile-only">
+                        <MobileTodayCard
+                          program={program}
+                          currentWeek={currentWeek}
+                          exercises={exercises}
+                          isWorkoutActive={isWorkoutActive}
+                          onToggleWorkout={handleToggleWorkout}
+                          selectedDayIndex={selectedPreviewDay}
+                          onSelectDay={setSelectedPreviewDay}
+                        />
+                      </div>
+                    </>
                   ) : (
                     <div className="mcr-no-plan">
                       <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>

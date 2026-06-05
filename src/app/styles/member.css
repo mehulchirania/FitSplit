@@ -299,45 +299,51 @@
 }
 
 .member-workout-body .day-tabs {
-  display: grid;
-  gap: 8px;
-  grid-auto-columns: minmax(132px, 1fr);
-  grid-auto-flow: column;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 24px;
   overflow-x: auto;
-  padding: 0 2px 8px;
+  padding: 0 4px;
   scroll-snap-type: x proximity;
 }
 
 .member-workout-body .day-tabs button {
-  align-items: flex-start;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 14px;
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
   box-shadow: none;
-  gap: 4px;
-  min-height: 68px;
-  padding: 11px 12px;
+  display: flex;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 0;
   scroll-snap-align: start;
   text-align: left;
+  transition: border-color 0.15s, color 0.15s;
 }
 
 .member-workout-body .day-tabs span {
   color: var(--text-faint);
-  font-size: 0.68rem;
-  letter-spacing: 0.04em;
+  font-size: 0.75rem;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
 .member-workout-body .day-tabs strong {
-  color: var(--text);
-  font-size: 0.84rem;
-  line-height: 1.2;
-  white-space: normal;
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
 .member-workout-body .day-tabs button.is-selected {
-  background: var(--brand-soft);
-  border-color: color-mix(in srgb, var(--brand) 42%, var(--border));
+  background: transparent;
+  border-bottom-color: var(--brand);
+}
+
+.member-workout-body .day-tabs button.is-selected strong {
+  color: var(--text);
 }
 
 /* Day tab — skipped/modified indicators */
@@ -506,12 +512,12 @@
 }
 
 .member-workout-body .selected-workout-day {
-  background: color-mix(in srgb, var(--bg-subtle) 78%, transparent);
-  border: 1px solid var(--border);
-  border-radius: 18px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
   display: grid;
   gap: 14px;
-  padding: 16px;
+  padding: 8px 0;
 }
 
 .member-workout-body .selected-workout-day > .eyebrow,
@@ -529,16 +535,17 @@
 }
 
 .member-workout-body .exercise-row {
-  align-items: stretch;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 16px;
+  align-items: center;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  border-radius: 0;
   display: grid;
-  gap: 14px;
-  grid-template-columns: 74px minmax(0, 1fr) auto;
+  gap: 16px;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
   min-width: 0;
   overflow: visible;
-  padding: 12px;
+  padding: 16px 0;
 }
 
 .member-workout-body .exercise-row > * {
@@ -549,9 +556,9 @@
   aspect-ratio: 1;
   background-color: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 13px;
+  border-radius: 12px;
   min-height: 0;
-  width: 74px;
+  width: 64px;
 }
 
 .member-workout-body .exercise-row-copy {
@@ -584,13 +591,13 @@
 }
 
 .member-workout-body .exercise-row-actions {
-  align-items: flex-end;
+  align-items: center;
   align-self: center;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  justify-content: center;
-  min-width: 108px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-end;
 }
 
 .member-workout-body .muscle-targets {
@@ -613,51 +620,51 @@
 
 .member-workout-body .exercise-prescription {
   align-self: auto;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 999px;
+  background: transparent;
+  border: none;
   color: var(--text);
-  font-size: 0.78rem;
-  font-weight: 850;
-  justify-content: center;
-  min-width: 82px;
-  padding: 7px 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  min-width: 0;
+  padding: 0;
   white-space: nowrap;
 }
 
 .member-workout-body .exercise-video-button {
   align-items: center;
-  background: var(--brand);
-  border: 1px solid color-mix(in srgb, var(--brand) 76%, white 24%);
-  border-radius: 999px;
-  color: #081008;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-soft);
   cursor: pointer;
   display: inline-flex;
   font: inherit;
   font-size: 0.76rem;
-  font-weight: 900;
+  font-weight: 500;
   gap: 6px;
   justify-content: center;
   line-height: 1;
-  min-height: 32px;
-  padding: 8px 11px;
+  min-height: 30px;
+  padding: 6px 10px;
   white-space: nowrap;
+  transition: all 0.15s;
 }
 
 .member-workout-body .exercise-video-button:hover {
-  background: var(--brand-strong);
-  transform: translateY(-1px);
+  background: var(--bg-elevated);
+  border-color: var(--text-faint);
+  color: var(--text);
+  transform: none;
 }
 
 .member-workout-body .exercise-video-button--demo {
-  background: transparent;
-  border-color: var(--brand);
-  color: var(--brand);
+  color: var(--text-soft);
 }
 
 .member-workout-body .exercise-video-button--demo:hover {
-  background: color-mix(in srgb, var(--brand) 15%, transparent);
-  transform: translateY(-1px);
+  background: var(--bg-elevated);
+  border-color: var(--text-faint);
+  color: var(--text);
 }
 
 .member-workout-side {
@@ -970,17 +977,17 @@
   }
 
   .member-workout-body .day-tabs {
-    grid-auto-columns: minmax(118px, 78%);
+    gap: 16px;
   }
 
   .member-workout-body .selected-workout-day {
-    padding: 12px;
+    padding: 0;
   }
 
   .member-workout-body .exercise-row {
     grid-template-columns: 58px minmax(0, 1fr);
-    gap: 10px;
-    padding: 10px;
+    gap: 12px;
+    padding: 12px 0;
   }
 
   .member-workout-body .exercise-thumb {
@@ -988,17 +995,23 @@
   }
 
   .member-workout-body .exercise-row-actions {
-    align-items: flex-start;
+    align-items: center;
     flex-direction: row;
     flex-wrap: wrap;
     grid-column: 1 / -1;
     justify-content: flex-start;
     min-width: 0;
+    gap: 12px;
   }
 
-  .member-workout-body .exercise-prescription,
+  .member-workout-body .exercise-prescription {
+    flex: 1 1 100%;
+    text-align: left;
+    margin-bottom: 4px;
+  }
+
   .member-workout-body .exercise-video-button {
-    flex: 1 1 142px;
+    flex: 0 1 auto;
     min-height: 30px;
   }
 
