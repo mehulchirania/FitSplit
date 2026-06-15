@@ -4,10 +4,17 @@
 
 ## 1. Product overview
 
+**Current State:**
 FitSplit is a multi-tenant gym-operations + personal-training platform. A single
 deployment hosts many gyms; each gym is an isolated tenant under `gyms/{gymId}`. The pilot
 tenant is **Sri Shakthi Hanuman Gym** (`shg`, `collections.ts:68`). Four roles —
 `admin`, `owner`, `trainer`, `member` (`src/types/domain.ts:3`) — see different surfaces.
+
+**Planned State (B2C + B2B Hybrid):**
+FitSplit is evolving into a hybrid platform serving both direct-to-consumer and gym businesses:
+- **Consumer Free & Consumer Pro:** Standalone users can self-coach, log workouts, and track macros.
+- **Business:** Gym operators use the platform to manage rosters and deliver PT.
+- **Gym Members:** Entitled users receive the full "Consumer Pro" feature set at no extra cost, paid for by their gym.
 
 ## 2. Tech stack (verified)
 
@@ -99,6 +106,7 @@ sequenceDiagram
 
 ## 5. Multi-tenancy model
 
+**Current State:**
 - Tenant root: `gyms/{gymId}` (`collections.ts:71-81`). Almost all domain data is a
   subcollection of the gym.
 - **Dual storage (legacy):** most collections **also** exist at the root with a `gymId`
@@ -108,6 +116,10 @@ sequenceDiagram
 - `authProfiles/{uid}` is the **root auth/session index** — lightweight, no gym-owned profile
   data (`collections.ts:6-8`). Custom claims `role`, `gymId`, `memberId` are set on the Auth
   user (`actions/shared.ts:149-153`) and consumed by Firestore rules (`firestore.rules:13-29`).
+
+**Planned State (Consumer "Personal Gyms"):**
+- To seamlessly support standalone consumers without breaking existing gym-scoped queries, each direct consumer will be provisioned their own "personal gym" (e.g., `gyms/personal-{uid}`).
+- This effectively treats a consumer as the sole owner and member of a private tenant, reusing the exact same data structures.
 
 ## 6. Privileged-write enforcement
 

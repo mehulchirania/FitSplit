@@ -39,11 +39,16 @@ flowchart TB
 
 ## Roles
 
+**Current State:**
 `admin | owner | trainer | member` (`src/types/domain.ts:3`). `owner` has a `staffType`
 (`owner|trainer|staff`). Demo "trainers" are `role:"owner"` + `staffType:"trainer"`
 (`src/lib/auth.ts:78-95`); `createStaffAccount`/`createTrainer` mint real `role:"trainer"` accounts
 (`functions/src/index.ts:449,1291`). **As of 2026-06-05 a pure `role:"trainer"` account can log in**
 — `toProfile`/cookie fallback accept `trainer` (`src/lib/auth.ts:306,893`).
+
+**Planned State:**
+- **Consumer role:** A new `consumer` role or variant with `plan: "free" | "pro"`.
+- Consumers will only have access to their own "personal gym" data and will be explicitly blocked from any business/roster operations (e.g., viewing other members, delivering PT, creating packages).
 
 ## Route access (middleware.ts:3-11)
 

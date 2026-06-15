@@ -32,6 +32,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## gyms  *(root)*
 - **Scope:** root `gyms/{gymId}` (`collections.ts:2`, `collections.ts:71`).
 - **Purpose:** tenant root document — gym profile, branding, geofence, notices, settings.
+  - **Planned State:** Will support `type: "personal"` for standalone consumers (`gyms/personal-{uid}`).
 - **Example document:**
 ```json
 {
@@ -81,6 +82,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   (`actions/notifications.ts:81`), `primarySlot`/`secondarySlot`, body metrics, coach note, lockout
   fields `failedLoginAttempts`/`lockedUntil`/`lastFailedLoginAt` (`src/lib/auth.ts:540-564`),
   soft-delete `isDeleted`/`deletedAt` (`actions/members.ts:743`).
+  - **Planned State:** Will add `plan: "free" | "pro"` to denote consumer subscription tiers.
 - **Relationships:** `defaultGymId` → `gyms`; mirrors `gyms/{gymId}/members|staff`.
 - **Reads:** login (`src/lib/auth.ts:325-420`), `getMemberProfileDocument` (`read-models/shared.ts:47`),
   trainers/owners/floor-load reads (`read-models/members.ts`, `read-models/gyms.ts`).

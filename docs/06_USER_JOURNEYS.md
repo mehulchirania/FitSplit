@@ -199,3 +199,25 @@ Owner toggles → `toggleMemberAccess` sets `isActive:false` on authProfiles + m
 Auth user (`actions/members.ts:579`). On next request, `getCurrentUser` finds inactive profile
 and redirects to `/suspended` (`src/lib/auth.ts:935-943`). Admin `setGymStatus` cascades the flag to
 every profile in the gym (`actions/gyms.ts:544`).
+
+## 11. Consumer Journeys (Planned State)
+
+```mermaid
+sequenceDiagram
+  participant C as Consumer
+  participant App as Consumer App (/app)
+  participant Sub as Payment Gateway
+  participant B2B as Gym (B2B)
+  C->>App: Sign up (Free Tier)
+  App->>App: Provision personal workspace gyms/personal-{uid}
+  C->>App: Logs workouts, builds habit
+  C->>Sub: Upgrades to Consumer Pro
+  App->>App: Unlocks advanced analytics, custom programs
+  C->>App: "Claim my gym" / Join Gym
+  App->>B2B: Creates member record in Gym Workspace
+  B2B->>App: Gym entitles member to full Pro features for free
+```
+
+- **Consumer Free Signup:** Self-serve signup provisions a private `gyms/personal-{uid}` tenant where the user is both owner and sole member.
+- **Consumer Pro Upsell:** Users can purchase a personal subscription via a payment gateway to unlock advanced features.
+- **Gym Entitlement (B2B flywheel):** If a consumer joins a paying gym, the gym grants the user full Pro access for free, while linking them to the gym's roster for PT and attendance tracking.

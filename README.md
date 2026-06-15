@@ -28,6 +28,8 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 **Architecture pattern:** Next.js Server Components + Server Actions for all data access. No traditional REST API routes. Privileged writes (member creation, program assignment, access control) go through Cloud Functions using the Admin SDK. Middleware enforces role-based routing via session cookies before any page renders.
 
+**B2C + B2B Evolution (Planned):** FitSplit is evolving from a pure gym-scoped multi-tenant architecture into a hybrid B2C/B2B platform. Standalone consumers will have their own "personal gym" workspaces (`gyms/personal-{uid}`), allowing them to track progress independently or seamlessly join a real gym later.
+
 ---
 
 ## 📚 Documentation
@@ -126,7 +128,10 @@ Use the **Member** login tab (4-digit PIN):
 | `mehulchirania` | `1234` | Mehul Chirania |
 | `9688227039` | `1234` | Mobile Account |
 | `mehul@example.com` | `1234` | Email Account |
-| `aarav@example.com` | `1234` | Aarav |
+| `aarav` | `1234` | Aarav |
+| `meera` | `1234` | Meera |
+| `kabir` | `1234` | Kabir |
+| `nisha` | `1234` | Nisha |
 
 ---
 
@@ -246,7 +251,7 @@ app/
       pt-history/   # Full PT session history
       settings/     # Account settings — units, PIN change, notifications
   trainer/          # Trainer PT schedule + my members list
-  styles/           # 21 modular CSS files (see CSS Architecture section)
+  styles/           # modular CSS files (21 numbered, plus forms.css, member.css, ep-modal.css)
 
 components/
   workout/                          # Extracted workout sub-components

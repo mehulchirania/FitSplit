@@ -10,11 +10,11 @@
 
 | # | Topic | README/docs say | Code says | Source | Severity |
 |---|---|---|---|---|---|
-| A1 | CSS file count | "21 modular CSS files" + lists `forms.css`, `member.css` | `src/app/styles/` also contains **`ep-modal.css`** (undocumented), and two `11-` files (`11-bulk-member-list.css`, `11-member-tabs.css`) | `ls src/app/styles/` | Low |
+| A1 | ~~CSS file count~~ — **resolved** | "21 modular CSS files" + lists `forms.css`, `member.css` | `src/app/styles/` also contains **`ep-modal.css`** (undocumented), and two `11-` files (`11-bulk-member-list.css`, `11-member-tabs.css`) | `ls src/app/styles/` | Resolved |
 | A2 | ~~Trainer role~~ — **resolved** | "trainer (staffType)" + first-class `trainer` role in rules/middleware | Session layer now accepts role `trainer` (`toProfile`/cookie fallback `src/lib/auth.ts:306,893`). Demo trainers are still `role:"owner"`+`staffType:"trainer"` in seed data | `src/lib/auth.ts:306,893`, `:78-95` | Resolved |
 | A3 | ~~Notification types~~ — **resolved (2026-06-15)** | README lists a fixed set; `src/types/domain.ts` union has 16 | `payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` confirmed present at `domain.ts:438-440` (was added per R6 on 2026-06-05; DISCREPANCIES.md just wasn't updated) | `src/types/domain.ts:435-440` | Resolved |
 | A4 | ~~`FIRESTORE_STRUCTURE.md` collection list~~ — **resolved (2026-06-15)** | (root doc, treated as map) | `collections.ts` adds `macroLogs`, `activityLogs`, `packages`, `paymentRequests`, `summaries`, `usernames`, `phones`, `platformSummaries`; `loginAttempts` used but not declared in collections.ts; `ptSessions`/`ptLiftLogs` gym-scoped. All added to `FIRESTORE_STRUCTURE.md` | `collections.ts:1-88` | Resolved |
-| A5 | Demo member logins table | README lists `mehulchirania`, `9688227039`, etc. | Matches `demoLogins`, but README omits `aarav`, `meera`, `kabir`, `nisha` which also exist | `src/lib/auth.ts:112-240` | Low |
+| A5 | ~~Demo member logins table~~ — **resolved** | README lists `mehulchirania`, `9688227039`, etc. | Matches `demoLogins`, but README omits `aarav`, `meera`, `kabir`, `nisha` which also exist | `src/lib/auth.ts:112-240` | Resolved |
 
 ## B. Internal code inconsistencies (potential bugs)
 
