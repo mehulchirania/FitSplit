@@ -1,10 +1,10 @@
 import type { Membership, MembershipStatus } from "@/types/domain";
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const today = new Date("2026-05-03T00:00:00+05:30");
 
 export function getDaysRemaining(endDate: string) {
   const end = new Date(`${endDate}T00:00:00+05:30`);
+  const today = new Date(new Date().toLocaleString("en-CA", { timeZone: "Asia/Kolkata" }));
   return Math.ceil((end.getTime() - today.getTime()) / MS_PER_DAY);
 }
 
