@@ -1,6 +1,6 @@
 # DISCREPANCIES (Meta)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-05 · Commit: a0be3a8 · Audited: 2026-06-15`
 
 > Every place the legacy `README.md` / `FIRESTORE_STRUCTURE.md` disagree with code, plus
 > dead/orphaned references and internal inconsistencies. **Code wins.** Severity is the doc
@@ -12,8 +12,8 @@
 |---|---|---|---|---|---|
 | A1 | CSS file count | "21 modular CSS files" + lists `forms.css`, `member.css` | `src/app/styles/` also contains **`ep-modal.css`** (undocumented), and two `11-` files (`11-bulk-member-list.css`, `11-member-tabs.css`) | `ls src/app/styles/` | Low |
 | A2 | ~~Trainer role~~ — **resolved** | "trainer (staffType)" + first-class `trainer` role in rules/middleware | Session layer now accepts role `trainer` (`toProfile`/cookie fallback `src/lib/auth.ts:306,893`). Demo trainers are still `role:"owner"`+`staffType:"trainer"` in seed data | `src/lib/auth.ts:306,893`, `:78-95` | Resolved |
-| A3 | Notification types | README lists a fixed set; `src/types/domain.ts` union has 16 | Billing code emits `payment_request_pending` / `payment_request_rejected` not in the union | `actions/member-billing.ts:70`, `actions/billing.ts:171`, vs `src/types/domain.ts:352-368` | Medium |
-| A4 | `FIRESTORE_STRUCTURE.md` collection list | (root doc, treated as map) | `collections.ts` adds `macroLogs`, `activityLogs`, `packages`, `paymentRequests`, `summaries`, `usernames`, `platformSummaries`; `loginAttempts` used but not declared | `collections.ts:1-64`, `src/lib/auth.ts:575` | Medium |
+| A3 | ~~Notification types~~ — **resolved (2026-06-15)** | README lists a fixed set; `src/types/domain.ts` union has 16 | `payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` confirmed present at `domain.ts:438-440` (was added per R6 on 2026-06-05; DISCREPANCIES.md just wasn't updated) | `src/types/domain.ts:435-440` | Resolved |
+| A4 | ~~`FIRESTORE_STRUCTURE.md` collection list~~ — **resolved (2026-06-15)** | (root doc, treated as map) | `collections.ts` adds `macroLogs`, `activityLogs`, `packages`, `paymentRequests`, `summaries`, `usernames`, `phones`, `platformSummaries`; `loginAttempts` used but not declared in collections.ts; `ptSessions`/`ptLiftLogs` gym-scoped. All added to `FIRESTORE_STRUCTURE.md` | `collections.ts:1-88` | Resolved |
 | A5 | Demo member logins table | README lists `mehulchirania`, `9688227039`, etc. | Matches `demoLogins`, but README omits `aarav`, `meera`, `kabir`, `nisha` which also exist | `src/lib/auth.ts:112-240` | Low |
 
 ## B. Internal code inconsistencies (potential bugs)
@@ -24,9 +24,9 @@
 | B2 | ~~Lockout key mismatch~~ — **resolved (mitigated)** | On every failure the login flow increments **both** `loginAttempts/{email}` (`auth.ts:813`) and `loginAttempts/{identifier}` (`auth.ts:814`), so the email-keyed doc the `blockLockedAccounts` trigger reads (`functions/src/index.ts:1912`) is maintained. The two-key design is intentional, not a gap. (Separate, untracked limitation: failed *direct-SDK* sign-ins aren't counted — Firebase per-IP throttling is the backstop.) | `src/lib/auth.ts:808-831`, `functions/src/index.ts:1912` | Resolved |
 | B3 | ~~Root PT read access too broad~~ — **resolved** | Root `ptSessions`/`ptLiftLogs` now restrict members to their own data (`resource.data.memberId == memberId()`); gym-scoped path likewise. No cross-member read remains | `firestore.rules` root `ptSessions`/`ptLiftLogs` member clause; gym-scoped `:252,261` | Resolved |
 | B4 | ~~macroLogs/activityLogs root mirror has no rules~~ — **resolved** | Explicit root `match` blocks added for `macroLogs`, `activityLogs`, and `memberships`, scoped like root `liftLogs` (admin/owner/member-self; `memberships` writes `allow:false`). Also fixed root `exerciseRequests`, which was readable/creatable by any `signedIn()` user across tenants — now `isGymUser(gymId)`-scoped | `firestore.rules` root `macroLogs`/`activityLogs`/`memberships`/`exerciseRequests`; tests in `scripts/test-firestore-rules.mjs` | Resolved |
-| B5 | `submitPaymentRequest` notification type | Emits `payment_request_pending` (not in `Notification.type` union); read-model maps unknown types verbatim so UI may lack an icon | `actions/member-billing.ts:70`, `read-models/notifications.ts:22` | Low |
-| B6 | Action vs CF duplication | Most privileged writes exist as both a Server Action (used) and a Cloud Function (often unused). Drift risk: e.g. CF `assignProgramToMember` uses trigger-based side effects; the action writes them inline | see [04](04_DATA_ACCESS_CATALOG.md) | Medium |
-| B7 | `computeGymDashboard` 7-day window | `expiringThisWeek` uses a hardcoded 7-day window, ignoring per-gym `expiryWarningDays` | `functions/src/index.ts:1609,1690` vs `actions/gyms.ts:151` | Low |
+| B5 | ~~`submitPaymentRequest` notification type~~ — **resolved (2026-06-15)** | Emits `payment_request_pending` (confirmed in union at `domain.ts:438`); icon assigned per R6 resolution | `src/types/domain.ts:438` | Resolved |
+| B6 | ~~Action vs CF duplication~~ — **documented (2026-06-15)** | Overlap table present in [04_DATA_ACCESS_CATALOG.md](04_DATA_ACCESS_CATALOG.md) "Action vs Function overlap" section. 15 operations documented with both surfaces. Architectural decision (standardize on one surface) tracked as R5 in [10_REFACTORING_ROADMAP.md](10_REFACTORING_ROADMAP.md) | `docs/04_DATA_ACCESS_CATALOG.md:10-37` | Documented |
+| B7 | ~~`computeGymDashboard` 7-day window~~ — **resolved (2026-06-15)** | Both `computeGymDashboard` and `processMembershipExpiries` now read `gymDoc.data().expiryWarningDays ?? 7` per gym instead of a hardcoded constant | `functions/src/index.ts:1606,1688` | Resolved |
 | B8 | ~~PT lifecycle actions can't find gym-scoped sessions~~ — **resolved (2026-06-05)** | `startPTSession`/`complete`/`cancel`/`reschedule` looked sessions up only in the **root** `ptSessions` collection and threw "PT session not found." for sessions that exist only in the **gym-scoped** path (where the UI lists from). Now `loadPTSessionForWrite` resolves gym-scoped → root and updates only existing copies | `actions/pt.ts` `loadPTSessionForWrite` | Resolved |
 
 ## C. Declared-but-unused / orphaned
@@ -48,9 +48,9 @@
 - Vitest present — ✅ (`vitest.config.ts`) but only 2 test files exist.
 - Region `asia-south1` — ✅ (`functions/src/index.ts:20`).
 
-## E. Not inspected this pass (verify before relying)
+## E. Previously uninspected — now verified (2026-06-15)
 
-- `next.config.mjs` CSP/security header specifics (existence confirmed; lines not cited).
-- Service worker / PWA manifest files.
-- `src/lib/split-library.ts`, `src/lib/workout-utils.ts` internals (referenced, not line-cited).
-- Seed/migration scripts referenced in README `package.json` scripts.
+- **`next.config.mjs`**: CSP is in `src/middleware.ts` (per-request nonce). Static security headers set here: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` (geolocation self-only), `HSTS`, `COOP same-origin`, `CORP same-origin`, `X-DNS-Prefetch-Control off`. `ignoreBuildErrors: true` and `ignoreDuringBuilds: true` for ESLint are intentional (tracked in R9). Sentry + bundle analyzer wrapped.
+- **`src/lib/split-library.ts`** and **`src/lib/workout-utils.ts`**: Fully read. See `project_architecture.md` "Split library" section.
+- **Service worker / PWA manifest**: Manifest at `public/manifest.json?v=11` referenced in layout. Icons at `?v=11`. PWA is installable.
+- **Seed/migration scripts**: `npm run migrate:tenant-cleanup` and `npm run migrate:gym-scoped` exist per `FIRESTORE_STRUCTURE.md`. Not re-read in this pass; scope of these scripts is documented there.

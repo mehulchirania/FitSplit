@@ -21,6 +21,7 @@ export function AppTopbar({
   gymLogoUrl,
   hasLiveSession = false,
   initials,
+  avatarUrl,
   notifications = [],
   role,
   staffType,
@@ -30,6 +31,7 @@ export function AppTopbar({
   gymLogoUrl?: string;
   hasLiveSession?: boolean;
   initials?: string;
+  avatarUrl?: string;
   notifications?: Notification[];
   role?: Role;
   staffType?: string;
@@ -353,7 +355,9 @@ export function AppTopbar({
                 className="profile-trigger"
                 type="button"
               >
-                {initials ? initials : <UserRound />}
+                {avatarUrl ? (
+                  <img className="profile-trigger-avatar" src={avatarUrl} alt="" />
+                ) : initials ? initials : <UserRound />}
                 {/* Live session indicator — pulsing green dot */}
                 {hasLiveSession && <span className="profile-trigger-live-dot" aria-hidden="true" />}
               </button>

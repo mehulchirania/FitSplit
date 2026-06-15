@@ -112,7 +112,8 @@ functions/src/index.ts           Cloud Functions (asia-south1, nodejs22)
 
 ## Known bugs
 
-- **`src/lib/memberships.ts` line 6:** `const today = new Date("2026-05-03T00:00:00+05:30")` is hardcoded. `getDaysRemaining` and `getMembershipStatus` are frozen. Fix: move `new Date()` inside `getDaysRemaining`.
+- *None currently tracked.* (The hardcoded-date bug in `src/lib/memberships.ts` — `new Date("2026-05-03…")` freezing all membership status — was fixed 2026-06-15; `getDaysRemaining` now uses `new Date()` resolved to `Asia/Kolkata`.)
+- **`m.membershipEndDate` (Cloud Functions) vs `Membership.endDate` (app):** expiry math lives in two places — `src/lib/memberships.ts` (app, reads `endDate`) and `functions/src/index.ts` `processMembershipExpiries`/`computeGymDashboard` (reads member doc `membershipEndDate`). Both now honor per-gym `expiryWarningDays`. Keep them in sync.
 
 ## Important gotchas
 

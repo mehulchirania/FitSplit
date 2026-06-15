@@ -15,3 +15,4 @@ firebase-debug.*.log
 dev-server*.log
 .vercel
 *.tsbuildinfo
+graphify-out/

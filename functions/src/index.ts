@@ -1606,14 +1606,17 @@ export const generateGymDashboardStats = onCall({ region }, async (request) => {
 async function computeGymDashboard(gymId: string) {
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
-  const in7Days = addMonths(todayStr, 0, 7); // helper overload
 
-  const [membersSnap, pendingSnap, trainersSnap, membershipsSnap] = await Promise.all([
+  const [gymDoc, membersSnap, pendingSnap, trainersSnap, membershipsSnap] = await Promise.all([
+    db.doc(`gyms/${gymId}`).get(),
     db.collection(`gyms/${gymId}/members`).get(),
     db.collection(`gyms/${gymId}/paymentRequests`).where("status", "==", "pending").get(),
     db.collection(`gyms/${gymId}/staff`).where("role", "in", ["owner", "trainer"]).get(),
     db.collection(`gyms/${gymId}/memberships`).where("status", "==", "active").get()
   ]);
+
+  const expiryWarningDays = Number(gymDoc.data()?.expiryWarningDays ?? 7);
+  const inNDays = addMonths(todayStr, 0, expiryWarningDays);
 
   let totalMembers = 0, activeMembers = 0, ptMembers = 0, expiringThisWeek = 0, expiredCount = 0, revenueMTD = 0;
   for (const doc of membersSnap.docs) {
@@ -1624,7 +1627,7 @@ async function computeGymDashboard(gymId: string) {
     if (d.isPT === true) ptMembers++;
     if (d.membershipEndDate) {
       if (d.membershipEndDate < todayStr) expiredCount++;
-      else if (d.membershipEndDate <= in7Days) expiringThisWeek++;
+      else if (d.membershipEndDate <= inNDays) expiringThisWeek++;
     }
   }
 
@@ -1687,13 +1690,14 @@ function addMonths(dateStr: string, months: number, days = 0): string {
 
 export const processMembershipExpiries = onSchedule({ region, schedule: "every 24 hours", retryCount: 0 }, async () => {
   const todayStr = new Date().toISOString().slice(0, 10);
-  const in7Days = addMonths(todayStr, 0, 7);
   const gymsSnap = await db.collection("gyms").where("status", "==", "active").get();
 
   for (const gymDoc of gymsSnap.docs) {
     const gymId = gymDoc.id;
+    const expiryWarningDays = Number(gymDoc.data().expiryWarningDays ?? 7);
+    const inNDays = addMonths(todayStr, 0, expiryWarningDays);
     const membersSnap = await db.collection(`gyms/${gymId}/members`)
-      .where("membershipEndDate", "<=", in7Days).get();
+      .where("membershipEndDate", "<=", inNDays).get();
 
     const batch = db.batch();
     let batchCount = 0;
@@ -1704,7 +1708,7 @@ export const processMembershipExpiries = onSchedule({ region, schedule: "every 2
       if (!endDate) continue;
 
       const isExpired = endDate < todayStr;
-      const isExpiringSoon = !isExpired && endDate <= in7Days;
+      const isExpiringSoon = !isExpired && endDate <= inNDays;
       const newStatus = isExpired ? "expired" : "expiring_soon";
       const currentStatus = d.membershipStatus;
 

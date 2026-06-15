@@ -1,6 +1,6 @@
 # 11 · KNOWN ISSUES & GAPS (Tier 2)
 
-`Generated: 2026-06-05 · Last updated: 2026-06-06`
+`Generated: 2026-06-05 · Last updated: 2026-06-15`
 
 > **Purpose.** This file aggregates all known bugs, incomplete functionalities, and technical debt across the FitSplit platform. It serves as the backlog for future maintenance and refactoring.
 
@@ -24,6 +24,11 @@
    - **Issue:** Payment processing is currently mocked (cash approval flow works, Card/UPI are mock/integration-ready only).
    - **Impact:** B2C payments are not fully supported end-to-end.
    - **Fix Required:** Only implement if explicitly back on roadmap. Out of scope for current builds.
+
+6. **Production Geofence Coordinates for Attendance** *(backlogged 2026-06-15)*
+   - **Issue:** `validateGymGeofence` (`src/lib/firebase/actions/shared.ts`) reads `latitude`/`longitude`/`radiusMeters` from the gym doc (falling back to `SHG_GYM_*` env vars). SHG's gym doc has no coordinates set, so the function returns `geofenceStatus: "not_configured"` and **allows every check-in** — the attendance-integrity feature is effectively inert.
+   - **Impact:** Geofenced attendance does not actually constrain check-ins until coordinates are entered. Members can start a workout/attendance session from anywhere.
+   - **Fix Required:** Enter SHG's real lat/lng/radius in `/owner/settings` (or set `SHG_GYM_LATITUDE`/`SHG_GYM_LONGITUDE`/`SHG_GYM_RADIUS_METERS`). Data-entry task; no code change needed. Until then the feature is a no-op by design (fails open).
 
 4. **Security Rule Tests & Pre-commit Hooks**
    - **Issue:** Need `@firebase/rules-unit-testing` and an emulator in CI to test Firestore rules before deploy. Husky baseline is added but ESLint warnings need cleanup.
@@ -53,10 +58,7 @@
    - **Impact:** Concurrent edits will clobber data.
    - **Fix Required:** Move to a subcollection or use array-union transactions.
 
-5. **Notification Type Union Drift**
-   - **Issue:** Billing code emits `payment_request_pending`/`payment_request_rejected` which aren't in `src/types/domain.ts` union.
-   - **Impact:** UI may fall back to default icons or fail to render properly.
-   - **Fix Required:** Add types to union and notification-list icon map.
+5. ~~**Notification Type Union Drift**~~ — Fixed 2026-06-05 (R6): `payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` are present in `src/types/domain.ts:435-440` with dedicated icons in `notification-list.tsx`.
 
 6. **Unused Code & Legacy CSS**
    - **Issue:** `workoutSplitTemplates` declared but unused. Legacy CSS like `01-owner-members.css` and `ep-modal.css` are still floating in the repo.

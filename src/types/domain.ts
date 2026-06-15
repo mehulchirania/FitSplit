@@ -155,6 +155,10 @@ export type MemberProfile = {
   phone: string;
   joinedAt: string;
   avatarInitials: string;
+  /** Public download URL of the member's uploaded avatar photo, if any. */
+  avatarUrl?: string;
+  /** Storage path of the uploaded avatar (for overwrite/delete). */
+  avatarPath?: string;
   /** Short fitness goal shown on member cards (e.g. "Build muscle"). */
   goal: string;
   isActive: boolean;
@@ -211,6 +215,7 @@ export type Member = Pick<
   | "phone"
   | "joinedAt"
   | "avatarInitials"
+  | "avatarUrl"
   | "goal"
   | "isActive"
   | "username"
@@ -570,6 +575,7 @@ export type ProfileMetrics = Pick<
   | "fullName"
   | "email"
   | "phone"
+  | "avatarUrl"
   | "age"
   | "gender"
   | "dob"

@@ -24,7 +24,8 @@ import {
   mirrorProfileToGym,
   mirrorGymScopedRecord,
   assertMemberBelongsToCallerGym,
-  assertCanManageGym
+  assertCanManageGym,
+  parsePngDataUrl
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -205,6 +206,65 @@ export async function updateStaffProfile(
     return success(`${fullName} was updated.`, gymId, ["staff"]);
   } catch (error) {
     return failure(error, "Unable to update staff profile.");
+  }
+}
+
+const UpdateStaffImageSchema = z.object({
+  userId: ZodHelpers.textRequired("User ID"),
+  gymId: ZodHelpers.textRequired("Gym ID"),
+  imageDataUrl: ZodHelpers.textRequired("Image preview")
+});
+
+/**
+ * Uploads a cropped staff image (PNG data URL) to Firebase Storage and persists
+ * the public download URL on the staff profile (auth index + gym scoped staff
+ * doc). Staff can update their own image; owners/admins can update any staff in
+ * their gym. Mirrors the gym-logo / member-avatar upload pattern.
+ */
+export async function updateStaffImage(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, UpdateStaffImageSchema);
+    if (!parsed.success) return parsed.state;
+
+    const currentUser = await requireAuth();
+    const { userId, gymId, imageDataUrl } = parsed.data;
+
+    // Self-update is always allowed for one's own record. Updating another
+    // staff member requires owner/admin rights over that gym.
+    if (currentUser.uid !== userId) {
+      assertCanManageGym(currentUser, gymId);
+    }
+
+    const { db, storage } = requireFirebaseServices();
+    const buffer = parsePngDataUrl(imageDataUrl);
+    const now = new Date().toISOString();
+    const token = randomUUID();
+    const imagePath = `staff-images/${gymId}/${userId}.png`;
+    const bucket = storage.bucket();
+
+    await bucket.file(imagePath).save(buffer, {
+      contentType: "image/png",
+      metadata: {
+        cacheControl: "public, max-age=31536000",
+        metadata: { firebaseStorageDownloadTokens: token }
+      }
+    });
+
+    const imageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(imagePath)}?alt=media&token=${token}`;
+    const updates = { imageUrl, imagePath, updatedAt: now };
+
+    await Promise.all([
+      db.collection(collectionPaths.authProfiles).doc(userId).set(updates, { merge: true }),
+      scopedGymDoc(db, gymId, "staff", userId).set(updates, { merge: true })
+    ]);
+
+    return success("Profile photo updated.", gymId, ["staff"]);
+  } catch (error) {
+    return failure(error, "Unable to update profile photo. Please try again.");
   }
 }
 

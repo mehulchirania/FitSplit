@@ -18,6 +18,7 @@ type CatalogExercise = {
   id: string;
   name: string;
   mechanic: string;
+  muscle_target_description?: string;
   video_url?: string;
   gym_video_url?: string;
 };
@@ -346,6 +347,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       gymVideoUrl: catalogExercise.gym_video_url ?? "",
       gymVideoSource: catalogExercise.gym_video_url ? "youtube" as const : "none" as const,
       thumbnailUrl: getExerciseThumbnail(catalogExercise.name, muscleGroup as MuscleGroup),
+      muscleTargetDescription: catalogExercise.muscle_target_description,
       ownerOnly: true
     }))
   ).concat([
@@ -355,6 +357,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       muscleGroup: "Shoulders",
       equipment: "band",
       instructions: "Hold band at chest height, pull apart, squeezing shoulder blades.",
+      muscleTargetDescription: "A mobility move for the rear delts and mid-traps that opens the chest and warms up the shoulders.",
       videoSource: "none",
       videoUrl: "",
       gymVideoUrl: "",
@@ -368,6 +371,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       muscleGroup: "Back",
       equipment: "bodyweight",
       instructions: "On all fours, arch back up, then dip back down slowly.",
+      muscleTargetDescription: "A spinal mobility stretch that mobilises the spinal erectors and warms up the back through flexion and extension.",
       videoSource: "none",
       videoUrl: "",
       gymVideoUrl: "",
@@ -381,6 +385,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       muscleGroup: "Legs",
       equipment: "bodyweight",
       instructions: "Stand on one leg, pull other foot to glutes, keep knees together.",
+      muscleTargetDescription: "A static stretch for the quadriceps and hip flexors to improve flexibility after leg training.",
       videoSource: "none",
       videoUrl: "",
       gymVideoUrl: "",

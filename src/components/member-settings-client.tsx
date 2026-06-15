@@ -4,8 +4,9 @@ import { useState, useEffect, useTransition, useActionState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
-import { updateProfileMetrics, changeMemberPin, exportMyData, requestAccountDeletion } from "@/lib/firebase/actions";
+import { updateProfileMetrics, updateMemberAvatar, changeMemberPin, exportMyData, requestAccountDeletion } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
+import { AvatarUploader } from "@/components/avatar-uploader";
 import type { Member, ProfileMetrics } from "@/types/domain";
 
 interface MemberSettingsClientProps {
@@ -139,7 +140,13 @@ function ProfileTab({ member, profile, memberId }: {
     <div className="mset-body">
       {/* Avatar + name header */}
       <div className="mset-profile-hero">
-        <div className="mset-avatar-lg">{member.fullName.charAt(0).toUpperCase()}</div>
+        <AvatarUploader
+          action={updateMemberAvatar}
+          currentUrl={member.avatarUrl}
+          name={member.fullName}
+          dataUrlField="avatarDataUrl"
+          fields={{ memberId }}
+        />
         <div>
           <strong className="mset-profile-name">{member.fullName}</strong>
           <span className="mset-profile-meta">@{member.username || memberId} · Member</span>

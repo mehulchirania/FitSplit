@@ -221,6 +221,103 @@ gyms/{gymId}
     status
     createdAt
     updatedAt
+
+  ptSessions/{sessionId}
+    id
+    gymId
+    memberId
+    trainerId
+    status: "scheduled" | "active" | "completed" | "cancelled"
+    plannedExercises[]
+    startDate
+    endDate
+    createdAt
+    updatedAt
+
+  ptLiftLogs/{logId}
+    id
+    gymId
+    memberId
+    trainerId
+    ptSessionId
+    exerciseId
+    weight
+    sets
+    reps
+    source: "trainer"
+    loggedAt
+    createdAt
+
+  macroLogs/{memberId_date}
+    id (= "{memberId}_{date}")
+    gymId
+    memberId
+    date
+    protein
+    carbs
+    fat
+    water
+    loggedAt
+
+  activityLogs/{logId}
+    id
+    gymId
+    memberId
+    type: "cardio" | "stretch"
+    durationMinutes
+    notes
+    loggedAt
+    createdAt
+
+  packages/{packageId}
+    id
+    gymId
+    name
+    durationDays
+    price
+    currency
+    isActive
+    createdAt
+    updatedAt
+
+  memberships/{membershipId}
+    id
+    gymId
+    memberId
+    packageId
+    packageName
+    startDate
+    endDate
+    status: "active" | "expired" | "cancelled"
+    paidAmount
+    createdAt
+    updatedAt
+
+  paymentRequests/{requestId}
+    id
+    gymId
+    memberId
+    packageId
+    packageName
+    amount
+    status: "pending" | "approved" | "rejected"
+    requestedAt
+    resolvedAt
+    createdAt
+    updatedAt
+
+  summaries/dashboard
+    gymId
+    totalMembers
+    activeMembers
+    ptMembers
+    expiringThisWeek
+    expiredCount
+    pendingPaymentRequests
+    activeTrainers
+    totalRevenueMTD
+    currency
+    lastComputedAt
 ```
 
 ## Global Collections
@@ -230,8 +327,30 @@ Keep these at root:
 ```text
 authProfiles/{uid}
 exerciseCatalog/{exerciseId}
+exerciseRequests/{requestId}
 workoutPrograms/{programId}
+workoutSplitTemplates/{templateId}   ← declared + has rules; no active read/write site (C1)
 archives/{archiveId}
+usernames/{normalizedUsername}       ← sparse uniqueness index; doc ID = normalized username
+phones/{gymId:normalizedPhone}       ← sparse uniqueness index; doc ID = gymId:phone
+platformSummaries/main               ← cross-gym aggregate written by generateAdminDashboardStats CF
+loginAttempts/{identifier|email}     ← login lockout tracking; dual-keyed per login attempt
+
+Root mirrors of gym-scoped collections (dual-write via mirrorGymScopedRecord):
+  liftLogs/{logId}
+  macroLogs/{memberId_date}
+  activityLogs/{logId}
+  ptSessions/{sessionId}
+  ptLiftLogs/{logId}
+  programAssignments/{id}
+  dayLogs/{id}
+  bodyMetricLogs/{id}
+  workoutSessions/{id}
+  attendanceRecords/{id}
+  notifications/{id}
+  activityEvents/{id}
+  contactMessages/{id}
+  memberships/{id}                   ← declared at root (collections.ts:9) but active path is gym-scoped only (C3)
 ```
 
 `authProfiles/{uid}` is the lightweight auth/session index used by login and session lookup. It should contain only fields needed to authenticate, route, and enforce access quickly: `id`, `authUid`, `username`, `authEmail`, `email`, `phone`, `fullName`, `role`, `staffType`, `defaultGymId`, `gymId`, `isActive`, `mustChangePassword`, login lockout fields, timestamps, and `authIndexOnly: true`.

@@ -11,7 +11,9 @@ import {
 import type { FormEvent, MouseEvent as ReactMouseEvent } from "react";
 import {
   AnimatePresence,
-  motion,
+  LazyMotion,
+  domAnimation,
+  m,
 } from "framer-motion";
 import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
 
@@ -104,9 +106,10 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   }
 
   return (
+    <LazyMotion features={domAnimation}>
     <AnimatePresence>
       {open && (
-        <motion.div
+        <m.div
           className="lp-modal-backdrop"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -114,7 +117,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
           transition={{ duration: 0.22 }}
           onMouseDown={onBackdrop}
         >
-          <motion.section
+          <m.section
             className="lp-modal"
             role="dialog"
             aria-modal="true"
@@ -152,7 +155,7 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
                 >
                   {tab[0].toUpperCase() + tab.slice(1)}
                   {mode === tab && (
-                    <motion.span
+                    <m.span
                       className="lp-tab-underline"
                       layoutId="lp-tab-underline"
                       transition={{ type: "spring", damping: 30, stiffness: 400 }}
@@ -209,10 +212,11 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
             <p className="lp-modal-note">
               Secure access for members, trainers, and gym owners.
             </p>
-          </motion.section>
-        </motion.div>
+          </m.section>
+        </m.div>
       )}
     </AnimatePresence>
+    </LazyMotion>
   );
 }
 
@@ -292,10 +296,11 @@ function EnquiryModal({ open, onClose }: { open: boolean; onClose: () => void })
   }
 
   return (
+    <LazyMotion features={domAnimation}>
     <AnimatePresence>
       {open && (
-        <motion.div className="lp-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onMouseDown={onBackdrop}>
-          <motion.section className="lp-modal" role="dialog" aria-modal="true" aria-label="Enquiry" initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93, y: 20 }} transition={{ duration: 0.3, ease: EASE }}>
+        <m.div className="lp-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onMouseDown={onBackdrop}>
+          <m.section className="lp-modal" role="dialog" aria-modal="true" aria-label="Enquiry" initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93, y: 20 }} transition={{ duration: 0.3, ease: EASE }}>
             <div className="lp-modal-hdr">
               <div className="lp-modal-brand">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -324,10 +329,11 @@ function EnquiryModal({ open, onClose }: { open: boolean; onClose: () => void })
                 <Link href="/privacy" style={{ color: "var(--accent)" }}>Privacy Policy</Link>.
               </p>
             </form>
-          </motion.section>
-        </motion.div>
+          </m.section>
+        </m.div>
       )}
     </AnimatePresence>
+    </LazyMotion>
   );
 }
 

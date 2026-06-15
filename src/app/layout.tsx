@@ -157,6 +157,7 @@ export default async function RootLayout({
             gymLogoUrl={gymLogoUrl}
             hasLiveSession={hasLiveSession}
             initials={initials}
+            avatarUrl={currentUser?.avatarUrl}
             gymName={gymName}
             notifications={notifications}
             role={currentUser?.role}

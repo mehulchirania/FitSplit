@@ -4,7 +4,229 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
-## 🎨 Latest Milestone — Owner-workspace UI fixes + PT page redesign (2026-06-05)
+## 🧹 Latest Milestone — Dead-code triage + landing framer-motion split (2026-06-15)
+
+Follow-up to the bundle-optimization milestone below. **No live functionality changed** (verified by
+`tsc` + `next build` — every deletion would have broken a static import if it were still referenced).
+
+**Landing framer-motion → LazyMotion** ([landing-page-client.tsx](src/components/landing-page-client.tsx)) —
+the two modals (`LoginModal`, `EnquiryModal`) now use `LazyMotion features={domAnimation}` + `m.*` instead
+of `motion.*`. `/` First Load 247 kB → **237 kB** (−10 kB). Honest note: smaller than the ~80 kB hoped —
+`domAnimation` is imported synchronously and the landing didn't use the heavy drag/layout features. Going
+fully lazy (dynamic `features`) could save more but risks an animation flash; not worth it here.
+
+**Knip dead-code triage — deleted 22 unused files + 8 unused deps:**
+- Files: the legacy workout-console cluster (`member-workout-console`, `workout/use-workout-console`,
+  `lib/stores/workout-store`, `member-dashboard-tabs`, `workout/{day-skip-form,injury-notes-form,session-timer-bar}`),
+  `login-form` (landing has its own inline login), and unreferenced generic components
+  (`activity-log-form`, `add-gym-form`, `attendance-calendar`, `back-button`, `bulk-member-list`,
+  `data-table`, `feature-carousel`, `landing-nav`, `loader`, `member-row`, `muscle-target-pills`,
+  `owner-quick-links`, `status-pill`, `workout-makeup-card`).
+- Deps (`package.json`): **`@fullcalendar/*` ×5** (never wired — the "PT Calendar" has zero imports;
+  CLAUDE.md/README are stale on this), **`@radix-ui/react-popover`** (only `member-row` used it),
+  **`@radix-ui/react-slot`** (zero refs), **`zustand`** (only the dead `workout-store` used it).
+
+**Left in place for OWNER REVIEW (flagged, not deleted) — Knip says unused, but they're documented/WIP:**
+- `lib/memberships.ts` — zero imports / zero callers of `getDaysRemaining`/`getMembershipStatus`, **yet
+  CLAUDE.md (updated today) describes it as live and just-fixed.** Contradiction — confirm whether the
+  expiry logic was moved (then delete) or still intended (then wire it up).
+- `lib/muscle-targets.ts` — documented key file; only consumer was the (now-deleted) `muscle-target-pills`.
+- `components/gym-floor-load-map.tsx` (+ `-lazy`) — the **data** fn `getGymFloorLoadMap` is still used by
+  owner pages, but the **visual component** is rendered nowhere. The floor-map feature fetches data but
+  doesn't display this component — likely wants re-wiring, not deletion.
+
+**Knip false positives to ignore:** `eslint-config-next` (used by ESLint flat config `extends`); the 63
+"unused exports" are mostly the intentional `icons.tsx` barrel.
+
+---
+
+## 📦 Latest Milestone — Bundle size optimization (verified) (2026-06-15)
+
+Data-driven code-splitting from the `npm run analyze` treemap. **No functionality changed** — same
+components, deferred loading. All numbers measured from `next build` output, before → after.
+
+**Verified results (First Load JS):**
+
+| Route | Original | Now | Δ |
+|---|---|---|---|
+| Shared baseline (every route) | 215 kB | **183 kB** | −32 kB |
+| `/profile` | 361 kB | **208 kB** | −153 kB (−42%) |
+| `/member` | 476 kB | **329 kB** | −147 kB (−31%) |
+| `/owner/members/[memberId]` | 359 kB | 327 kB | −32 kB |
+| `/` (landing) | 279 kB | 247 kB | −32 kB |
+
+**1. Sentry Session Replay lazy-loaded** ([instrumentation-client.ts](src/instrumentation-client.ts)) —
+`replayIntegration` was statically imported, forcing ~188 kB (parsed) onto 100% of users in the shared
+bundle, though replay is only sampled at 1% of sessions / 100% of error sessions. Now added via
+`Sentry.addIntegration` after a same-origin dynamic `import()` (not the CDN `lazyLoadIntegration`, which
+would violate the nonce CSP). Removes ~32 kB First Load from **every route**.
+
+**2. Recharts charts code-split** (~318 kB lib) — the 6 chart components are now `next/dynamic(..., { ssr:false })`
+wrappers (`*-chart.tsx`/`*-panel.tsx`/`*-widget.tsx` = thin wrapper; real code moved to `*.impl.tsx`).
+Wrapping at the **component** (not call-site) is required because `app/profile/page.tsx` and
+`app/owner/reports/page.tsx` are Server Components, where `ssr:false` is forbidden. Shared
+[chart-skeleton.tsx](src/components/chart-skeleton.tsx) fallback reuses the design-system `.sk-pulse` class.
+- **Consolidated a half-finished optimization:** a prior pass had created `*-chart-lazy.tsx` files but
+  only wired 3 of 6 call sites to them (muscle-radar / macro-progress / profile-metrics still loaded
+  recharts eagerly — that's why `/profile` was 361 kB). Deleted the 3 redundant `-lazy.tsx` files and
+  repointed their call sites to the now-lazy base import, so the pattern is uniform and foolproof.
+  (`gym-floor-load-map-lazy.tsx` left as-is — separate concern.)
+
+**Verification:** `tsc --noEmit` clean; `next build` exit 0; dev server boots with zero console/server
+errors; landing renders fully. **Authed chart-render QA (member/profile pages) not run in headless
+preview** — same demo-login harness limitation noted in the avatar milestone. The 3 newly-lazied charts
+use the identical `dynamic({ssr:false})` pattern as the 3 already lazy in production, so runtime risk is low.
+
+**Remaining opportunity (not done):** framer-motion (123 kB) on `/` — swap `motion` → `LazyMotion`+`m`
+to shave ~80 kB off the landing route.
+
+---
+
+## 🧰 Tooling — Graphify knowledge graph (2026-06-15)
+
+Installed **graphify** (`graphifyy` 0.8.39, via `uv tool install`) — a CLI that builds a queryable
+knowledge graph of the codebase. Registered as a Claude Code skill (`graphify install --platform claude`,
+writes to `~/.claude/skills/graphify/`; also created a global `~/.claude/CLAUDE.md`). **No app code changed.**
+
+- Ran the full pipeline on the repo: **353 files / ~460k words → 2,130 nodes, 4,902 edges, 148 communities**
+  (1,967 AST nodes from 317 code files + 163 semantic nodes from 26 docs; 10 favicon/logo images skipped).
+- Outputs land in `graphify-out/` — **added to [.gitignore](.gitignore)** (not committed). Contains
+  `graph.html` (interactive), `GRAPH_REPORT.md` (audit), `graph.json` (GraphRAG/MCP-ready), `cache/`.
+- God nodes (most-connected core abstractions): `requireRole()` (109 edges), `failure()`, `success()`,
+  `hasFirebaseAdminConfig()`, `getFirebaseAdminServices()`, `parseActionData()`, `requireFirebase()` —
+  confirms the server-action guard/validation layer is the architectural hub.
+- Usage going forward: ask codebase questions via `graphify query "<question>"`, or `/graphify .` to rebuild.
+
+---
+
+## ⚡ Latest Milestone — Dev-speed + build tooling upgrades (2026-06-15)
+
+Focus: faster local dev and low-risk performance/tooling wins. **No app functionality changed.**
+
+- **Turbopack dev** — `dev` script is now `next dev --turbopack` ([package.json](package.json)). Verified
+  booting on Next 15.5.19: page renders `200`, HMR ~485 ms, zero runtime/hydration errors. This is the
+  "Vite-class" fast inner loop without leaving the Next.js framework (Server Actions, middleware CSP,
+  RSC all intact).
+- **React Compiler enabled** — `experimental.reactCompiler: true` ([next.config.mjs](next.config.mjs)),
+  backed by new dev dep `babel-plugin-react-compiler`. Auto-memoizes components (cuts re-renders,
+  removes most manual `useMemo`/`useCallback`). Verified: clean production build (`Compiled successfully`)
+  and clean dev runtime. **Needs broader runtime QA across member/owner pages** — easily reverted by
+  removing the `experimental` block if any page misbehaves.
+- **Build now enforces correctness** — removed `typescript.ignoreBuildErrors` and `eslint.ignoreDuringBuilds`
+  from `next.config.mjs`. These were masking regressions and contradicting CLAUDE.md rules #3/#4.
+  Safe because `tsc --noEmit` and `next lint` are both clean (warnings only). `npm run build` is green.
+- **Knip added** (`npm run knip`, [knip.json](knip.json)) for unused file/export/dependency detection.
+  First run flags 26 files / 8 deps as candidates — **treat as a review list, not auto-delete**: several
+  (e.g. `gym-floor-load-map.tsx`, `@fullcalendar/*`, `zustand`) are live features loaded via dynamic
+  imports Knip can't trace. Manual triage required before any removal.
+- **`cross-env` added** — fixes the `analyze` script, which used bash-only `ANALYZE=true` syntax that
+  silently never set the env var on Windows/PowerShell. `npm run analyze` now works cross-platform.
+- **Bundle baseline (from build):** shared First Load JS = **215 kB** (one ~120 kB shared chunk dominates —
+  worth investigating, likely Firebase client SDK). Heaviest routes: `/member` (476 kB First Load),
+  `/profile` (361 kB), `/owner/members/[memberId]` (359 kB). Candidates for dynamic-import / code-split
+  follow-up.
+
+**Gotcha discovered:** running `next dev --turbopack` and `next build` (webpack) concurrently corrupts
+`.next/` (Turbopack chunks collide with the webpack build → `Cannot find module '[turbopack]_runtime.js'`).
+Stop the dev server (and/or `rm -rf .next`) before a production build.
+
+---
+
+## 📸 Latest Milestone — Profile photo uploads + exercise muscle descriptions (2026-06-15)
+
+Implemented two prioritized functional items (#3, #4); geofence config (#1) moved to backlog (`docs/11`).
+
+### #4 — Muscle target descriptions (workouts.json)
+- All **66** mock catalog exercises in `src/lib/workouts.json` now carry a specific `muscle_target_description` (e.g. "Emphasises the long head of the triceps by extending the elbow with the arm overhead…"). Previously the exercise-detail pill fell back to a generic inferred string.
+- `src/lib/mock-data.ts`: `CatalogExercise` type + the `exercises` mapper now read `muscle_target_description` → `muscleTargetDescription`. The 3 stretch entries also got descriptions.
+- Flows through existing `exercise-list.tsx` `getMuscleTargetDescription()` (uploaded/specific value wins over inference) and `read-models/exercises.ts` (Firestore `muscleTargetDescription` already read).
+
+### #3 — Firebase Storage avatar / staff image uploads
+- **New reusable component** `src/components/avatar-uploader.tsx` — circular client-side crop (canvas → square PNG data URL) + zoom, submits through a server action. Used for both member avatars and staff images.
+- **New server actions** (mirror the gym-logo upload pattern in `actions/gyms.ts`):
+  - `updateMemberAvatar` (`actions/members.ts`) — member-self or owner/admin; uploads to `member-avatars/{gymId}/{memberId}.png`; persists `avatarUrl`+`avatarPath` to auth index + gym-scoped member doc.
+  - `updateStaffImage` (`actions/staff.ts`) — staff-self or owner/admin; uploads to `staff-images/{gymId}/{userId}.png`; persists `imageUrl`+`imagePath` to authProfiles + gym-scoped staff doc.
+  - Both use `parsePngDataUrl` + `requireFirebaseServices().storage`, build a tokenized `firebasestorage.googleapis.com` download URL. (Admin SDK uploads bypass Storage rules; token-based URLs bypass read rules — no rules change needed.)
+- **Type/read-model wiring:** `MemberProfile.avatarUrl`/`avatarPath` added; `avatarUrl` added to `Member` + `ProfileMetrics` picks; populated in all 3 member mappers (`read-models/shared.ts`, `read-models/members.ts` ×2). `AuthenticatedUser.avatarUrl` + `ProfileRecord.avatarUrl` added in `auth.ts` (reads member `avatarUrl` or staff `imageUrl`).
+- **Display:** member settings hero (`member-settings-client.tsx`) and owner profile page (`profile/page.tsx`) render the uploader; topbar (`app-topbar.tsx`) shows the avatar image (via `currentUser.avatarUrl` from layout) instead of initials when present.
+- **CSS:** new `.avatar-uploader*` + `.profile-trigger-avatar` block in `15-ui-upgrades.css`.
+- **Verification:** `tsc --noEmit` clean; `next lint` clean (no new warnings); dev server compiles with zero server/console errors; landing + login modal render. Authenticated avatar walkthrough not completed in the headless preview (demo login didn't establish a session via synthetic form submit — harness limitation, not a code issue).
+
+---
+
+## 🔑 Previous Milestone — B2C identity spike (account vs affiliation) (2026-06-15)
+
+New decision doc: **`docs/B2C_IDENTITY_SPIKE.md`** — resolves the highest-uncertainty item
+(§4.4) from the B2C design plan. Verdict: the identity refactor is **contained to the auth module
++ a self-signup/provisioning path**, not a platform rewrite.
+
+- **Three code facts that de-risk it:** (1) `AuthenticatedUser.gymId` already comes from
+  `profile.defaultGymId` — named for multi-gym; (2) all training logs are dual-written to **root**
+  collections keyed by `memberId` (= uid), so history is already portable across gyms; (3) the
+  whole downstream (`requireRole`, read-models, actions) consumes a single `gymId`/`role`.
+- **Model:** identity = Firebase Auth `uid` = **account** (`authProfiles/{uid}` gains `plan` +
+  an `affiliations` subcollection; `defaultGymId` → "active workspace"). Affiliation carries
+  per-gym `role`. Personal gym = an affiliation with `gymId = personal-{uid}`, `type:"personal"`.
+- **Load-bearing move:** add `activeGymId` to the session; `getCurrentUser` projects the active
+  affiliation into the **existing single-gym `AuthenticatedUser` shape** → downstream untouched.
+  All multi-gym complexity stays in the resolver. `resolveEntitlements(account, activeGym)` plugs
+  in right after.
+- **Watch items:** `getProfileById` collectionGroup `.limit(1)` becomes ambiguous with multi-gym
+  uids (must resolve via account + activeGymId); add a **global phone index** for self-signup
+  login identity (keep per-gym `phones` for member contacts); account-linking on member-add.
+- **Open decisions (defaults set):** affiliations subcollection; model N affiliations; lazy
+  account creation for existing pin-only members.
+- **Status:** design only. Unblocks Foundation phase (§6.1).
+
+---
+
+## 🧭 Previous Milestone — B2C + B2B model design plan (2026-06-15)
+
+New strategy/architecture design doc: **`docs/B2C_B2B_DESIGN.md`**. Plans opening FitSplit to
+direct consumers (B2C: Free + Pro) alongside the existing gym-owner business model (B2B), without
+letting Free cannibalize the business tier.
+
+- **Core principle:** segment by *job-to-be-done*, not quantity. Consumer plans = "train myself
+  better"; Business plans = "run a roster of paying clients." Roster operations (member mgmt,
+  payments, attendance, PT delivery, revenue dashboard) are structurally un-cannibalizable by any
+  consumer tier — this is the moat that keeps owners paying.
+- **Decision locked:** gym members of a paying gym get the **full Consumer Pro** feature set free
+  (granted by the gym) — the headline B2B sales weapon; Pro feature set is built once.
+- **Key architecture call:** model each consumer as a **"personal gym"** (`gym.type:
+  "personal"`, consumer is sole owner+member) so the entire `gyms/{gymId}/...` dual-write model,
+  read-models, and rules are reused — no `gymId === null` fork.
+- **New entitlements layer** (separate from `requireRole`): `plan` on account/gym →
+  `resolveEntitlements(user, gym)` = max(personal plan, gym-granted plan); gate with
+  `requireEntitlement(...)` server-side + UI upsell.
+- **Open items:** account-vs-gym identity model (§4.4, needs a spike), global login uniqueness
+  migration, server-side entitlement enforcement, free-tier calibration. Platform billing →
+  Razorpay subscriptions (India-first). 5-phase rollout in §6.
+- **Status:** design only, nothing implemented yet.
+
+---
+
+## 🗂 Previous Milestone — Docs audit + Cloud Function expiry fix (2026-06-15)
+
+### Docs audit
+Full pass through `DISCREPANCIES.md` (2026-06-05 vintage) against the live codebase:
+
+- **A3/B5 (Notification type union)**: Confirmed already resolved in code — `payment_request_pending`, `payment_request_rejected`, `data_deletion_request` present at `src/types/domain.ts:438-440`. DISCREPANCIES.md now marked resolved.
+- **A4 (FIRESTORE_STRUCTURE.md stale)**: Updated `FIRESTORE_STRUCTURE.md` to add 8 gym-scoped collections (`ptSessions`, `ptLiftLogs`, `macroLogs`, `activityLogs`, `packages`, `memberships`, `paymentRequests`, `summaries/dashboard`) and root collections (`usernames`, `phones`, `platformSummaries`, `loginAttempts`, root mirrors). Both DISCREPANCIES.md and the doc now agree.
+- **B6 (Action vs CF duplication)**: Already documented in `04_DATA_ACCESS_CATALOG.md` "Action vs Function overlap" section with a 15-operation table. Marked as documented.
+- **Section E (previously uninspected)**: `next.config.mjs`, split-library/workout-utils internals, PWA manifest — all inspected and noted in DISCREPANCIES.md.
+- **11_KNOWN_ISSUES_AND_GAPS.md item 5**: Notification type drift marked as fixed (per R6 from 2026-06-05).
+- **CLAUDE.md**: Created at project root — comprehensive per-session context file covering stack, auth, routes, Firestore schema, CSS system, server action patterns, key files, known bugs, and gotchas.
+
+### Cloud Function fix (B7)
+`computeGymDashboard` and `processMembershipExpiries` both used a hardcoded 7-day window (`addMonths(todayStr, 0, 7)`) for `expiringThisWeek` / `isExpiringSoon`, ignoring the per-gym `expiryWarningDays` setting editable in gym settings.
+
+- `computeGymDashboard` now fetches `db.doc('gyms/${gymId}')` in the same `Promise.all` and reads `gymDoc.data()?.expiryWarningDays ?? 7`
+- `processMembershipExpiries` reads `gymDoc.data().expiryWarningDays ?? 7` per gym inside the existing gym loop (gymDoc was already in scope from `gymsSnap.docs`)
+- Functions TypeScript check passes clean
+
+---
+
+## 🎨 Previous Milestone — Owner-workspace UI fixes + PT page redesign (2026-06-05)
 
 ### Members page (`members-hybrid-view` / `19-members-redesign.css`)
 - **White action buttons fixed.** `.mhv-qcard__action` (and 2 sibling buttons) used `color: var(--bg-elevated)` as text on a `var(--text)` (white) background; `--bg-elevated` is now a translucent `rgba(255,255,255,0.03)` overlay → invisible text. Changed text colour to solid `var(--bg)`.

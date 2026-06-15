@@ -8,7 +8,8 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15 (App Router, React 19, TypeScript 5.8) |
+| Framework | Next.js 15 (App Router, React 19 + React Compiler, TypeScript 6) |
+| Dev bundler | Turbopack (`next dev --turbopack`) |
 | Database | Cloud Firestore (gym-scoped multi-tenant) |
 | Auth | Firebase Authentication — email/password + session cookies |
 | Functions | Firebase Cloud Functions v2 (Node.js 22, `asia-south1`) |
@@ -48,7 +49,7 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **Program Library**: FitSplit global library + gym-custom programs. Split types: PPL ×2, PPL + Upper/Lower, Bro Split, Combo ×2, Custom.
 - **Program Assignment**: Assign programs to individual members or bulk-assign across the roster.
 - **Live Workout Console**: Members log sets and reps in real time with day navigation, skip/modify tracking, and week-over-week history.
-- **Exercise Catalog**: Global FitSplit catalog + gym-custom exercises with YouTube video embeds, muscle group tagging, and equipment metadata.
+- **Exercise Catalog**: Global FitSplit catalog + gym-custom exercises with YouTube video embeds, muscle group tagging, equipment metadata, and per-exercise muscle-target descriptions (all 66 default catalog entries).
 - **Exercise Requests**: Members request new exercises; owners review and approve/reject.
 - **Workout Insights**: Local heuristic analysis of lift history — rest day suggestions, progressive overload coaching tips, PR callouts. No external API needed.
 - **Injury Notes**: Members record pain points or limitations (e.g. "left shoulder pain"). Trainer can see this note and adjust the plan. Rule-based exercise swap suggestions via local muscle-group logic.
@@ -81,6 +82,7 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **Geofenced Attendance**: GPS-verified check-in/check-out with configurable gym radius. Logs geofence status (`inside`, `not_configured`, `location_not_provided`).
 - **Membership Management**: Plan tracking with expiry warnings and automated notifications.
 - **Gym Notice Board**: Owners post rules, tips, reminders, and announcements visible to members.
+- **Profile Photos**: Members and staff upload a cropped avatar (client-side circular crop → PNG) stored in Firebase Storage; shown in the top bar and profile screens. Members self-serve in settings; owners/admins can update any member in their gym.
 - **Macro/Nutrition Targets**: Trainers prescribe daily calorie/macro targets; members track progress in the wellness panel.
 - **Multi-Gym Isolation**: All reads and writes are partitioned by `gymId` — gym-scoped Firestore collections with Firestore security rules enforcing boundaries.
 
@@ -154,7 +156,7 @@ FIREBASE_PRIVATE_KEY=
 
 ### 3. Run the dev server
 ```bash
-npm run dev
+npm run dev   # next dev --turbopack (Rust bundler — fast cold start + HMR)
 ```
 
 ### 4. Type-check and build
@@ -206,6 +208,8 @@ npm run functions:deploy          # Build + deploy Cloud Functions only
 ### Utilities
 ```bash
 npm run split:css                 # Split CSS selectors (legacy helper)
+npm run knip                      # Report unused files / exports / dependencies
+npm run analyze                   # Production build with bundle analyzer (ANALYZE=true)
 ```
 
 ---
@@ -270,6 +274,7 @@ components/
   macro-progress-panel.tsx          # Nutrition target tracking
   workout-insights-card.tsx         # Local heuristic workout insights (no external API)
   staff-access-actions.tsx          # Inline staff edit/reset-password/delete with useActionState
+  avatar-uploader.tsx               # Reusable circular avatar crop+upload (member avatar / staff image)
 
 lib/
   auth.ts                           # Session cookies, login, requireRole(); demo login fallback fixed

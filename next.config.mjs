@@ -21,12 +21,14 @@ const securityHeaders = [
 
 const nextConfig = {
   output: "standalone",
-  eslint: {
-    ignoreDuringBuilds: true,
+  // React Compiler (React 19): auto-memoizes components, removing most manual
+  // useMemo/useCallback and cutting re-renders. Requires babel-plugin-react-compiler.
+  experimental: {
+    reactCompiler: true,
   },
-  typescript: {
-    ignoreBuildErrors: true,
-  },
+  // NOTE: build-time TS/ESLint checks are intentionally ENABLED. `npx tsc --noEmit`
+  // and `next lint` are clean (see CLAUDE.md rules #3/#4) — do not re-add
+  // ignoreBuildErrors/ignoreDuringBuilds, which silently mask regressions.
   images: {
     remotePatterns: [
       {

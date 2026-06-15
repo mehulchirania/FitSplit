@@ -164,6 +164,7 @@ async function getMemberDetailUncached(memberId: string): Promise<{
     phone: String(data.phone ?? ""),
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? (memberName.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
+    avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,
     goal: String(data.goal ?? "General fitness"),
     isActive: data.isActive !== false,
     username
@@ -278,6 +279,7 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     phone: String(data.phone ?? ""),
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? "MB"),
+    avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,
     goal: String(data.goal ?? ""),
     isActive: data.isActive !== false,
     username: await resolveMemberUsername(getFirebaseAdminServices().db, memberId, data),
@@ -295,6 +297,7 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
     fullName: String(data.fullName ?? fallbackProfile.fullName),
     email: String(data.email ?? fallbackProfile.email),
     phone: String(data.phone ?? fallbackProfile.phone),
+    avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,
     age: data.age ? Number(data.age) : fallbackProfile.age,
     gender: String(data.gender ?? fallbackProfile.gender ?? ""),
     dob: String(data.dob ?? fallbackProfile.dob ?? ""),

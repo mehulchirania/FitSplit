@@ -32,6 +32,7 @@ type ProfileRecord = {
   isActive: boolean;
   mustChangePassword?: boolean;
   termsAcceptedAt?: string;
+  avatarUrl?: string;
 };
 
 export type AuthenticatedUser = {
@@ -50,6 +51,8 @@ export type AuthenticatedUser = {
   /** ISO timestamp of when the user accepted the Terms + Privacy Policy.
    * Undefined until first acceptance; drives the first-login consent gate. */
   termsAcceptedAt?: string;
+  /** Public download URL of the user's avatar (member) or staff image, if uploaded. */
+  avatarUrl?: string;
 };
 
 type DemoLogin = {
@@ -323,7 +326,9 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
     defaultGymId: String(data.defaultGymId ?? ""),
     isActive: data.isActive !== false,
     mustChangePassword: data.mustChangePassword === true,
-    termsAcceptedAt: data.termsAcceptedAt ? String(data.termsAcceptedAt) : undefined
+    termsAcceptedAt: data.termsAcceptedAt ? String(data.termsAcceptedAt) : undefined,
+    // Members store the photo as `avatarUrl`; staff as `imageUrl`. Surface either.
+    avatarUrl: data.avatarUrl ? String(data.avatarUrl) : data.imageUrl ? String(data.imageUrl) : undefined
   };
 }
 
@@ -450,7 +455,8 @@ function authUserFromProfile(profile: ProfileRecord): AuthenticatedUser {
     gymId: profile.defaultGymId,
     memberId: profile.role === "member" ? profile.id : undefined,
     mustChangePassword: profile.mustChangePassword === true,
-    termsAcceptedAt: profile.termsAcceptedAt
+    termsAcceptedAt: profile.termsAcceptedAt,
+    avatarUrl: profile.avatarUrl
   };
 }
 

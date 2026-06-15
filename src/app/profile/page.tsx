@@ -2,7 +2,7 @@ import { BodyWeightLogger } from "@/components/body-weight-logger";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ProfileForm } from "@/components/profile-form";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
-import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart-lazy";
+import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 import { MuscleRadarChart } from "@/components/muscle-radar-chart";
 import { requireAuth } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
@@ -16,7 +16,8 @@ import {
   getOwnersForGym
 } from "@/lib/firebase/read-models";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
-import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisplayName } from "@/lib/firebase/actions";
+import { AvatarUploader } from "@/components/avatar-uploader";
+import { changeMemberPin, changeStaffPassword, changeAdminEmail, updateAdminDisplayName, updateStaffImage } from "@/lib/firebase/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -236,6 +237,26 @@ export default async function ProfilePage({
           </aside>
         </section>
         {forceChangeBanner}
+
+        <section className="list-panel" style={{ marginTop: 16 }}>
+          <div className="panel-title">
+            <h2>Profile photo</h2>
+            <span className="status-pill status-neutral">Shown in the top bar</span>
+          </div>
+          <div className="form-panel" style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <AvatarUploader
+              action={updateStaffImage}
+              currentUrl={currentUser.avatarUrl}
+              name={currentUser.fullName}
+              dataUrlField="imageDataUrl"
+              fields={{ userId: currentUser.uid, gymId: currentUser.gymId ?? PRIMARY_GYM_ID }}
+            />
+            <p style={{ color: "var(--text-soft)", fontSize: "0.85rem", margin: 0 }}>
+              Upload a square photo. It appears on your profile menu and across the gym workspace.
+            </p>
+          </div>
+        </section>
+
         {passwordChangeForm}
       </main>
     );

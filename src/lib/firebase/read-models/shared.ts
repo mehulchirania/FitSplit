@@ -31,6 +31,7 @@ export function mapProfileToMember(docId: string, data: Record<string, unknown>)
     phone: String(data.phone ?? ""),
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? (name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "MB")),
+    avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,
     goal: String(data.goal ?? "General fitness"),
     staffType: data.staffType ? String(data.staffType) as Member["staffType"] : undefined,
     isActive: data.isActive !== false,

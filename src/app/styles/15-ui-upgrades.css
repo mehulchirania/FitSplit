@@ -586,3 +586,140 @@ html[data-theme="dark"] .focus-exercise-card {
   .cal-dot        { height: 5px; width: 5px; }
   .cal-dow        { font-size: 0.58rem; }
 }
+
+/* ── Avatar / profile-photo uploads (member + staff) ─────────────────────── */
+
+/* Topbar trigger renders the uploaded avatar edge-to-edge inside its pill. */
+.profile-trigger:has(.profile-trigger-avatar) {
+  padding: 0;
+  width: 42px;
+  overflow: hidden;
+}
+.profile-trigger-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 999px;
+  display: block;
+}
+
+/* Reusable circular avatar uploader (AvatarUploader component). */
+.avatar-uploader { position: relative; }
+
+.avatar-uploader__trigger {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--brand) 36%, var(--border));
+  background: color-mix(in srgb, var(--brand) 22%, var(--bg-elevated));
+  color: var(--text);
+  cursor: pointer;
+  flex-shrink: 0;
+  padding: 0;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--fast), transform var(--fast);
+}
+.avatar-uploader__trigger:hover { transform: translateY(-1px); }
+.avatar-uploader__img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.avatar-uploader__initials { font-size: 1.2rem; font-weight: 800; letter-spacing: 0.02em; }
+[data-theme="light"] .avatar-uploader__initials { color: var(--brand-strong); }
+
+.avatar-uploader__edit {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--primary-foreground);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--bg);
+}
+
+.avatar-uploader__panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 10px);
+  left: 0;
+  width: min(320px, calc(100vw - 32px));
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,0.35));
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.avatar-uploader__editor {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.avatar-uploader__canvas {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #0a0a0a;
+}
+.avatar-uploader__empty {
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  border: 1px dashed var(--border);
+  padding: 16px;
+}
+.avatar-uploader__file {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--brand-strong, var(--brand));
+  cursor: pointer;
+}
+.avatar-uploader__file input { display: block; margin-top: 6px; font-size: 0.78rem; }
+.avatar-uploader__zoom {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+}
+.avatar-uploader__zoom input { flex: 1; }
+.avatar-uploader__msg { margin: 0; font-size: 0.8rem; }
+.avatar-uploader__msg--error { color: var(--danger, #ef4444); }
+.avatar-uploader__msg--success { color: #22c55e; }
+.avatar-uploader__actions { display: flex; gap: 8px; }
+.avatar-uploader__save {
+  flex: 1;
+  background: var(--brand);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.avatar-uploader__save:disabled { opacity: 0.55; cursor: not-allowed; }
+.avatar-uploader__cancel {
+  background: transparent;
+  color: var(--text-soft);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}

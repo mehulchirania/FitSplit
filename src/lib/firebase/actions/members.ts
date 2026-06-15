@@ -29,7 +29,8 @@ import {
   mirrorGymScopedRecord,
   assertCanManageMember,
   assertMemberBelongsToCallerGym,
-  assertCanManageGym
+  assertCanManageGym,
+  parsePngDataUrl
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -506,6 +507,64 @@ export async function updateProfileMetrics(
   } catch (error) {
     console.error("Unable to update profile metrics", error);
     return failure(error, "Unable to update profile. Please try again.");
+  }
+}
+
+const UpdateMemberAvatarSchema = z.object({
+  memberId: ZodHelpers.textRequired("Member"),
+  avatarDataUrl: ZodHelpers.textRequired("Avatar preview")
+});
+
+/**
+ * Uploads a cropped member avatar (PNG data URL) to Firebase Storage and
+ * persists the public download URL on the member profile (auth index + gym
+ * scoped mirror). Members can update their own avatar; owners/admins can update
+ * any member in their gym. Mirrors the gym-logo upload pattern in actions/gyms.ts.
+ */
+export async function updateMemberAvatar(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, UpdateMemberAvatarSchema);
+    if (!parsed.success) return parsed.state;
+
+    const currentUser = await requireAuth();
+    const { db, storage } = requireFirebaseServices();
+    const { memberId, avatarDataUrl } = parsed.data;
+
+    // Member-self or owner/admin-of-gym. Throws on cross-tenant access.
+    assertCanManageMember(currentUser, memberId);
+
+    const profileDoc = await getGymScopedProfileDoc(db, memberId, "member", currentUser.gymId);
+    const existingProfile = profileDoc.data() || {};
+    const gymId = String(existingProfile.defaultGymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+
+    const buffer = parsePngDataUrl(avatarDataUrl);
+    const now = new Date().toISOString();
+    const token = randomUUID();
+    const avatarPath = `member-avatars/${gymId}/${memberId}.png`;
+    const bucket = storage.bucket();
+
+    await bucket.file(avatarPath).save(buffer, {
+      contentType: "image/png",
+      metadata: {
+        cacheControl: "public, max-age=31536000",
+        metadata: { firebaseStorageDownloadTokens: token }
+      }
+    });
+
+    const avatarUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(avatarPath)}?alt=media&token=${token}`;
+
+    const avatarUpdate = { id: memberId, role: "member", defaultGymId: gymId, avatarUrl, avatarPath, updatedAt: now };
+    await writeAuthProfileIndex(db, memberId, { ...existingProfile, ...avatarUpdate });
+    await mirrorProfileToGym(db, memberId, { ...existingProfile, ...avatarUpdate });
+
+    return success("Profile photo updated.", gymId, ["members"]);
+  } catch (error) {
+    console.error("Unable to update member avatar", error);
+    return failure(error, "Unable to update profile photo. Please try again.");
   }
 }
 

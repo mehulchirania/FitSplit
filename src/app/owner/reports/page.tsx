@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import { AttendanceTrendChart } from "@/components/attendance-trend-chart-lazy";
+import { AttendanceTrendChart } from "@/components/attendance-trend-chart";
 import {
   getActiveProgramAssignments,
   getActiveWorkoutSessions,
