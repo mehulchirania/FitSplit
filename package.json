@@ -68,7 +68,7 @@
     "@vitest/coverage-v8": "^4.1.8",
     "babel-plugin-react-compiler": "^1.0.0",
     "cross-env": "^10.1.0",
-    "eslint": "^9.25.1",
+    "eslint": "^10.5.0",
     "eslint-config-next": "^15.3.1",
     "husky": "^9.1.7",
     "knip": "^6.16.1",
