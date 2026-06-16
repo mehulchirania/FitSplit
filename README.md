@@ -15,11 +15,11 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 | Functions | Firebase Cloud Functions v2 (Node.js 22, `asia-south1`) |
 | Storage | Firebase Storage (logos, exercise media) |
 | Push | Firebase Cloud Messaging (FCM) |
-| Client State | Zustand (live workout session) |
+| Client State | React state + Context (live workout session) |
 | Offline | Dexie.js (IndexedDB — offline lift logging) |
-| Charts | Recharts |
-| Calendar | FullCalendar (PT scheduling) |
-| UI Primitives | Radix UI (Dialog, Dropdown, Popover, Select) |
+| Charts | Recharts (lazy-loaded via `next/dynamic`, `ssr:false`) |
+| Calendar | Custom PT calendar component (`pt-calendar.tsx`) |
+| UI Primitives | Radix UI (Dialog, Dropdown, Select) |
 | Animations | Framer Motion |
 | Toasts | Sonner |
 | Validation | Zod |
@@ -60,7 +60,7 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **PT Plan Booking**: Owners and trainers book PT plans with configurable duration (default 30 days).
 - **Trainer Live Console**: Real-time set/rep logging during active PT sessions, dual-written to the member's lift log history.
 - **PT History**: Members view their full PT session history and trainer-logged sets.
-- **PT Calendar**: FullCalendar-based schedule view for trainers.
+- **PT Calendar**: Custom calendar component (`pt-calendar.tsx`) schedule view for trainers.
 
 ### 📊 Progress & Analytics
 - **Lift Log History**: Full set/rep history per exercise with progressive overload charts (PR reference line, kg units).
@@ -254,12 +254,6 @@ app/
   styles/           # modular CSS files (21 numbered, plus forms.css, member.css, ep-modal.css)
 
 components/
-  workout/                          # Extracted workout sub-components
-    session-timer-bar.tsx           # Active session bar: elapsed time + end workout
-    injury-notes-form.tsx           # Injury/limitation notes with preset chips
-    day-skip-form.tsx               # Skip reason chips + confirm + makeup exercises
-    use-workout-console.ts          # All workout console business logic (custom hook)
-  member-workout-console.tsx        # Coordinator (~220 lines)
   member-sub-sidebar.tsx            # Member sub-pages sidebar (links, gym branding, logout)
   odp-sidebar.tsx                   # Owner workspace sidebar (nav, user footer, logout)
   odp-workspace-shell.tsx           # Owner workspace wrapper (sidebar + main area)
@@ -267,15 +261,12 @@ components/
   trainer-live-console.tsx          # PT session trainer UI
   notification-list.tsx             # Rich notification list (icons, timestamps, links, dismiss)
   app-topbar.tsx                    # Topbar (hidden for /owner/* at component level, see above)
-  gym-floor-load-map.tsx            # Real-time slot occupancy heatmap
   workout-program-gallery.tsx       # Program browser with filtering + readOnly mode
   catalog-video-preview.tsx         # Exercise video preview chip (YouTube + gym video)
   progress-chart.tsx                # Lift history area chart (styled empty state)
   progressive-overload-chart.tsx    # Progressive overload line chart (PR reference line, kg units)
   muscle-radar-chart.tsx            # Muscle group volume radar
-  attendance-calendar.tsx           # Member attendance history
   members-hybrid-view.tsx           # D4 Hybrid members page (action queue, KPI strip, table)
-  bulk-member-list.tsx              # Bulk select + actions
   macro-progress-panel.tsx          # Nutrition target tracking
   workout-insights-card.tsx         # Local heuristic workout insights (no external API)
   staff-access-actions.tsx          # Inline staff edit/reset-password/delete with useActionState
@@ -286,7 +277,6 @@ lib/
   ai.ts                             # Local workout insights heuristic (getWorkoutInsights) — no API
   offline-db.ts                     # Dexie IndexedDB (offline lift logging)
   workout-utils.ts                  # Workout calculation helpers
-  stores/workout-store.ts           # Zustand workout session state
   firebase/
     actions/                        # Server Actions (mutations) — one file per domain
       gyms.ts                       # updateGymDetails + updateGymLogo allow owner role (not admin-only)

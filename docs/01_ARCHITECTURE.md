@@ -27,10 +27,10 @@ FitSplit is evolving into a hybrid platform serving both direct-to-consumer and 
 | Privileged backend | Cloud Functions v2, region `asia-south1` | `functions/src/index.ts:20` |
 | Storage | Firebase Storage (gym logos) | `actions/gyms.ts:514-527`, `functions/src/index.ts:591-604` |
 | Push | Firebase Cloud Messaging | `actions/shared.ts:616-663`, `functions/src/index.ts:263-279` |
-| Client state | Zustand | `package.json` `zustand ^5` (`src/lib/stores/workout-store.ts`) |
+| Client state | React state + Context (live workout session) | `src/components/member-coach-shell.tsx` |
 | Offline | Dexie.js (IndexedDB) | `package.json` `dexie ^4` (`src/lib/offline-db.ts`) |
-| Charts | Recharts | `package.json` `recharts ^3` |
-| Calendar | FullCalendar | `package.json` `@fullcalendar/*` |
+| Charts | Recharts (lazy via `next/dynamic`) | `package.json` `recharts ^3`; `*-chart.tsx` wrappers + `*.impl.tsx` |
+| Calendar | Custom component (no FullCalendar dep) | `src/components/pt-calendar.tsx` |
 | UI primitives | Radix UI | `package.json` `@radix-ui/*` |
 | Animation | Framer Motion | `package.json` `framer-motion ^12` |
 | Toasts | Sonner | `package.json` `sonner ^2` |

@@ -8,7 +8,7 @@ Developer: Mehul Chirania (`mehulchirania@gmail.com`), Bengaluru. Also a demo me
 
 ## Stack
 
-Next.js 15 App Router · React 19 · TypeScript 6 (strict) · Firestore · Firebase Auth (session cookies) · Firebase App Hosting · Firebase Storage · FCM · Radix UI · Recharts · FullCalendar · Framer Motion · Sonner · Dexie (offline) · Zod v4 · Zustand · Vitest
+Next.js 15 App Router (Turbopack dev) · React 19 + React Compiler · TypeScript 6 (strict) · Firestore · Firebase Auth (session cookies) · Firebase App Hosting · Firebase Storage · FCM · Radix UI · Recharts (lazy-loaded) · Framer Motion · Sonner · Dexie (offline) · Zod v4 · Vitest
 
 ## Workflow rules (non-negotiable)
 
@@ -104,16 +104,14 @@ src/lib/firebase/actions/        All server actions (barrel re-export in actions
 src/lib/firebase/read-models/    All Firestore reads (with cache tags + mock fallbacks)
 src/lib/split-library.ts         Generates predefined WorkoutProgram[] from JSON sources
 src/lib/workout-utils.ts         getWeekStart, getDefaultDayIndex, injury rules
-src/lib/memberships.ts           getDaysRemaining, getMembershipStatus ← BUG: hardcoded date
-src/lib/muscle-targets.ts        MUSCLE_TARGETS, inferExerciseTargets
 src/lib/offline-db.ts            Dexie IndexedDB for offline lift logging (FitSplitDB)
 functions/src/index.ts           Cloud Functions (asia-south1, nodejs22)
 ```
 
 ## Known bugs
 
-- *None currently tracked.* (The hardcoded-date bug in `src/lib/memberships.ts` — `new Date("2026-05-03…")` freezing all membership status — was fixed 2026-06-15; `getDaysRemaining` now uses `new Date()` resolved to `Asia/Kolkata`.)
-- **`m.membershipEndDate` (Cloud Functions) vs `Membership.endDate` (app):** expiry math lives in two places — `src/lib/memberships.ts` (app, reads `endDate`) and `functions/src/index.ts` `processMembershipExpiries`/`computeGymDashboard` (reads member doc `membershipEndDate`). Both now honor per-gym `expiryWarningDays`. Keep them in sync.
+- *None currently tracked.*
+- **Membership expiry math now lives in ONE place — Cloud Functions.** `membershipStatus` is a **persisted Firestore field** written by `functions/src/index.ts` (`processMembershipExpiries`, package-activation handlers) and by `actions/billing.ts`; read-models just read `data.membershipStatus`. The old app-side `src/lib/memberships.ts` (`getDaysRemaining`/`getMembershipStatus`) was **deleted 2026-06-16** as dead code (zero references). The expiry warning still honors per-gym `expiryWarningDays`.
 
 ## Important gotchas
 

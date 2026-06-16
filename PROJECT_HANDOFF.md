@@ -26,14 +26,23 @@ fully lazy (dynamic `features`) could save more but risks an animation flash; no
   CLAUDE.md/README are stale on this), **`@radix-ui/react-popover`** (only `member-row` used it),
   **`@radix-ui/react-slot`** (zero refs), **`zustand`** (only the dead `workout-store` used it).
 
-**Left in place for OWNER REVIEW (flagged, not deleted) — Knip says unused, but they're documented/WIP:**
-- `lib/memberships.ts` — zero imports / zero callers of `getDaysRemaining`/`getMembershipStatus`, **yet
-  CLAUDE.md (updated today) describes it as live and just-fixed.** Contradiction — confirm whether the
-  expiry logic was moved (then delete) or still intended (then wire it up).
-- `lib/muscle-targets.ts` — documented key file; only consumer was the (now-deleted) `muscle-target-pills`.
-- `components/gym-floor-load-map.tsx` (+ `-lazy`) — the **data** fn `getGymFloorLoadMap` is still used by
-  owner pages, but the **visual component** is rendered nowhere. The floor-map feature fetches data but
-  doesn't display this component — likely wants re-wiring, not deletion.
+**4 more files investigated and deleted 2026-06-16** (initially flagged for review; each confirmed
+superseded/dead via whole-repo reference checks, then removed — `tsc` + `next build` green):
+- `lib/memberships.ts` — `membershipStatus` is now a **persisted Firestore field** (written by
+  Cloud Functions `processMembershipExpiries` + `actions/billing.ts`; read-models read `data.membershipStatus`).
+  The app-side `getDaysRemaining`/`getMembershipStatus` had zero callers — superseded, deleted. CLAUDE.md
+  Known-bugs updated to reflect expiry now lives in ONE place (Cloud Functions).
+- `lib/muscle-targets.ts` — only consumer was the (already-deleted) `muscle-target-pills`; the live
+  `exercise-list.tsx` uses its own `getMuscleTargetDescription()`. Dead, deleted.
+- `components/gym-floor-load-map.tsx` (+ `-lazy`) — **NOT a bug** (my earlier hunch was wrong): the
+  floor-load feature works fine via **inline JSX** — `owner/reports/page.tsx` renders the A/B/C/D slot grid
+  and `owner/page.tsx` passes `floor` to the workspace shell. The standalone `GymFloorLoadMap` component was
+  dead duplicate code. The data fn `getGymFloorLoadMap` (`read-models/gyms.ts`) is untouched and still live.
+
+**Docs reconciled (2026-06-16):** removed stale FullCalendar/Zustand/`memberships.ts`/`muscle-targets.ts`/
+deleted-component references from `CLAUDE.md`, `README.md`, `docs/01_ARCHITECTURE.md`,
+`docs/07_MODULE_BREAKDOWN.md`, `docs/10_REFACTORING_ROADMAP.md`. (The `status-pill` style-guide entry stays —
+it's a live CSS class even though the dead `status-pill.tsx` component was removed.)
 
 **Knip false positives to ignore:** `eslint-config-next` (used by ESLint flat config `extends`); the 63
 "unused exports" are mostly the intentional `icons.tsx` barrel.

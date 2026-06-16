@@ -65,7 +65,7 @@ still use the old `list-panel` / `panel-title` / `stat-card` cards** (defined in
 `01-owner-members.css`, `07-member-dashboard-legacy.css`, `02-shared-components.css`): the trainer
 pages (`/trainer`, `/trainer/members`), member sub-pages (`membership`, `pt-history`, `exercises`),
 `profile`/`activity`, `owner/members/[memberId]`, and ~15 shared components
-(`body-weight-logger`, `gym-floor-load-map`, `muscle-radar-chart`, `member-history`,
+(`body-weight-logger`, `muscle-radar-chart`, `member-history`,
 `member-progress-panel`, `member-context-editor`, `owner-ai-capacity-panel`, etc.). The legacy CSS
 files can't be deleted until these are migrated. Undocumented `ep-modal.css` also exists.
 **Fix:** migrate per-area to `adm-card` (owner/admin) or `m3d-`/`mset-` (member) card shells, then
