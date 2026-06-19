@@ -3,7 +3,7 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 import { withSentryConfig } from "@sentry/nextjs";
 const withBundleAnalyzer = bundleAnalyzer({ enabled: process.env.ANALYZE === "true" });
 
-// NOTE: Content-Security-Policy is set in `src/middleware.ts`, not here, because it
+// NOTE: Content-Security-Policy is set in `src/proxy.ts`, not here, because it
 // needs a fresh per-request nonce ('nonce-…' + 'strict-dynamic' in production). The
 // static headers below have no per-request component and are applied to every path.
 const securityHeaders = [
@@ -23,9 +23,7 @@ const nextConfig = {
   output: "standalone",
   // React Compiler (React 19): auto-memoizes components, removing most manual
   // useMemo/useCallback and cutting re-renders. Requires babel-plugin-react-compiler.
-  experimental: {
-    reactCompiler: true,
-  },
+  reactCompiler: true,
   // NOTE: build-time TS/ESLint checks are intentionally ENABLED. `npx tsc --noEmit`
   // and `next lint` are clean (see CLAUDE.md rules #3/#4) — do not re-add
   // ignoreBuildErrors/ignoreDuringBuilds, which silently mask regressions.
@@ -53,9 +51,7 @@ const sentryOptions = {
   silent: !process.env.SENTRY_AUTH_TOKEN,
   org: process.env.SENTRY_ORG,
   project: process.env.SENTRY_PROJECT,
-  authToken: process.env.SENTRY_AUTH_TOKEN,
-  // Disable the Sentry webpack plugin in development to avoid noise.
-  disableLogger: true
+  authToken: process.env.SENTRY_AUTH_TOKEN
 };
 
 export default withSentryConfig(withBundleAnalyzer(nextConfig), sentryOptions);

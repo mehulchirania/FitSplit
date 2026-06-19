@@ -54,7 +54,7 @@ function buildCsp(nonce: string): string {
   ].join("; ");
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Fresh nonce per request (production only — dev CSP doesn't use it).

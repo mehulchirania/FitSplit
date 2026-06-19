@@ -6,6 +6,8 @@ import { getAdminMessaging, getFirebaseAdminServices, hasFirebaseAdminConfig } f
 import type { FormActionState } from "@/types/action-state";
 import type { GymWorkspace, Role } from "@/types/domain";
 
+const revalidateTagWithProfile = revalidateTag as (tag: string, profile?: "max") => void;
+
 export function requireFirebase() {
   if (!hasFirebaseAdminConfig()) {
     throw new Error(
@@ -210,9 +212,9 @@ const DEFAULT_GYM_CACHE_COLLECTIONS: GymCacheCollection[] = [
 export function revalidateGymTags(gymId?: string, collections: GymCacheCollection[] = DEFAULT_GYM_CACHE_COLLECTIONS) {
   try {
     if (gymId) {
-      collections.forEach((collection) => revalidateTag(`gym:${gymId}:${collection}`));
+      collections.forEach((collection) => revalidateTagWithProfile(`gym:${gymId}:${collection}`, "max"));
     } else {
-      collections.forEach((collection) => revalidateTag(collection));
+      collections.forEach((collection) => revalidateTagWithProfile(collection, "max"));
     }
   } catch {
     // revalidateTag is a noop outside a request context.

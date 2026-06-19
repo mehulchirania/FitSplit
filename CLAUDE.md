@@ -10,6 +10,37 @@ Developer: Mehul Chirania (`mehulchirania@gmail.com`), Bengaluru. Also a demo me
 
 Next.js 15 App Router (Turbopack dev) · React 19 + React Compiler · TypeScript 6 (strict) · Firestore · Firebase Auth (session cookies) · Firebase App Hosting · Firebase Storage · FCM · Radix UI · Recharts (lazy-loaded) · Framer Motion · Sonner · Dexie (offline) · Zod v4 · Vitest
 
+## Agent behavior
+
+### Token efficiency
+No conversational filler. No restating the question. No "Great question!" openers. Lead with the answer or the action. If a response would be pure acknowledgement, skip it.
+
+### Verify before asserting
+Never claim a function, file, component, Firestore path, or CSS class exists without reading it first. Memory of what was written earlier is not the same as what is on disk now. Read → reason → act. This applies equally to UI state assumptions, server action signatures, and data model fields.
+
+### Response formatting
+Use prose over bullet points for explanations and reasoning. Bullets are for reference material, checklists, and schema definitions — not for thinking out loud. No excessive bolding inside prose. Never use bullets when declining or redirecting. Tables are for comparisons, not for things a sentence would cover.
+
+### File creation strategy
+- **Under 100 lines:** write the complete file in one pass.
+- **Over 100 lines:** outline the structure first, build section by section, review, then finalize. Never dump an unreviewed 400-line file in one block.
+- **File vs inline:** a component, hook, action, or util is a file. An explanation or short snippet stays inline. Don't create files for things the user will only read in chat.
+
+### Complexity calibration
+- **Simple bug or style fix:** direct edit, no preamble.
+- **New feature under 3 files:** implement with brief rationale.
+- **New feature touching auth, data model, or offline path:** state the plan and get confirmation before writing code.
+- **Architectural change:** start with "Here's what I'd actually do", state the exact decision, name the hidden friction, close with what the top teams do differently.
+
+### Decision making
+- Prioritize long-term maintainability over clever shortcuts.
+- When two approaches are equally valid, pick the one that produces less code.
+- Handle edge cases at the boundary (auth, tenant isolation, offline sync) — not inside business logic.
+- Never leave a TODO without a linked decision — either implement it or open a tracked issue.
+- When something is unclear, ask one question. If the question would block progress, state the assumption and proceed — flag it so the user can redirect.
+
+---
+
 ## Workflow rules (non-negotiable)
 
 1. **Edit files directly in this repo, current branch. Never `git worktree add`, never create a side branch.** Worktrees broke `extensions.worktreeconfig` and Codex integration — that restriction is permanent.
@@ -57,6 +88,58 @@ Next.js 15 App Router (Turbopack dev) · React 19 + React Compiler · TypeScript
 **Dual-write pattern:** every write goes to the root collection AND `gyms/{gymId}/{collection}`. Use `mirrorGymScopedRecord(db, gymId, collection, docId, data)` from `actions/shared.ts`.
 
 **Deterministic doc IDs:** `macroLogs` = `${memberId}_${date}`, `dayLogs` = `${memberId}_${dayId}_${weekStart}`, workout sessions = `sessionId` (UUID from client).
+
+## UI / UX standards
+
+### Design principles
+- Every screen must work at 375px (iPhone SE) without horizontal scroll.
+- Touch targets minimum 44×44px — no exceptions for icons or nav items.
+- Interactive elements must have a visible focus state. Don't remove outlines without replacing them.
+- Motion: respect `prefers-reduced-motion`. Animations are enhancement, not baseline. Wrap Framer Motion variants in a check or use `useReducedMotion()`.
+- Color contrast minimum AA: 4.5:1 for body text, 3:1 for large text and UI components.
+
+### Component discipline
+- One component, one responsibility. If a component needs a comment explaining what it does, it needs to be split.
+- Props are typed explicitly — no `any`, no spreading unknown objects into DOM elements.
+- Co-locate related logic: if a hook is only used by one component, it lives in the same file.
+- Loading and error states are not optional. Every async operation has three UI states: loading, success, error.
+
+### State and data flow
+- Firestore-derived state is the source of truth. Never duplicate it into local state that can drift.
+- Local UI state (modals, toggles, form fields) lives in `useState` / `useReducer`. Don't reach for global state for things one component needs.
+- Optimistic updates for all workout logging and attendance actions — the app must feel instant on poor connectivity.
+- Destructive actions (delete member, remove set, archive record) require a confirmation step. No undo = must confirm.
+
+### UX patterns
+- Empty states are designed, not blank. Every empty list tells the user what to do next.
+- Form validation is inline and immediate, not deferred to submit.
+- Sync status (pending / synced / failed) is always visible for offline-capable actions — never silently drop a pending write.
+- Sonner toasts for transient feedback. Persistent errors go inline near the relevant field or action, not in a toast.
+- Dialogs must support ESC dismiss and prompt on unsaved changes.
+
+---
+
+## Backend / Firestore discipline
+
+### Data model
+- Prefer flat collections over deeply nested subcollections. Nesting beyond 3 levels is a schema smell.
+- Denormalize deliberately. If a field is read in a list view, it belongs on the list document — don't require a secondary fetch.
+- Document IDs are auto-generated or deterministic slugs. Never use email or PII as a document ID.
+- Timestamps use `serverTimestamp()` for creation and updates — never `new Date()` on the client.
+- When adding a new collection: write the Firestore security rule for it in the same change. Never leave a collection unprotected.
+
+### Error handling
+- All Firestore and Admin SDK calls are wrapped in try/catch at the call site. Errors are typed, not swallowed.
+- Firebase Auth errors are mapped to user-readable messages before surfacing — never expose raw Firebase error codes or Admin SDK stack traces to the UI.
+- Server actions return a typed result envelope via `success()` / `failure()` from `actions/shared.ts`. Never throw unstructured errors from an action.
+- If an action can partially fail (e.g. dual-write root + gym-scoped), handle rollback or log the inconsistency explicitly — don't silently leave data in a half-written state.
+
+### Security
+- `requireRole` / `requireOwner` are called at the top of every protected Server Action and page. Skipping these is never acceptable even for "internal" endpoints.
+- Admin SDK bypasses Firestore rules — security is entirely in the Server Action guards. This means every new action must start with an auth check, not end with one.
+- The `fitsplit-role` cookie is user-craftable. Middleware trusts it for routing only. Authorization always re-validates via the signed session cookie in `requireRole`.
+
+---
 
 ## CSS system
 
