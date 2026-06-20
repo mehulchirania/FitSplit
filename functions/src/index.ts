@@ -1607,12 +1607,11 @@ async function computeGymDashboard(gymId: string) {
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
 
-  const [gymDoc, membersSnap, pendingSnap, trainersSnap, membershipsSnap] = await Promise.all([
+  const [gymDoc, membersSnap, pendingSnap, trainersSnap] = await Promise.all([
     db.doc(`gyms/${gymId}`).get(),
     db.collection(`gyms/${gymId}/members`).get(),
     db.collection(`gyms/${gymId}/paymentRequests`).where("status", "==", "pending").get(),
-    db.collection(`gyms/${gymId}/staff`).where("role", "in", ["owner", "trainer"]).get(),
-    db.collection(`gyms/${gymId}/memberships`).where("status", "==", "active").get()
+    db.collection(`gyms/${gymId}/staff`).where("role", "in", ["owner", "trainer"]).get()
   ]);
 
   const expiryWarningDays = Number(gymDoc.data()?.expiryWarningDays ?? 7);

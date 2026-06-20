@@ -104,8 +104,8 @@ export default async function ManageGymsPage({
                 style={{ textDecoration: "none", color: "inherit", cursor: "pointer", gridTemplateColumns: "30px 1.6fr 1fr 80px 100px 80px" }}
               >
                 {gym.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
                   <span className="adm-gym-row__avatar" style={{ background: "var(--bg-elevated)", display: "flex", alignItems: "center", justifyContent: "center", padding: 2 }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={gym.logoUrl} alt={gym.name} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 6 }} />
                   </span>
                 ) : (

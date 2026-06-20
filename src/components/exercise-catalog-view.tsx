@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useActionState, useEffect } from "react";
+import { useState, useMemo, useActionState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { X } from "@/components/icons";
 import { ExerciseEditForm } from "@/components/exercise-edit-form";
@@ -22,25 +22,23 @@ type FormAction = (prev: FormActionState, formData: FormData) => Promise<FormAct
 // ── Inline gym-video editor ────────────────────────────────────────────────────
 
 function GymVideoCell({ exercise }: { exercise: Exercise }) {
-  const [state, formAction, isPending] = useActionState(
-    setGymExerciseVideo,
-    initialFormActionState
-  );
   const router = useRouter();
   const [url, setUrl] = useState(exercise.gymVideoUrl ?? "");
   const [open, setOpen] = useState(false);
   const saved = exercise.gymVideoUrl ?? "";
 
-  useEffect(() => {
-    if (state.status === "success") {
-      router.refresh();
+  async function saveGymVideo(prev: FormActionState, formData: FormData) {
+    const result = await setGymExerciseVideo(prev, formData);
+    if (result.status === "success") {
       setOpen(false);
+      router.refresh();
     }
-  }, [state.status, router]);
-
-  useEffect(() => {
-    setUrl(exercise.gymVideoUrl ?? "");
-  }, [exercise.gymVideoUrl]);
+    return result;
+  }
+  const [, formAction, isPending] = useActionState(
+    saveGymVideo,
+    initialFormActionState
+  );
 
   if (!open) {
     return (
@@ -61,7 +59,10 @@ function GymVideoCell({ exercise }: { exercise: Exercise }) {
         )}
         <button
           type="button"
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            setUrl(saved);
+            setOpen(true);
+          }}
           className="button button-secondary"
           style={{ padding: "3px 10px", fontSize: "0.75rem", minHeight: "28px" }}
         >

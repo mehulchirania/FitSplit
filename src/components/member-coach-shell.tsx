@@ -92,6 +92,22 @@ function Avatar({ initials, size = "md", className = "" }: { initials: string; s
   return <span className={`mcr-avatar mcr-avatar--${size} ${className}`}>{initials}</span>;
 }
 
+function ChevD() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  );
+}
+
+function LogOutIco() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  );
+}
+
 /* ── Sidebar (Desktop) ───────────────────────────────────────────── */
 function Sidebar({
   tab, setTab, firstName, gymName, gymLogoUrl,
@@ -135,18 +151,6 @@ function Sidebar({
 
   const gymShort = gymName.split(" · ")[0];
   const initials = firstName.charAt(0).toUpperCase();
-
-  // Chevron + logout icons inlined
-  const ChevD = () => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
-  );
-  const LogOutIco = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-  );
 
   return (
     <aside className="m3d-side">
@@ -472,8 +476,9 @@ function MembershipRow({ membershipStatus, membershipEndDate }: {
   membershipStatus?: string | null;
   membershipEndDate?: string | null;
 }) {
+  const [nowMs] = useState(() => Date.now());
   const daysLeft = membershipEndDate
-    ? Math.ceil((new Date(membershipEndDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    ? Math.ceil((new Date(membershipEndDate).getTime() - nowMs) / (1000 * 60 * 60 * 24))
     : null;
 
   const statusText = membershipStatus === "active"
@@ -926,15 +931,16 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     membershipStatus, membershipEndDate,
     coachNote, coachNoteFrom,
     program, currentWeek, exercises, liftLogs, dayLogs, activityLogs,
-    macroLogs, macroLog, macroTarget, injuryNote,
+    macroLogs, macroLog, macroTarget,
     memberId, gymId, todayDate,
-    member, profile, initialActiveSessionCount,
+    member, profile,
   } = props;
 
   const [tab, setTab] = useState("train");
   const [toast, setToast] = useState<string | null>(null);
   const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [selectedPreviewDay, setSelectedPreviewDay] = useState(0);
+  const [nowMs] = useState(() => Date.now());
 
   function handleToast(msg: string) {
     setToast(msg);
@@ -951,7 +957,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     if (startedAt) {
       const startMs = parseInt(startedAt, 10);
       if (Date.now() - startMs < 4 * 60 * 60 * 1000) {
-        setIsWorkoutActive(true);
+        window.setTimeout(() => setIsWorkoutActive(true), 0);
       } else {
         window.localStorage.removeItem("fitsplit-workout-start");
       }
@@ -1096,7 +1102,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                           {membershipStatus === "active" ? "Active" :
                            membershipStatus === "expiring_soon" ? "Expiring soon" :
                            membershipStatus === "expired" ? "Expired" : "—"}
-                          {membershipEndDate ? ` · ${Math.ceil((new Date(membershipEndDate).getTime() - Date.now()) / 86400000)}d left` : ""}
+                          {membershipEndDate ? ` · ${Math.ceil((new Date(membershipEndDate).getTime() - nowMs) / 86400000)}d left` : ""}
                         </strong>
                       </div>
                       <Link href="/member/membership" className="m3d-btn-ghost m3d-btn-sm">Manage</Link>

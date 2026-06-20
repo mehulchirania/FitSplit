@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { resetPassword, toggleMemberAccess } from "@/lib/firebase/actions";
 import { callResetMemberPin, callToggleMemberAccess } from "@/lib/firebase/functions";
 import { Activity } from "@/components/icons";
@@ -15,19 +15,15 @@ export function MemberAccessActions({
   memberId: string;
   username?: string;
 }) {
-  const [active, setActive] = useState(isActive);
+  const [optimisticActive, setOptimisticActive] = useState<boolean | null>(null);
   const [pin, setPin] = useState("");
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    setActive(isActive);
-  }, [isActive]);
+  const active = optimisticActive ?? isActive;
 
   function updateAccess() {
     const next = !active;
-    const previous = active;
-    setActive(next);
+    setOptimisticActive(next);
     setMessage(null);
 
     startTransition(async () => {
@@ -40,7 +36,7 @@ export function MemberAccessActions({
         fd.set("isActive", String(next));
         const result = await toggleMemberAccess(initialFormActionState, fd);
         if (result.status === "error") {
-          setActive(previous);
+          setOptimisticActive(active);
         }
         setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
       }

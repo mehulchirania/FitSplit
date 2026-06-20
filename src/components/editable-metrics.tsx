@@ -14,6 +14,9 @@ export function EditableMetrics({ member }: { member: Member }) {
   const [height, setHeight] = useState(member.heightCm?.toString() || "");
   const [saveError, setSaveError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const displayAge = isEditing ? age : member.age?.toString() || "";
+  const displayWeight = isEditing ? weight : member.weightKg?.toString() || "";
+  const displayHeight = isEditing ? height : member.heightCm?.toString() || "";
 
   // D16: Track whether the user has made changes since entering edit mode.
   const isDirty =
@@ -21,13 +24,6 @@ export function EditableMetrics({ member }: { member: Member }) {
     (age !== (member.age?.toString() || "") ||
       weight !== (member.weightKg?.toString() || "") ||
       height !== (member.heightCm?.toString() || ""));
-
-  useEffect(() => {
-    if (isEditing) return;
-    setAge(member.age?.toString() || "");
-    setWeight(member.weightKg?.toString() || "");
-    setHeight(member.heightCm?.toString() || "");
-  }, [isEditing, member.age, member.heightCm, member.weightKg]);
 
   // D16: Warn before tab close / browser navigation when there are unsaved changes.
   useEffect(() => {
@@ -39,7 +35,7 @@ export function EditableMetrics({ member }: { member: Member }) {
     return () => window.removeEventListener("beforeunload", handler);
   }, [isDirty]);
 
-  const bmiValue = weight && height ? Number(weight) / Math.pow(Number(height) / 100, 2) : null;
+  const bmiValue = displayWeight && displayHeight ? Number(displayWeight) / Math.pow(Number(displayHeight) / 100, 2) : null;
   const bmi = bmiValue ? bmiValue.toFixed(1) : "--";
 
   const getBmiColor = (val: number | null) => {
@@ -112,9 +108,9 @@ export function EditableMetrics({ member }: { member: Member }) {
   }
 
   const stats = [
-    { label: "Weight", value: weight ? `${weight} kg` : "—" },
-    { label: "Height", value: height ? `${height} cm` : "—" },
-    { label: "Age", value: age || "—" },
+    { label: "Weight", value: displayWeight ? `${displayWeight} kg` : "—" },
+    { label: "Height", value: displayHeight ? `${displayHeight} cm` : "—" },
+    { label: "Age", value: displayAge || "—" },
   ];
 
   return (
@@ -183,7 +179,12 @@ export function EditableMetrics({ member }: { member: Member }) {
       {/* Edit button */}
       <button
         type="button"
-        onClick={() => setIsEditing(true)}
+        onClick={() => {
+          setAge(member.age?.toString() || "");
+          setWeight(member.weightKg?.toString() || "");
+          setHeight(member.heightCm?.toString() || "");
+          setIsEditing(true);
+        }}
         title="Edit metrics"
         aria-label="Edit body metrics"
         style={{

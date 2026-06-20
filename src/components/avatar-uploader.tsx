@@ -46,20 +46,6 @@ export function AvatarUploader({
 
   const initials = name.split(" ").map((p) => p[0]).filter(Boolean).join("").slice(0, 2).toUpperCase() || "?";
 
-  useEffect(() => {
-    if (!image) return;
-    const img = new Image();
-    img.onload = () => {
-      imageRef.current = img;
-      drawPreview(img);
-    };
-    img.src = image.src;
-  }, [image]);
-
-  useEffect(() => {
-    if (imageRef.current) drawPreview(imageRef.current);
-  }, [zoom]);
-
   function drawPreview(img: HTMLImageElement) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -81,6 +67,20 @@ export function AvatarUploader({
     ctx.drawImage(img, x, y, drawWidth, drawHeight);
     setDataUrl(canvas.toDataURL("image/png"));
   }
+
+  useEffect(() => {
+    if (!image) return;
+    const img = new Image();
+    img.onload = () => {
+      imageRef.current = img;
+      drawPreview(img);
+    };
+    img.src = image.src;
+  }, [image]);
+
+  useEffect(() => {
+    if (imageRef.current) drawPreview(imageRef.current);
+  }, [zoom]);
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

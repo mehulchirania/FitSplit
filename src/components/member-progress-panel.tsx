@@ -31,8 +31,9 @@ export function MemberProgressPanel({
 }: MemberProgressPanelProps) {
   const router = useRouter();
   const liftFormRef = useRef<HTMLFormElement>(null);
-  const [liftLogs, setLiftLogs] = useState(initialLiftLogs);
+  const [optimisticLiftLogs, setOptimisticLiftLogs] = useState<LiftLog[] | null>(null);
   const [selectedExerciseId, setSelectedExerciseId] = useState("");
+  const liftLogs = optimisticLiftLogs ?? initialLiftLogs;
 
   const [eventStatus, setEventStatus] = useState<FormActionState | null>(null);
   const [isEventPending, setIsEventPending] = useState(false);
@@ -42,9 +43,7 @@ export function MemberProgressPanel({
   const [offlineSyncStatus, setOfflineSyncStatus] = useState<FormActionState | null>(null);
   const [isOfflineSyncing, setIsOfflineSyncing] = useState(false);
 
-  useEffect(() => {
-    setLiftLogs(initialLiftLogs);
-  }, [initialLiftLogs]);
+
 
   const exerciseById = useMemo(
     () => new Map(exercises.map((exercise) => [exercise.id, exercise])),
@@ -66,11 +65,7 @@ export function MemberProgressPanel({
     [exercises, plannedExerciseIds]
   );
 
-  useEffect(() => {
-    if (!selectedExerciseId && uniqueLoggableExercises[0]?.exerciseId) {
-      setSelectedExerciseId(uniqueLoggableExercises[0].exerciseId);
-    }
-  }, [selectedExerciseId, uniqueLoggableExercises]);
+  const effectiveSelectedExerciseId = selectedExerciseId || uniqueLoggableExercises[0]?.exerciseId || "";
 
   const prMap = liftLogs.reduce<Map<string, number>>((acc, log) => {
     if (log.weight && log.exerciseId) {
@@ -119,7 +114,7 @@ export function MemberProgressPanel({
   useEffect(() => {
     offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
     if (typeof navigator !== "undefined" && navigator.onLine) {
-      void syncOfflineQueue(false);
+      window.setTimeout(() => { void syncOfflineQueue(false); }, 0);
     }
     const handleOnline = () => void syncOfflineQueue(false);
     window.addEventListener("online", handleOnline);
@@ -151,7 +146,7 @@ export function MemberProgressPanel({
 
     if (typeof navigator !== "undefined" && !navigator.onLine) {
       await offlineDB.liftLogs.add({ ...newLog, synced: false });
-      setLiftLogs((current) => [newLog, ...current]);
+      setOptimisticLiftLogs((current) => [newLog, ...(current ?? initialLiftLogs)]);
       offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
       setIsNewPR(false);
       setLogSuccess(true);
@@ -166,7 +161,7 @@ export function MemberProgressPanel({
       const result = await logLiftSet(initialFormActionState, formData);
       setIsEventPending(false);
       if (result.status === "success") {
-        setLiftLogs((current) => [newLog, ...current]);
+        setOptimisticLiftLogs((current) => [newLog, ...(current ?? initialLiftLogs)]);
         setIsNewPR(weight > prevMax);
         setLogSuccess(true);
         toast.success(weight > prevMax ? "New PR logged. Strong progress." : "Set logged. Progress recorded.");
@@ -179,7 +174,7 @@ export function MemberProgressPanel({
     } catch {
       setIsEventPending(false);
       await offlineDB.liftLogs.add({ ...newLog, synced: false });
-      setLiftLogs((current) => [newLog, ...current]);
+      setOptimisticLiftLogs((current) => [newLog, ...(current ?? initialLiftLogs)]);
       offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(console.error);
       setIsNewPR(false);
       setLogSuccess(true);
@@ -221,7 +216,7 @@ export function MemberProgressPanel({
         prMap={prMap}
         liftLogs={liftLogs}
         liftFormRef={liftFormRef}
-        selectedExerciseId={selectedExerciseId}
+        selectedExerciseId={effectiveSelectedExerciseId}
         onExerciseChange={setSelectedExerciseId}
         onSubmit={handleLiftLog}
         isSubmitting={isEventPending}

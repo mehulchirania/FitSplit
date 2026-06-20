@@ -115,8 +115,8 @@ export default async function AdminPage() {
                 >
                   {/* Avatar / logo */}
                   {gym.logoUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <span className="adm-gym-row__avatar" style={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center", padding: 2 }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={gym.logoUrl} alt={gym.name} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 5 }} />
                     </span>
                   ) : (

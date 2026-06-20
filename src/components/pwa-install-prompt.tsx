@@ -20,12 +20,16 @@ function isStandalone() {
 
 export function PwaInstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [showIosHint, setShowIosHint] = useState(false);
+  const [isInstalled, setIsInstalled] = useState(() => isStandalone());
+  const [showIosHint] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isIos = /iphone|ipad|ipod/.test(userAgent);
+    return isIos && !isStandalone();
+  });
   const [isHiddenForSession, setIsHiddenForSession] = useState(false);
 
   useEffect(() => {
-    setIsInstalled(isStandalone());
     const isLocalDevelopment =
       window.location.hostname === "localhost" ||
       window.location.hostname === "127.0.0.1" ||
@@ -52,10 +56,6 @@ export function PwaInstallPrompt() {
         console.warn("FitSplit service worker registration failed", error);
       });
     }
-
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    const isIos = /iphone|ipad|ipod/.test(userAgent);
-    setShowIosHint(isIos && !isStandalone());
 
     function handleBeforeInstallPrompt(event: Event) {
       event.preventDefault();

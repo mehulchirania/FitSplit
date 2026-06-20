@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useTransition, useActionState } from "react";
+import { useState, useTransition, useActionState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
@@ -72,6 +72,18 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="mset-card">{children}</div>
     </div>
   );
+}
+
+function storedSetting<T extends string>(key: string, fallback: T, allowed: readonly T[]) {
+  if (typeof window === "undefined") return fallback;
+  const value = window.localStorage.getItem(key);
+  return allowed.includes(value as T) ? value as T : fallback;
+}
+
+function storedToggle(key: string, fallback: boolean) {
+  if (typeof window === "undefined") return fallback;
+  const value = window.localStorage.getItem(key);
+  return value === null ? fallback : value === "1";
 }
 
 /* ── Profile tab ─────────────────────────────────────────────────────────── */
@@ -271,10 +283,10 @@ function ProfileTab({ member, profile, memberId }: {
 /* ── Settings tab ────────────────────────────────────────────────────────── */
 
 function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
-  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">("kg");
-  const [heightUnit, setHeightUnit] = useState<"cm" | "ft">("cm");
-  const [workoutReminders, setWorkoutReminders] = useState(true);
-  const [coachMessages, setCoachMessages] = useState(true);
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">(() => storedSetting("fitsplit-weight-unit", "kg", ["kg", "lbs"]));
+  const [heightUnit, setHeightUnit] = useState<"cm" | "ft">(() => storedSetting("fitsplit-height-unit", "cm", ["cm", "ft"]));
+  const [workoutReminders, setWorkoutReminders] = useState(() => storedToggle("fitsplit-notif-workout", true));
+  const [coachMessages, setCoachMessages] = useState(() => storedToggle("fitsplit-notif-coach", true));
 
   // PIN change
   const [showPin, setShowPin] = useState(false);
@@ -316,20 +328,10 @@ function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
   }
 
   const [isPending, startTransition] = useTransition();
-
-  useEffect(() => {
-    const wu = localStorage.getItem("fitsplit-weight-unit") as "kg" | "lbs" | null;
-    const hu = localStorage.getItem("fitsplit-height-unit") as "cm" | "ft" | null;
-    const wr = localStorage.getItem("fitsplit-notif-workout");
-    const cm = localStorage.getItem("fitsplit-notif-coach");
-    if (wu) setWeightUnit(wu);
-    if (hu) setHeightUnit(hu);
-    if (wr !== null) setWorkoutReminders(wr === "1");
-    if (cm !== null) setCoachMessages(cm === "1");
-  }, []);
+  const [nowMs] = useState(() => Date.now());
 
   const daysLeft = member.membershipEndDate
-    ? Math.ceil((new Date(member.membershipEndDate).getTime() - Date.now()) / 86400000)
+    ? Math.ceil((new Date(member.membershipEndDate).getTime() - nowMs) / 86400000)
     : null;
   const membershipLabel =
     member.membershipStatus === "active" ? "Active"

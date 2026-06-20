@@ -18,7 +18,7 @@ export function SessionTimeout({ isAuthenticated }: { isAuthenticated: boolean }
     if (!isAuthenticated) {
       window.localStorage.removeItem(sessionStartKey);
       window.localStorage.removeItem(rememberMeKey);
-      setShowWarning(false);
+      window.setTimeout(() => setShowWarning(false), 0);
       return;
     }
 
@@ -48,8 +48,10 @@ export function SessionTimeout({ isAuthenticated }: { isAuthenticated: boolean }
         }, 60_000);
       }, warningDelay);
     } else if (remaining > 0) {
-      setShowWarning(true);
-      setMinutesLeft(Math.ceil(remaining / 60_000));
+      window.setTimeout(() => {
+        setShowWarning(true);
+        setMinutesLeft(Math.ceil(remaining / 60_000));
+      }, 0);
     }
 
     const logoutId = window.setTimeout(async () => {

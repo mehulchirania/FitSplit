@@ -53,13 +53,14 @@ export default async function MemberDashboard() {
 
   const program = assignment ? programs.find((p) => p.id === assignment.programId) ?? null : null;
   const firstName = member.fullName.split(" ")[0];
+  const now = new Date();
+  const nowMs = now.getTime();
 
   const currentWeek = assignment
-    ? Math.ceil((Date.now() - new Date(assignment.assignedAt ?? Date.now()).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
+    ? Math.ceil((nowMs - new Date(assignment.assignedAt ?? nowMs).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
     : null;
 
   // Days trained this week (Mon-Sun)
-  const now = new Date();
   const startOfWeek = new Date(now);
   startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7));
   startOfWeek.setHours(0, 0, 0, 0);

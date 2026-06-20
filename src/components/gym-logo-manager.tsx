@@ -37,23 +37,6 @@ export function GymLogoManager({
   const [status, setStatus] = useState<FormActionState | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  useEffect(() => {
-    if (!image) return;
-
-    const img = new Image();
-    img.onload = () => {
-      imageRef.current = img;
-      drawPreview(img);
-    };
-    img.src = image.src;
-  }, [image]);
-
-  useEffect(() => {
-    if (imageRef.current) {
-      drawPreview(imageRef.current);
-    }
-  }, [zoom, offsetX, offsetY]);
-
   function drawPreview(img: HTMLImageElement) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -81,6 +64,23 @@ export function GymLogoManager({
     ctx.drawImage(img, x, y, drawWidth, drawHeight);
     setLogoDataUrl(canvas.toDataURL("image/png"));
   }
+
+  useEffect(() => {
+    if (!image) return;
+
+    const img = new Image();
+    img.onload = () => {
+      imageRef.current = img;
+      drawPreview(img);
+    };
+    img.src = image.src;
+  }, [image]);
+
+  useEffect(() => {
+    if (imageRef.current) {
+      drawPreview(imageRef.current);
+    }
+  }, [zoom, offsetX, offsetY]);
 
   function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];

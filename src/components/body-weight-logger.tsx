@@ -30,6 +30,7 @@ export function BodyWeightLogger({
   const [bodyFat, setBodyFat] = useState("");
   const [notes, setNotes] = useState("");
   const [message, setMessage] = useState<{ kind: "success" | "error"; text: string } | null>(null);
+  const [nowMs] = useState(() => Date.now());
   const [isPending, startTransition] = useTransition();
 
   const latest = logs[0];
@@ -41,7 +42,7 @@ export function BodyWeightLogger({
   // Delta calculations — compare current weight to the entry closest to N days ago.
   function deltaSince(days: number): { delta: number; from: BodyMetricLog } | null {
     if (!latest || sorted.length < 2) return null;
-    const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+    const cutoff = nowMs - days * 24 * 60 * 60 * 1000;
     // Find the most recent log AT or BEFORE the cutoff. Walk sorted (oldest→newest)
     // and pick the one furthest in but not past the cutoff.
     let candidate: BodyMetricLog | undefined;

@@ -33,7 +33,7 @@ const LBL: React.CSSProperties = {
 };
 
 // ── Inline member panel ────────────────────────────────────────────────────────
-function MemberPanel({ m, gymId }: { m: Member; gymId: string }) {
+function MemberPanel({ m }: { m: Member; gymId: string }) {
   const router = useRouter();
 
   // Tab: "details" or "access"

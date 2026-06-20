@@ -298,7 +298,7 @@ export function MembersHybridView({
   const [bucket, setBucket] = useState<Bucket>("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [page, setPage] = useState(1);
+  const [pageState, setPageState] = useState({ key: "all||name", page: 1 });
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState<"assign" | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState(programs[0]?.id ?? "");
@@ -362,9 +362,9 @@ export function MembersHybridView({
     return [...list].sort(cmp[sortKey]);
   }, [initialMembers, bucket, query, sortKey, accessById]);
 
-  useEffect(() => { setPage(1); }, [bucket, query, sortKey]);
-
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageKey = `${bucket}|${query}|${sortKey}`;
+  const page = pageState.key === pageKey ? pageState.page : 1;
   const safePage = Math.min(page, totalPages);
   const slice = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
@@ -767,7 +767,10 @@ export function MembersHybridView({
                 type="button"
                 className="mhv-btn mhv-btn--ghost mhv-btn--sm"
                 disabled={safePage <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPageState((current) => ({
+                  key: pageKey,
+                  page: Math.max(1, (current.key === pageKey ? current.page : safePage) - 1)
+                }))}
                 aria-label="Previous page"
               >
                 <IconChevLeft /> Prev
@@ -779,7 +782,10 @@ export function MembersHybridView({
                 type="button"
                 className="mhv-btn mhv-btn--ghost mhv-btn--sm"
                 disabled={safePage >= totalPages}
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPageState((current) => ({
+                  key: pageKey,
+                  page: Math.min(totalPages, (current.key === pageKey ? current.page : safePage) + 1)
+                }))}
                 aria-label="Next page"
               >
                 Next <IconChevRight />

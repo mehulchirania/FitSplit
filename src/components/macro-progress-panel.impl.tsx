@@ -49,13 +49,12 @@ export function MacroProgressPanel({
   // Load from server data (initialActual) first, fall back to localStorage
   useEffect(() => {
     if (initialActual) {
-      setActual(initialActual);
       return;
     }
     const stored = window.localStorage.getItem(dateKey);
     if (stored) {
       try {
-        setActual(JSON.parse(stored));
+        window.setTimeout(() => setActual(JSON.parse(stored)), 0);
       } catch {
         // non-fatal
       }

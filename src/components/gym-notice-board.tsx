@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { GymNotice } from "@/types/domain";
 
 const TYPE_CONFIG: Record<string, { label: string; accent: string }> = {
@@ -25,7 +25,7 @@ export function GymNoticeBoard({ notices }: { notices: GymNotice[] }) {
     return () => { mountedRef.current = false; };
   }, []);
 
-  function goTo(next: number) {
+  const goTo = useCallback((next: number) => {
     if (!visible) return;
     setVisible(false);
     setTimeout(() => {
@@ -33,10 +33,12 @@ export function GymNoticeBoard({ notices }: { notices: GymNotice[] }) {
       setIdx(next);
       setVisible(true);
     }, 320);
-  }
+  }, [visible]);
 
   // Always points to latest goTo+idx without stale closures
-  advanceRef.current = () => goTo((idx + 1) % active.length);
+  useEffect(() => {
+    advanceRef.current = () => goTo((idx + 1) % active.length);
+  }, [active.length, goTo, idx]);
 
   useEffect(() => {
     if (active.length <= 1 || isPaused) return;

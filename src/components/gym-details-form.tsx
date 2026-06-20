@@ -7,6 +7,8 @@ import { updateGymDetails } from "@/lib/firebase/actions";
 import { callUpdateGymDetails } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 
+type TrainerMemberVisibility = "assigned_only" | "all_pt_members" | "all_members";
+
 export function GymDetailsForm({
   gym
 }: {
@@ -24,7 +26,7 @@ export function GymDetailsForm({
     radiusMeters?: number;
     latitude?: number;
     longitude?: number;
-    trainerMemberVisibility?: "assigned_only" | "all_pt_members" | "all_members";
+    trainerMemberVisibility?: TrainerMemberVisibility;
   };
 }) {
   const router = useRouter();
@@ -53,7 +55,7 @@ export function GymDetailsForm({
           radiusMeters: formData.get("radiusMeters") ? Number(formData.get("radiusMeters")) : undefined,
           latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
           longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
-          trainerMemberVisibility: (formData.get("trainerMemberVisibility") as any) || undefined
+          trainerMemberVisibility: (formData.get("trainerMemberVisibility") as TrainerMemberVisibility | null) || undefined
         });
         setMessage({ type: "success", text: result.data?.message || "Gym details updated successfully." });
         router.refresh();

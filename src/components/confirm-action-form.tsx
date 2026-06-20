@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { CSSProperties, FormEvent, ReactNode } from "react";
 import type { FormActionState } from "@/types/action-state";
@@ -47,18 +47,15 @@ export function ConfirmActionForm({
   const [state, formAction, isPending] = useActionState(action, initialFormActionState);
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isConfirmedSubmit, setIsConfirmedSubmit] = useState(false);
   const [dismissedMessage, setDismissedMessage] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
-
-  useEffect(() => {
-    if (!isPending) {
-      setIsConfirmedSubmit(false);
-    }
-  }, [isPending]);
+  const isConfirmedSubmitRef = useRef(false);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    if (isConfirmedSubmit) {
+    if (isConfirmedSubmitRef.current) {
+      window.setTimeout(() => {
+        isConfirmedSubmitRef.current = false;
+      }, 0);
       return;
     }
 
@@ -70,7 +67,7 @@ export function ConfirmActionForm({
     setDismissedMessage("");
 
     if (!requireConfirmation) {
-      setIsConfirmedSubmit(true);
+      isConfirmedSubmitRef.current = true;
       return;
     }
 
@@ -80,7 +77,7 @@ export function ConfirmActionForm({
 
   function confirmSubmit() {
     setIsDialogOpen(false);
-    setIsConfirmedSubmit(true);
+    isConfirmedSubmitRef.current = true;
     onBeforeConfirm?.();
     window.setTimeout(() => formRef.current?.requestSubmit(), 0);
   }

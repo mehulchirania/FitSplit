@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
-import { X } from "@/components/icons";
 import { ProgramViewModal } from "@/components/program-view-modal";
 import { CustomPlanBuilder } from "@/components/custom-plan-builder";
 import { deleteCustomWorkoutProgram } from "@/lib/firebase/actions";
 import { callArchiveCustomProgram } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
-import type { Exercise, Member, MuscleGroup, ProgramAssignment, WorkoutDay, WorkoutProgram } from "@/types/domain";
+import type { Exercise, Member, MuscleGroup, ProgramAssignment, WorkoutProgram } from "@/types/domain";
 
 type CatalogGroup = { muscleGroup: MuscleGroup; exercises: Exercise[] };
 
@@ -44,16 +43,6 @@ function trainingDays(program: WorkoutProgram) {
 
 function exerciseCount(program: WorkoutProgram) {
   return program.days.reduce((count, day) => count + day.exercises.length, 0);
-}
-
-function programInsight(program: WorkoutProgram) {
-  return program.selectionHints?.trainerNotes ?? program.bestFor?.slice(0, 2).join(" / ") ?? program.goal;
-}
-
-function dayExerciseNames(day: WorkoutDay, names: Map<string, string>) {
-  return day.exercises
-    .map((item) => names.get(item.exerciseId))
-    .filter((name): name is string => Boolean(name));
 }
 
 function assignmentNames(
@@ -403,7 +392,6 @@ export function WorkoutProgramGallery({
             display: "flex", alignItems: "center", justifyContent: "center",
             padding: 24, overflow: "hidden",
           }}
-          /* eslint-disable-next-line jsx-a11y/no-static-element-interactions */
           onKeyDown={() => { editDirtyRef.current = true; }}
           onChange={() => { editDirtyRef.current = true; }}
         >

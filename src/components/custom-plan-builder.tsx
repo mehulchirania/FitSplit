@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
   createCustomWorkoutProgram,
   requestCatalogExercise,
@@ -72,7 +72,7 @@ function DayNamePicker({ value, onChange }: { value: string; onChange: (v: strin
   const ref = useRef<HTMLDivElement>(null);
 
   // close on outside click
-  useState(() => {
+  useEffect(() => {
     if (typeof document === "undefined") return;
     const h = (e: MouseEvent) => {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);

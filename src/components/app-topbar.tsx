@@ -48,10 +48,6 @@ export function AppTopbar({
   const pathname = usePathname();
 
   useEffect(() => {
-    setIsDrawerOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
     lastScrollYRef.current = window.scrollY;
 
     function handleScroll() {

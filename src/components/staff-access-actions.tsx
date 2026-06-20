@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition, useActionState, useEffect } from "react";
+import { useState, useTransition, useActionState } from "react";
 import { deleteGymStaffProfile, resetPassword, updateStaffProfile } from "@/lib/firebase/actions";
 import { callArchiveStaffAccount, callResetStaffPassword } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
@@ -32,17 +32,19 @@ export function StaffAccessActions({
   const [editPhone, setEditPhone] = useState(phone);
   const [editRole, setEditRole] = useState<StaffType>(staffType);
 
-  const [updateState, updateAction, isUpdatePending] = useActionState(updateStaffProfile, initialFormActionState);
-
-  useEffect(() => {
-    if (updateState.status === "success") {
+  async function updateStaff(prevState: typeof initialFormActionState, formData: FormData) {
+    const result = await updateStaffProfile(prevState, formData);
+    if (result.status === "success") {
       setEditOpen(false);
-      setMessage({ type: "success", text: updateState.message });
+      setMessage({ type: "success", text: result.message });
       router.refresh();
-    } else if (updateState.status === "error") {
-      setMessage({ type: "error", text: updateState.message });
+    } else if (result.status === "error") {
+      setMessage({ type: "error", text: result.message });
     }
-  }, [updateState, router]);
+    return result;
+  }
+
+  const [, updateAction, isUpdatePending] = useActionState(updateStaff, initialFormActionState);
 
   function resetStaffPassword() {
     setMessage(null);

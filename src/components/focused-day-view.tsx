@@ -31,8 +31,7 @@ export function FocusedDayView({
   day,
   exercises,
   liftLogs,
-  assignment,
-  programTitle
+  assignment
 }: {
   day: WorkoutDay;
   exercises: Exercise[];
