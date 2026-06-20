@@ -340,23 +340,28 @@ async function getProfileById(uid: string) {
     db.collection(collectionPaths.profiles).doc(uid).get()
   ]);
 
-  if (doc.exists) {
-    return toProfile(doc.id, doc.data());
-  }
-  if (legacyDoc.exists) {
-    return toProfile(legacyDoc.id, legacyDoc.data());
+  let partialData: DocumentData | undefined = doc.exists ? doc.data() : undefined;
+  if (!partialData?.role && legacyDoc.exists) {
+    partialData = { ...legacyDoc.data(), ...partialData };
   }
 
-  try {
-    const [memberSnapshot, staffSnapshot] = await Promise.all([
-      db.collectionGroup("members").where("id", "==", uid).limit(1).get(),
-      db.collectionGroup("staff").where("id", "==", uid).limit(1).get()
-    ]);
-    const scopedDoc = memberSnapshot.docs[0] ?? staffSnapshot.docs[0];
-    return scopedDoc ? toProfile(scopedDoc.id, scopedDoc.data()) : null;
-  } catch {
-    return null;
+  // If we still don't have a role, look in the gym collections
+  if (!partialData?.role) {
+    try {
+      const [memberSnapshot, staffSnapshot] = await Promise.all([
+        db.collectionGroup("members").where("id", "==", uid).limit(1).get(),
+        db.collectionGroup("staff").where("id", "==", uid).limit(1).get()
+      ]);
+      const scopedDoc = memberSnapshot.docs[0] ?? staffSnapshot.docs[0];
+      if (scopedDoc) {
+        partialData = { ...scopedDoc.data(), ...partialData };
+      }
+    } catch {
+      // ignore
+    }
   }
+
+  return partialData ? toProfile(uid, partialData) : null;
 }
 
 async function getProfileByEmail(email: string) {

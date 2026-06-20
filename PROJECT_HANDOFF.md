@@ -267,7 +267,7 @@ Full pass through `DISCREPANCIES.md` (2026-06-05 vintage) against the live codeb
 ### Still open (needs input / larger effort)
 - Fill the **legal-entity name + address** placeholder in `/privacy` and `/terms` before production.
 - Sign a **DPA** with gyms (FitSplit is their processor) + rely on Google's DPA.
-- Consider storing **consent once per user** rather than gating every login.
+
 
 ---
 
