@@ -71,7 +71,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.9",
     "husky": "^9.1.7",
-    "knip": "^6.17.1",
+    "knip": "^6.21.0",
     "lint-staged": "^17.0.8",
     "typescript": "^6.0.3",
     "vitest": "^4.1.9"
