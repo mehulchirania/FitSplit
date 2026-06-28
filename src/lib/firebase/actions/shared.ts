@@ -431,6 +431,32 @@ export async function mirrorGymScopedRecord(
   );
 }
 
+export async function batchMirrorGymScopedRecords(
+  db: ReturnType<typeof getFirebaseAdminServices>["db"],
+  gymId: string,
+  records: Array<{
+    collection: Exclude<Parameters<typeof gymCollectionPath>[1], "members" | "staff">;
+    id: string;
+    data: Record<string, unknown>;
+  }>
+) {
+  if (records.length === 0) return;
+  const batch = db.batch();
+  for (const record of records) {
+    batch.set(
+      scopedGymDoc(db, gymId, record.collection, record.id),
+      {
+        ...record.data,
+        id: String(record.data.id ?? record.id),
+        gymId,
+        mirroredFromRootCollection: true
+      },
+      { merge: true }
+    );
+  }
+  await batch.commit();
+}
+
 export type GymGeofenceConfig = Pick<GymWorkspace, "latitude" | "longitude" | "radiusMeters">;
 
 export function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {

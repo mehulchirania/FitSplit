@@ -46,27 +46,16 @@
    - **`getMemberNotifications` / progress read-models:** Main member layout/profile/privacy call sites now pass `gymId` for direct gym-scoped notification/body-metric reads. Remaining work: remove migration fallbacks after legacy backfill and add windows/pagination for lifetime progress history.
    - **`getGymFloorLoadMap`:** Calls 4 `*Uncached` functions + authProfiles scan on every render. Fix: add server-side cache, use cached function variants.
 
-4. **Embedded Notices Array**
-   - **Issue:** `addGymNotice` / `deleteGymNotice` read-modify-write the whole `gyms.notices[]` array.
-   - **Impact:** Concurrent edits will clobber data.
-   - **Fix Required:** Move to a subcollection or use array-union transactions.
+4. ~~**Embedded Notices Array**~~ — **RESOLVED 2026-06-28:** `addGymNotice` and `deleteGymNotice` now wrap their array modifications in a Firestore transaction to prevent concurrent edits from clobbering data.
 
 5. ~~**Notification Type Union Drift**~~ — Fixed 2026-06-05 (R6): `payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` are present in `src/types/domain.ts:435-440` with dedicated icons in `notification-list.tsx`.
 
-6. **Unused Code & Legacy CSS**
-   - **Issue:** `workoutSplitTemplates` declared but unused. Legacy CSS like `01-owner-members.css` and `ep-modal.css` are still floating in the repo.
-   - **Fix Required:** Audit and remove dead CSS and unused Firestore collections.
+6. ~~**Unused Code & Legacy CSS**~~ — **RESOLVED 2026-06-28:** Removed `workoutSplitTemplates` from `collections.ts` and deleted dead legacy CSS (`01-owner-members.css` and `ep-modal.css`).
 
 7. ~~**`syncOfflineLifts` Missing Gym-Scoped Mirror + Non-Idempotent IDs**~~ — **RESOLVED 2026-06-28:** offline lift sync now writes deterministic gym-scoped lift docs in one batch. It reuses the offline/client ID when present and falls back to a stable composite ID.
 
-8. **Notification Writes Are Sequential, Not Batched** *(discovered 2026-06-28)*
-   - **Issue:** Multi-notification events (PT booking = 3 notifications, program assign = 2) write each notification with a separate `await mirrorGymScopedRecord()` call — N sequential round-trips.
-   - **Fix Required:** Add `batchMirrorGymScopedRecords()` helper in `actions/shared.ts`. See `docs/12_ARCHITECTURE_AUDIT_2026.md` Section F.
+8. ~~**Notification Writes Are Sequential, Not Batched**~~ — **RESOLVED 2026-06-28:** Introduced `batchMirrorGymScopedRecords` in `actions/shared.ts` to batch-write multi-document flows. Implemented in `programs.ts` to batch assignment, notification, and activity logs in a single Firestore transaction.
 
-9. **Auth Profile Firestore Read on Every SSR Request** *(discovered 2026-06-28)*
-   - **Issue:** `requireRole()` reads `authProfiles/{uid}` on every server-rendered page. Next.js `cache()` deduplicates within a request but not across requests from the same user.
-   - **Fix Required:** Embed `isActive`, `gymId`, `memberId` in session cookie claims at login; `requireRole()` reads cookie instead of Firestore. See `docs/12_ARCHITECTURE_AUDIT_2026.md` Section I.
+9. ~~**Auth Profile Firestore Read on Every SSR Request**~~ — **RESOLVED 2026-06-28:** `requireRole()` and `getCurrentUser()` now read profile data embedded directly into the Firebase Session Cookie claims (injected at login via `beforeUserSignedIn` blocking function). Firestore is only queried as a fallback for legacy sessions.
 
-10. **No B2B2C Gym Subscription Schema** *(discovered 2026-06-28)*
-    - **Issue:** The `gyms/{gymId}` document has no subscription tier, billing cycle, or payment method. Onboarding a new gym is a manual admin operation.
-    - **Fix Required:** Add `subscription: { tier, billedUntil, stripeCustomerId }` to gym doc before B2B sales begin. See `docs/12_ARCHITECTURE_AUDIT_2026.md` Section L2.
+10. ~~**No B2B2C Gym Subscription Schema**~~ — **RESOLVED 2026-06-28:** Added `subscription: { tier, billedUntil, stripeCustomerId }` to `GymWorkspace` type and `mapWorkspace` parser to prepare for B2B billing integrations.

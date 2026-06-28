@@ -11,9 +11,10 @@ import {
   mapWorkspace
 } from "./shared";
 import { getActiveProgramAssignments } from "./programs";
-import { getMembersUncached } from "./members";
-import { getWorkoutProgramsUncached } from "./programs";
-import { getExerciseCatalogUncached } from "./exercises";
+import { getMembers } from "./members";
+import { getWorkoutPrograms } from "./programs";
+import { getExerciseCatalog } from "./exercises";
+import { cache } from "react";
 
 export async function getGymWorkspaces(): Promise<{
   gyms: GymWorkspace[];
@@ -194,9 +195,9 @@ export type SlotLoad = {
   exercises: { exerciseName: string; count: number }[];
 };
 
-export async function getGymFloorLoadMap(gymId: string): Promise<{
+export const getGymFloorLoadMap = cache(async (gymId: string): Promise<{
   slots: SlotLoad[];
-}> {
+}> => {
   // 1. Fetch active assignments in gym
   const [
     { assignments },
@@ -205,9 +206,9 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
     { exercises }
   ] = await Promise.all([
     getActiveProgramAssignments(gymId),
-    getMembersUncached(gymId),
-    getWorkoutProgramsUncached(gymId),
-    getExerciseCatalogUncached(gymId)
+    getMembers(gymId),
+    getWorkoutPrograms(gymId),
+    getExerciseCatalog(gymId)
   ]);
 
   // 2. Fetch all profiles to find slots for members
@@ -308,4 +309,4 @@ export async function getGymFloorLoadMap(gymId: string): Promise<{
   });
 
   return { slots };
-}
+});

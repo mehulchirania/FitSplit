@@ -632,9 +632,11 @@ export async function addGymNotice(
     };
 
     const gymRef = db.collection(collectionPaths.gyms).doc(gymId);
-    const gymDoc = await gymRef.get();
-    const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
-    await gymRef.set({ notices: [...existing, notice] }, { merge: true });
+    await db.runTransaction(async (transaction) => {
+      const gymDoc = await transaction.get(gymRef);
+      const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
+      transaction.set(gymRef, { notices: [...existing, notice] }, { merge: true });
+    });
 
     return success("Notice added.", gymId, ["gyms"]);
   } catch (error) {
@@ -657,10 +659,12 @@ export async function deleteGymNotice(
     const noticeId = parsed.data.noticeId;
 
     const gymRef = db.collection(collectionPaths.gyms).doc(gymId);
-    const gymDoc = await gymRef.get();
-    const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
-    const updated = existing.filter((n) => (n as { id?: string }).id !== noticeId);
-    await gymRef.set({ notices: updated }, { merge: true });
+    await db.runTransaction(async (transaction) => {
+      const gymDoc = await transaction.get(gymRef);
+      const existing: unknown[] = Array.isArray(gymDoc.data()?.notices) ? (gymDoc.data()!.notices as unknown[]) : [];
+      const updated = existing.filter((n) => (n as { id?: string }).id !== noticeId);
+      transaction.set(gymRef, { notices: updated }, { merge: true });
+    });
 
     return success("Notice removed.", gymId, ["gyms"]);
   } catch (error) {

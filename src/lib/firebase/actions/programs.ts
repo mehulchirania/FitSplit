@@ -18,6 +18,7 @@ import {
   scopedGymDoc,
   archiveDocumentSnapshot,
   mirrorGymScopedRecord,
+  batchMirrorGymScopedRecords,
   assertMemberBelongsToCallerGym,
   assertCanManageGym,
   sendPushToMember,
@@ -111,7 +112,6 @@ export async function assignProgramToMember(
       createdAt: now,
       updatedAt: now
     };
-    await mirrorGymScopedRecord(db, assignGymId, "programAssignments", assignmentId, assignmentRecord);
 
     const notificationRecord = {
       id: notificationId,
@@ -125,7 +125,6 @@ export async function assignProgramToMember(
       memberId,
       createdAt: now
     };
-    await mirrorGymScopedRecord(db, assignGymId, "notifications", notificationId, notificationRecord);
 
     const activityRecord = {
       id: activityId,
@@ -136,7 +135,12 @@ export async function assignProgramToMember(
       icon: "dumbbell",
       createdAt: now
     };
-    await mirrorGymScopedRecord(db, assignGymId, "activityEvents", activityId, activityRecord);
+
+    await batchMirrorGymScopedRecords(db, assignGymId, [
+      { collection: "programAssignments", id: assignmentId, data: assignmentRecord },
+      { collection: "notifications", id: notificationId, data: notificationRecord },
+      { collection: "activityEvents", id: activityId, data: activityRecord }
+    ]);
 
     // Fire push notification (non-blocking, never throws)
     void sendPushToMember(
@@ -583,34 +587,35 @@ export async function createAndAssignCustomProgram(
       createdAt: now,
       updatedAt: now
     };
-    await mirrorGymScopedRecord(db, gymId, "programAssignments", assignmentId, assignmentRecord);
 
-    // 4. Notify the member
     const notificationRecord = {
       id: notificationId,
       recipientRole: "member",
       recipientId: memberId,
       gymId,
       type: "program_assigned",
-      title: "Workout program assigned",
+      title: "Custom workout program assigned",
       body: `${title} is now available in your weekly schedule.`,
       actionHref: "/member",
       memberId,
       createdAt: now
     };
-    await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
-    // 5. Activity log
     const activityRecord = {
       id: activityId,
       gymId,
       audience: "owner",
-      title: `Custom program assigned — ${title}`,
-      detail: `${memberName} was assigned a custom ${days.length}-day plan.`,
+      title: `Custom Program assigned - ${title}`,
+      detail: `${memberName} now has ${title} as the active weekly schedule.`,
       icon: "dumbbell",
       createdAt: now
     };
-    await mirrorGymScopedRecord(db, gymId, "activityEvents", activityId, activityRecord);
+
+    await batchMirrorGymScopedRecords(db, gymId, [
+      { collection: "programAssignments", id: assignmentId, data: assignmentRecord },
+      { collection: "notifications", id: notificationId, data: notificationRecord },
+      { collection: "activityEvents", id: activityId, data: activityRecord }
+    ]);
 
     return success(`${title} was created and assigned to ${memberName}.`, gymId, ["programs"]);
   } catch (error) {

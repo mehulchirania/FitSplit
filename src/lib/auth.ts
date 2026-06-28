@@ -934,13 +934,38 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
   try {
     const { auth } = getFirebaseAdminServices();
     const decodedSession = await auth.verifySessionCookie(session);
+
+    // SSR Profile Optimization: Check if custom claims have the profile data
+    if (decodedSession.role && decodedSession.isActive !== undefined) {
+      if (decodedSession.isActive === false) {
+        const hdrs = await headers();
+        const pathname = hdrs.get("x-pathname") ?? "";
+        if (!pathname.startsWith("/suspended")) {
+          redirect("/suspended");
+        }
+        return null;
+      }
+      return {
+        uid: decodedSession.uid,
+        email: decodedSession.email,
+        phone: decodedSession.phone || "",
+        fullName: decodedSession.fullName || "FitSplit user",
+        role: decodedSession.role,
+        staffType: decodedSession.staffType,
+        gymId: decodedSession.gymId,
+        memberId: decodedSession.memberId,
+        mustChangePassword: decodedSession.mustChangePassword,
+        termsAcceptedAt: decodedSession.termsAcceptedAt,
+        avatarUrl: decodedSession.avatarUrl
+      };
+    }
+
+    // Fallback for legacy sessions without claims
     const profile =
       (await getProfileById(decodedSession.uid)) ??
       (decodedSession.email ? await getProfileByEmail(decodedSession.email) : null);
 
     if (!profile || !profile.isActive) {
-      // Redirect to the suspended page unless we're already there
-      // (the middleware injects x-pathname so we can check without parsing the URL).
       const hdrs = await headers();
       const pathname = hdrs.get("x-pathname") ?? "";
       if (!pathname.startsWith("/suspended")) {

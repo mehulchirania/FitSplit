@@ -136,6 +136,11 @@ export type GymWorkspace = {
   longitude?: number;
   radiusMeters?: number;
   notices?: GymNotice[];
+  subscription?: {
+    tier: string;
+    billedUntil?: string;
+    stripeCustomerId?: string;
+  };
 };
 
 /**

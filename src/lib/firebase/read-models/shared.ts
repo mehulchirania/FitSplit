@@ -137,6 +137,17 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
     )
       ? (data.trainerMemberVisibility as TrainerMemberVisibility)
       : undefined,
+    subscription: data.subscription && typeof data.subscription === "object"
+      ? {
+          tier: String((data.subscription as Record<string, unknown>).tier ?? "free"),
+          billedUntil: (data.subscription as Record<string, unknown>).billedUntil
+            ? String((data.subscription as Record<string, unknown>).billedUntil)
+            : undefined,
+          stripeCustomerId: (data.subscription as Record<string, unknown>).stripeCustomerId
+            ? String((data.subscription as Record<string, unknown>).stripeCustomerId)
+            : undefined,
+        }
+      : undefined,
   };
 }
 

@@ -1905,35 +1905,61 @@ export const autoExpireAbandonedPTSessions = onSchedule(
 // (mobile apps, Postman, etc.) are gated by the same lockout logic used in
 // loginWithCredentials.  No lock doc → allow.  Lock expired → allow.  Active
 // lock → throw unauthenticated to block the sign-in.
-export const blockLockedAccounts = beforeUserSignedIn(
+export const beforeSignInHandler = beforeUserSignedIn(
   { region },
   async (event) => {
     const email = event.data?.email?.toLowerCase().trim();
-    if (!email) return; // no email → nothing to check
-
-    try {
-      const lockDoc = await db.collection("loginAttempts").doc(email).get();
-      const data = lockDoc.data();
-      if (!data) return; // no attempts recorded → allow
-
-      const { lockedUntil } = data as { lockedUntil?: string };
-      if (!lockedUntil) return; // not locked → allow
-
-      const lockExpiry = new Date(lockedUntil).getTime();
-      if (Date.now() >= lockExpiry) return; // lock expired → allow
-
-      const minutesRemaining = Math.ceil((lockExpiry - Date.now()) / 60_000);
-      throw new HttpsError(
-        "resource-exhausted",
-        `Too many failed attempts. Try again in about ${minutesRemaining} minute${minutesRemaining === 1 ? "" : "s"}.`
-      );
-    } catch (err) {
-      // Re-throw HttpsError (our intentional block) or unknown errors.
-      // Never silently swallow the block.
-      if ((err as { code?: string })?.code === "resource-exhausted") throw err;
-      console.error("[blockLockedAccounts] Unexpected error during lockout check:", err);
-      // Fail open on unexpected errors — don't block legitimate logins due to
-      // a transient Firestore read failure.
+    if (email) {
+      try {
+        const lockDoc = await db.collection("loginAttempts").doc(email).get();
+        const data = lockDoc.data();
+        if (data?.lockedUntil) {
+          const lockExpiry = new Date(data.lockedUntil).getTime();
+          if (Date.now() < lockExpiry) {
+            const minutesRemaining = Math.ceil((lockExpiry - Date.now()) / 60_000);
+            throw new HttpsError(
+              "resource-exhausted",
+              `Too many failed attempts. Try again in about ${minutesRemaining} minute${minutesRemaining === 1 ? "" : "s"}.`
+            );
+          }
+        }
+      } catch (err) {
+        if ((err as { code?: string })?.code === "resource-exhausted") throw err;
+        console.error("[beforeSignInHandler] Unexpected error during lockout check:", err);
+      }
     }
+
+    // SSR Profile Optimization: Inject profile data into token claims
+    const uid = event.data?.uid;
+    if (uid) {
+      try {
+        const profile = await db.collection("authProfiles").doc(uid).get();
+        if (profile.exists) {
+          const data = profile.data();
+          if (data) {
+            const role = String(data.role ?? "member");
+            const gymId = String(data.defaultGymId ?? data.gymId ?? primaryGymId);
+            return {
+              customClaims: {
+                role,
+                gymId,
+                memberId: role === "member" ? String(data.id ?? uid) : undefined,
+                isActive: data.isActive !== false,
+                fullName: data.fullName ? String(data.fullName) : "FitSplit user",
+                phone: data.phone ? String(data.phone) : "",
+                staffType: data.staffType ? String(data.staffType) : undefined,
+                mustChangePassword: data.mustChangePassword === true,
+                termsAcceptedAt: data.termsAcceptedAt ? String(data.termsAcceptedAt) : undefined,
+                avatarUrl: data.avatarUrl ? String(data.avatarUrl) : data.imageUrl ? String(data.imageUrl) : undefined
+              }
+            };
+          }
+        }
+      } catch (err) {
+        console.error("[beforeSignInHandler] Unexpected error fetching profile for claims:", err);
+      }
+    }
+
+    return;
   }
 );
