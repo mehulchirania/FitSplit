@@ -5,7 +5,6 @@ import { useMemo, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { Plus, X } from "@/components/icons";
 import { bookPTSession } from "@/lib/firebase/actions";
-import { callAssignPTPlan } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Exercise, Member, WorkoutExercise } from "@/types/domain";
 import { FormActionContext, FieldError } from "./form-action-context";
@@ -117,32 +116,13 @@ export function PTBookingForm({
     if (!selectedMember || !selectedTrainer || plannedExercises.length === 0) return;
 
     const formData = new FormData(event.currentTarget);
-    const planDurationDays = Number(formData.get("planDurationDays") ?? 30);
-    const planStartDate = String(formData.get("planStartDate") ?? "");
-    const notes = String(formData.get("notes") ?? "").trim();
     setState(initialFormActionState);
 
     startTransition(async () => {
-      try {
-        const result = await callAssignPTPlan({
-          gymId,
-          memberId: selectedMember.id,
-          memberName: selectedMember.fullName,
-          trainerId: selectedTrainer.id,
-          trainerName: selectedTrainer.fullName,
-          planStartDate,
-          planDurationDays,
-          plannedExercises: plannedExercises.map(({ localId: _localId, ...entry }) => entry),
-          notes: notes || undefined
-        });
-        setState({ status: "success", message: result.data.message });
+      const result = await bookPTSession(initialFormActionState, formData);
+      setState(result);
+      if (result.status === "success") {
         resetFormAfterSuccess();
-      } catch {
-        const result = await bookPTSession(initialFormActionState, formData);
-        setState(result);
-        if (result.status === "success") {
-          resetFormAfterSuccess();
-        }
       }
     });
   }

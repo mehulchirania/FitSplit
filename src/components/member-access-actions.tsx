@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { resetPassword, toggleMemberAccess } from "@/lib/firebase/actions";
-import { callResetMemberPin, callToggleMemberAccess } from "@/lib/firebase/functions";
 import { Activity } from "@/components/icons";
 import { initialFormActionState } from "@/types/action-state";
 
@@ -27,19 +26,14 @@ export function MemberAccessActions({
     setMessage(null);
 
     startTransition(async () => {
-      try {
-        const result = await callToggleMemberAccess({ memberId, isActive: next });
-        setMessage({ type: "success", text: result.data.message });
-      } catch {
-        const fd = new FormData();
-        fd.set("memberId", memberId);
-        fd.set("isActive", String(next));
-        const result = await toggleMemberAccess(initialFormActionState, fd);
-        if (result.status === "error") {
-          setOptimisticActive(active);
-        }
-        setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
+      const fd = new FormData();
+      fd.set("memberId", memberId);
+      fd.set("isActive", String(next));
+      const result = await toggleMemberAccess(initialFormActionState, fd);
+      if (result.status === "error") {
+        setOptimisticActive(active);
       }
+      setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
     });
   }
 
@@ -51,20 +45,14 @@ export function MemberAccessActions({
 
     setMessage(null);
     startTransition(async () => {
-      try {
-        const result = await callResetMemberPin({ memberId, pin });
+      const fd = new FormData();
+      fd.set("userId", memberId);
+      fd.set("newPin", pin);
+      const result = await resetPassword(initialFormActionState, fd);
+      if (result.status === "success") {
         setPin("");
-        setMessage({ type: "success", text: result.data.message });
-      } catch {
-        const fd = new FormData();
-        fd.set("userId", memberId);
-        fd.set("newPin", pin);
-        const result = await resetPassword(initialFormActionState, fd);
-        if (result.status === "success") {
-          setPin("");
-        }
-        setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
       }
+      setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
     });
   }
 

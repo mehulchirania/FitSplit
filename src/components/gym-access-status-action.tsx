@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { setGymStatus } from "@/lib/firebase/actions";
-import { callSetGymAccessStatus } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 
 export function GymAccessStatusAction({
@@ -26,19 +25,13 @@ export function GymAccessStatusAction({
     setMessage("");
 
     startTransition(async () => {
-      try {
-        const result = await callSetGymAccessStatus({ gymId, status });
-        setMessage(result.data.message);
-        router.refresh();
-      } catch {
-        const fd = new FormData();
-        fd.set("gymId", gymId);
-        fd.set("status", status);
-        const result = await setGymStatus(initialFormActionState, fd);
-        if (result.status === "error") setEnabled(previous);
-        setMessage(result.message);
-        if (result.status === "success") router.refresh();
-      }
+      const fd = new FormData();
+      fd.set("gymId", gymId);
+      fd.set("status", status);
+      const result = await setGymStatus(initialFormActionState, fd);
+      if (result.status === "error") setEnabled(previous);
+      setMessage(result.message);
+      if (result.status === "success") router.refresh();
     });
   }
 

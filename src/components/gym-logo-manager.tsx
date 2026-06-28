@@ -5,7 +5,6 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { ChangeEvent, FormEvent } from "react";
 import { useRouter } from "next/navigation";
-import { callUpdateGymLogo } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { FormActionState } from "@/types/action-state";
 
@@ -116,15 +115,9 @@ export function GymLogoManager({
 
     const formData = new FormData(event.currentTarget);
     startTransition(async () => {
-      try {
-        const result = await callUpdateGymLogo({ gymId, logoDataUrl });
-        setStatus({ status: "success", message: result.data.message });
-        router.refresh();
-      } catch {
-        const result = await action(initialFormActionState, formData);
-        setStatus(result);
-        if (result.status === "success") router.refresh();
-      }
+      const result = await action(initialFormActionState, formData);
+      setStatus(result);
+      if (result.status === "success") router.refresh();
     });
   }
 

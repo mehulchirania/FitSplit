@@ -66,7 +66,6 @@ export async function requestCatalogExercise(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(requestRecord);
     await mirrorGymScopedRecord(db, gymId, "exerciseRequests", requestId, requestRecord);
 
     const notificationRecord = {
@@ -80,7 +79,6 @@ export async function requestCatalogExercise(
       actionHref: "/owner/exercises",
       createdAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
     return success(`Request to add "${name}" sent to admin for review.`, gymId, ["exercises"]);
@@ -151,7 +149,6 @@ export async function approveCatalogExerciseRequest(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.exerciseCatalog).doc(exerciseId).set(exerciseRecord);
     await mirrorGymScopedRecord(db, gymId, "exerciseCatalog", exerciseId, exerciseRecord);
 
     await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(

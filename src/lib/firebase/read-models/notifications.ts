@@ -130,7 +130,7 @@ export async function getAdminNotifications(): Promise<{
 // Member notifications
 // ---------------------------------------------------------------------------
 
-export async function getMemberNotifications(memberId: string): Promise<{
+export async function getMemberNotifications(memberId: string, gymId?: string): Promise<{
   notifications: Notification[];
   isPersisted: boolean;
 }> {
@@ -144,12 +144,18 @@ export async function getMemberNotifications(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
-      .collectionGroup(gymScopedCollectionPaths.notifications)
-      .where("recipientId", "==", memberId)
-      .orderBy("createdAt", "desc")
-      .limit(50)
-      .get();
+    const scopedSnapshot = gymId
+      ? await gymCollection(db, gymId, "notifications")
+          .where("recipientId", "==", memberId)
+          .orderBy("createdAt", "desc")
+          .limit(50)
+          .get()
+      : await db
+          .collectionGroup(gymScopedCollectionPaths.notifications)
+          .where("recipientId", "==", memberId)
+          .orderBy("createdAt", "desc")
+          .limit(50)
+          .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.notifications)

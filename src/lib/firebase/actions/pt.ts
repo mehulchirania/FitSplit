@@ -101,7 +101,6 @@ export async function bookPTSession(
     };
 
     const db = requireFirebase();
-    await db.collection(collectionPaths.ptSessions).doc(sessionId).set(sessionRecord);
     await mirrorGymScopedRecord(db, gymId, "ptSessions", sessionId, sessionRecord);
 
     // Notification is written by the onPTPlanCreated Cloud Function trigger
@@ -274,7 +273,6 @@ export async function logPTLiftSet(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.ptLiftLogs).doc(logId).set(ptLiftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "ptLiftLogs", logId, ptLiftLogRecord);
 
     // Dual-write to liftLogs so member workout history inherits PT sets
@@ -294,7 +292,6 @@ export async function logPTLiftSet(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.liftLogs).doc(logId).set(liftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "liftLogs", logId, liftLogRecord);
 
     return success("Lift logged.", gymId, ["pt-sessions", "pt-lift-logs"]);
@@ -351,7 +348,6 @@ export async function completePTSession(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
 
     // Fire push notification (non-blocking, never throws)
@@ -425,7 +421,6 @@ export async function cancelPTSession(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
 
     return success("Session cancelled.", gymId, ["pt-sessions", "pt-lift-logs"]);
@@ -519,7 +514,6 @@ export async function reschedulePTSession(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notifId).set(notifRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notifId, notifRecord);
 
     return success("Session rescheduled.", gymId, ["pt-sessions", "pt-lift-logs"]);

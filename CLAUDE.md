@@ -85,7 +85,7 @@ Use prose over bullet points for explanations and reasoning. Bullets are for ref
 
 **Gym-scoped subcollections:** `gyms/{gymId}/<all of the above>` + `members/`, `staff/`, `siteLinks/`, `summaries/`
 
-**Dual-write pattern:** every write goes to the root collection AND `gyms/{gymId}/{collection}`. Use `mirrorGymScopedRecord(db, gymId, collection, docId, data)` from `actions/shared.ts`.
+**Root mirrors / dual-write debt:** gym-scoped collections are the target canonical path. R4 cleanup is complete for the hot operational write pairs, including `progress.ts` and `syncOfflineLifts`; legacy root fallbacks remain until old root data is backfilled/archived. See `docs/12_ARCHITECTURE_AUDIT_2026.md` before changing progress/offline paths.
 
 **Deterministic doc IDs:** `macroLogs` = `${memberId}_${date}`, `dayLogs` = `${memberId}_${dayId}_${weekStart}`, workout sessions = `sessionId` (UUID from client).
 
@@ -169,7 +169,7 @@ All write actions are in `src/lib/firebase/actions/`. Every action:
 1. Calls `requireRole([...])` or `requireAuth()` first.
 2. Parses `FormData` with `parseActionData(formData, ZodSchema)` from `actions/validation.ts`.
 3. Calls `requireFirebase()` to get Admin SDK Firestore instance.
-4. Dual-writes root + gym-scoped via `mirrorGymScopedRecord`.
+4. Writes to the canonical gym-scoped collection via `mirrorGymScopedRecord` when the collection is tenant-owned; only intentional global catalogs stay root-level.
 5. Returns `success(message, gymId, ["cache-tag1", "cache-tag2"])` or `failure(error, fallback)` — both in `actions/shared.ts`.
 6. `success()` calls `revalidateGymTags()` to bust Next.js cache.
 
@@ -193,7 +193,7 @@ functions/src/index.ts           Cloud Functions (asia-south1, nodejs22)
 
 ## Known bugs
 
-- *None currently tracked.*
+- Architecture/cost issues from the 2026-06-28 backend audit are tracked in `docs/12_ARCHITECTURE_AUDIT_2026.md` and `docs/11_KNOWN_ISSUES_AND_GAPS.md`. Easy wins completed 2026-06-28: `progress.ts` hot-path root writes removed, `syncOfflineLifts` fixed, `getGymWorkspaces`/`getGymDetail` member scans removed, and member notification/body-metric reads scoped by gym at main call sites. Remaining: progress history windows/pagination, notification batching, auth-profile read cost, B2B2C subscription/resource limits, and legacy root fallback removal after migration.
 - **Membership expiry math now lives in ONE place — Cloud Functions.** `membershipStatus` is a **persisted Firestore field** written by `functions/src/index.ts` (`processMembershipExpiries`, package-activation handlers) and by `actions/billing.ts`; read-models just read `data.membershipStatus`. The old app-side `src/lib/memberships.ts` (`getDaysRemaining`/`getMembershipStatus`) was **deleted 2026-06-16** as dead code (zero references). The expiry warning still honors per-gym `expiryWarningDays`.
 
 ## Important gotchas

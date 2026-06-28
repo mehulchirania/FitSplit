@@ -154,7 +154,6 @@ export async function createMemberProfile(
         { memberCount: FieldValue.increment(1), updatedAt: now },
         { merge: true }
       );
-      txn.set(db.collection(collectionPaths.activityEvents).doc(createEventId), createEvent);
       txn.set(
         scopedGymDoc(db, gymId, "activityEvents", createEventId),
         { ...createEvent, id: createEventId, gymId, mirroredFromRootCollection: true },
@@ -717,7 +716,6 @@ export async function toggleMemberAccess(
       icon: "bell",
       createdAt: now
     };
-    await db.collection(collectionPaths.activityEvents).doc(toggleEventId).set(toggleEvent);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", toggleEventId, toggleEvent);
 
     return success(`Member access ${isActive ? "enabled" : "disabled"}.`, gymId, ["members"]);
@@ -924,7 +922,6 @@ export async function deleteMemberProfile(
       icon: "users",
       createdAt: new Date().toISOString()
     };
-    await db.collection(collectionPaths.activityEvents).doc(deleteEventId).set(deleteEvent);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", deleteEventId, deleteEvent);
 
     return success(`${deletedName} was deleted.`, gymId, ["members"]);

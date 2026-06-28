@@ -4,6 +4,68 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Easy Firestore Cost Wins Implemented (2026-06-28)
+
+Implemented the low-effort/high-impact items from the architecture audit, with no AI features added.
+
+**Firestore write cost reduction:**
+- `src/lib/firebase/actions/progress.ts` no longer writes hot member progress/session data to both root and gym-scoped collections. `logLiftSet`, `logBodyWeight`, `logDayStatus`, `saveMacroLog`, `logActivity`, `startWorkoutSession`, `endWorkoutSession`, and `updateMakeupStatus` now write the canonical gym-scoped docs only.
+- `syncOfflineLifts` now writes deterministic gym-scoped lift docs in a single batch. It reuses the offline/client ID when present and falls back to a stable composite ID, so retrying the same offline sync no longer creates duplicate random root records.
+
+**Firestore read cost reduction:**
+- `getGymWorkspaces` now reads only the `gyms` collection and uses `memberCount` from each gym doc. Removed the full collectionGroup members scan and root `authProfiles` member scan.
+- `getGymDetail` now uses the mapped gym doc directly instead of fetching all member docs just to count them.
+- `getBodyMetricLogsForMember` and `getMemberNotifications` accept optional `gymId`; main profile/layout/privacy call sites now pass it so reads hit direct gym-scoped collections instead of collectionGroup queries.
+
+**Docs updated:**
+- `docs/11_KNOWN_ISSUES_AND_GAPS.md`, `docs/12_ARCHITECTURE_AUDIT_2026.md`, `docs/00_AI_CONTEXT.md`, and `CLAUDE.md` now mark these easy wins complete and leave the remaining backlog separate: history pagination/summaries, notification batching, auth/session read reduction, B2B2C subscription/resource limits, and legacy root fallback removal after migration.
+
+---
+
+## Architecture & Cost Audit — B2B2C Scaling Analysis (2026-06-28)
+
+Full backend audit covering Firestore cost patterns, scaling bottlenecks, and B2B2C readiness. Full report in `docs/12_ARCHITECTURE_AUDIT_2026.md`. Key findings:
+
+**Critical findings from the audit, fixed in the easy-win pass above:**
+- `progress.ts` was dual-writing the highest-volume logs. The hot progress/session paths now write gym-scoped only.
+- `syncOfflineLifts` wrote root-only with no gym-scoped mirror, and generated non-deterministic IDs so the same offline set could be double-written.
+- `getGymWorkspaces` did 3 full-collection scans per admin page load. It now reads only gym docs and uses denormalized counters.
+- `getGymDetail` fetched all member documents just for a count.
+
+**Medium priority:**
+- Progress and notification read-models use unscoped `collectionGroup` queries (no gym filter). Cost scales with total gym count, not per-member. Fix: pass gymId explicitly.
+- Multi-notification events use sequential `await` chains — N round-trips per event. Need `batchMirrorGymScopedRecords()` helper.
+- `requireRole()` reads `authProfiles/{uid}` on every SSR page. Fix: embed isActive/gymId/memberId in session cookie claims.
+- `getGymFloorLoadMap` calls 4 uncached functions + authProfiles scan per render.
+
+**B2B2C gaps:**
+- No gym subscription schema (tier, billedUntil, stripeCustomerId) — required before B2B sales.
+- No per-gym resource limits (maxMembers, maxStorage).
+- Single-gym member model (`defaultGymId: string`) — no support for multi-branch chains.
+- No FCM topic subscription on registration — gym-wide broadcasts would require reading all member profiles.
+
+Issues 7–10 added to `docs/11_KNOWN_ISSUES_AND_GAPS.md`. Action plan in `docs/12_ARCHITECTURE_AUDIT_2026.md` Section "Recommended Action Plan".
+
+---
+
+## R5 + R4 Phase 1: Server Actions standardisation & dual-write reduction (2026-06-28)
+
+**R5 — Cloud Function → Server Action migration (complete)**
+
+All 11 UI components that used a CF-primary/SA-fallback pattern have been migrated to SA-only. Removed components: `add-member-form`, `add-staff-form`, `member-access-actions`, `gym-access-status-action`, `gym-logo-manager`, `gym-details-form`, `program-assignment-form`, `pt-booking-form`, `admin-gym-member-list`, `members-hybrid-view`, `staff-access-actions`. `functions.ts` trimmed from ~390 to ~80 lines — dead wrappers deleted; kept only archive, lookup, stats, activation, and trainer-assignment CFs that have no SA equivalent.
+
+**R4 Phase 1 — Root write removal for confirmed dual-write pairs (partial)**
+
+Removed redundant root-collection writes in `members.ts` (3 × activityEvents), `staff.ts` (2 × activityEvents — one root-only converted to gym-scoped), and `programs.ts` (7 × programAssignments + notifications + activityEvents). All gym-scoped writes via `mirrorGymScopedRecord` remain untouched.
+
+**R4 Phase 1 — Now complete for all confirmed pairs**
+
+Additional root writes removed from `pt.ts` (ptSessions, ptLiftLogs, liftLogs, notifications ×3), `exercises.ts` (exerciseCatalog, exerciseRequests, notifications), `contact.ts` (contactMessages, notifications). The remaining `exercises.ts` root writes (lines 272, 346, 435) are intentional admin-global writes for the shared exercise catalog, not dual-write pairs. The `contact.ts` "mark as read" now relies solely on the collectionGroup update for gym-scoped copies.
+
+**Still out of scope:** `progress.ts` personal-member logs (liftLogs, bodyMetricLogs, dayLogs, macroLogs, activityLogs, workoutSessions, attendanceRecords) — these appear to be root-only writes with no gym-scoped pair; verification needed before touching them.
+
+---
+
 ## Landing page redesigned with shadcn/ui (2026-06-28)
 
 Replaced all hand-rolled interactive components on the landing page with shadcn/ui primitives. No change to page structure, copy, or mock visuals.
@@ -647,7 +709,7 @@ Implemented Design 04 (Hybrid) from the Claude Design export. Replaces the old t
 
 ## 🎨 Design System Standards
 
-The complete Design System (tokens, CSS architecture, prefixes, layouts) has been moved to **[`docs/12_UI_STYLE_GUIDE.md`](docs/12_UI_STYLE_GUIDE.md)**. Please refer to that document for all styling guidelines.
+The complete Design System (tokens, CSS architecture, prefixes, layouts) has been moved to **[`docs/13_UI_STYLE_GUIDE.md`](docs/13_UI_STYLE_GUIDE.md)**. Please refer to that document for all styling guidelines.
 
 ---
 

@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { bulkAssignProgram, bulkToggleMemberAccess } from "@/lib/firebase/actions";
-import { callBulkAssignProgram, callBulkToggleMemberAccess } from "@/lib/firebase/functions";
 import { AddMemberForm } from "@/components/add-member-form";
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -415,51 +414,23 @@ export function MembersHybridView({
     }
 
     startTransition(async () => {
-      try {
-        let message = "";
-        if (action === "assign") {
-          const result = await callBulkAssignProgram({
-            memberIds: targetIds,
-            programId: selectedProgramId,
-            programTitle: program?.title,
-          });
-          message = result.data.message;
-        } else {
-          const result = await callBulkToggleMemberAccess({
-            memberIds: targetIds,
-            isActive: action === "restore",
-          });
-          message = result.data.message;
-          const failed = result.data.data?.failed ?? [];
-          if (failed.length) {
-            setAccessById((cur) => {
-              const next = new Map(cur);
-              failed.forEach((item) => next.set(item.memberId, previousAccess.get(item.memberId) ?? false));
-              return next;
-            });
-          }
-        }
-        toast.success(message);
+      const fd = new FormData();
+      fd.set("memberIds", JSON.stringify(targetIds));
+      let result;
+      if (action === "assign") {
+        fd.set("programId", selectedProgramId);
+        fd.set("programTitle", program?.title ?? "");
+        result = await bulkAssignProgram({ status: "idle", message: "" }, fd);
+      } else {
+        fd.set("isActive", action === "restore" ? "true" : "false");
+        result = await bulkToggleMemberAccess({ status: "idle", message: "" }, fd);
+        if (result.status === "error") setAccessById(previousAccess);
+      }
+      if (result.status === "success") {
+        toast.success(result.message);
         clearSelection();
-      } catch {
-        const fd = new FormData();
-        fd.set("memberIds", JSON.stringify(targetIds));
-        let result;
-        if (action === "assign") {
-          fd.set("programId", selectedProgramId);
-          fd.set("programTitle", program?.title ?? "");
-          result = await bulkAssignProgram({ status: "idle", message: "" }, fd);
-        } else {
-          fd.set("isActive", action === "restore" ? "true" : "false");
-          result = await bulkToggleMemberAccess({ status: "idle", message: "" }, fd);
-          if (result.status === "error") setAccessById(previousAccess);
-        }
-        if (result.status === "success") {
-          toast.success(result.message);
-          clearSelection();
-        } else {
-          toast.error(result.message);
-        }
+      } else {
+        toast.error(result.message);
       }
     });
   }

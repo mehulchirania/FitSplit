@@ -111,7 +111,6 @@ export async function assignProgramToMember(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set(assignmentRecord);
     await mirrorGymScopedRecord(db, assignGymId, "programAssignments", assignmentId, assignmentRecord);
 
     const notificationRecord = {
@@ -126,7 +125,6 @@ export async function assignProgramToMember(
       memberId,
       createdAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, assignGymId, "notifications", notificationId, notificationRecord);
 
     const activityRecord = {
@@ -138,7 +136,6 @@ export async function assignProgramToMember(
       icon: "dumbbell",
       createdAt: now
     };
-    await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
     await mirrorGymScopedRecord(db, assignGymId, "activityEvents", activityId, activityRecord);
 
     // Fire push notification (non-blocking, never throws)
@@ -206,7 +203,6 @@ export async function bulkAssignProgram(
           createdAt: now,
           updatedAt: now
         };
-        await db.collection(collectionPaths.programAssignments).doc(assignmentId).set(record);
         await mirrorGymScopedRecord(db, assignGymId, "programAssignments", assignmentId, record);
       })
     );
@@ -587,7 +583,6 @@ export async function createAndAssignCustomProgram(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.programAssignments).doc(assignmentId).set(assignmentRecord);
     await mirrorGymScopedRecord(db, gymId, "programAssignments", assignmentId, assignmentRecord);
 
     // 4. Notify the member
@@ -603,7 +598,6 @@ export async function createAndAssignCustomProgram(
       memberId,
       createdAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
     // 5. Activity log
@@ -616,7 +610,6 @@ export async function createAndAssignCustomProgram(
       icon: "dumbbell",
       createdAt: now
     };
-    await db.collection(collectionPaths.activityEvents).doc(activityId).set(activityRecord);
     await mirrorGymScopedRecord(db, gymId, "activityEvents", activityId, activityRecord);
 
     return success(`${title} was created and assigned to ${memberName}.`, gymId, ["programs"]);

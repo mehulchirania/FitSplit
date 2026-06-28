@@ -3,7 +3,7 @@ import type { GymWorkspace, Member } from "@/types/domain";
 import {
   gyms as mockGyms
 } from "@/lib/mock-data";
-import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "../collections";
+import { collectionPaths, PRIMARY_GYM_ID, PRIMARY_OWNER_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import {
   gymCollection,
@@ -25,40 +25,13 @@ export async function getGymWorkspaces(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const [gymSnapshot, scopedMembersSnapshot, memberSnapshot] = await Promise.all([
-      db.collection(collectionPaths.gyms).get(),
-      db.collectionGroup(gymScopedCollectionPaths.members).get(),
-      db
-        .collection(collectionPaths.authProfiles)
-        .where("role", "==", "member")
-        .get()
-    ]);
+    const gymSnapshot = await db.collection(collectionPaths.gyms).get();
 
     if (gymSnapshot.empty) {
       return { gyms: mockGyms, isPersisted: false };
     }
 
-    const gyms = gymSnapshot.docs
-      .map((doc) => {
-        const workspace = mapWorkspace(doc.id, doc.data());
-        const memberIds = new Set<string>();
-
-        scopedMembersSnapshot.docs
-          .filter((memberDoc) => memberDoc.ref.parent.parent?.id === workspace.id)
-          .forEach((memberDoc) => memberIds.add(memberDoc.id));
-
-        memberSnapshot.docs
-          .filter((memberDoc) => {
-            const data = memberDoc.data();
-            return (data.defaultGymId === workspace.id || data.gymId === workspace.id) && data.role === "member";
-          })
-          .forEach((memberDoc) => memberIds.add(memberDoc.id));
-
-        return {
-          ...workspace,
-          memberCount: memberIds.size
-        };
-      });
+    const gyms = gymSnapshot.docs.map((doc) => mapWorkspace(doc.id, doc.data()));
 
     if (gyms.length === 0) {
       return { gyms: mockGyms, isPersisted: false };
@@ -100,20 +73,10 @@ export async function getGymDetail(gymId: string): Promise<{
       if (slugQuery.empty) return { gym: null, isPersisted: true };
       const slugDoc = slugQuery.docs[0];
       if (!slugDoc) return { gym: null, isPersisted: true };
-      const [scopedMembers, rootMembers] = await Promise.all([
-        gymCollection(db, slugDoc.id, "members").get(),
-        db.collection(collectionPaths.authProfiles).where("role", "==", "member").where("defaultGymId", "==", slugDoc.id).get()
-      ]);
-      const memberIds = new Set([...scopedMembers.docs, ...rootMembers.docs].map((memberDoc) => memberDoc.id));
-      return { gym: { ...mapWorkspace(slugDoc.id, slugDoc.data()), memberCount: memberIds.size }, isPersisted: true };
+      return { gym: mapWorkspace(slugDoc.id, slugDoc.data()), isPersisted: true };
     }
 
-    const [scopedMembers, rootMembers] = await Promise.all([
-      gymCollection(db, doc.id, "members").get(),
-      db.collection(collectionPaths.authProfiles).where("role", "==", "member").where("defaultGymId", "==", doc.id).get()
-    ]);
-    const memberIds = new Set([...scopedMembers.docs, ...rootMembers.docs].map((memberDoc) => memberDoc.id));
-    return { gym: { ...mapWorkspace(doc.id, doc.data() ?? {}), memberCount: memberIds.size }, isPersisted: true };
+    return { gym: mapWorkspace(doc.id, doc.data() ?? {}), isPersisted: true };
   } catch {
     return { gym: null, isPersisted: false };
   }

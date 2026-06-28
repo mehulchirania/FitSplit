@@ -28,6 +28,8 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 **Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders.
 
+**Firestore cost posture:** Gym-scoped collections are the canonical tenant data path. The 2026-06-28 cost pass removed the highest-volume progress/offline root writes and replaced admin gym/member-count scans with denormalized gym counters. Remaining cost work is tracked in `docs/12_ARCHITECTURE_AUDIT_2026.md`.
+
 **B2C + B2B Evolution (Planned):** FitSplit is evolving from a pure gym-scoped multi-tenant architecture into a hybrid B2C/B2B platform. Standalone consumers will have their own "personal gym" workspaces (`gyms/personal-{uid}`), allowing them to track progress independently or seamlessly join a real gym later.
 
 ---
@@ -39,7 +41,7 @@ The **`docs/`** directory is the single source of truth for this codebase. Start
 The docs follow a three-tier model:
 - **Tier 0** — `00_AI_CONTEXT.md`: always-loaded condensed overview.
 - **Tier 1** — `01_ARCHITECTURE.md` … `09_SCREEN_CATALOG.md`: verified facts (architecture, data model, actions, functions, roles, routes, screens).
-- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_UI_STYLE_GUIDE.md`, and `DISCREPANCIES.md`.
+- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `13_UI_STYLE_GUIDE.md`, and `DISCREPANCIES.md`.
 
 This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
 
@@ -348,7 +350,7 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 
 FitSplit uses a custom design system with comprehensive design tokens (dark mode by default), CSS architecture, and reusable layouts (like the owner workspace `.odp2-workspace` and member hybrid view). 
 
-For the complete UI style guide, including color palettes, critical button rules, and CSS prefixes, see **[`docs/12_UI_STYLE_GUIDE.md`](docs/12_UI_STYLE_GUIDE.md)**.
+For the complete UI style guide, including color palettes, critical button rules, and CSS prefixes, see **[`docs/13_UI_STYLE_GUIDE.md`](docs/13_UI_STYLE_GUIDE.md)**.
 
 ---
 

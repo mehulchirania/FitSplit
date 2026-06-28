@@ -4,7 +4,7 @@ import { collectionPaths, gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection } from "./shared";
 
-export async function getBodyMetricLogsForMember(memberId: string): Promise<{
+export async function getBodyMetricLogsForMember(memberId: string, gymId?: string): Promise<{
   logs: BodyMetricLog[];
   isPersisted: boolean;
 }> {
@@ -13,10 +13,12 @@ export async function getBodyMetricLogsForMember(memberId: string): Promise<{
   }
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
-      .collectionGroup(gymScopedCollectionPaths.bodyMetricLogs)
-      .where("memberId", "==", memberId)
-      .get();
+    const scopedSnapshot = gymId
+      ? await gymCollection(db, gymId, "bodyMetricLogs").where("memberId", "==", memberId).get()
+      : await db
+          .collectionGroup(gymScopedCollectionPaths.bodyMetricLogs)
+          .where("memberId", "==", memberId)
+          .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.bodyMetricLogs)

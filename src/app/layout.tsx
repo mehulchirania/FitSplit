@@ -108,7 +108,7 @@ export default async function RootLayout({
         ? getAdminNotifications().then((r) => { notifications = r.notifications; })
         : Promise.resolve(),
       currentUser.role === "member"
-        ? getMemberNotifications(memberId).then((r) => { notifications = r.notifications; })
+        ? getMemberNotifications(memberId, currentUser.gymId).then((r) => { notifications = r.notifications; })
         : Promise.resolve(),
       currentUser.role === "owner"
         ? getOwnerNotifications(currentUser.gymId).then((r) => { notifications = r.notifications; })

@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition, useActionState } from "react";
 import { deleteGymStaffProfile, resetPassword, updateStaffProfile } from "@/lib/firebase/actions";
-import { callArchiveStaffAccount, callResetStaffPassword } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 
 type StaffType = "owner" | "trainer" | "staff";
@@ -49,16 +48,11 @@ export function StaffAccessActions({
   function resetStaffPassword() {
     setMessage(null);
     startTransition(async () => {
-      try {
-        const result = await callResetStaffPassword({ userId, password: "password" });
-        setMessage({ type: "success", text: result.data.message });
-      } catch {
-        const fd = new FormData();
-        fd.set("userId", userId);
-        fd.set("newPassword", "password");
-        const result = await resetPassword(initialFormActionState, fd);
-        setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
-      }
+      const fd = new FormData();
+      fd.set("userId", userId);
+      fd.set("newPassword", "password");
+      const result = await resetPassword(initialFormActionState, fd);
+      setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
     });
   }
 
@@ -66,18 +60,12 @@ export function StaffAccessActions({
     setConfirmDelete(false);
     setMessage(null);
     startTransition(async () => {
-      try {
-        const result = await callArchiveStaffAccount({ gymId, userId });
-        setMessage({ type: "success", text: result.data.message });
-        router.refresh();
-      } catch {
-        const fd = new FormData();
-        fd.set("userId", userId);
-        fd.set("gymId", gymId);
-        const result = await deleteGymStaffProfile(initialFormActionState, fd);
-        setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
-        if (result.status === "success") router.refresh();
-      }
+      const fd = new FormData();
+      fd.set("userId", userId);
+      fd.set("gymId", gymId);
+      const result = await deleteGymStaffProfile(initialFormActionState, fd);
+      setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
+      if (result.status === "success") router.refresh();
     });
   }
 

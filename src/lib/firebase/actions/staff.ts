@@ -155,7 +155,6 @@ export async function createOwnerProfile(
         createdAt: now,
         targetId: ownerId
       };
-      await db.collection(collectionPaths.activityEvents).doc(auditId).set(auditRecord);
       await mirrorGymScopedRecord(db, gymId, "activityEvents", auditId, auditRecord);
     } catch (e) {
       console.warn("Failed to write audit event for createOwnerProfile:", e);
@@ -478,7 +477,7 @@ export async function resetPassword(
     // disputes "someone changed my login".
     try {
       const auditId = randomUUID();
-      await db.collection(collectionPaths.activityEvents).doc(auditId).set({
+      const auditRecord = {
         id: auditId,
         gymId,
         audience: "owner",
@@ -488,7 +487,8 @@ export async function resetPassword(
         createdAt: new Date().toISOString(),
         actorId: currentUser.uid,
         targetId: userId
-      });
+      };
+      await mirrorGymScopedRecord(db, gymId, "activityEvents", auditId, auditRecord);
     } catch (e) {
       console.warn("Failed to write audit event for resetPassword:", e);
     }

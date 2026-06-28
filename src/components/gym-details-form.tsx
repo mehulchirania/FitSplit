@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { updateGymDetails } from "@/lib/firebase/actions";
-import { callUpdateGymDetails } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 
 type TrainerMemberVisibility = "assigned_only" | "all_pt_members" | "all_members";
@@ -40,30 +39,9 @@ export function GymDetailsForm({
     setMessage(null);
 
     startTransition(async () => {
-      try {
-        const result = await callUpdateGymDetails({
-          gymId: gym.id,
-          name: String(formData.get("name") ?? ""),
-          location: String(formData.get("location") ?? ""),
-          locationUrl: String(formData.get("locationUrl") ?? ""),
-          phone: String(formData.get("phone") ?? ""),
-          email: String(formData.get("email") ?? ""),
-          instagram: String(formData.get("instagram") ?? ""),
-          linkedin: String(formData.get("linkedin") ?? ""),
-          youtube: String(formData.get("youtube") ?? ""),
-          expiryWarningDays: formData.get("expiryWarningDays") ? Number(formData.get("expiryWarningDays")) : undefined,
-          radiusMeters: formData.get("radiusMeters") ? Number(formData.get("radiusMeters")) : undefined,
-          latitude: formData.get("latitude") ? Number(formData.get("latitude")) : undefined,
-          longitude: formData.get("longitude") ? Number(formData.get("longitude")) : undefined,
-          trainerMemberVisibility: (formData.get("trainerMemberVisibility") as TrainerMemberVisibility | null) || undefined
-        });
-        setMessage({ type: "success", text: result.data?.message || "Gym details updated successfully." });
-        router.refresh();
-      } catch {
-        const result = await updateGymDetails(initialFormActionState, formData);
-        setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
-        if (result.status === "success") router.refresh();
-      }
+      const result = await updateGymDetails(initialFormActionState, formData);
+      setMessage({ type: result.status === "success" ? "success" : "error", text: result.message });
+      if (result.status === "success") router.refresh();
     });
   }
 

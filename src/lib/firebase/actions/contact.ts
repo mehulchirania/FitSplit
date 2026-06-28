@@ -93,7 +93,6 @@ export async function submitContactMessage(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.contactMessages).doc(messageId).set(contactRecord);
     await mirrorGymScopedRecord(db, gymId, "contactMessages", messageId, contactRecord);
 
     const notificationRecord = {
@@ -107,7 +106,6 @@ export async function submitContactMessage(
       actionHref: "/admin/inbox",
       createdAt: now
     };
-    await db.collection(collectionPaths.notifications).doc(notificationId).set(notificationRecord);
     await mirrorGymScopedRecord(db, gymId, "notifications", notificationId, notificationRecord);
 
     return success("Message sent. We will get back to you soon.", gymId, ["contact", "notifications"]);
@@ -149,13 +147,6 @@ export async function markContactMessageRead(
     const db = requireFirebase();
     const now = new Date().toISOString();
 
-    await db.collection(collectionPaths.contactMessages).doc(messageId).set(
-      {
-        status: "read",
-        updatedAt: now
-      },
-      { merge: true }
-    );
     const scopedMessages = await db
       .collectionGroup("contactMessages")
       .where("id", "==", messageId)

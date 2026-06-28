@@ -54,6 +54,15 @@ const LogDayStatusSchema = z.object({
   makeupExerciseIds: z.string().optional()
 });
 
+function stableOfflineLiftLogId(log: Record<string, unknown>, index: number, now: string) {
+  const source = String(
+    log.id ??
+      log.offlineId ??
+      `${log.sessionId ?? "offline"}_${log.memberId ?? "member"}_${log.exerciseId ?? "exercise"}_${log.loggedAt ?? now}_${index}`
+  );
+  return source.replace(/[\/#?[\]]/g, "_");
+}
+
 export async function logLiftSet(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
@@ -95,7 +104,6 @@ export async function logLiftSet(
       createdAt: now,
       updatedAt: now
     };
-    await db.collection(collectionPaths.liftLogs).doc(liftLogId).set(liftLogRecord);
     await mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord);
 
     return success("Lift entry was logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
@@ -118,23 +126,29 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
     const batch = db.batch();
     const now = new Date().toISOString();
 
-    for (const log of logs) {
-      const liftLogId = randomUUID();
-      const docRef = db.collection(collectionPaths.liftLogs).doc(liftLogId);
-
-      batch.set(docRef, {
+    for (const [index, log] of logs.entries()) {
+      const gymId = String(log.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+      const liftLogId = stableOfflineLiftLogId(log, index, now);
+      const sessionId = String(log.sessionId || liftLogId);
+      const liftLogRecord = {
         id: liftLogId,
-        gymId: currentUser.gymId ?? PRIMARY_GYM_ID,
+        gymId,
         memberId: log.memberId,
         exerciseId: log.exerciseId,
         weight: Number(log.weight),
         sets: Number(log.sets),
         reps: log.reps,
-        sessionId: log.sessionId || randomUUID(),
+        sessionId,
         loggedAt: log.loggedAt || now,
         createdAt: now,
         updatedAt: now
-      });
+      };
+
+      batch.set(
+        scopedGymDoc(db, gymId, "liftLogs", liftLogId),
+        { ...liftLogRecord, mirroredFromRootCollection: true },
+        { merge: true }
+      );
     }
 
     await batch.commit();
@@ -187,7 +201,6 @@ export async function logBodyWeight(
       loggedAt: now,
       createdAt: now
     };
-    await db.collection(collectionPaths.bodyMetricLogs).doc(id).set(bodyMetricRecord);
     await mirrorGymScopedRecord(db, gymId, "bodyMetricLogs", id, bodyMetricRecord);
 
     // Mirror onto profile so dashboards see the current value without a join.
@@ -312,10 +325,6 @@ export async function logDayStatus(
       updatedAt: now
     };
 
-    await db.collection(collectionPaths.dayLogs).doc(docId).set(
-      dayLogRecord,
-      { merge: true }
-    );
     await mirrorGymScopedRecord(db, gymId, "dayLogs", docId, dayLogRecord);
 
     return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
@@ -406,7 +415,6 @@ export async function saveMacroLog(
       updatedAt: now
     };
 
-    await db.collection(collectionPaths.macroLogs).doc(docId).set(macroRecord, { merge: true });
     await mirrorGymScopedRecord(db, gymId, "macroLogs", docId, macroRecord);
 
     return success("Macros saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
@@ -441,8 +449,7 @@ export async function updateMakeupStatus(
       ...(targetDayId ? { makeupTargetDayId: targetDayId } : {})
     };
 
-    await db.collection(collectionPaths.dayLogs).doc(dayLogId).set(update, { merge: true });
-    await db.collection(`gyms/${gymId}/dayLogs`).doc(dayLogId).set(update, { merge: true });
+    await scopedGymDoc(db, gymId, "dayLogs", dayLogId).set(update, { merge: true });
 
     return success("Makeup preference saved.", gymId, ["day-logs"]);
   } catch (error) {
@@ -499,7 +506,6 @@ export async function logActivity(
       createdAt: now
     };
 
-    await db.collection(collectionPaths.activityLogs).doc(id).set(activityRecord);
     await mirrorGymScopedRecord(db, gymId, "activityLogs", id, activityRecord);
 
     return success(type === "stretch" ? "Mobility work logged." : "Cardio logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
@@ -575,10 +581,6 @@ export async function startWorkoutSession(
         ...(programId ? { programId } : {}),
         ...(dayTitle ? { dayTitle } : {})
       };
-    await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
-      sessionRecord,
-      { merge: true }
-    );
     await mirrorGymScopedRecord(db, gymId, "workoutSessions", sessionId, sessionRecord);
 
     const attendanceRecord = {
@@ -594,10 +596,6 @@ export async function startWorkoutSession(
         createdAt: now,
         updatedAt: now
       };
-    await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set(
-      attendanceRecord,
-      { merge: true }
-    );
     await mirrorGymScopedRecord(db, gymId, "attendanceRecords", sessionId, attendanceRecord);
 
     return success("Workout session was started.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
@@ -632,14 +630,6 @@ export async function endWorkoutSession(
     const now = new Date().toISOString();
     const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
-    await db.collection(collectionPaths.workoutSessions).doc(sessionId).set(
-      {
-        endedAt: now,
-        status: "completed",
-        updatedAt: now
-      },
-      { merge: true }
-    );
     await scopedGymDoc(db, gymId, "workoutSessions", sessionId).set(
       {
         endedAt: now,
@@ -651,14 +641,6 @@ export async function endWorkoutSession(
 
     // Record attendance for the day
     try {
-      await db.collection(collectionPaths.attendanceRecords).doc(sessionId).set({
-        id: sessionId,
-        memberId,
-        gymId,
-        sessionId,
-        checkOutAt: now,
-        updatedAt: now
-      }, { merge: true });
       await scopedGymDoc(db, gymId, "attendanceRecords", sessionId).set({
         id: sessionId,
         memberId,

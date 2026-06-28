@@ -269,7 +269,7 @@ export default async function ProfilePage({
     getLiftLogsForMember(memberId, currentUser.gymId),
     getExerciseCatalog(currentUser.gymId),
     getOwnersForGym(currentUser.gymId),
-    getBodyMetricLogsForMember(memberId)
+    getBodyMetricLogsForMember(memberId, currentUser.gymId)
   ]);
   const trainers = owners.filter((o) => o.staffType === "trainer" || o.staffType === "owner");
 

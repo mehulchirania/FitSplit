@@ -7,7 +7,6 @@ import { useRouter } from "next/navigation";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import { Plus, X } from "@/components/icons";
 import { assignProgramToMember, createAndAssignCustomProgram } from "@/lib/firebase/actions";
-import { callAssignProgramToMember } from "@/lib/firebase/functions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member, MuscleGroup, WorkoutProgram } from "@/types/domain";
 import { FieldError } from "./form-action-context";
@@ -48,20 +47,9 @@ function PickPlanForm({
     const formData = new FormData(event.currentTarget);
     setFeedback(null);
     startTransition(async () => {
-      try {
-        const result = await callAssignProgramToMember({
-          memberId: member.id,
-          memberName: member.fullName,
-          programId: selected.id,
-          programTitle: selected.title
-        });
-        setFeedback({ type: "success", message: result.data.message });
-        router.refresh();
-      } catch {
-        const result = await assignProgramToMember(initialFormActionState, formData);
-        setFeedback({ type: result.status === "success" ? "success" : "error", message: result.message });
-        if (result.status === "success") router.refresh();
-      }
+      const result = await assignProgramToMember(initialFormActionState, formData);
+      setFeedback({ type: result.status === "success" ? "success" : "error", message: result.message });
+      if (result.status === "success") router.refresh();
     });
   }
 

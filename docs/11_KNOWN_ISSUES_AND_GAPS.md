@@ -30,20 +30,21 @@
 
 ## Architecture & Tech Debt
 
-1. **Dual-Write Dominant Complexity (Root vs Gym-Scoped)**
-   - **Issue:** Almost every collection is written twice (`mirrorGymScopedRecord`/`mirrorProfileToGym`), and every read-model falls back to root.
+1. **Dual-Write Dominant Complexity (Root vs Gym-Scoped)** *(R4 — operational write pairs resolved 2026-06-28)*
+   - **Issue:** Legacy root mirrors still exist and many read-models keep root fallbacks for migration safety.
    - **Impact:** Doubles write cost, invites drift, forces defensive read logic.
-   - **Fix Required:** Consolidate to gym-scoped data as the single source of truth, backfill root-only data, and remove root mirrors.
+   - **Progress 2026-06-28:** Root writes removed from `members.ts` (activityEvents ×3), `staff.ts` (activityEvents ×2), `programs.ts` (programAssignments + notifications + activityEvents ×7), `pt.ts` (ptSessions, ptLiftLogs, liftLogs, notifications ×3), `exercises.ts` (exerciseCatalog, exerciseRequests, notifications), `contact.ts` (contactMessages, notifications). Gym-scoped writes via `mirrorGymScopedRecord` are now the sole path for all operational collections.
+   - **Progress 2026-06-28:** `progress.ts` hot paths now write gym-scoped only for lift logs, body metrics, day logs, macro logs, activity logs, workout sessions, and attendance records. `syncOfflineLifts` now writes deterministic gym-scoped lift docs instead of root-only random IDs.
+   - **Remaining:** Keep root fallbacks only until legacy data is backfilled or archived; then remove fallback queries collection by collection.
+   - **Remaining:** `exercises.ts` lines 272/346/435 are intentional admin-global catalog writes, not dual-write pairs.
 
-2. **Server Action vs Cloud Function Duplication**
-   - **Issue:** Member/staff/gym operations exist as both Server Actions (used by UI) and Cloud Functions (often unused; `allow:false` rules assume CF).
-   - **Impact:** Logic drift (e.g., side-effect handling differs).
-   - **Fix Required:** Standardize on one surface per operation and treat the other as dead code.
+2. ~~**Server Action vs Cloud Function Duplication**~~ — **RESOLVED 2026-06-28 (R5):** All 11 UI components migrated from CF-primary/SA-fallback to SA-only. `functions.ts` trimmed to ~80 lines (archive, lookup, stats, membership activation CFs only). Server Actions are now the sole write path for all member/staff/gym/program/PT operations.
 
-3. **Collection-Group and Full-Collection Scans**
-   - **Issue:** `getGymWorkspaces` and `generateAdminDashboardStats` iterate large collections without utilizing denormalized counters optimally.
-   - **Impact:** Performance degradation as the platform scales.
-   - **Fix Required:** Rely purely on `summaries/dashboard` and `gyms.memberCount`.
+3. **Collection-Group and Full-Collection Scans** *(audited in depth 2026-06-28 — see `docs/12_ARCHITECTURE_AUDIT_2026.md` Sections B, D, E)*
+   - ~~**`getGymWorkspaces`:** Does 3 parallel full-collection scans (gyms + collectionGroup members + authProfiles by role).~~ **RESOLVED 2026-06-28:** now reads only `gyms` and uses denormalized `memberCount`.
+   - ~~**`getGymDetail`:** Fetches all member documents for a gym just to count them.~~ **RESOLVED 2026-06-28:** now uses `mapWorkspace(...).memberCount` from the gym doc.
+   - **`getMemberNotifications` / progress read-models:** Main member layout/profile/privacy call sites now pass `gymId` for direct gym-scoped notification/body-metric reads. Remaining work: remove migration fallbacks after legacy backfill and add windows/pagination for lifetime progress history.
+   - **`getGymFloorLoadMap`:** Calls 4 `*Uncached` functions + authProfiles scan on every render. Fix: add server-side cache, use cached function variants.
 
 4. **Embedded Notices Array**
    - **Issue:** `addGymNotice` / `deleteGymNotice` read-modify-write the whole `gyms.notices[]` array.
@@ -55,3 +56,17 @@
 6. **Unused Code & Legacy CSS**
    - **Issue:** `workoutSplitTemplates` declared but unused. Legacy CSS like `01-owner-members.css` and `ep-modal.css` are still floating in the repo.
    - **Fix Required:** Audit and remove dead CSS and unused Firestore collections.
+
+7. ~~**`syncOfflineLifts` Missing Gym-Scoped Mirror + Non-Idempotent IDs**~~ — **RESOLVED 2026-06-28:** offline lift sync now writes deterministic gym-scoped lift docs in one batch. It reuses the offline/client ID when present and falls back to a stable composite ID.
+
+8. **Notification Writes Are Sequential, Not Batched** *(discovered 2026-06-28)*
+   - **Issue:** Multi-notification events (PT booking = 3 notifications, program assign = 2) write each notification with a separate `await mirrorGymScopedRecord()` call — N sequential round-trips.
+   - **Fix Required:** Add `batchMirrorGymScopedRecords()` helper in `actions/shared.ts`. See `docs/12_ARCHITECTURE_AUDIT_2026.md` Section F.
+
+9. **Auth Profile Firestore Read on Every SSR Request** *(discovered 2026-06-28)*
+   - **Issue:** `requireRole()` reads `authProfiles/{uid}` on every server-rendered page. Next.js `cache()` deduplicates within a request but not across requests from the same user.
+   - **Fix Required:** Embed `isActive`, `gymId`, `memberId` in session cookie claims at login; `requireRole()` reads cookie instead of Firestore. See `docs/12_ARCHITECTURE_AUDIT_2026.md` Section I.
+
+10. **No B2B2C Gym Subscription Schema** *(discovered 2026-06-28)*
+    - **Issue:** The `gyms/{gymId}` document has no subscription tier, billing cycle, or payment method. Onboarding a new gym is a manual admin operation.
+    - **Fix Required:** Add `subscription: { tier, billedUntil, stripeCustomerId }` to gym doc before B2B sales begin. See `docs/12_ARCHITECTURE_AUDIT_2026.md` Section L2.

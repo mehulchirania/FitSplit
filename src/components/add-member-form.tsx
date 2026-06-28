@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createMemberProfile } from "@/lib/firebase/actions";
-import { callCreateMemberAccount } from "@/lib/firebase/functions";
 import type { FormActionState } from "@/types/action-state";
 import { initialFormActionState } from "@/types/action-state";
 import { FormActionContext, FieldError } from "./form-action-context";
@@ -48,24 +47,11 @@ export function AddMemberForm() {
     setPendingForm(null);
     setDismissedMessage("");
     startTransition(async () => {
-      try {
-        const result = await callCreateMemberAccount({
-          fullName: String(submittedForm.get("fullName") ?? ""),
-          username: String(submittedForm.get("username") ?? ""),
-          email: String(submittedForm.get("email") ?? ""),
-          phone: String(submittedForm.get("phone") ?? ""),
-          goal: String(submittedForm.get("goal") ?? "")
-        });
-        setStatus({ status: "success", message: result.data.message });
+      const result = await createMemberProfile(initialFormActionState, submittedForm);
+      setStatus(result);
+      if (result.status === "success") {
         setFormValues(emptyForm);
         router.refresh();
-      } catch {
-        const result = await createMemberProfile(initialFormActionState, submittedForm);
-        setStatus(result);
-        if (result.status === "success") {
-          setFormValues(emptyForm);
-          router.refresh();
-        }
       }
     });
   }

@@ -41,7 +41,8 @@ flowchart TD
   subgraph T2[Tier 2 · opinion / volatile / backlog]
     ROADMAP[10 · REFACTORING_ROADMAP]
     ISSUES[11 · KNOWN_ISSUES_AND_GAPS]
-    STYLE[12 · UI_STYLE_GUIDE]
+    AUDIT[12 · ARCHITECTURE_AUDIT_2026]
+    STYLE[13 · UI_STYLE_GUIDE]
   end
 
   subgraph META[Meta · drift control]
@@ -75,7 +76,8 @@ flowchart TD
   click SCREENS "09_SCREEN_CATALOG.md" "Open 09 · SCREEN_CATALOG"
   click ROADMAP "10_REFACTORING_ROADMAP.md" "Open 10 · REFACTORING_ROADMAP"
   click ISSUES "11_KNOWN_ISSUES_AND_GAPS.md" "Open 11 · KNOWN_ISSUES_AND_GAPS"
-  click STYLE "12_UI_STYLE_GUIDE.md" "Open 12 · UI_STYLE_GUIDE"
+  click AUDIT "12_ARCHITECTURE_AUDIT_2026.md" "Open 12 · ARCHITECTURE_AUDIT_2026"
+  click STYLE "13_UI_STYLE_GUIDE.md" "Open 13 · UI_STYLE_GUIDE"
   click DISC "DISCREPANCIES.md" "Open DISCREPANCIES"
 ```
 
@@ -87,7 +89,7 @@ flowchart TD
 |---|---|---|
 | **Tier 0** | Every session (keep tiny, ~8k tokens) | `00_AI_CONTEXT.md` |
 | **Tier 1** | Current-state facts (the SSoT body) | `01`–`09` |
-| **Tier 2** | Opinion / volatile / backlog | `10`–`12` |
+| **Tier 2** | Opinion / volatile / backlog | `10`–`13` |
 | **Meta** | Navigation + drift control | `_INDEX.md`, `DISCREPANCIES.md` |
 
 ## File directory
@@ -106,7 +108,8 @@ flowchart TD
 | [09_SCREEN_CATALOG.md](09_SCREEN_CATALOG.md) | 1 | Per route: purpose, data, role, collections. |
 | [10_REFACTORING_ROADMAP.md](10_REFACTORING_ROADMAP.md) | 2 | Dated point-in-time opinion: debt, risks, dead code. |
 | [11_KNOWN_ISSUES_AND_GAPS.md](11_KNOWN_ISSUES_AND_GAPS.md) | 2 | Aggregated backlog of bugs, incomplete functionalities, and tech debt. |
-| [12_UI_STYLE_GUIDE.md](12_UI_STYLE_GUIDE.md) | 2 | Complete design system, tokens, CSS architecture, and layout paradigms. |
+| [12_ARCHITECTURE_AUDIT_2026.md](12_ARCHITECTURE_AUDIT_2026.md) | 2 | Firestore cost, backend architecture, and B2B2C scaling audit. |
+| [13_UI_STYLE_GUIDE.md](13_UI_STYLE_GUIDE.md) | 2 | Complete design system, tokens, CSS architecture, and layout paradigms. |
 | [DISCREPANCIES.md](DISCREPANCIES.md) | Meta | README/code conflicts + dead/orphaned references. |
 
 ---

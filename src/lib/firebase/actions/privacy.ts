@@ -86,7 +86,7 @@ export async function exportMyData(gymId: string): Promise<DataExportResult> {
       activityEvents,
     ] = await Promise.all([
       getMemberWithProfile(memberId),
-      getBodyMetricLogsForMember(memberId),
+      getBodyMetricLogsForMember(memberId, gymId),
       getLiftLogsForMember(memberId, gymId),
       getDayLogsForMember(memberId, gymId),
       getMacroLogsForMember(memberId, gymId, ALL),
@@ -95,7 +95,7 @@ export async function exportMyData(gymId: string): Promise<DataExportResult> {
       getPTSessionsForMember(gymId, memberId),
       getMembershipsForMember(gymId, memberId),
       getPaymentRequestsForMember(gymId, memberId),
-      getMemberNotifications(memberId),
+      getMemberNotifications(memberId, gymId),
       getActivityEvents("member", memberId, gymId),
     ]);
 

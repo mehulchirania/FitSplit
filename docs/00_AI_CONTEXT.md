@@ -1,6 +1,6 @@
 # 00 · AI CONTEXT (Tier 0 — load this every session)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-05 · Last updated: 2026-06-28`
 
 > Condensed everything. Hard cap ~8k tokens. Links out to deeper docs — does not
 > duplicate their detail. If a fact here matters to your task, confirm it in the
@@ -21,9 +21,9 @@ Router PWA deployed on Firebase App Hosting. One platform, many gyms; the pilot 
    program assignment, access toggles, billing approval, gym archive. Firestore rules set
    the corresponding direct client writes to `allow: false`.
 3. **Multi-tenancy is gym-first.** Most data lives under `gyms/{gymId}/...`. Every read/write
-   is partitioned by `gymId`. There is **also a parallel root-level copy** of most
-   collections (dual-write legacy) — see [02_DATA_DICTIONARY](02_DATA_DICTIONARY.md) and the
-   debt note in [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
+   is partitioned by `gymId`. Parallel root-level mirrors are legacy migration debt;
+   R4 cleanup is complete for hot operational write pairs, including progress/offline logging.
+   See [12_ARCHITECTURE_AUDIT_2026](12_ARCHITECTURE_AUDIT_2026.md).
 4. **Server Actions are the actual write path in the app today.** Most UI calls Server
    Actions in `src/lib/firebase/actions/*` (which use the Admin SDK directly), not the callable
    Cloud Functions. The callables in `functions/src/index.ts` mirror many of the same
@@ -76,8 +76,8 @@ Role home redirects live in `src/proxy.ts`. Owner topbar is suppressed for `/own
 
 **Root-level** (`collections.ts:1-33`): `gyms`, `authProfiles` (auth/session index),
 `profiles` (legacy), `usernames` (uniqueness index), `archives` (60-day soft-delete),
-`platformSummaries`, `loginAttempts`, plus **root mirrors** of most gym-scoped collections
-(legacy dual-write). FitSplit **global** library lives at root `exerciseCatalog` /
+`platformSummaries`, `loginAttempts`, plus legacy **root mirrors** of some gym-scoped collections.
+FitSplit **global** library lives at root `exerciseCatalog` /
 `workoutPrograms` (admin-only writes).
 
 ## Core workflows (detail in [06_USER_JOURNEYS](06_USER_JOURNEYS.md))
@@ -90,7 +90,7 @@ Role home redirects live in `src/proxy.ts`. Owner topbar is suppressed for `/own
 - **Live workout** — member `startWorkoutSession` (geofenced) → `logLiftSet` (offline via
   Dexie, synced by `syncOfflineLifts`) → `endWorkoutSession`. Attendance recorded alongside.
 - **PT** — `bookPTSession`/`assignPTPlan` → `startPTSession` → `logPTLiftSet`
-  (**dual-writes** to `ptLiftLogs` + `liftLogs` with `source:"trainer"`) → `completePTSession`.
+  (trainer-set history also appears in member lift history with `source:"trainer"`) → `completePTSession`.
   Scheduled reminders + auto-expire of abandoned sessions.
 - **Billing** — member `submitPaymentRequest` → owner `approvePaymentRequest` creates a
   `memberships` doc + denormalises `membershipStatus`/`membershipEndDate` onto member.
@@ -112,8 +112,8 @@ Role home redirects live in `src/proxy.ts`. Owner topbar is suppressed for `/own
 
 - **read-model** = server-side cached Firestore read (`src/lib/firebase/read-models/*`,
   uses `unstable_cache` + `react.cache`).
-- **dual-write / mirror** = same doc written to both root and `gyms/{gymId}/…`
-  (`mirrorGymScopedRecord`, `mirrorProfileToGym`).
+- **root mirror / dual-write debt** = legacy pattern where the same doc is written to root and
+  `gyms/{gymId}/…`; use the 2026 audit before changing these paths.
 - **scope** on exercises/programs: `default`/`predefined` (global) vs `custom` (gym).
 - **staffType** = sub-type of an `owner`-role staff doc: `owner|trainer|staff`.
 - **compatibility cookies** = the non-session cookies `src/proxy.ts` reads for routing.
@@ -122,4 +122,4 @@ Role home redirects live in `src/proxy.ts`. Owner topbar is suppressed for `/own
 
 Data model → `02`/`03`. "How is X written/read?" → `04`. "Who can do X?" → `05`.
 "What happens end-to-end?" → `06`. "Where do I change module Y?" → `07`. Screens → `09`.
-Known bugs/debt/security → `10` + `DISCREPANCIES.md`.
+Known bugs/debt/security → `10`, `11`, `12_ARCHITECTURE_AUDIT_2026.md`, and `DISCREPANCIES.md`.

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useActionState, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { callToggleMemberAccess, callResetMemberPin } from "@/lib/firebase/functions";
 import { toggleMemberAccess, resetPassword, updateMemberProfile } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
 import type { Member } from "@/types/domain";
@@ -55,30 +54,20 @@ function MemberPanel({ m }: { m: Member; gymId: string }) {
     const next = !active; const prev = active;
     setActive(next);
     startAccT(async () => {
-      try {
-        const r = await callToggleMemberAccess({ memberId: m.id, isActive: next });
-        toast(setAccMsg, true, r.data.message); router.refresh();
-      } catch {
-        const fd = new FormData();
-        fd.set("memberId", m.id); fd.set("isActive", String(next));
-        const r = await toggleMemberAccess(initialFormActionState, fd);
-        if (r.status === "error") setActive(prev);
-        toast(setAccMsg, r.status === "success", r.message);
-        if (r.status === "success") router.refresh();
-      }
+      const fd = new FormData();
+      fd.set("memberId", m.id); fd.set("isActive", String(next));
+      const r = await toggleMemberAccess(initialFormActionState, fd);
+      if (r.status === "error") setActive(prev);
+      toast(setAccMsg, r.status === "success", r.message);
+      if (r.status === "success") router.refresh();
     });
   }
 
   function resetPin() {
     startAccT(async () => {
-      try {
-        const r = await callResetMemberPin({ memberId: m.id, pin: "1234" });
-        toast(setAccMsg, true, r.data.message + " — new PIN: 1234");
-      } catch {
-        const fd = new FormData(); fd.set("memberId", m.id); fd.set("newPin", "1234");
-        const r = await resetPassword(initialFormActionState, fd);
-        toast(setAccMsg, r.status === "success", r.message);
-      }
+      const fd = new FormData(); fd.set("userId", m.id); fd.set("newPin", "1234");
+      const r = await resetPassword(initialFormActionState, fd);
+      toast(setAccMsg, r.status === "success", r.status === "success" ? r.message + " — new PIN: 1234" : r.message);
     });
   }
 
