@@ -1,6 +1,6 @@
 # FitSplit Technical Knowledge Repository — Index
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-28 · Commit: fb6f244 · Updated for current App Router structure`
 
 > **Purpose.** This `/docs` tree is the single source of truth (SSoT) for the FitSplit
 > codebase. It is built so a new developer (or AI session) can understand and modify
@@ -113,7 +113,8 @@ flowchart TD
 
 ## Maintenance protocol
 
-- **Stamp.** Every doc header carries `Generated: <date> · Commit: <git short hash>`.
+- **Stamp.** Every doc header carries a generation/review date and, when regenerated, the
+  relevant git short hash.
 - **Regenerate-one.** Each doc can be rebuilt in isolation. To rebuild a single doc,
   re-run the original generation prompt scoped to that doc only — e.g.
   *"regenerate `02_DATA_DICTIONARY.md` only against current code"*. A change to one
@@ -128,7 +129,7 @@ flowchart TD
 
 ## Self-audit results
 
-See the bottom of this file. Audit run `2026-06-05` against commit `c0e1f4b`.
+See the bottom of this file. Structural audit refreshed `2026-06-28` against commit `fb6f244`.
 
 ### 1. Coverage checklist
 
@@ -139,8 +140,8 @@ See the bottom of this file. Audit run `2026-06-05` against commit `c0e1f4b`.
   `04_DATA_ACCESS_CATALOG.md`. ✅
 - **Server Actions** — every exported function in `src/lib/firebase/actions/*` appears in `04`. ✅
 - **Read-models** — every exported function in `src/lib/firebase/read-models/*` appears in `04`. ✅
-- **Routes** — every route under `src/app/` (from the `src/app/**/page.tsx` glob) appears in
-  `09_SCREEN_CATALOG.md`. ✅
+- **Routes** — every page route under `src/app/**/page.tsx`, the root App Router special files,
+  and the `/api/health` route handler appear in `09_SCREEN_CATALOG.md`. ✅
 
 ### 2. Citation spot-check (10 random)
 

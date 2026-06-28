@@ -8,22 +8,44 @@ import {
   useState,
   useTransition,
 } from "react";
-import type { FormEvent, MouseEvent as ReactMouseEvent } from "react";
+import type { FormEvent } from "react";
 import {
   AnimatePresence,
   LazyMotion,
   domAnimation,
   m,
 } from "framer-motion";
+import {
+  ArrowRightIcon,
+  BarChart3Icon,
+  CalendarIcon,
+  DumbbellIcon,
+  UsersIcon,
+} from "lucide-react";
 import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
-
 import { LANDING_MOCK } from "@/lib/landing-mock";
-import { X as CloseIcon } from "@/components/icons";
 
-// ─── Animation variants ───────────────────────────────────────────────────────
-const EASE: [number, number, number, number] = [0.16, 1, 0.3, 1];
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
-// ─── Login modal ──────────────────────────────────────────────────────────────
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 function authErrMsg(err: unknown) {
   if (err instanceof FirebaseError) {
@@ -35,6 +57,23 @@ function authErrMsg(err: unknown) {
   return "Unable to sign in. Please try again.";
 }
 
+// ─── Brand mark ───────────────────────────────────────────────────────────────
+
+function BrandMark({ size = 28 }: { size?: number }) {
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src="/new_logo.png"
+      alt=""
+      width={size}
+      height={size}
+      style={{ borderRadius: 8, display: "block", objectFit: "contain" }}
+    />
+  );
+}
+
+// ─── Login modal ──────────────────────────────────────────────────────────────
+
 function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [mode, setMode] = useState<"member" | "staff">("member");
   const [username, setUsername] = useState("");
@@ -45,23 +84,8 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const formRef = useRef<HTMLFormElement>(null);
   const isMember = mode === "member";
 
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-    return () => {
-      document.body.style.overflow = "";
-      window.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose]);
-
   function switchMode(next: "member" | "staff") {
     setMode(next); setUsername(""); setPassword(""); setError(""); setMessage("");
-  }
-
-  function onBackdrop(e: ReactMouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) onClose();
   }
 
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
@@ -106,187 +130,109 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-    <AnimatePresence>
-      {open && (
-        <m.div
-          className="lp-modal-backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.22 }}
-          onMouseDown={onBackdrop}
-        >
-          <m.section
-            className="lp-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Login"
-            initial={{ opacity: 0, scale: 0.93, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.93, y: 20 }}
-            transition={{ duration: 0.3, ease: EASE }}
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="lp-modal max-w-[420px] gap-0 p-7" showCloseButton={false}>
+        {/* Header */}
+        <div className="lp-modal-hdr">
+          <div className="lp-modal-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/new_logo.png" alt="FitSplit" width="52" height="22" />
+            <span>FitSplit</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full text-muted-foreground"
+            onClick={onClose}
+            aria-label="Close login"
+            type="button"
           >
-            {/* Header */}
-            <div className="lp-modal-hdr">
-              <div className="lp-modal-brand">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/new_logo.png" alt="FitSplit" width="52" height="22" />
-                <span>FitSplit</span>
-              </div>
-              <button className="lp-modal-x" onClick={onClose} aria-label="Close login" type="button">
-                <CloseIcon />
-              </button>
-            </div>
+            ✕
+          </Button>
+        </div>
 
-            <h2 className="lp-modal-title">Access your workspace</h2>
-            <p className="lp-modal-sub">Members use mobile number/username + PIN. Staff use username + password.</p>
+        <DialogHeader className="mt-2 mb-4 text-left gap-1">
+          <DialogTitle className="lp-modal-title">Access your workspace</DialogTitle>
+          <DialogDescription className="lp-modal-sub">
+            Members use mobile number/username + PIN. Staff use username + password.
+          </DialogDescription>
+        </DialogHeader>
 
-            {/* Tabs */}
-            <div className="lp-tabs" role="tablist" aria-label="Login type">
-              {(["member", "staff"] as const).map((tab) => (
-                <button
-                  key={tab}
-                  role="tab"
-                  aria-selected={mode === tab}
-                  className={`lp-tab${mode === tab ? " lp-tab-on" : ""}`}
-                  onClick={() => switchMode(tab)}
-                  type="button"
-                >
-                  {tab[0].toUpperCase() + tab.slice(1)}
-                  {mode === tab && (
-                    <m.span
-                      className="lp-tab-underline"
-                      layoutId="lp-tab-underline"
-                      transition={{ type: "spring", damping: 30, stiffness: 400 }}
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
+        {/* Mode tabs */}
+        <Tabs value={mode} onValueChange={(v) => switchMode(v as "member" | "staff")} className="mb-4">
+          <TabsList className="w-full">
+            <TabsTrigger value="member" className="flex-1">Member</TabsTrigger>
+            <TabsTrigger value="staff" className="flex-1">Staff</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
-            {/* Form */}
-            <form
-              ref={formRef}
-              className="lp-modal-form"
-              onSubmit={onSubmit}
-              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); formRef.current?.requestSubmit(); } }}
-            >
-              <label className="lp-field">
-                <span>{isMember ? "Mobile number or username" : "Username"}</span>
-                <input
-                  type="text"
-                  autoComplete="username"
-                  inputMode={isMember ? "email" : undefined}
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                />
-              </label>
-              <label className="lp-field">
-                <span>{isMember ? "4-digit PIN" : "Password"}</span>
-                <input
-                  type="password"
-                  autoComplete={isMember ? "one-time-code" : "current-password"}
-                  inputMode={isMember ? "numeric" : undefined}
-                  maxLength={isMember ? 4 : undefined}
-                  value={password}
-                  onChange={(e) =>
-                    setPassword(isMember ? e.target.value.replace(/\D/g, "").slice(0, 4) : e.target.value)
-                  }
-                  pattern={isMember ? "\\d{4}" : undefined}
-                  required
-                />
-              </label>
-              {error && <p className="lp-form-error" role="alert">{error}</p>}
-              {message && <p className="lp-form-success" role="status">{message}</p>}
+        {/* Form */}
+        <form
+          ref={formRef}
+          className="lp-modal-form"
+          onSubmit={onSubmit}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); formRef.current?.requestSubmit(); } }}
+        >
+          <div className="lp-field">
+            <Label htmlFor="lp-username">{isMember ? "Mobile number or username" : "Username"}</Label>
+            <Input
+              id="lp-username"
+              type="text"
+              autoComplete="username"
+              inputMode={isMember ? "email" : undefined}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="lp-input"
+            />
+          </div>
+          <div className="lp-field">
+            <Label htmlFor="lp-password">{isMember ? "4-digit PIN" : "Password"}</Label>
+            <Input
+              id="lp-password"
+              type="password"
+              autoComplete={isMember ? "one-time-code" : "current-password"}
+              inputMode={isMember ? "numeric" : undefined}
+              maxLength={isMember ? 4 : undefined}
+              value={password}
+              onChange={(e) =>
+                setPassword(isMember ? e.target.value.replace(/\D/g, "").slice(0, 4) : e.target.value)
+              }
+              pattern={isMember ? "\\d{4}" : undefined}
+              required
+              className="lp-input"
+            />
+          </div>
+          {error && <p className="lp-form-error" role="alert">{error}</p>}
+          {message && <p className="lp-form-success" role="status">{message}</p>}
 
-              <button className="lp-btn-primary lp-w-full" disabled={isPending} type="submit">
-                {isPending ? "Logging in..." : "Log in"}
-              </button>
-              <button className="lp-forgot" disabled={isPending} onClick={onForgot} type="button">
-                Forgot password?
-              </button>
-            </form>
+          <Button
+            className="w-full mt-1"
+            disabled={isPending}
+            type="submit"
+            style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
+          >
+            {isPending ? "Logging in…" : "Log in"}
+          </Button>
+          <button className="lp-forgot" disabled={isPending} onClick={onForgot} type="button">
+            Forgot password?
+          </button>
+        </form>
 
-            <p className="lp-modal-note">
-              Secure access for members, trainers, and gym owners.
-            </p>
-          </m.section>
-        </m.div>
-      )}
-    </AnimatePresence>
-    </LazyMotion>
+        <p className="lp-modal-note">
+          Secure access for members, trainers, and gym owners.
+        </p>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-// ─── Brand mark: uses the real logo image ────────────────────────────────────
-function BrandMark({ size = 28 }: { size?: number }) {
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/new_logo.png"
-      alt=""
-      width={size}
-      height={size}
-      style={{ borderRadius: 8, display: "block", objectFit: "contain" }}
-    />
-  );
-}
-
-// ─── Inline SVG icons ─────────────────────────────────────────────────────────
-function IcDumbbell() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 5v14M18 5v14M6 9h12M6 15h12M3 9h3M3 15h3M18 9h3M18 15h3" />
-    </svg>
-  );
-}
-function IcCalendar() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" />
-    </svg>
-  );
-}
-function IcChart() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-    </svg>
-  );
-}
-function IcUsers() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
-    </svg>
-  );
-}
-function IcPlus() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-    </svg>
-  );
-}
+// ─── Enquiry modal ────────────────────────────────────────────────────────────
 
 function EnquiryModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [body, setBody] = useState("");
-  
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = ""; window.removeEventListener("keydown", onKey); };
-  }, [open, onClose]);
-
-  function onBackdrop(e: ReactMouseEvent<HTMLDivElement>) {
-    if (e.target === e.currentTarget) onClose();
-  }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -296,89 +242,81 @@ function EnquiryModal({ open, onClose }: { open: boolean; onClose: () => void })
   }
 
   return (
-    <LazyMotion features={domAnimation}>
-    <AnimatePresence>
-      {open && (
-        <m.div className="lp-modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.22 }} onMouseDown={onBackdrop}>
-          <m.section className="lp-modal" role="dialog" aria-modal="true" aria-label="Enquiry" initial={{ opacity: 0, scale: 0.93, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.93, y: 20 }} transition={{ duration: 0.3, ease: EASE }}>
-            <div className="lp-modal-hdr">
-              <div className="lp-modal-brand">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/new_logo.png" alt="FitSplit" width="52" height="22" />
-                <span>FitSplit</span>
-              </div>
-              <button className="lp-modal-x" onClick={onClose} aria-label="Close" type="button"><CloseIcon /></button>
-            </div>
-            <h2 className="lp-modal-title">Get in touch</h2>
-            <p className="lp-modal-sub">Tell us a bit about your gym and we'll get back to you with setup instructions.</p>
-            <form className="lp-modal-form" onSubmit={onSubmit}>
-              <label className="lp-field"><span>Name</span><input type="text" value={name} onChange={(e) => setName(e.target.value)} required /></label>
-              <label className="lp-field"><span>Contact (Email or Phone)</span><input type="text" value={contact} onChange={(e) => setContact(e.target.value)} required /></label>
-              <label className="lp-field">
-                <span>Message (Optional)</span>
-                <textarea 
-                  value={body} 
-                  onChange={(e) => setBody(e.target.value)} 
-                  rows={3} 
-                  style={{ background: "var(--input-bg, rgba(255, 255, 255, 0.04))", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", color: "var(--fg)", fontSize: "16px", outline: "none", resize: "none", width: "100%", fontFamily: "inherit" }} 
-                />
-              </label>
-              <button type="submit" className="lpd-btn lpd-btn--brand lpd-btn--lg" style={{ marginTop: "16px", width: "100%" }}>Send Enquiry</button>
-              <p className="lp-modal-note" style={{ marginTop: "12px" }}>
-                We use your details only to respond to your enquiry. See our{" "}
-                <Link href="/privacy" style={{ color: "var(--accent)" }}>Privacy Policy</Link>.
-              </p>
-            </form>
-          </m.section>
-        </m.div>
-      )}
-    </AnimatePresence>
-    </LazyMotion>
+    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+      <DialogContent className="lp-modal max-w-[420px] gap-0 p-7" showCloseButton={false}>
+        <div className="lp-modal-hdr">
+          <div className="lp-modal-brand">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/new_logo.png" alt="FitSplit" width="52" height="22" />
+            <span>FitSplit</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="rounded-full text-muted-foreground"
+            onClick={onClose}
+            aria-label="Close"
+            type="button"
+          >
+            ✕
+          </Button>
+        </div>
+
+        <DialogHeader className="mt-2 mb-4 text-left gap-1">
+          <DialogTitle className="lp-modal-title">Get in touch</DialogTitle>
+          <DialogDescription className="lp-modal-sub">
+            Tell us a bit about your gym and we&apos;ll get back to you with setup instructions.
+          </DialogDescription>
+        </DialogHeader>
+
+        <form className="lp-modal-form" onSubmit={onSubmit}>
+          <div className="lp-field">
+            <Label htmlFor="enq-name">Name</Label>
+            <Input id="enq-name" type="text" value={name} onChange={(e) => setName(e.target.value)} required className="lp-input" />
+          </div>
+          <div className="lp-field">
+            <Label htmlFor="enq-contact">Contact (Email or Phone)</Label>
+            <Input id="enq-contact" type="text" value={contact} onChange={(e) => setContact(e.target.value)} required className="lp-input" />
+          </div>
+          <div className="lp-field">
+            <Label htmlFor="enq-body">Message (Optional)</Label>
+            <textarea
+              id="enq-body"
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              rows={3}
+              style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", color: "var(--text)", fontSize: "14px", outline: "none", resize: "none", width: "100%", fontFamily: "inherit" }}
+            />
+          </div>
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full mt-2"
+            style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
+          >
+            Send Enquiry
+          </Button>
+          <p className="lp-modal-note" style={{ marginTop: "12px" }}>
+            We use your details only to respond to your enquiry. See our{" "}
+            <Link href="/privacy" style={{ color: "var(--accent)" }}>Privacy Policy</Link>.
+          </p>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
-function IcArrow() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
-    </svg>
-  );
-}
+// ─── Feature icons ────────────────────────────────────────────────────────────
 
 function featIcon(icon: string) {
-  if (icon === "dumbbell") return <IcDumbbell />;
-  if (icon === "calendar") return <IcCalendar />;
-  if (icon === "chart") return <IcChart />;
-  return <IcUsers />;
-}
-
-// ─── Nav ─────────────────────────────────────────────────────────────────────
-function L1_Nav({ onLogin }: { onLogin: () => void }) {
-  return (
-    <header className="lpd-nav">
-      <div className="lpd-container lpd-nav__inner">
-        <a className="lpd-brand" href="#top">
-          <span className="lpd-brand__mark">
-            <BrandMark size={44} />
-          </span>
-          FitSplit
-        </a>
-        <nav className="lpd-nav__links">
-          {LANDING_MOCK.nav.map((item) => (
-            item === "About" 
-              ? <Link key={item} href="/about">{item}</Link>
-              : <a key={item} href={`#l1-${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
-          ))}
-        </nav>
-        <div className="lpd-nav__cta">
-          <button className="lpd-btn lpd-btn--ghost" onClick={onLogin}>Log in</button>
-        </div>
-      </div>
-    </header>
-  );
+  if (icon === "dumbbell") return <DumbbellIcon size={20} />;
+  if (icon === "calendar") return <CalendarIcon size={20} />;
+  if (icon === "chart") return <BarChart3Icon size={20} />;
+  return <UsersIcon size={20} />;
 }
 
 // ─── Dashboard mock ───────────────────────────────────────────────────────────
+
 function L1_MockOwner() {
   return (
     <div className="l1-mock">
@@ -423,6 +361,7 @@ function L1_MockOwner() {
 }
 
 // ─── Phone mock ───────────────────────────────────────────────────────────────
+
 function L1_MockPhone() {
   const exercises = [
     { name: "Bench Press",     sub: "4 × 5–8 · 52.5kg",      done: true   },
@@ -454,18 +393,45 @@ function L1_MockPhone() {
   );
 }
 
+// ─── Nav ──────────────────────────────────────────────────────────────────────
+
+function L1_Nav({ onLogin }: { onLogin: () => void }) {
+  return (
+    <header className="lpd-nav">
+      <div className="lpd-container lpd-nav__inner">
+        <a className="lpd-brand" href="#top">
+          <span className="lpd-brand__mark">
+            <BrandMark size={44} />
+          </span>
+          FitSplit
+        </a>
+        <nav className="lpd-nav__links">
+          {LANDING_MOCK.nav.map((item) =>
+            item === "About"
+              ? <Link key={item} href="/about">{item}</Link>
+              : <a key={item} href={`#l1-${item.toLowerCase().replace(/\s+/g, "-")}`}>{item}</a>
+          )}
+        </nav>
+        <div className="lpd-nav__cta">
+          <Button variant="outline" onClick={onLogin} className="rounded-full">Log in</Button>
+        </div>
+      </div>
+    </header>
+  );
+}
+
 // ─── Hero ─────────────────────────────────────────────────────────────────────
+
 function L1_Hero({ onLogin }: { onLogin: () => void }) {
   const { hero } = LANDING_MOCK;
   return (
     <section className="l1-hero" id="top">
       <div className="lpd-container l1-hero__inner">
-        {/* Left copy */}
         <div>
-          <span className="lpd-eyebrow">
+          <Badge variant="outline" className="lpd-eyebrow mb-0 rounded-full border-border bg-card text-muted-foreground">
             <span className="lpd-pulse" />
             {hero.eyebrow}
-          </span>
+          </Badge>
           <h1 className="l1-h1">
             {hero.h1}
             <br />
@@ -473,13 +439,17 @@ function L1_Hero({ onLogin }: { onLogin: () => void }) {
           </h1>
           <p className="l1-hero__sub">{hero.sub}</p>
           <div className="l1-hero__cta">
-            <button className="lpd-btn lpd-btn--primary lpd-btn--lg" onClick={onLogin}>
-              Log in <IcArrow />
-            </button>
+            <Button
+              size="lg"
+              className="lpd-btn--lg rounded-full font-bold"
+              style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
+              onClick={onLogin}
+            >
+              Log in <ArrowRightIcon size={14} />
+            </Button>
           </div>
         </div>
 
-        {/* Right visual */}
         <div className="l1-hero__visual">
           <L1_MockOwner />
           <div className="l1-hero__phone">
@@ -491,8 +461,8 @@ function L1_Hero({ onLogin }: { onLogin: () => void }) {
   );
 }
 
-
 // ─── Features ─────────────────────────────────────────────────────────────────
+
 function L1_Features() {
   return (
     <section className="lpd-section" id="l1-product">
@@ -504,12 +474,19 @@ function L1_Features() {
         </div>
         <div className="l1-feat-grid">
           {LANDING_MOCK.features.map((f, i) => (
-            <div key={f.title} className="l1-feat" data-reveal data-delay={String(i + 1)}>
-              <div className="l1-feat__icon">{featIcon(f.icon)}</div>
-              <span className="l1-feat__tag">{f.tag}</span>
-              <h3 className="l1-feat__title">{f.title}</h3>
-              <p className="l1-feat__body">{f.body}</p>
-            </div>
+            <Card
+              key={f.title}
+              className="l1-feat gap-0 rounded-[18px] border-border bg-card p-0 shadow-none"
+              data-reveal
+              data-delay={String(i + 1)}
+            >
+              <CardContent className="p-[26px]">
+                <div className="l1-feat__icon">{featIcon(f.icon)}</div>
+                <span className="l1-feat__tag">{f.tag}</span>
+                <h3 className="l1-feat__title">{f.title}</h3>
+                <p className="l1-feat__body">{f.body}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
@@ -518,6 +495,7 @@ function L1_Features() {
 }
 
 // ─── How it works ─────────────────────────────────────────────────────────────
+
 function L1_HowItWorks() {
   return (
     <section className="lpd-section l1-how">
@@ -529,73 +507,29 @@ function L1_HowItWorks() {
         </div>
         <div className="l1-steps">
           {LANDING_MOCK.steps.map((s, i) => (
-            <div key={s.n} className="l1-step" data-reveal data-delay={String(i + 1)}>
-              <span className="l1-step__num">{s.n}</span>
-              <h3 className="l1-step__label">{s.label}</h3>
-              <p className="l1-step__body">{s.body}</p>
-            </div>
+            <Card
+              key={s.n}
+              className="l1-step gap-0 rounded-[16px] border-border bg-card p-0 shadow-none"
+              data-reveal
+              data-delay={String(i + 1)}
+            >
+              <CardContent className="p-[22px]">
+                <Badge className="l1-step__num mb-[14px] rounded-full bg-transparent border-0 p-0 text-[13px] font-extrabold" style={{ color: "var(--brand)", background: "var(--brand-soft)" }}>
+                  {s.n}
+                </Badge>
+                <h3 className="l1-step__label">{s.label}</h3>
+                <p className="l1-step__body">{s.body}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>
     </section>
   );
 }
-
-
-
-// ─── Pricing (temporarily hidden — uncomment when ready) ─────────────────────
-/*
-function L1_Pricing({ onLogin }: { onLogin: () => void }) {
-  const { pricing } = LANDING_MOCK;
-  return (
-    <section className="lpd-section l1-pricing" id="l1-pricing">
-      <div className="lpd-container">
-        <div className="lpd-section-head">
-          <span className="lpd-section-label">Pricing</span>
-          <h2 className="lpd-h2">{pricing.title}</h2>
-          <p className="lpd-sub">{pricing.sub}</p>
-        </div>
-        <div className="l1-plans">
-          {pricing.plans.map((plan) => (
-            <div key={plan.name} className={`l1-plan${plan.featured ? " l1-plan--feat" : ""}`}>
-              {plan.featured && <span className="l1-plan__pill">Most popular</span>}
-              <p className="l1-plan__name">{plan.name}</p>
-              <div className="l1-plan__price">
-                {plan.priceMonthly !== null ? (
-                  <>
-                    <strong>₹{plan.priceMonthly}</strong>
-                    <span>{plan.priceUnit}</span>
-                  </>
-                ) : (
-                  <>
-                    <strong style={{ fontSize: 28 }}>Custom</strong>
-                    <span>{plan.priceUnit}</span>
-                  </>
-                )}
-              </div>
-              <p className="l1-plan__tagline">{plan.tagline}</p>
-              <ul className="l1-plan__features">
-                {plan.features.map((f) => (
-                  <li key={f}><IcCheck /> {f}</li>
-                ))}
-              </ul>
-              <button
-                className={`lpd-btn ${plan.featured ? "lpd-btn--brand" : "lpd-btn--ghost"}`}
-                style={{ width: "100%" }}
-                onClick={onLogin}
-              >
-                {plan.priceMonthly !== null ? "Start free trial" : "Contact us"}
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-*/
 
 // ─── FAQ ──────────────────────────────────────────────────────────────────────
+
 function L1_FAQ() {
   return (
     <section className="lpd-section lpd-section--tight" id="l1-faq">
@@ -605,31 +539,57 @@ function L1_FAQ() {
           <h2 className="lpd-h2">Common questions.</h2>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "64px", alignItems: "flex-start" }}>
-          <div className="l1-faq__list" style={{ maxWidth: "100%" }}>
+          <Accordion type="single" collapsible className="l1-faq__list w-full max-w-full">
             {LANDING_MOCK.faq.map((item) => (
-              <details key={item.q} className="l1-faq__item">
-                <summary>
+              <AccordionItem
+                key={item.q}
+                value={item.q}
+                className="l1-faq__item mb-[6px] rounded-[14px] border border-border bg-card overflow-hidden last:border-b"
+              >
+                <AccordionTrigger className="px-[22px] py-[18px] text-[15px] font-semibold text-foreground no-underline hover:no-underline hover:bg-muted">
                   {item.q}
-                  <IcPlus />
-                </summary>
-                <p>{item.a}</p>
-              </details>
+                </AccordionTrigger>
+                <AccordionContent className="px-[22px] pb-[18px] pt-0 text-[14px] text-muted-foreground leading-relaxed">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
             ))}
-          </div>
-          <div className="l1-contact-form" style={{ background: "var(--bg-elevated)", padding: "32px", borderRadius: "24px", border: "1px solid var(--border)" }}>
-            <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px", color: "var(--text)" }}>Have another question?</h3>
-            <p style={{ fontSize: "14px", color: "var(--text-soft)", marginBottom: "24px" }}>Send us a message and we'll get back to you shortly.</p>
-            <form className="lp-modal-form" onSubmit={(e) => { 
-              e.preventDefault(); 
-              window.alert("Message sent to admin inbox!"); 
-              (e.target as HTMLFormElement).reset();
-            }}>
-               <label className="lp-field"><span>Name</span><input type="text" required /></label>
-               <label className="lp-field"><span>Email</span><input type="email" required /></label>
-               <label className="lp-field"><span>Message</span><textarea rows={4} style={{ background: "var(--input-bg, rgba(255, 255, 255, 0.04))", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", color: "var(--fg)", fontSize: "16px", outline: "none", resize: "none", width: "100%", fontFamily: "inherit" }} required /></label>
-               <button type="submit" className="lpd-btn lpd-btn--brand lpd-btn--lg" style={{ width: "100%", marginTop: "8px" }}>Send message</button>
-            </form>
-          </div>
+          </Accordion>
+
+          <Card className="gap-0 rounded-[24px] border-border bg-card p-0 shadow-none">
+            <CardContent className="p-8">
+              <h3 style={{ fontSize: "20px", fontWeight: 700, marginBottom: "8px", color: "var(--text)" }}>Have another question?</h3>
+              <p style={{ fontSize: "14px", color: "var(--text-soft)", marginBottom: "24px" }}>Send us a message and we&apos;ll get back to you shortly.</p>
+              <form
+                className="lp-modal-form"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  window.alert("Message sent to admin inbox!");
+                  (e.target as HTMLFormElement).reset();
+                }}
+              >
+                <div className="lp-field"><Label htmlFor="faq-name">Name</Label><Input id="faq-name" type="text" required className="lp-input" /></div>
+                <div className="lp-field"><Label htmlFor="faq-email">Email</Label><Input id="faq-email" type="email" required className="lp-input" /></div>
+                <div className="lp-field">
+                  <Label htmlFor="faq-msg">Message</Label>
+                  <textarea
+                    id="faq-msg"
+                    rows={4}
+                    style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "10px", padding: "10px 14px", color: "var(--text)", fontSize: "14px", outline: "none", resize: "none", width: "100%", fontFamily: "inherit" }}
+                    required
+                  />
+                </div>
+                <Button
+                  type="submit"
+                  size="lg"
+                  className="w-full mt-2"
+                  style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
+                >
+                  Send message
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>
@@ -637,6 +597,7 @@ function L1_FAQ() {
 }
 
 // ─── CTA banner ───────────────────────────────────────────────────────────────
+
 function L1_CTA({ onLogin }: { onLogin: () => void }) {
   return (
     <section className="l1-cta">
@@ -647,9 +608,14 @@ function L1_CTA({ onLogin }: { onLogin: () => void }) {
             <p className="lpd-sub">14 days free. No card required. Live in under a week.</p>
           </div>
           <div className="l1-cta__btns">
-            <button className="lpd-btn lpd-btn--brand lpd-btn--lg" onClick={onLogin}>
-              Log in <IcArrow />
-            </button>
+            <Button
+              size="lg"
+              className="rounded-full font-bold"
+              style={{ background: "var(--brand)", color: "var(--primary-foreground)" }}
+              onClick={onLogin}
+            >
+              Log in <ArrowRightIcon size={14} />
+            </Button>
           </div>
         </div>
       </div>
@@ -658,6 +624,7 @@ function L1_CTA({ onLogin }: { onLogin: () => void }) {
 }
 
 // ─── Footer ───────────────────────────────────────────────────────────────────
+
 function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
   return (
     <footer className="lpd-foot">
@@ -706,6 +673,7 @@ function L1_Footer({ onEnquiry }: { onEnquiry: () => void }) {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
+
 export function LandingPageClient() {
   const [loginOpen, setLoginOpen] = useState(false);
   const [enquiryOpen, setEnquiryOpen] = useState(false);
@@ -714,7 +682,6 @@ export function LandingPageClient() {
     document.documentElement.setAttribute("data-theme", "dark");
   }, []);
 
-  // ── Scroll-reveal: fade in elements with [data-reveal] ──────────────────
   useEffect(() => {
     const els = document.querySelectorAll<HTMLElement>("[data-reveal]");
     if (!els.length) return;
@@ -739,11 +706,7 @@ export function LandingPageClient() {
     <>
       <div className="lpd l1">
         <L1_Nav onLogin={() => setLoginOpen(true)} />
-
-        {/* Hero is immediately visible — no scroll-reveal wrapper */}
         <L1_Hero onLogin={() => setLoginOpen(true)} />
-
-
 
         <div data-reveal>
           <L1_Features />
@@ -752,10 +715,6 @@ export function LandingPageClient() {
         <div data-reveal>
           <L1_HowItWorks />
         </div>
-
-
-
-        {/* Pricing hidden — uncomment <L1_Pricing> here when ready */}
 
         <div data-reveal>
           <L1_FAQ />
@@ -767,6 +726,7 @@ export function LandingPageClient() {
 
         <L1_Footer onEnquiry={() => setEnquiryOpen(true)} />
       </div>
+
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
       <EnquiryModal open={enquiryOpen} onClose={() => setEnquiryOpen(false)} />
     </>

@@ -17,6 +17,9 @@ import type {
 type CatalogExercise = {
   id: string;
   name: string;
+  muscleGroup: string;
+  equipment: string;
+  movementPattern: string;
   mechanic: string;
   muscle_target_description?: string;
   video_url?: string;
@@ -340,7 +343,8 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       id: catalogExercise.id,
       name: catalogExercise.name,
       muscleGroup: muscleGroup as MuscleGroup,
-      equipment: catalogExercise.mechanic,
+      equipment: catalogExercise.equipment,
+      movementPattern: catalogExercise.movementPattern,
       instructions: getCoachingNotes(catalogExercise.name, catalogExercise.mechanic, muscleGroup),
       videoSource: catalogExercise.video_url ? "youtube" as const : "none" as const,
       videoUrl: catalogExercise.video_url ?? "",
@@ -356,6 +360,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       name: "Band Pull-Aparts",
       muscleGroup: "Shoulders",
       equipment: "band",
+      movementPattern: "fly",
       instructions: "Hold band at chest height, pull apart, squeezing shoulder blades.",
       muscleTargetDescription: "A mobility move for the rear delts and mid-traps that opens the chest and warms up the shoulders.",
       videoSource: "none",
@@ -370,6 +375,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       name: "Cat-Cow Stretch",
       muscleGroup: "Back",
       equipment: "bodyweight",
+      movementPattern: "spinal_flexion",
       instructions: "On all fours, arch back up, then dip back down slowly.",
       muscleTargetDescription: "A spinal mobility stretch that mobilises the spinal erectors and warms up the back through flexion and extension.",
       videoSource: "none",
@@ -384,6 +390,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       name: "Standing Quad Stretch",
       muscleGroup: "Legs",
       equipment: "bodyweight",
+      movementPattern: "knee_flexion",
       instructions: "Stand on one leg, pull other foot to glutes, keep knees together.",
       muscleTargetDescription: "A static stretch for the quadriceps and hip flexors to improve flexibility after leg training.",
       videoSource: "none",

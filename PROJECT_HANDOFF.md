@@ -4,6 +4,51 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Landing page redesigned with shadcn/ui (2026-06-28)
+
+Replaced all hand-rolled interactive components on the landing page with shadcn/ui primitives. No change to page structure, copy, or mock visuals.
+
+**What changed:**
+- Installed: `tailwindcss`, `@tailwindcss/postcss`, `tailwindcss-animate`, `lucide-react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `radix-ui` (monorepo), `@radix-ui/react-accordion`, `@radix-ui/react-tabs`, `@radix-ui/react-slot`
+- Created `postcss.config.mjs` with `@tailwindcss/postcss`
+- Created `src/app/styles/shadcn.css` — Tailwind v4 utilities only (no preflight), maps shadcn CSS variables to project tokens via `@theme inline`
+- Created `components.json` (shadcn config) and `src/lib/utils.ts` (`cn` helper)
+- Downloaded shadcn components to `src/components/ui/`: `button`, `dialog`, `accordion`, `card`, `tabs`, `badge`, `input`, `label`
+- Rewrote `src/components/landing-page-client.tsx`: LoginModal/EnquiryModal → shadcn `Dialog`; nav/hero/CTA buttons → shadcn `Button`; feature/step cards → shadcn `Card`; FAQ accordion → shadcn `Accordion`; login tabs → shadcn `Tabs`; eyebrow → shadcn `Badge`; form fields → shadcn `Input`/`Label`; inline SVG icons → `lucide-react`
+- Updated `src/app/landing.css`: removed `.lp-modal-backdrop` (shadcn Dialog provides overlay), kept all structural layout classes, added `.lp-input` override to style shadcn Input to match brand
+- Existing 21-CSS-file system is untouched; Tailwind utilities are scoped to components that use them
+
+---
+
+## Documentation refreshed for current App Router structure (2026-06-28)
+
+Updated the repo docs to match the live Next.js 16 app structure:
+
+- Replaced stale Next.js 15 and `middleware.ts` references with Next.js 16 and `src/proxy.ts`.
+- Documented the App Router special files: `src/app/template.tsx`, `src/app/not-found.tsx`, shared `AppStatusScreen`, and `/api/health`.
+- Corrected the old "no `/api` routes" claim: business data still uses Server Components, Server Actions, read-models, and Cloud Functions; `/api/health` is the only operational route handler.
+- Updated README, `CLAUDE.md`, Tier-0/Tier-1 docs, discrepancies, known issues, and UI style guidance.
+- Validation: `npm run lint`, `npm run typecheck`, and `npm run build` passed after the App Router status/health additions.
+
+---
+
+## 🗂️ Latest Milestone — Exercise JSON normalization + Firestore rules CI (2026-06-28)
+
+Two items from `docs/11_KNOWN_ISSUES_AND_GAPS.md` resolved.
+
+**Exercise JSON normalization (`src/lib/workouts.json`):**
+All 66 catalog entries now carry three new per-entry fields:
+- `muscleGroup` — mirrors the top-level key (e.g. `"Chest"`, `"Back"`); enables flat Firestore reads without relying on the nested key.
+- `equipment` — actual equipment token: `barbell`, `dumbbell`, `cable`, `machine`, `bodyweight`, `ez_bar`, or `smith_machine`.
+- `movementPattern` — movement classification: `horizontal_push`, `vertical_push`, `horizontal_pull`, `vertical_pull`, `hip_hinge`, `squat`, `lunge`, `knee_extension`, `knee_flexion`, `calf_raise`, `elbow_flexion`, `elbow_extension`, `shoulder_abduction`, `shoulder_flexion`, `shrug`, `fly`, `pullover`, `spinal_flexion`, `hip_extension`, `wrist_flexion`.
+
+**Bug fixed in `src/lib/mock-data.ts`:** The `exercises` mapper was assigning `catalogExercise.mechanic` (`"Compound"` / `"Isolation"`) to the `Exercise.equipment` field — every mock exercise in the app had `equipment: "Compound"`. Fixed to read `catalogExercise.equipment`. `movementPattern` is now also surfaced on the mapped `Exercise` object. The three hardcoded stretch entries got `movementPattern` too. `CatalogExercise` type updated accordingly. `tsc --noEmit` clean.
+
+**Firestore rules CI (`.github/workflows/firestore-rules.yml`):**
+GitHub Actions workflow created. Triggers on push to `main` and PRs against `main` when `firestore.rules` or `scripts/test-firestore-rules.mjs` change. Pipeline: Node 22 + Java 21 (Temurin) → `npm ci` → `firebase-tools` global install → `firebase emulators:exec --only firestore --project demo-fitsplit "npm run test:rules"` (34 tests).
+
+---
+
 ## 🧹 Latest Milestone — Dead-code triage + landing framer-motion split (2026-06-15)
 
 Follow-up to the bundle-optimization milestone below. **No live functionality changed** (verified by
@@ -707,6 +752,8 @@ The codebase is in solid shape. Gym-scoped multi-tenancy, Radix UI, Recharts cod
 - New suite added to `lib/__tests__/validation.test.ts`: `ZodHelpers.username` (8) + 4 additional `parseActionData` cases.
 - Corrected handoff items 6–14 and 16 to "Done" — they were implemented in earlier sessions but the document was stale.
 - Remaining genuine gaps: items 1 (granular cache tags), 2 (error handling), 3 (husky warnings), 4 (Sentry DSN env vars), 15 (security rule tests).
+
+---
 
 ## Latest Update - 2026-05-25: Member greeting and read-only programs
 

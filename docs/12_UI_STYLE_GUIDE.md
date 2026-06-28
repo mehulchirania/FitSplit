@@ -78,6 +78,13 @@ CSS is modularized under `src/app/styles/`, loaded in numeric order via `src/app
 | `adm-` | Admin/owner shared UI (`08-admin-catalog-media.css`) |
 | `mhv-` | Members hybrid view (`19-members-redesign.css`) |
 | `m3d-` | Member sub-pages shell (`21-member-redesign.css`) |
+| `app-status-` | Shared not-found/error status screens (`09-profile-history-notices-loader.css`) |
+
+### App Router Status Screens
+
+Use `src/components/app-status-screen.tsx` for app-level 404 and error boundary states. It is already
+wired into `src/app/not-found.tsx` and the root/admin/owner/member `error.tsx` files. Keep status
+screens unframed and centered; use the existing `.button` variants for actions instead of inline styles.
 | `pt-` | Personal training booking, cards, calendar (`10-pt-training.css`) |
 | `nlist-`, `ntf-` | Notification list and bell dropdown |
 | `lp-`, `lpd-` | Landing page components (`landing.css`) |

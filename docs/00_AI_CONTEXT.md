@@ -8,14 +8,14 @@
 
 ## What FitSplit is
 
-Firebase-backed, multi-gym operations + personal-training platform. Next.js 15 App
+Firebase-backed, multi-gym operations + personal-training platform. Next.js 16 App
 Router PWA deployed on Firebase App Hosting. One platform, many gyms; the pilot gym is
 **SHG** (`shg`). See [01_ARCHITECTURE](01_ARCHITECTURE.md).
 
 ## Hard constraints (do not violate)
 
-1. **No REST / no `/api` routes.** All reads = Server Components calling read-models
-   (`src/lib/firebase/read-models/*`). All mutations = Server Actions (`src/lib/firebase/actions/*`)
+1. **No app REST layer.** App data reads = Server Components calling read-models
+   (`src/lib/firebase/read-models/*`). The only route handler is `/api/health` (`src/app/api/health/route.ts`) for probes. All mutations = Server Actions (`src/lib/firebase/actions/*`)
    **or** Cloud Functions callables (`src/lib/firebase/functions.ts` → `functions/src/index.ts`).
 2. **Privileged writes go through Cloud Functions (Admin SDK).** Member/staff creation,
    program assignment, access toggles, billing approval, gym archive. Firestore rules set
@@ -38,7 +38,7 @@ Router PWA deployed on Firebase App Hosting. One platform, many gyms; the pilot 
 |---|---|---|
 | `admin` | platform-wide | manages gyms, global catalog/programs, inbox |
 | `owner` | one gym | members, programs, PT, billing, settings. `staffType` distinguishes `owner`/`trainer`/`staff` |
-| `trainer` | one gym | first-class role in rules/middleware/Functions; session resolution now accepts role `trainer` (fixed 2026-06-05, see note below) |
+| `trainer` | one gym | first-class role in rules/proxy/Functions; session resolution now accepts role `trainer` (fixed 2026-06-05, see note below) |
 | `member` | self | workout console, logging, progress, PT history |
 
 **Trainer role (fixed 2026-06-05).** A pure `role:"trainer"` account **can now establish a
@@ -53,18 +53,18 @@ hard requirement. (Was DISCREPANCIES B1 / roadmap R1.)
   (`src/lib/auth.ts:61-240`); password `password` (staff) / PIN `1234` (members, stored as
   `pin-1234`). Real auth via Firebase Identity Toolkit REST → session cookie.
 - Session cookie `fitsplit-session`: 2h default, 14d "remember me" (`src/lib/auth.ts:19-20`).
-- Compatibility cookies `fitsplit-role|username|gym-id|member-id` drive middleware routing
-  (`src/lib/auth.ts:422-436`, `middleware.ts:37-46`).
+- Compatibility cookies `fitsplit-role|username|gym-id|member-id` drive proxy routing
+  (`src/lib/auth.ts`, `src/proxy.ts`).
 - Guards: `requireAuth`, `requireRole`, `requireOwner` (`src/lib/auth.ts:952-996`). `requireOwner`
   blocks `staffType !== "owner"` from destructive owner actions (`src/lib/auth.ts:991`).
 - Login lockout: 5 fails → 15 min (`src/lib/auth.ts:509-510`), enforced both server-side and via
   the `blockLockedAccounts` Auth blocking trigger (`functions/src/index.ts:1905`).
 
-## Routing (`middleware.ts`)
+## Routing (`src/proxy.ts`)
 
 `/admin`→admin · `/owner`→owner+admin · `/trainer`→trainer+owner · `/member`→member ·
-`/profile`,`/activity`→any authed; `/about`,`/privacy`,`/terms`→public (`middleware.ts:3-11`). Role home redirects
-`middleware.ts:13-18`. Owner topbar is suppressed for `/owner/*` (component-level).
+`/profile`,`/activity`→any authed; `/about`,`/privacy`,`/terms`→public (`src/proxy.ts`).
+Role home redirects live in `src/proxy.ts`. Owner topbar is suppressed for `/owner/*` (component-level).
 
 ## Collections (names only — detail in [02_DATA_DICTIONARY](02_DATA_DICTIONARY.md))
 
@@ -116,7 +116,7 @@ hard requirement. (Was DISCREPANCIES B1 / roadmap R1.)
   (`mirrorGymScopedRecord`, `mirrorProfileToGym`).
 - **scope** on exercises/programs: `default`/`predefined` (global) vs `custom` (gym).
 - **staffType** = sub-type of an `owner`-role staff doc: `owner|trainer|staff`.
-- **compatibility cookies** = the non-session cookies middleware reads for routing.
+- **compatibility cookies** = the non-session cookies `src/proxy.ts` reads for routing.
 
 ## Where to look
 

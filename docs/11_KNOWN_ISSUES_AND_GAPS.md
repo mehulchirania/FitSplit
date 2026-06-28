@@ -1,24 +1,18 @@
 # 11 · KNOWN ISSUES & GAPS (Tier 2)
 
-`Generated: 2026-06-05 · Last updated: 2026-06-15`
+`Generated: 2026-06-05 · Last updated: 2026-06-28`
 
 > **Purpose.** This file aggregates all known bugs, incomplete functionalities, and technical debt across the FitSplit platform. It serves as the backlog for future maintenance and refactoring.
 
 ## High Priority Bugs
 
-*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) and all High/Moderate dependency vulnerabilities (Next.js, UUID, PostCSS, etc.) were resolved on 2026-06-05. T&C gate showing on every login (not first-time-only) resolved 2026-06-06.*
+*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) and all High/Moderate dependency vulnerabilities (Next.js, UUID, PostCSS, Vite/protobufjs transitive advisories, etc.) were resolved. Latest dependency audit on 2026-06-28 reports 0 root and 0 `/functions` vulnerabilities. T&C gate showing on every login (not first-time-only) resolved 2026-06-06.*
 
 ## Incomplete Functionalities
 
-1. **Muscle Target Descriptions in Mock Data**
-   - **Issue:** `src/lib/workouts.json` has 66 exercises, but they lack the `muscleTargetDescription` field. 
-   - **Impact:** The exercise detail UI pill won't render descriptions for mock exercises, only for those manually patched in Firestore.
-   - **Fix Required:** One-pass fill of all 66 entries with specific muscle focus (e.g. "Targets the lateral and long head of the triceps…").
+1. ~~**Muscle Target Descriptions in Mock Data**~~ — **RESOLVED 2026-06-28:** All 66 entries in `workouts.json` carried `muscle_target_description` already (added 2026-06-15). Confirmed complete.
 
-2. **Exercise JSON Catalog Deep Cleanup**
-   - **Issue:** Mock data in `src/lib/workouts.json` lacks normalized `muscleGroup`, `equipment`, or `movementPattern` fields on individual entries.
-   - **Impact:** Slower parsing; relies on top-level keys. 
-   - **Fix Required:** Add per-entry fields, deduplicate across groups, and cross-reference every `exerciseId` in `gyms/*/workoutPrograms` against the JSON IDs.
+2. ~~**Exercise JSON Catalog Deep Cleanup**~~ — **RESOLVED 2026-06-28:** All 66 entries in `src/lib/workouts.json` now carry per-entry `muscleGroup`, `equipment` (actual equipment: barbell/dumbbell/cable/machine/bodyweight/ez_bar/smith_machine), and `movementPattern` fields. The `mock-data.ts` mapper was also fixed: it was incorrectly assigning `mechanic` (Compound/Isolation) to the `equipment` field — it now reads `catalogExercise.equipment` directly and surfaces `movementPattern` on the `Exercise` type. `tsc --noEmit` clean.
 
 3. **Billing & Stripe Integration**
    - **Issue:** Payment processing is currently mocked (cash approval flow works, Card/UPI are mock/integration-ready only).
@@ -30,9 +24,7 @@
    - **Impact:** Geofenced attendance does not actually constrain check-ins until coordinates are entered. Members can start a workout/attendance session from anywhere.
    - **Fix Required:** Enter SHG's real lat/lng/radius in `/owner/settings` (or set `SHG_GYM_LATITUDE`/`SHG_GYM_LONGITUDE`/`SHG_GYM_RADIUS_METERS`). Data-entry task; no code change needed. Until then the feature is a no-op by design (fails open).
 
-4. **Security Rule Tests & Pre-commit Hooks**
-   - **Issue:** Need `@firebase/rules-unit-testing` and an emulator in CI to test Firestore rules before deploy. Husky baseline is added but ESLint warnings need cleanup.
-   - **Impact:** CI/CD pipeline does not validate Firestore rules automatically.
+4. ~~**Security Rule Tests & Pre-commit Hooks**~~ — **RESOLVED 2026-06-28:** `.github/workflows/firestore-rules.yml` created. Triggers on push/PR to `main` when `firestore.rules` or the test script changes. Installs Node 22 + Java 21 (Temurin), runs `firebase emulators:exec --only firestore --project demo-fitsplit "npm run test:rules"` (34 tests). Husky/ESLint warning cleanup remains a separate item (low priority).
 
 5. ~~**`phones` collection missing Firestore security rule**~~ — Fixed 2026-06-05: explicit `allow read, write: if false` block added to `firestore.rules` alongside the `usernames` rule.
 

@@ -8,7 +8,7 @@ Developer: Mehul Chirania (`mehulchirania@gmail.com`), Bengaluru. Also a demo me
 
 ## Stack
 
-Next.js 15 App Router (Turbopack dev) · React 19 + React Compiler · TypeScript 6 (strict) · Firestore · Firebase Auth (session cookies) · Firebase App Hosting · Firebase Storage · FCM · Radix UI · Recharts (lazy-loaded) · Framer Motion · Sonner · Dexie (offline) · Zod v4 · Vitest
+Next.js 16 App Router (Turbopack dev) · React 19 + React Compiler · TypeScript 6 (strict) · Firestore · Firebase Auth (session cookies) · Firebase App Hosting · Firebase Storage · FCM · Radix UI · Recharts (lazy-loaded) · Framer Motion · Sonner · Dexie (offline) · Zod v4 · Vitest
 
 ## Agent behavior
 
@@ -137,7 +137,7 @@ Use prose over bullet points for explanations and reasoning. Bullets are for ref
 ### Security
 - `requireRole` / `requireOwner` are called at the top of every protected Server Action and page. Skipping these is never acceptable even for "internal" endpoints.
 - Admin SDK bypasses Firestore rules — security is entirely in the Server Action guards. This means every new action must start with an auth check, not end with one.
-- The `fitsplit-role` cookie is user-craftable. Middleware trusts it for routing only. Authorization always re-validates via the signed session cookie in `requireRole`.
+- The `fitsplit-role` cookie is user-craftable. `src/proxy.ts` trusts it for routing only. Authorization always re-validates via the signed session cookie in `requireRole`.
 
 ---
 
@@ -179,7 +179,7 @@ All write actions are in `src/lib/firebase/actions/`. Every action:
 
 ```
 src/lib/auth.ts                  Login, sessions, requireRole, demo fallback
-src/middleware.ts                 Route protection + per-request CSP nonce
+src/proxy.ts                      Route protection + per-request CSP nonce
 src/types/domain.ts              All domain types
 src/lib/firebase/collections.ts  collectionPaths, PRIMARY_GYM_ID
 src/lib/firebase/admin.ts        Admin SDK init; hasFirebaseAdminConfig()
@@ -204,10 +204,10 @@ functions/src/index.ts           Cloud Functions (asia-south1, nodejs22)
 - **FcmSetup** is only rendered for `role === "member"` in the root layout.
 - **Split library weekly variation:** `applyCurrentWeeklyVariation(program, date)` picks a week based on ISO week index mod 4 — exercise selection rotates every week.
 - **`parseActionData`** converts all FormData entries to a plain object before Zod parsing, so checkbox values arrive as the string `"on"` or `"true"`.
-- **Nonce CSP:** `middleware.ts` sets `x-nonce` header per request. Root layout reads it for the inline theme script. All `<Script>` components in prod must carry the nonce.
+- **Nonce CSP:** `src/proxy.ts` sets `x-nonce` header per request. Root layout reads it for the inline theme script. All `<Script>` components in prod must carry the nonce.
 - **Cloud Functions vs Server Actions:** the primary write path uses Server Actions + Admin SDK (bypasses Firestore rules). Cloud Functions handle background tasks, scheduled jobs, and Firestore triggers. `src/lib/firebase/functions.ts` has callable wrappers but most write ops go through Server Actions.
 - **Archives:** deleting members/programs/gyms writes to `archives/{id}` with 60-day retention before physical delete.
-- **`fitsplit-role` cookie** is user-craftable — middleware trusts it for routing decisions only. Every protected page calls `requireRole` which validates the signed session cookie — defense-in-depth is maintained only if this pattern is preserved.
+- **`fitsplit-role` cookie** is user-craftable — `src/proxy.ts` trusts it for routing decisions only. Every protected page calls `requireRole` which validates the signed session cookie — defense-in-depth is maintained only if this pattern is preserved.
 
 ## Firestore security
 

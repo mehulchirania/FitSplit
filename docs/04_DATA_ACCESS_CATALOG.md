@@ -1,11 +1,19 @@
 # 04 · DATA ACCESS CATALOG (Tier 1)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-28 · Commit: fb6f244 · Updated for current App Router structure`
 
-> Replaces a REST "API catalog". Three surfaces: **Server Actions** (`src/lib/firebase/actions/*`,
-> `"use server"`), **Cloud Functions** (`functions/src/index.ts`, callable via
-> `src/lib/firebase/functions.ts`), and **Read-Models** (`src/lib/firebase/read-models/*`).
-> R = reads, W = writes. "scoped+root" = dual-write to gym-scoped path and root mirror.
+> Replaces a REST "API catalog". Business data has three surfaces: **Server Actions**
+> (`src/lib/firebase/actions/*`, `"use server"`), **Cloud Functions** (`functions/src/index.ts`,
+> callable via `src/lib/firebase/functions.ts`), and **Read-Models**
+> (`src/lib/firebase/read-models/*`). The only App Router route handler is the operational
+> health probe at `src/app/api/health/route.ts`. R = reads, W = writes. "scoped+root" =
+> dual-write to gym-scoped path and root mirror.
+
+## Route handlers
+
+| Route | File | Methods | Purpose | Collections |
+|---|---|---|---|---|
+| `/api/health` | `src/app/api/health/route.ts` | `GET`, `HEAD` | No-store service health probe for hosting/monitoring | none |
 
 ## Action vs Function overlap (read this first)
 

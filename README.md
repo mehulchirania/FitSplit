@@ -8,7 +8,7 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15 (App Router, React 19 + React Compiler, TypeScript 6) |
+| Framework | Next.js 16 (App Router, React 19 + React Compiler, TypeScript 6) |
 | Dev bundler | Turbopack (`next dev --turbopack`) |
 | Database | Cloud Firestore (gym-scoped multi-tenant) |
 | Auth | Firebase Authentication — email/password + session cookies |
@@ -19,14 +19,14 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 | Offline | Dexie.js (IndexedDB — offline lift logging) |
 | Charts | Recharts (lazy-loaded via `next/dynamic`, `ssr:false`) |
 | Calendar | Custom PT calendar component (`pt-calendar.tsx`) |
-| UI Primitives | Radix UI (Dialog, Dropdown, Select) |
+| UI Primitives | Radix UI (Dialog, Dropdown, Select) + shadcn/ui (landing page) |
 | Animations | Framer Motion |
 | Toasts | Sonner |
 | Validation | Zod |
 | Testing | Vitest |
 | Deployment | Firebase App Hosting (0–10 instances, 512 MB, 80 concurrency) |
 
-**Architecture pattern:** Next.js Server Components + Server Actions for all data access. No traditional REST API routes. Privileged writes (member creation, program assignment, access control) go through Cloud Functions using the Admin SDK. Middleware enforces role-based routing via session cookies before any page renders.
+**Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders.
 
 **B2C + B2B Evolution (Planned):** FitSplit is evolving from a pure gym-scoped multi-tenant architecture into a hybrid B2C/B2B platform. Standalone consumers will have their own "personal gym" workspaces (`gyms/personal-{uid}`), allowing them to track progress independently or seamlessly join a real gym later.
 
@@ -223,6 +223,13 @@ npm run analyze                   # Production build with bundle analyzer (ANALY
 
 ```
 app/
+  layout.tsx        # Root shell, global CSS, topbar/nav, consent gate, nonce-aware theme script
+  template.tsx      # Root route template wrapper
+  loading.tsx       # Root loading state
+  error.tsx         # Root error boundary
+  global-error.tsx  # Final root-level render error boundary for Sentry capture
+  not-found.tsx     # Shared FitSplit 404 screen
+  api/health/       # GET/HEAD health probe route handler
   admin/
     billing/        # Platform billing — coming soon placeholder
     exercises/      # Global exercise catalog management
@@ -268,13 +275,12 @@ components/
   muscle-radar-chart.tsx            # Muscle group volume radar
   members-hybrid-view.tsx           # D4 Hybrid members page (action queue, KPI strip, table)
   macro-progress-panel.tsx          # Nutrition target tracking
-  workout-insights-card.tsx         # Local heuristic workout insights (no external API)
   staff-access-actions.tsx          # Inline staff edit/reset-password/delete with useActionState
   avatar-uploader.tsx               # Reusable circular avatar crop+upload (member avatar / staff image)
+  app-status-screen.tsx             # Shared 404/error status screen
 
 lib/
   auth.ts                           # Session cookies, login, requireRole(); demo login fallback fixed
-  ai.ts                             # Local workout insights heuristic (getWorkoutInsights) — no API
   offline-db.ts                     # Dexie IndexedDB (offline lift logging)
   workout-utils.ts                  # Workout calculation helpers
   firebase/
@@ -291,7 +297,7 @@ lib/
 
 functions/src/index.ts              # All Cloud Functions (~2000+ lines)
 types/domain.ts                     # Domain types — Notification has actionHref, memberId, ptSessionId
-middleware.ts                       # Route protection + role redirects (admin/owner/trainer/member)
+src/proxy.ts                        # Route protection, role redirects, per-request CSP nonce
 firestore.rules                     # Firestore security rules
 ```
 
@@ -319,12 +325,12 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 
 ## 🔒 Security
 
-- **CSP headers**: Strict Content-Security-Policy set per-request in `src/middleware.ts`. **Production uses a fresh per-request nonce + `'strict-dynamic'`** for `script-src` (no `'unsafe-inline'`/`'unsafe-eval'` in effect); Next.js applies the nonce to every script it renders, and the inline theme script in `layout.tsx` carries it via `headers()`. `img-src` is `https:` only (no mixed content) with `upgrade-insecure-requests`; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. Development keeps `'unsafe-inline'`/`'unsafe-eval'` (no nonce) so HMR works.
+- **CSP headers**: Strict Content-Security-Policy set per-request in `src/proxy.ts`. **Production uses a fresh per-request nonce + `'strict-dynamic'`** for `script-src` (no `'unsafe-inline'`/`'unsafe-eval'` in effect); Next.js applies the nonce to every script it renders, and the inline theme script in `layout.tsx` carries it via `headers()`. `img-src` is `https:` only (no mixed content) with `upgrade-insecure-requests`; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. Development keeps `'unsafe-inline'`/`'unsafe-eval'` (no nonce) so HMR works.
 - **Security headers**: HSTS (2 years, `preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, a locked-down `Permissions-Policy` (camera/mic/payment/usb off, geolocation self), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`, `X-DNS-Prefetch-Control: off`, `X-Permitted-Cross-Domain-Policies: none`.
 - **Firestore rules**: Role-based rules (`isAdmin()`, `isOwnerForGym()`, `isStaffForGym()`, `isGymMember()`), gym-scoped at root and per-gym. Privileged writes are `allow: false` — must go through Cloud Functions. Tested via `npm run test:rules` (Firestore emulator).
 - **Storage rules**: Catalog media is gym-scoped — reads limited to users of the owning gym, writes to that gym's owner/admin only, with content-type and size caps. Default-deny for all other paths.
 - **Login lockout**: 5 failed attempts triggers a 15-minute lockout, enforced via a Firebase Auth blocking trigger.
-- **Session cookies**: 2-hour secure HttpOnly cookies (`SameSite=Lax`, `Secure` in production). Role and gymId stored separately for middleware routing.
+- **Session cookies**: 2-hour secure HttpOnly cookies (`SameSite=Lax`, `Secure` in production). Role and gymId stored separately for proxy routing.
 - **Secrets**: only public `NEXT_PUBLIC_FIREBASE_*` values are committed (`apphosting.yaml`); the Firebase Admin private key is supplied via Secret Manager, never committed.
 
 ---

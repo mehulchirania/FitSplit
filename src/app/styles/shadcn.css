@@ -1,0 +1,56 @@
+/* Tailwind v4 utilities only — no preflight so existing CSS is unaffected */
+@import "tailwindcss/utilities";
+@plugin "tailwindcss-animate";
+
+/*
+ * Map shadcn's expected CSS variable names to the project's existing tokens.
+ * The project defines all real values in 00-base-shell.css.
+ * Shadcn components reference these via Tailwind utility classes.
+ */
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+
+  --color-primary: var(--brand);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--bg-elevated);
+  --color-secondary-foreground: var(--text);
+
+  --color-muted: var(--bg-subtle);
+  --color-muted-foreground: var(--text-soft);
+
+  --color-accent: var(--bg-elevated);
+  --color-accent-foreground: var(--text);
+
+  --color-destructive: var(--danger);
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-ring: var(--brand);
+
+  --color-card: var(--bg-elevated);
+  --color-card-foreground: var(--text);
+
+  --color-popover: var(--bg-elevated);
+  --color-popover-foreground: var(--text);
+
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+  --radius-xl: 1.25rem;
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+}
+
+@keyframes accordion-down {
+  from { height: 0; }
+  to { height: var(--radix-accordion-content-height); }
+}
+
+@keyframes accordion-up {
+  from { height: var(--radix-accordion-content-height); }
+  to { height: 0; }
+}

@@ -1,6 +1,6 @@
 # 01 · ARCHITECTURE (Tier 1)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-28 · Commit: fb6f244 · Updated for current App Router structure`
 
 ## 1. Product overview
 
@@ -20,7 +20,7 @@ FitSplit is evolving into a hybrid platform serving both direct-to-consumer and 
 
 | Layer | Tech | Source |
 |---|---|---|
-| Framework | Next.js 15 App Router, React 19 | `package.json` deps `next ^15.3.1`, `react ^19.0.0` |
+| Framework | Next.js 16 App Router, React 19 | `package.json` deps `next ^16.2.9`, `react ^19.2.7` |
 | Language | TypeScript | repo-wide `.ts/.tsx` |
 | DB | Cloud Firestore (gym-scoped) | `src/lib/firebase/admin.ts`, `collections.ts` |
 | Auth | Firebase Auth (username/phone + password + session cookies) | `src/lib/auth.ts` |
@@ -41,9 +41,11 @@ FitSplit is evolving into a hybrid platform serving both direct-to-consumer and 
 > `src/lib/__tests__/validation.test.ts` and `src/lib/__tests__/workout-utils.test.ts`. See
 > [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
 
-## 3. Architecture pattern — no REST
+## 3. Architecture pattern — Server Actions first
 
-There are **no `/api` route handlers**. Two data paths:
+There is no REST-style application API for business data. The only App Router route handler today
+is `/api/health` (`src/app/api/health/route.ts`), which returns a no-store JSON health probe for
+hosting/monitoring checks. Business data uses two paths:
 
 - **Reads:** Server Components import read-models from `src/lib/firebase/read-models/*`. Read-models
   use the Admin SDK and wrap results in `unstable_cache` (tag-based revalidation) and
@@ -60,6 +62,7 @@ There are **no `/api` route handlers**. Two data paths:
 ```mermaid
 graph TD
   subgraph Client[Browser / PWA]
+    BR[Browser request]
     SC[Server Component page] --> RM[read-model]
     UI[Client component / form] -->|Server Action| SA[src/lib/firebase/actions/*]
     UI -->|httpsCallable| CF[functions/src/index.ts]
@@ -74,7 +77,8 @@ graph TD
   SA --> FCM[(FCM push)]
   CF --> FCM
   DX -.syncOfflineLifts.-> SA
-  MW[middleware.ts] -. role-gate .-> SC
+  BR -. health probe .-> API[src/app/api/health/route.ts]
+  PX[src/proxy.ts] -. role-gate + CSP nonce .-> SC
 ```
 
 ## 4. Request lifecycle (page render)
@@ -82,19 +86,19 @@ graph TD
 ```mermaid
 sequenceDiagram
   participant B as Browser
-  participant MW as middleware.ts
+  participant PX as src/proxy.ts
   participant L as src/app/layout.tsx + role layout
   participant G as requireRole (src/lib/auth.ts)
   participant RM as read-model
   participant FS as Firestore
-  B->>MW: GET /owner/members
-  MW->>MW: match protectedRoutes, read fitsplit-role cookie
+  B->>PX: GET /owner/members
+  PX->>PX: match protectedRoutes, read fitsplit-role cookie
   alt no session/role
-    MW-->>B: redirect /
+    PX-->>B: redirect /
   else wrong role
-    MW-->>B: redirect roleHome[role]
+    PX-->>B: redirect roleHome[role]
   end
-  MW->>L: forward (sets x-pathname header)
+  PX->>L: forward (sets x-pathname header + production x-nonce)
   L->>G: requireRole(["admin","owner"])
   G->>FS: verify session cookie + load authProfile
   G-->>L: AuthenticatedUser (or redirect)
@@ -151,10 +155,10 @@ through Functions/Admin SDK:
 ## 8. Deployment
 
 Firebase App Hosting: `minInstances:0`, `maxInstances:10`, `concurrency:80`, `cpu:1`,
-`memoryMiB:512` (`apphosting.yaml:3-8`) — matches README. Public Firebase client env vars are
-committed in `apphosting.yaml:10-46` (expected for `NEXT_PUBLIC_*` keys). Cloud Functions deploy
-to `asia-south1` (`functions/src/index.ts:20`). CSP/security headers configured in
-`next.config.mjs` (per README §Security; not line-cited this pass).
+`memoryMiB:512` (`apphosting.yaml`). Public Firebase client env vars are committed in
+`apphosting.yaml` (expected for `NEXT_PUBLIC_*` keys). Cloud Functions deploy to `asia-south1`.
+Static security headers are configured in `next.config.mjs`; the per-request nonce CSP and role
+redirects live in `src/proxy.ts`.
 
 ## 9. Styling
 

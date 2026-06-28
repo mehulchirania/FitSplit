@@ -569,29 +569,16 @@
 [data-theme="dark"] .l1-cta__btns .lpd-btn--ghost { background: transparent; border-color: var(--border); color: var(--text); }
 [data-theme="dark"] .l1-cta__btns .lpd-btn--ghost:hover { background: var(--bg-subtle); }
 
-/* ─── Login modal (lp-* classes used by LoginModal component) ────────────── */
+/* ─── Login / Enquiry modal (shadcn Dialog + lp-* overrides) ─────────────── */
 
-.lp-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.75);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  padding: 24px;
-}
+/* Override shadcn DialogContent to match brand aesthetic */
 .lp-modal {
-  background: #1a1a1a;
-  border-radius: 20px;
-  padding: 28px;
-  width: 100%;
-  max-width: 420px;
-  box-shadow: 0 40px 80px rgba(0,0,0,0.5);
-  border: 1px solid var(--border);
+  background: #1a1a1a !important;
+  border-radius: 20px !important;
+  border-color: var(--border) !important;
+  box-shadow: 0 40px 80px rgba(0,0,0,0.5) !important;
 }
-[data-theme="light"] .lp-modal-backdrop { background: rgba(0, 0, 0, 0.6); }
-[data-theme="light"] .lp-modal { background: #ffffff; }
+[data-theme="light"] .lp-modal { background: #ffffff !important; }
 .lp-modal-hdr {
   display: flex;
   justify-content: space-between;
@@ -649,18 +636,28 @@
 .lp-modal-form { display: flex; flex-direction: column; gap: 12px; }
 .lp-field { display: flex; flex-direction: column; gap: 4px; }
 .lp-field span  { font-size: 12.5px; font-weight: 600; color: var(--text); }
-.lp-field input {
-  background: var(--bg-subtle);
-  border: 1px solid transparent;
-  border-radius: 10px;
-  font: inherit;
-  font-size: 14px;
-  padding: 10px 12px;
-  outline: none;
+.lp-field input,
+.lp-input {
+  background: var(--bg-subtle) !important;
+  border: 1px solid transparent !important;
+  border-radius: 10px !important;
+  font: inherit !important;
+  font-size: 14px !important;
+  padding: 10px 12px !important;
+  height: auto !important;
+  outline: none !important;
   transition: border-color 120ms, background 120ms;
-  color: var(--text);
+  color: var(--text) !important;
+  box-shadow: none !important;
 }
-.lp-field input:focus { border-color: var(--brand); background: var(--bg-elevated); }
+.lp-field input:focus,
+.lp-input:focus,
+.lp-input:focus-visible {
+  border-color: var(--brand) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: none !important;
+  ring: none !important;
+}
 .lp-btn-primary {
   display: flex; align-items: center; justify-content: center; gap: 8px;
   background: var(--brand); color: var(--primary-foreground);

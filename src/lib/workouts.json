@@ -4,6 +4,9 @@
       {
         "id": "ch_01",
         "name": "Barbell Bench Press",
+        "muscleGroup": "Chest",
+        "equipment": "barbell",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "Builds the sternal (mid) and clavicular chest through heavy horizontal pressing, with the front delts and triceps driving the lockout.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/79Wdpx9b4uY",
@@ -12,6 +15,9 @@
       {
         "id": "ch_02",
         "name": "Incline Dumbbell Press",
+        "muscleGroup": "Chest",
+        "equipment": "dumbbell",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "Emphasises the upper (clavicular) chest and front delts, with dumbbells allowing a deeper stretch and independent arm drive.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/oS2Uy3MAbgs",
@@ -20,6 +26,9 @@
       {
         "id": "ch_03",
         "name": "Pec Deck Fly",
+        "muscleGroup": "Chest",
+        "equipment": "machine",
+        "movementPattern": "fly",
         "muscle_target_description": "Isolates the mid and inner chest through horizontal adduction, keeping the triceps out of the movement.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/AzIKrHSBrVo",
@@ -28,6 +37,9 @@
       {
         "id": "ch_04",
         "name": "Cable Crossover",
+        "muscleGroup": "Chest",
+        "equipment": "cable",
+        "movementPattern": "fly",
         "muscle_target_description": "Targets the inner and lower chest with constant cable tension through a full adduction squeeze.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/14VcTQz6h-8",
@@ -36,6 +48,9 @@
       {
         "id": "ch_05",
         "name": "Decline Barbell Press",
+        "muscleGroup": "Chest",
+        "equipment": "barbell",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "Loads the lower (sternal) chest fibres through pressing on a decline, with the triceps and front delts assisting.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/a-UFQE4oxWY",
@@ -44,6 +59,9 @@
       {
         "id": "ch_06",
         "name": "Machine Chest Press",
+        "muscleGroup": "Chest",
+        "equipment": "machine",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "Trains the mid chest on a fixed path, letting you push the pecs and triceps hard with minimal stabiliser demand.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/VHIlmOPMWWs",
@@ -52,6 +70,9 @@
       {
         "id": "ch_07",
         "name": "Dumbbell Pullover",
+        "muscleGroup": "Chest",
+        "equipment": "dumbbell",
+        "movementPattern": "pullover",
         "muscle_target_description": "Stretches and works the lower chest and lats through shoulder extension, with the serratus assisting.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/6yYVcIOAERY",
@@ -60,6 +81,9 @@
       {
         "id": "ch_08",
         "name": "Push-Ups",
+        "muscleGroup": "Chest",
+        "equipment": "bodyweight",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "A bodyweight press for the mid chest, front delts and triceps, with the core bracing throughout.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/J-vItVuxDl0",
@@ -68,6 +92,9 @@
       {
         "id": "ch_09",
         "name": "Machine Chest Fly",
+        "muscleGroup": "Chest",
+        "equipment": "machine",
+        "movementPattern": "fly",
         "muscle_target_description": "Isolates the pecs through guided horizontal adduction for a controlled inner-chest squeeze.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/XZg28DIf1oc",
@@ -76,6 +103,9 @@
       {
         "id": "ch_10",
         "name": "One-Arm Pushup",
+        "muscleGroup": "Chest",
+        "equipment": "bodyweight",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "An advanced unilateral press loading one side of the chest, triceps and front delt while the core resists rotation.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/bh9PsSfGZ2o",
@@ -86,6 +116,9 @@
       {
         "id": "bk_01",
         "name": "Pull-Ups",
+        "muscleGroup": "Back",
+        "equipment": "bodyweight",
+        "movementPattern": "vertical_pull",
         "muscle_target_description": "Builds the lats and teres major through vertical pulling, with the biceps and mid-back assisting your bodyweight.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/a7_k1upEPjc",
@@ -94,6 +127,9 @@
       {
         "id": "bk_02",
         "name": "Barbell Row",
+        "muscleGroup": "Back",
+        "equipment": "barbell",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "Thickens the mid-back — lats, rhomboids and traps — through horizontal pulling, with the spinal erectors holding position.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/7SzAgsAVzMo",
@@ -102,6 +138,9 @@
       {
         "id": "bk_03",
         "name": "Lat Pulldown",
+        "muscleGroup": "Back",
+        "equipment": "cable",
+        "movementPattern": "vertical_pull",
         "muscle_target_description": "Targets the lats and teres major with vertical pulling, a scalable alternative to the pull-up; biceps assist.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/RFgiCDJs8Nk",
@@ -110,6 +149,9 @@
       {
         "id": "bk_04",
         "name": "Seated Cable Row",
+        "muscleGroup": "Back",
+        "equipment": "cable",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "Works the mid-back, rhomboids and lats through horizontal pulling under constant cable tension.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/wAU8VdcRAMQ",
@@ -118,6 +160,9 @@
       {
         "id": "bk_05",
         "name": "T-Bar Row",
+        "muscleGroup": "Back",
+        "equipment": "barbell",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "Loads the lats, rhomboids and traps heavily for back thickness, with the lower back stabilising.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/HRo7m_Dfpxw",
@@ -126,6 +171,9 @@
       {
         "id": "bk_06",
         "name": "Single Arm Dumbbell Row",
+        "muscleGroup": "Back",
+        "equipment": "dumbbell",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "A unilateral row for the lats and mid-back, allowing a long stretch and squeeze while the core resists rotation.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/q8E9XaizZpY",
@@ -134,6 +182,9 @@
       {
         "id": "bk_07",
         "name": "Straight Arm Pulldown",
+        "muscleGroup": "Back",
+        "equipment": "cable",
+        "movementPattern": "vertical_pull",
         "muscle_target_description": "Isolates the lats through shoulder extension with locked elbows, keeping the biceps out of the pull.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/YINo3Z-vXAk",
@@ -142,6 +193,9 @@
       {
         "id": "bk_08",
         "name": "Chin-Ups",
+        "muscleGroup": "Back",
+        "equipment": "bodyweight",
+        "movementPattern": "vertical_pull",
         "muscle_target_description": "A supinated-grip vertical pull biasing the lats and biceps more than the standard pull-up.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/kLmFCtNDut4",
@@ -150,6 +204,9 @@
       {
         "id": "bk_09",
         "name": "Landmine Row",
+        "muscleGroup": "Back",
+        "equipment": "barbell",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "Builds the lats and mid-back through a strong horizontal pull with a fixed bar path and supported lower back.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/Sr2q7i-i8X0",
@@ -158,6 +215,9 @@
       {
         "id": "bk_10",
         "name": "Chest Supported Row",
+        "muscleGroup": "Back",
+        "equipment": "dumbbell",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "Targets the rhomboids, mid-traps and lats with the chest braced, removing momentum and lower-back strain.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/G35gTqGcXXA",
@@ -168,6 +228,9 @@
       {
         "id": "lg_01",
         "name": "Barbell Squat",
+        "muscleGroup": "Legs",
+        "equipment": "barbell",
+        "movementPattern": "squat",
         "muscle_target_description": "The primary lower-body builder — quads and glutes drive the lift while the hamstrings, adductors and core stabilise.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/dW3zj79xfrc",
@@ -176,6 +239,9 @@
       {
         "id": "lg_02",
         "name": "Romanian Deadlift",
+        "muscleGroup": "Legs",
+        "equipment": "barbell",
+        "movementPattern": "hip_hinge",
         "muscle_target_description": "Loads the hamstrings and glutes through a hip hinge, with the spinal erectors and grip working to hold position.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/hu3jRvTc_po",
@@ -184,6 +250,9 @@
       {
         "id": "lg_03",
         "name": "Leg Press",
+        "muscleGroup": "Legs",
+        "equipment": "machine",
+        "movementPattern": "squat",
         "muscle_target_description": "Trains the quads and glutes through a fixed pressing path, letting you load heavy with minimal balance demand.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/1PTD0mfKOQg",
@@ -192,6 +261,9 @@
       {
         "id": "lg_04",
         "name": "Leg Extension",
+        "muscleGroup": "Legs",
+        "equipment": "machine",
+        "movementPattern": "knee_extension",
         "muscle_target_description": "Isolates the quadriceps — especially the rectus femoris and vastus muscles — through knee extension.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/Tae3aeJe5Ks",
@@ -200,6 +272,9 @@
       {
         "id": "lg_05",
         "name": "Standing Calf Raises",
+        "muscleGroup": "Legs",
+        "equipment": "machine",
+        "movementPattern": "calf_raise",
         "muscle_target_description": "Targets the gastrocnemius (upper calf) through plantar flexion with the knees kept straight.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/ey9a2M71-vU",
@@ -208,6 +283,9 @@
       {
         "id": "lg_06",
         "name": "Walking Lunges",
+        "muscleGroup": "Legs",
+        "equipment": "bodyweight",
+        "movementPattern": "lunge",
         "muscle_target_description": "Works the quads and glutes unilaterally with a long stride, while the core and hip stabilisers control each step.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/f7Aw2yiqmVs",
@@ -216,6 +294,9 @@
       {
         "id": "lg_07",
         "name": "Bulgarian Split Squats",
+        "muscleGroup": "Legs",
+        "equipment": "bodyweight",
+        "movementPattern": "squat",
         "muscle_target_description": "A single-leg squat that heavily loads the quads and glutes, demanding balance and hip stability.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/tdOk9XkzGVc",
@@ -224,6 +305,9 @@
       {
         "id": "lg_08",
         "name": "Lying Hamstring Curls",
+        "muscleGroup": "Legs",
+        "equipment": "machine",
+        "movementPattern": "knee_flexion",
         "muscle_target_description": "Isolates the hamstrings through knee flexion, with the calves assisting at the contraction.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/6eVuy_P5FR8",
@@ -232,6 +316,9 @@
       {
         "id": "lg_09",
         "name": "Seated Calf Raises",
+        "muscleGroup": "Legs",
+        "equipment": "machine",
+        "movementPattern": "calf_raise",
         "muscle_target_description": "Targets the soleus (deep, lower calf) through plantar flexion with the knees bent.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/ey9a2M71-vU",
@@ -240,6 +327,9 @@
       {
         "id": "lg_10",
         "name": "Hack Squat",
+        "muscleGroup": "Legs",
+        "equipment": "machine",
+        "movementPattern": "squat",
         "muscle_target_description": "Loads the quads and glutes on a guided sled path, biasing the quads through a deep knee bend.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/cFGgMO-ENiQ",
@@ -248,6 +338,9 @@
       {
         "id": "lg_11",
         "name": "Goblet Squat",
+        "muscleGroup": "Legs",
+        "equipment": "dumbbell",
+        "movementPattern": "squat",
         "muscle_target_description": "A front-loaded squat for the quads and glutes that reinforces an upright torso and braced core.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/ZBAd1g1z6qs",
@@ -256,6 +349,9 @@
       {
         "id": "lg_12",
         "name": "Front Squat",
+        "muscleGroup": "Legs",
+        "equipment": "barbell",
+        "movementPattern": "squat",
         "muscle_target_description": "Shifts load to the quads and upper back with a front-rack position, demanding a tall, braced torso.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/_qv0m3tPd3s",
@@ -266,6 +362,9 @@
       {
         "id": "sh_01",
         "name": "Overhead Press",
+        "muscleGroup": "Shoulders",
+        "equipment": "barbell",
+        "movementPattern": "vertical_push",
         "muscle_target_description": "Builds the front and side delts through vertical pressing, with the triceps and upper chest assisting and the core bracing.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/4LBVP2Oe7fg",
@@ -274,6 +373,9 @@
       {
         "id": "sh_02",
         "name": "Dumbbell Lateral Raise",
+        "muscleGroup": "Shoulders",
+        "equipment": "dumbbell",
+        "movementPattern": "shoulder_abduction",
         "muscle_target_description": "Isolates the lateral (side) deltoid through abduction to widen the shoulders.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/yuR2ma8f_-k",
@@ -282,6 +384,9 @@
       {
         "id": "sh_03",
         "name": "Reverse Pec Deck",
+        "muscleGroup": "Shoulders",
+        "equipment": "machine",
+        "movementPattern": "fly",
         "muscle_target_description": "Targets the rear delts and mid-traps through horizontal abduction for balanced shoulder development.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/ZzeiSNGJOeE",
@@ -290,6 +395,9 @@
       {
         "id": "sh_04",
         "name": "Arnold Press",
+        "muscleGroup": "Shoulders",
+        "equipment": "dumbbell",
+        "movementPattern": "vertical_push",
         "muscle_target_description": "A rotating overhead press that hits all three deltoid heads — front, side and rear — through a full range.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/6tP4V5Y43u0",
@@ -298,6 +406,9 @@
       {
         "id": "sh_05",
         "name": "Dumbbell Front Raise",
+        "muscleGroup": "Shoulders",
+        "equipment": "dumbbell",
+        "movementPattern": "shoulder_flexion",
         "muscle_target_description": "Isolates the anterior (front) deltoid through shoulder flexion.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/eJ_HNftboic",
@@ -306,6 +417,9 @@
       {
         "id": "sh_06",
         "name": "Barbell Upright Row",
+        "muscleGroup": "Shoulders",
+        "equipment": "barbell",
+        "movementPattern": "vertical_pull",
         "muscle_target_description": "Works the side delts and upper traps through a vertical pull kept close to the body.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/IYfLFuGKFLI",
@@ -314,6 +428,9 @@
       {
         "id": "sh_07",
         "name": "Barbell Shrugs",
+        "muscleGroup": "Shoulders",
+        "equipment": "barbell",
+        "movementPattern": "shrug",
         "muscle_target_description": "Isolates the upper trapezius through scapular elevation.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/h0zFdmOH-K0",
@@ -322,6 +439,9 @@
       {
         "id": "sh_08",
         "name": "Cable Lateral Raise",
+        "muscleGroup": "Shoulders",
+        "equipment": "cable",
+        "movementPattern": "shoulder_abduction",
         "muscle_target_description": "Targets the side delt with constant cable tension across the full abduction range.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/JlT2xB92lY8",
@@ -330,6 +450,9 @@
       {
         "id": "sh_09",
         "name": "Face Pull",
+        "muscleGroup": "Shoulders",
+        "equipment": "cable",
+        "movementPattern": "horizontal_pull",
         "muscle_target_description": "Strengthens the rear delts, mid-traps and rotator cuff through high horizontal pulling with external rotation.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/ywQsaOTRjzM",
@@ -338,6 +461,9 @@
       {
         "id": "sh_10",
         "name": "Smith Machine Shoulder Press",
+        "muscleGroup": "Shoulders",
+        "equipment": "smith_machine",
+        "movementPattern": "vertical_push",
         "muscle_target_description": "Trains the front and side delts on a fixed vertical path, letting you press heavy with less stabiliser demand.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/E7ngsffMPR0",
@@ -348,6 +474,9 @@
       {
         "id": "bi_01",
         "name": "Barbell Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "barbell",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Builds overall biceps mass through elbow flexion, with the forearms assisting the grip.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/2LpuygMBn4Q",
@@ -356,6 +485,9 @@
       {
         "id": "bi_02",
         "name": "Incline Dumbbell Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "dumbbell",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Stretches and works the long (outer) head of the biceps with the arms held behind the body.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/uCUaRFlA9vE",
@@ -364,6 +496,9 @@
       {
         "id": "bi_03",
         "name": "Hammer Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "dumbbell",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Targets the brachialis and brachioradialis (forearm) alongside the biceps using a neutral grip.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/hHFClZLbnzM",
@@ -372,6 +507,9 @@
       {
         "id": "bi_04",
         "name": "EZ Bar Preacher Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "ez_bar",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Isolates the short (inner) head of the biceps with the upper arm fixed, removing momentum.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/WyAVZn6_PIY",
@@ -380,6 +518,9 @@
       {
         "id": "bi_05",
         "name": "Concentration Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "dumbbell",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Isolates the biceps peak through strict elbow flexion with the arm braced against the thigh.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/EjUnEEfTSEY",
@@ -388,6 +529,9 @@
       {
         "id": "bi_06",
         "name": "Cable Bicep Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "cable",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Works the biceps under constant cable tension through the full curl range.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/CrbTqNOlFgE",
@@ -396,6 +540,9 @@
       {
         "id": "bi_07",
         "name": "Reverse Barbell Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "barbell",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Biases the brachioradialis and forearm extensors with a pronated (overhand) grip while still working the biceps.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/GrRJsPsUswM",
@@ -404,6 +551,9 @@
       {
         "id": "bi_08",
         "name": "High Cable Curls",
+        "muscleGroup": "Biceps",
+        "equipment": "cable",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Targets the biceps peak with the arms raised, keeping tension high at full contraction.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/BW03-MxiNPg",
@@ -412,6 +562,9 @@
       {
         "id": "bi_09",
         "name": "Bayesian Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "cable",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Stretches the long head of the biceps with the arm behind the body on a cable for tension through the stretch.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/oAlhGm6_Qh4",
@@ -420,6 +573,9 @@
       {
         "id": "bi_10",
         "name": "Machine Preacher Curl",
+        "muscleGroup": "Biceps",
+        "equipment": "machine",
+        "movementPattern": "elbow_flexion",
         "muscle_target_description": "Isolates the biceps on a fixed path with the upper arm supported for a strict contraction.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/S4dDLfp3e8w",
@@ -430,6 +586,9 @@
       {
         "id": "tr_01",
         "name": "Tricep Pushdown (Straight Bar)",
+        "muscleGroup": "Triceps",
+        "equipment": "cable",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Isolates the lateral and medial heads of the triceps through elbow extension.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/WbfNbXBc8FA",
@@ -438,6 +597,9 @@
       {
         "id": "tr_02",
         "name": "Overhead Tricep Extension",
+        "muscleGroup": "Triceps",
+        "equipment": "dumbbell",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Emphasises the long head of the triceps by extending the elbow with the arm overhead in a stretched position.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/J565P8FzJXA",
@@ -446,6 +608,9 @@
       {
         "id": "tr_03",
         "name": "Skull Crushers",
+        "muscleGroup": "Triceps",
+        "equipment": "barbell",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Loads all three triceps heads, with a strong stretch on the long head, through elbow extension while lying.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/-qtz5ysUzMM",
@@ -454,6 +619,9 @@
       {
         "id": "tr_04",
         "name": "Close Grip Bench Press",
+        "muscleGroup": "Triceps",
+        "equipment": "barbell",
+        "movementPattern": "horizontal_push",
         "muscle_target_description": "Builds the triceps with heavy pressing, while the chest and front delts assist through a narrow grip.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/C9MGP4YuoBk",
@@ -462,6 +630,9 @@
       {
         "id": "tr_05",
         "name": "Tricep Dips",
+        "muscleGroup": "Triceps",
+        "equipment": "bodyweight",
+        "movementPattern": "vertical_push",
         "muscle_target_description": "Works all three triceps heads through bodyweight pressing, with the lower chest and front delts assisting.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/jkTKsIME3Go",
@@ -470,6 +641,9 @@
       {
         "id": "tr_06",
         "name": "Rope Pushdown",
+        "muscleGroup": "Triceps",
+        "equipment": "cable",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Isolates the lateral and medial triceps heads, with the rope allowing a wider squeeze at lockout.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/-PqzEk57xiw",
@@ -478,6 +652,9 @@
       {
         "id": "tr_07",
         "name": "Dumbbell Kickbacks",
+        "muscleGroup": "Triceps",
+        "equipment": "dumbbell",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Isolates the triceps — especially the lateral head — at peak contraction through elbow extension.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/SLDF8kqH0MY",
@@ -486,6 +663,9 @@
       {
         "id": "tr_08",
         "name": "JM Press",
+        "muscleGroup": "Triceps",
+        "equipment": "barbell",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "A hybrid press/extension that overloads the triceps heavily, with the chest and delts assisting.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/H0dyiN40aDo",
@@ -494,6 +674,9 @@
       {
         "id": "tr_09",
         "name": "Triceps Kickback",
+        "muscleGroup": "Triceps",
+        "equipment": "dumbbell",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Isolates the triceps at lockout through elbow extension with the upper arm held parallel to the torso.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/WhBxKbe1-NU",
@@ -502,6 +685,9 @@
       {
         "id": "tr_10",
         "name": "Cable Overhead Triceps Extension",
+        "muscleGroup": "Triceps",
+        "equipment": "cable",
+        "movementPattern": "elbow_extension",
         "muscle_target_description": "Targets the long head of the triceps with the arms overhead under constant cable tension.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/NTk0Igxqcsk",
@@ -512,6 +698,9 @@
       {
         "id": "co_01",
         "name": "Cable Crunch",
+        "muscleGroup": "Core",
+        "equipment": "cable",
+        "movementPattern": "spinal_flexion",
         "muscle_target_description": "Targets the rectus abdominis through weighted spinal flexion, with the obliques assisting.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/RQjrmGTbxjI",
@@ -520,6 +709,9 @@
       {
         "id": "co_02",
         "name": "Hyperextensions",
+        "muscleGroup": "Core",
+        "equipment": "machine",
+        "movementPattern": "hip_extension",
         "muscle_target_description": "Strengthens the spinal erectors (lower back), glutes and hamstrings through hip and trunk extension.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/nGkITCtyMRc",
@@ -530,6 +722,9 @@
       {
         "id": "fa_01",
         "name": "Barbell Wrist Curl",
+        "muscleGroup": "Forearms",
+        "equipment": "barbell",
+        "movementPattern": "wrist_flexion",
         "muscle_target_description": "Isolates the wrist flexors on the underside of the forearm through wrist flexion.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/DRCSpntjwRw",
@@ -538,6 +733,9 @@
       {
         "id": "fa_02",
         "name": "Cable Wrist Curl",
+        "muscleGroup": "Forearms",
+        "equipment": "cable",
+        "movementPattern": "wrist_flexion",
         "muscle_target_description": "Works the forearm flexors under constant cable tension through wrist flexion.",
         "mechanic": "Isolation",
         "video_url": "https://www.youtube.com/shorts/cocFB-38xgA",

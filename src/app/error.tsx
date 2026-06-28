@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+import { AppStatusScreen } from "@/components/app-status-screen";
 
-export default function GlobalError({
+export default function RootError({
   error,
   reset
 }: {
@@ -10,19 +11,17 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[GlobalError]", error);
+    console.error("[RootError]", error);
   }, [error]);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", padding: "2rem", textAlign: "center", gap: "1rem" }}>
-      <p style={{ fontSize: "2rem" }}>⚠️</p>
-      <h2 style={{ fontSize: "1.2rem", fontWeight: 600 }}>Something went wrong</h2>
-      <p style={{ color: "var(--text-soft)", fontSize: "0.9rem", maxWidth: 360 }}>
-        {error.message ?? "An unexpected error occurred. Please try again."}
-      </p>
-      <button className="button button-primary" onClick={reset} type="button">
-        Try again
-      </button>
-    </div>
+    <AppStatusScreen
+      body={error.message ?? "An unexpected error occurred. Please try again."}
+      code="!"
+      eyebrow="Application error"
+      primaryAction={{ label: "Try again", onClick: reset }}
+      secondaryAction={{ label: "Go home", href: "/" }}
+      title="Something went wrong"
+    />
   );
 }

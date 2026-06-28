@@ -1,6 +1,6 @@
 # DISCREPANCIES (Meta)
 
-`Generated: 2026-06-05 · Commit: a0be3a8 · Audited: 2026-06-15`
+`Generated: 2026-06-05 · Commit: a0be3a8 · Audited: 2026-06-28`
 
 > Every place the legacy `README.md` / `FIRESTORE_STRUCTURE.md` disagree with code, plus
 > dead/orphaned references and internal inconsistencies. **Code wins.** Severity is the doc
@@ -41,7 +41,8 @@
 
 ## D. Verified accurate (README claims confirmed)
 
-- No `/api` routes — confirmed (no route handlers found). ✅
+- Business data has no REST-style `/api` surface. The only route handler is `/api/health`
+  (`src/app/api/health/route.ts`) for GET/HEAD service health checks. ✅
 - Privileged writes `allow:false` for members/staff/programAssignments/etc. ✅ (`firestore.rules`)
 - App Hosting config 0–10 inst / 512 MB / 80 concurrency — ✅ (`apphosting.yaml:3-8`).
 - Login lockout 5/15min, session 2h — ✅ (`src/lib/auth.ts:509-510,19`).
@@ -50,7 +51,7 @@
 
 ## E. Previously uninspected — now verified (2026-06-15)
 
-- **`next.config.mjs`**: CSP is in `src/middleware.ts` (per-request nonce). Static security headers set here: `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy` (geolocation self-only), `HSTS`, `COOP same-origin`, `CORP same-origin`, `X-DNS-Prefetch-Control off`. `ignoreBuildErrors: true` and `ignoreDuringBuilds: true` for ESLint are intentional (tracked in R9). Sentry + bundle analyzer wrapped.
+- **`next.config.mjs` + `src/proxy.ts`**: static security headers are in `next.config.mjs`; the per-request nonce CSP and role redirects are in `src/proxy.ts`. Build-time TypeScript and ESLint checks are enabled. Sentry + bundle analyzer wrapped.
 - **`src/lib/split-library.ts`** and **`src/lib/workout-utils.ts`**: Fully read. See `project_architecture.md` "Split library" section.
 - **Service worker / PWA manifest**: Manifest at `public/manifest.json?v=11` referenced in layout. Icons at `?v=11`. PWA is installable.
 - **Seed/migration scripts**: `npm run migrate:tenant-cleanup` and `npm run migrate:gym-scoped` exist per `FIRESTORE_STRUCTURE.md`. Not re-read in this pass; scope of these scripts is documented there.

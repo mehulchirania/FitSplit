@@ -1,15 +1,15 @@
 # 09 · SCREEN CATALOG (Tier 1)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-28 · Commit: fb6f244 · Updated for current App Router structure`
 
 > Per route under `src/app/`: purpose, role required, key data (read-models/actions), collections
-> touched. Role gate = the `requireRole/requireAuth` call in the page (or middleware for routes
-> that delegate). `(pages)` is a route group (shared layout, no URL segment).
+> touched. Role gate = the `requireRole/requireAuth` call in the page (or `src/proxy.ts` for
+> routes that delegate). `(pages)` is a route group (shared layout, no URL segment).
 
 ## Route sitemap
 
-Routes grouped by the middleware gate that protects them (`middleware.ts:3-11`). Wrong-role
-or unauthenticated users are redirected to their `roleHome` or `/` (`middleware.ts:40-46`).
+Routes grouped by the proxy gate that protects them (`src/proxy.ts`). Wrong-role or
+unauthenticated users are redirected to their `roleHome` or `/`.
 
 ```mermaid
 flowchart LR
@@ -21,6 +21,7 @@ flowchart LR
     ACT["/activity"]
     PROF["/profile"]
     SUSP["/suspended"]
+    HEALTH["/api/health"]
   end
 
   subgraph ADMIN["/admin · requireRole[admin]"]
@@ -78,6 +79,7 @@ flowchart LR
 | `/about` | `src/app/about/page.tsx` | **public** | Static about (credits collaboration with Blume Labs) | — |
 | `/privacy` | `src/app/privacy/page.tsx` | public | Privacy Policy (GDPR + CCPA/CPRA) | — |
 | `/terms` | `src/app/terms/page.tsx` | public | Terms of Service (incl. health/fitness disclaimer) | — |
+| `/api/health` | `src/app/api/health/route.ts` | public | No-store service health probe (`GET`/`HEAD`) | — |
 | `/activity` | `src/app/activity/page.tsx` | `requireAuth` | Activity feed | `getActivityEvents` |
 | `/profile` | `src/app/profile/page.tsx` | `requireAuth` | Account settings; staff password / PIN / admin email | `changeMemberPin`, `changeStaffPassword`, `changeAdminEmail`, `updateAdminDisplayName` |
 | `/suspended` | `src/app/suspended/page.tsx` | (any) | Shown when profile inactive | — |
@@ -87,6 +89,16 @@ for the shell, reads the per-request CSP nonce (`x-nonce`), and renders topbar/n
 `/owner/*`). It also renders the **first-login consent gate** (`TermsConsentGate`) for any authed user
 who hasn't yet accepted Terms + Privacy (`!currentUser.termsAcceptedAt` and no `fitsplit-terms-ack`
 cookie) — accept (→ `acceptTerms`) to proceed, decline (→ `logoutUser`) to log out.
+
+Root App Router special files:
+
+| File | Purpose |
+|---|---|
+| `src/app/template.tsx` | Root route template wrapper (`display: contents`) for route-subtree lifecycle without adding layout chrome |
+| `src/app/loading.tsx` | Shared full-page fitness loader |
+| `src/app/error.tsx` | Root client error boundary using `AppStatusScreen` |
+| `src/app/global-error.tsx` | Final root render error boundary; captures with Sentry and renders its own `<html>/<body>` |
+| `src/app/not-found.tsx` | Shared FitSplit 404 screen using `AppStatusScreen` |
 
 ## Admin
 
@@ -156,13 +168,13 @@ loads `getGymDetail`, `getMemberWithProfile`, `MemberSubSidebar`).
 
 ## Loading / error boundaries
 
-Each role area has `loading.tsx` skeletons and `error.tsx` boundaries
-(`src/app/{admin,owner,member}/error.tsx`, `src/app/global-error.tsx`, plus per-route `loading.tsx`).
-These are UI-only and touch no collections.
+Each role area has `loading.tsx` skeletons and `error.tsx` boundaries. Root/admin/owner/member error
+boundaries share `src/components/app-status-screen.tsx`; `src/app/not-found.tsx` uses the same status
+screen. These are UI-only and touch no collections.
 
 ## Entry / exit conditions (common)
 
-- **Entry:** middleware redirects unauthenticated users to `/`; wrong-role users to their
-  `roleHome` (`middleware.ts:40-46`).
+- **Entry:** `src/proxy.ts` redirects unauthenticated users to `/`; wrong-role users to their
+  `roleHome`.
 - **Exit:** inactive profile → `/suspended` (`src/lib/auth.ts:940`); new staff → `/profile?forceChange=1`
   (`src/lib/auth.ts:976`); `logoutUser` clears cookies → `/`.

@@ -1,6 +1,6 @@
 # 07 · MODULE BREAKDOWN (Tier 1)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-28 · Commit: fb6f244 · Updated for current App Router structure`
 
 > Module-by-module map for working on FitSplit without loading the whole repo. For each module:
 > its screens, the collections it touches, the actions/functions/read-models it uses, supporting
@@ -9,8 +9,8 @@
 
 | Module | Screens | Collections touched | Actions / Functions / Read-models | Owner services | Complexity | Refactor priority | Dependencies | Test coverage |
 |---|---|---|---|---|---|---|---|---|
-| **Auth & Session** | landing login, `/profile`, `/suspended` | authProfiles, profiles, usernames, loginAttempts | `src/lib/auth.ts` (login/session/guards); CF `lookupLoginEmail`, `blockLockedAccounts` | Firebase Auth, Identity Toolkit REST, cookies | 9 | **High** — trainer-role gap (`auth.ts:306`), dual lockout key mismatch | Firebase Admin, middleware | `src/lib/__tests__/validation.test.ts` (Zod helpers) |
-| **Routing/Shell** | all (`src/app/layout.tsx`, role layouts) | gyms, workoutSessions | `middleware.ts`; read-models `getGymDetail`, `getActiveWorkoutSessions` | next/headers, cookies | 4 | Low | Auth | none found |
+| **Auth & Session** | landing login, `/profile`, `/suspended` | authProfiles, profiles, usernames, loginAttempts | `src/lib/auth.ts` (login/session/guards); CF `lookupLoginEmail`, `blockLockedAccounts` | Firebase Auth, Identity Toolkit REST, cookies | 8 | Medium — role/staffType compatibility remains complex, but trainer login and lockout gaps are resolved | Firebase Admin, `src/proxy.ts` | `src/lib/__tests__/validation.test.ts` (Zod helpers) |
+| **Routing/Shell** | all (`src/app/layout.tsx`, `template.tsx`, role layouts, `not-found.tsx`, `/api/health`) | gyms, workoutSessions | `src/proxy.ts`; `src/app/api/health/route.ts`; read-models `getGymDetail`, `getActiveWorkoutSessions` | next/headers, cookies | 4 | Low | Auth | none found |
 | **Members (owner)** | `/owner/members`, `/owner/members/[id]`, `/trainer/members` | members, authProfiles, usernames, gyms, activityEvents + member-owned cascade | actions `members.ts`*; CF `createMemberAccount`,`toggleMemberAccess`,`bulk*`,`archiveMemberAccount`; read-models `getMembers*`,`getMemberWithProfile`,`getMembersForTrainer` | Auth, archive helpers | 8 | Medium | Auth, Programs, Billing | none found |
 | **Staff/Trainers** | `/owner/trainers`, `/admin/gyms/[id]` | staff, authProfiles | actions `staff.ts`; CF `createStaffAccount`,`createTrainer`,`assignTrainerToPTMember`,`updateTrainerVisibility`,`archiveStaffAccount`; read-models `getTrainersForGym`,`getOwnersForGym` | Auth | 7 | **High** — role/staffType duality | Auth, PT | none found |
 | **Programs** | `/owner/programs`, `/admin/programs`, `/member/programs`, member day view | workoutPrograms, programAssignments, notifications, activityEvents | actions `programs.ts`; CF `assignProgramToMember`,`bulkAssignProgram`,`archiveCustomProgram`,`onProgramAssignmentCreated`; read-models `getWorkoutPrograms`,`get*Assignment*` | `src/lib/split-library.ts`, `src/lib/workouts.json`, mock-data | 8 | Medium | Exercises, Members | none found |

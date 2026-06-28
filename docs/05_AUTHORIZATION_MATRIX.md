@@ -4,7 +4,7 @@
 
 > Roles × features. The **Enforced by** column names what actually blocks the action and where.
 > Enforcement layers, outermost → innermost:
-> 1. **middleware** (`middleware.ts`) — route-level redirect by `fitsplit-role` cookie.
+> 1. **proxy** (`src/proxy.ts`) — route-level redirect by `fitsplit-role` cookie.
 > 2. **requireRole / requireOwner** (`src/lib/auth.ts:962,988`) — server-side guard in page/action.
 > 3. **Function guard** (`getCallableUser`/`assertCanManageGym`, `functions/src/index.ts:133,152`).
 > 4. **Firestore rules** (`firestore.rules`) — last line, for any direct client SDK write.
@@ -20,7 +20,7 @@ Note the **two write paths** — Server Actions (the app's real path) use the Ad
 flowchart TB
   REQ([Request / write]) --> L1
 
-  subgraph L1[1 · middleware.ts — route redirect by fitsplit-role cookie]
+  subgraph L1[1 � src/proxy.ts � route redirect by fitsplit-role cookie + CSP nonce]
     direction TB
     subgraph L2["2 · requireRole / requireOwner — server guard (auth.ts:962,988)"]
       direction TB
@@ -50,18 +50,18 @@ flowchart TB
 - **Consumer role:** A new `consumer` role or variant with `plan: "free" | "pro"`.
 - Consumers will only have access to their own "personal gym" data and will be explicitly blocked from any business/roster operations (e.g., viewing other members, delivering PT, creating packages).
 
-## Route access (middleware.ts:3-11)
+## Route access (`src/proxy.ts`)
 
 | Prefix | admin | owner | trainer | member | Source |
 |---|:--:|:--:|:--:|:--:|---|
-| `/admin` | ✅ | ❌ | ❌ | ❌ | `middleware.ts:4` |
-| `/owner` | ✅ | ✅ | ❌* | ❌ | `middleware.ts:5` |
-| `/trainer` | ❌ | ✅ | ✅ | ❌ | `middleware.ts:6` |
-| `/member` | ❌ | ❌ | ❌ | ✅ | `middleware.ts:7` |
-| `/profile`,`/activity` | ✅ | ✅ | ✅ | ✅ | `middleware.ts:8-9` |
-| `/about`,`/privacy`,`/terms` | public | public | public | public | not in `middleware.ts` protectedRoutes (public) |
+| `/admin` | ✅ | ❌ | ❌ | ❌ | `src/proxy.ts` |
+| `/owner` | ✅ | ✅ | ❌* | ❌ | `src/proxy.ts` |
+| `/trainer` | ❌ | ✅ | ✅ | ❌ | `src/proxy.ts` |
+| `/member` | ❌ | ❌ | ❌ | ✅ | `src/proxy.ts` |
+| `/profile`,`/activity` | ✅ | ✅ | ✅ | ✅ | `src/proxy.ts` |
+| `/about`,`/privacy`,`/terms` | public | public | public | public | not in `src/proxy.ts` protectedRoutes (public) |
 
-\* trainers (demo) are `role:"owner"`, so they pass `/owner` middleware; pages themselves call
+\* trainers (demo) are `role:"owner"`, so they pass `/owner` proxy gate; pages themselves call
 `requireRole(["admin","owner"])`. A true `role:"trainer"` would be redirected from `/owner` to
 `/trainer` (and, since 2026-06-05, can establish a session to reach it).
 
