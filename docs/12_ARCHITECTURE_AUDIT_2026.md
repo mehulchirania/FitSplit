@@ -161,17 +161,17 @@ Based on prior observations (obs 154): FCM push sends to individual tokens store
 
 At 500 members per gym this is 500 reads + 1 FCM call. Currently this is only done for individual event notifications, not broadcasts. No batching concern at today's scale (SHG), but any future "all-gym" notification feature must use FCM Topic subscriptions (`/topics/gym-{gymId}`) rather than individual token enumeration.
 
-**Fix (future-facing):** On member FCM token registration (`fcm-setup.tsx`), subscribe to `/topics/gym-{gymId}` in addition to storing the token on the profile. Gym-wide notifications send to the topic instead of enumerating tokens. Zero reads required.
+**Status 2026-06-29:** Implemented for token registration. `saveFcmToken` stores the device token and subscribes it to `gym-{gymId}` through Firebase Admin Messaging. Future gym-wide notifications can send to the topic instead of enumerating member profiles.
 
 ---
 
-## Section H — `clearUserNotifications`: N Sequential Deletes
+## Section H — `clearUserNotifications`: N Sequential Reads
 
 **File:** `src/lib/firebase/actions/notifications.ts`
 
-Clearing all notifications for a user currently deletes each document individually (N deletes = N round-trips). For a member with 50 notifications this is 50 sequential Firestore deletes.
+Clearing notifications previously resolved root notification documents one by one, then batched the read-state writes. After root writes were removed from operational notification paths, this could miss gym-scoped notifications returned by the read-models.
 
-**Fix:** Use a Firestore batch delete. Query notification docs, collect refs, `batch.delete(ref)` each, commit once. Reduces N round-trips to 1 batch commit.
+**Status 2026-06-29:** Implemented. `clearUserNotifications` now resolves legacy root docs plus gym-scoped docs, uses collectionGroup lookup for admin notifications, checks ownership/gym scope before marking read, and commits all `readAt` updates in one batch.
 
 ---
 
@@ -290,8 +290,8 @@ Pass `gymId` from member profile to all progress read functions; switch from `co
 **P2.2 — Batch notification writes**  
 Add `batchMirrorGymScopedRecords` helper. Update all multi-notification paths in `programs.ts`, `pt.ts`. Reduces write latency.
 
-**P2.3 — Batch `clearUserNotifications`**  
-Switch from sequential deletes to a single Firestore batch.
+**P2.3 — Batch `clearUserNotifications`** — Done 2026-06-29  
+Resolve scoped + legacy notification docs, authorize by recipient/gym, and commit all `readAt` updates in a single Firestore batch.
 
 **P2.4 — Auth profile caching in session cookie**  
 Embed `isActive`, `gymId`, `memberId` in session cookie claims. `requireRole()` reads cookie claims instead of Firestore on 90% of requests.
@@ -301,8 +301,8 @@ Embed `isActive`, `gymId`, `memberId` in session cookie claims. `requireRole()` 
 **P3.1 — Add gym subscription schema**  
 `subscription.tier`, `subscription.billedUntil` on gym doc. Enforce in `createMemberProfile`.
 
-**P3.2 — FCM topic subscription**  
-On FCM token registration, subscribe to `/topics/gym-{gymId}`. Future broadcasts use topic, not token enumeration.
+**P3.2 — FCM topic subscription** — Done 2026-06-29  
+On FCM token registration, subscribe to `gym-{gymId}`. Future broadcasts can use topic, not token enumeration.
 
 **P3.3 — Per-gym resource limits**  
 `limits.maxMembers` on gym doc. Enforce in member creation.

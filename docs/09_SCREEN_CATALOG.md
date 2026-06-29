@@ -68,8 +68,8 @@ flowchart LR
   classDef pub fill:#128d65,stroke:#0c5f46,color:#fff;
 ```
 
-> ⚠️ A true `role:"trainer"` account cannot establish a session today, so `/trainer` is reached
-> by demo `role:"owner"` + `staffType:"trainer"` staff. See [DISCREPANCIES](DISCREPANCIES.md).
+> `/trainer` routes support true `role:"trainer"` accounts. Demo trainers are still seeded as
+> `role:"owner"` + `staffType:"trainer"` staff. See [DISCREPANCIES](DISCREPANCIES.md).
 
 ## Public / shared
 

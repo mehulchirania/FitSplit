@@ -135,11 +135,6 @@ service cloud.firestore {
         allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
       }
 
-      match /workoutSplitTemplates/{templateId} {
-        allow read: if isGymUser(gymId);
-        allow create, update, delete: if isAdmin() || isOwnerForGym(gymId);
-      }
-
       match /notifications/{notificationId} {
         allow read: if isAdmin()
           || isOwnerForGym(gymId)
@@ -331,11 +326,6 @@ service cloud.firestore {
     }
 
     match /workoutPrograms/{programId} {
-      allow read: if signedIn();
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /workoutSplitTemplates/{templateId} {
       allow read: if signedIn();
       allow create, update, delete: if isAdmin();
     }

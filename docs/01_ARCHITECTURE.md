@@ -163,7 +163,6 @@ redirects live in `src/proxy.ts`.
 ## 9. Styling
 
 CSS is modular under `src/app/styles/` loaded in numeric order. The directory contains the 21
-numbered files plus `forms.css`, `member.css`, **and `ep-modal.css`** (the last is not in the
-README CSS table — see [DISCREPANCIES](DISCREPANCIES.md)). Class-prefix conventions
+numbered files plus `forms.css`, `member.css`, and `shadcn.css`. Class-prefix conventions
 (`odp2-`, `adm-`, `mhv-`, `m3d-`, `mcv-`, `pt-`, `lpd-`, `l1-`, `lp-modal-`, `nlist-`, `ntf-`)
 are documented in `README.md` §Design System.

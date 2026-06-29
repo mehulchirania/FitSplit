@@ -10,7 +10,7 @@
 
 | # | Topic | README/docs say | Code says | Source | Severity |
 |---|---|---|---|---|---|
-| A1 | ~~CSS file count~~ — **resolved** | "21 modular CSS files" + lists `forms.css`, `member.css` | `src/app/styles/` also contains **`ep-modal.css`** (undocumented), and two `11-` files (`11-bulk-member-list.css`, `11-member-tabs.css`) | `ls src/app/styles/` | Resolved |
+| A1 | ~~CSS file count~~ — **resolved** | "21 modular CSS files" + lists `forms.css`, `member.css` | `src/app/styles/` contains 21 numbered files plus `forms.css`, `member.css`, and `shadcn.css`; the old standalone `ep-modal.css` file is gone. | `ls src/app/styles/` | Resolved |
 | A2 | ~~Trainer role~~ — **resolved** | "trainer (staffType)" + first-class `trainer` role in rules/middleware | Session layer now accepts role `trainer` (`toProfile`/cookie fallback `src/lib/auth.ts:306,893`). Demo trainers are still `role:"owner"`+`staffType:"trainer"` in seed data | `src/lib/auth.ts:306,893`, `:78-95` | Resolved |
 | A3 | ~~Notification types~~ — **resolved (2026-06-15)** | README lists a fixed set; `src/types/domain.ts` union has 16 | `payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` confirmed present at `domain.ts:438-440` (was added per R6 on 2026-06-05; DISCREPANCIES.md just wasn't updated) | `src/types/domain.ts:435-440` | Resolved |
 | A4 | ~~`FIRESTORE_STRUCTURE.md` collection list~~ — **resolved (2026-06-15)** | (root doc, treated as map) | `collections.ts` adds `macroLogs`, `activityLogs`, `packages`, `paymentRequests`, `summaries`, `usernames`, `phones`, `platformSummaries`; `loginAttempts` used but not declared in collections.ts; `ptSessions`/`ptLiftLogs` gym-scoped. All added to `FIRESTORE_STRUCTURE.md` | `collections.ts:1-88` | Resolved |
@@ -33,7 +33,7 @@
 
 | # | Item | Status | Source |
 |---|---|---|---|
-| C1 | `workoutSplitTemplates` collection | Declared in `collections.ts` + has rules, but no read/write site found; split logic lives in `src/lib/split-library.ts`/`workouts.json` | `collections.ts:14,41`, `firestore.rules:138,338` |
+| C1 | ~~`workoutSplitTemplates` collection~~ | Resolved 2026-06-29: collection declarations were already gone; orphaned Firestore rule blocks removed. Split logic lives in `src/lib/split-library.ts` / `workouts.json`. | `firestore.rules` |
 | C2 | `siteLinks` writes | Read by `getSiteLinks` and rules allow owner/admin write, but no write call site found (seeded/manual) | `read-models/misc.ts:6` |
 | C3 | root `memberships` key | Declared at root (`collections.ts:9`) but active path is gym-scoped only | `collections.ts:9` vs `:59` |
 | C4 | `profiles` (legacy) | Read-only fallback; no active writes | `firestore.rules:325` |

@@ -1,24 +1,36 @@
 "use server";
 
 import { requireAuth } from "@/lib/auth";
-import { collectionPaths } from "../collections";
+import { collectionPaths, gymScopedCollectionPaths } from "../collections";
+import { getAdminMessaging, hasFirebaseAdminConfig } from "../admin";
 import type { FormActionState } from "@/types/action-state";
 import {
   requireFirebase,
+  scopedGymDoc,
   success,
   failure
 } from "./shared";
+import { canMarkNotificationRead } from "./notification-auth";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
+
+function uniqueTruthyIds(ids: string[]) {
+  return Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean))).slice(0, 20);
+}
+
+function chunk<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
 
 export async function clearUserNotifications(notificationIds: string[]): Promise<FormActionState> {
   try {
     const currentUser = await requireAuth();
     const db = requireFirebase();
-    const scopedIds = notificationIds
-      .map((id) => id.trim())
-      .filter(Boolean)
-      .slice(0, 20);
+    const scopedIds = uniqueTruthyIds(notificationIds);
 
     if (scopedIds.length === 0) {
       return success("No notifications to clear.", undefined, ["notifications"]);
@@ -26,29 +38,46 @@ export async function clearUserNotifications(notificationIds: string[]): Promise
 
     const now = new Date().toISOString();
     const batch = db.batch();
+    const snapshotsByPath = new Map<string, FirebaseFirestore.DocumentSnapshot>();
 
-    for (const notificationId of scopedIds) {
-      const notificationRef = db.collection(collectionPaths.notifications).doc(notificationId);
-      const notificationDoc = await notificationRef.get();
-      const notification = notificationDoc.data();
-
-      if (!notificationDoc.exists || !notification) {
-        continue;
+    const directReads = scopedIds.flatMap((notificationId) => {
+      const reads = [db.collection(collectionPaths.notifications).doc(notificationId).get()];
+      if (currentUser.gymId) {
+        reads.push(scopedGymDoc(db, currentUser.gymId, "notifications", notificationId).get());
       }
+      return reads;
+    });
 
-      const isMemberNotification =
-        currentUser.role === "member" &&
-        String(notification.recipientId ?? "") === (currentUser.memberId ?? currentUser.uid);
-      const isOwnerNotification =
-        (currentUser.role === "owner" || currentUser.role === "admin") &&
-        String(notification.recipientRole ?? "") === "owner";
-
-      if (currentUser.role === "admin" || isMemberNotification || isOwnerNotification) {
-        batch.set(notificationRef, { readAt: now }, { merge: true });
+    for (const snapshot of await Promise.all(directReads)) {
+      if (snapshot.exists) {
+        snapshotsByPath.set(snapshot.ref.path, snapshot);
       }
     }
 
-    await batch.commit();
+    if (currentUser.role === "admin") {
+      const collectionGroupReads = chunk(scopedIds, 10).map((ids) =>
+        db
+          .collectionGroup(gymScopedCollectionPaths.notifications)
+          .where("id", "in", ids)
+          .get()
+      );
+      for (const snapshot of await Promise.all(collectionGroupReads)) {
+        snapshot.docs.forEach((doc) => snapshotsByPath.set(doc.ref.path, doc));
+      }
+    }
+
+    let writes = 0;
+    for (const notificationDoc of snapshotsByPath.values()) {
+      const notification = notificationDoc.data();
+      if (notification && canMarkNotificationRead(currentUser, notification)) {
+        batch.set(notificationDoc.ref, { readAt: now }, { merge: true });
+        writes += 1;
+      }
+    }
+
+    if (writes > 0) {
+      await batch.commit();
+    }
 
     return success("Notifications cleared.", currentUser.gymId, ["notifications"]);
   } catch (error) {
@@ -82,6 +111,17 @@ export async function saveFcmToken(
       { fcmToken: token, fcmTokenUpdatedAt: new Date().toISOString() },
       { merge: true }
     );
+
+    // Subscribe device to gym-wide topic so owners can send broadcasts without
+    // iterating all member profiles.
+    if (hasFirebaseAdminConfig() && currentUser.gymId) {
+      try {
+        await getAdminMessaging().subscribeToTopic(token, `gym-${currentUser.gymId}`);
+      } catch {
+        // Non-fatal — push still works via per-device token.
+      }
+    }
+
     return success("Push notifications enabled.", undefined, ["notifications"]);
   } catch (error) {
     console.error("Unable to save FCM token", error);

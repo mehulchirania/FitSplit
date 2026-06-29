@@ -43,8 +43,8 @@
 3. **Collection-Group and Full-Collection Scans** *(audited in depth 2026-06-28 — see `docs/12_ARCHITECTURE_AUDIT_2026.md` Sections B, D, E)*
    - ~~**`getGymWorkspaces`:** Does 3 parallel full-collection scans (gyms + collectionGroup members + authProfiles by role).~~ **RESOLVED 2026-06-28:** now reads only `gyms` and uses denormalized `memberCount`.
    - ~~**`getGymDetail`:** Fetches all member documents for a gym just to count them.~~ **RESOLVED 2026-06-28:** now uses `mapWorkspace(...).memberCount` from the gym doc.
-   - **`getMemberNotifications` / progress read-models:** Main member layout/profile/privacy call sites now pass `gymId` for direct gym-scoped notification/body-metric reads. Remaining work: remove migration fallbacks after legacy backfill and add windows/pagination for lifetime progress history.
-   - **`getGymFloorLoadMap`:** Calls 4 `*Uncached` functions + authProfiles scan on every render. Fix: add server-side cache, use cached function variants.
+   - **`getMemberNotifications` / progress read-models:** Main member layout/profile/privacy call sites now pass `gymId` for direct gym-scoped reads. ~~Progress history pagination~~ **RESOLVED 2026-06-29:** `getLiftLogsForMember` (limit 500), `getDayLogsForMember` (limit 365), `getBodyMetricLogsForMember` (limit 365) now add `.orderBy("loggedAt","desc").limit(N)` to both scoped and collectionGroup paths. Remaining: remove root fallbacks after legacy backfill.
+   - ~~**`getGymFloorLoadMap`:** Calls 4 `*Uncached` functions + authProfiles scan on every render.~~ **RESOLVED 2026-06-29:** switched to `getMembers`, `getWorkoutPrograms`, `getExerciseCatalog` (all `unstable_cache`-backed). `getActiveProgramAssignments` already used React `cache()`.
 
 4. ~~**Embedded Notices Array**~~ — **RESOLVED 2026-06-28:** `addGymNotice` and `deleteGymNotice` now wrap their array modifications in a Firestore transaction to prevent concurrent edits from clobbering data.
 

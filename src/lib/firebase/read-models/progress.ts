@@ -4,7 +4,7 @@ import { collectionPaths, gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection } from "./shared";
 
-export async function getBodyMetricLogsForMember(memberId: string, gymId?: string): Promise<{
+export async function getBodyMetricLogsForMember(memberId: string, gymId?: string, limit = 365): Promise<{
   logs: BodyMetricLog[];
   isPersisted: boolean;
 }> {
@@ -14,10 +14,12 @@ export async function getBodyMetricLogsForMember(memberId: string, gymId?: strin
   try {
     const { db } = getFirebaseAdminServices();
     const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "bodyMetricLogs").where("memberId", "==", memberId).get()
+      ? await gymCollection(db, gymId, "bodyMetricLogs").where("memberId", "==", memberId).orderBy("loggedAt", "desc").limit(limit).get()
       : await db
           .collectionGroup(gymScopedCollectionPaths.bodyMetricLogs)
           .where("memberId", "==", memberId)
+          .orderBy("loggedAt", "desc")
+          .limit(limit)
           .get();
     const snapshot = scopedSnapshot.empty
       ? await db
@@ -46,7 +48,7 @@ export async function getBodyMetricLogsForMember(memberId: string, gymId?: strin
   }
 }
 
-export async function getDayLogsForMember(memberId: string, gymId?: string): Promise<{
+export async function getDayLogsForMember(memberId: string, gymId?: string, limit = 365): Promise<{
   dayLogs: DayLog[];
   isPersisted: boolean;
 }> {
@@ -56,10 +58,12 @@ export async function getDayLogsForMember(memberId: string, gymId?: string): Pro
   try {
     const { db } = getFirebaseAdminServices();
     const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "dayLogs").where("memberId", "==", memberId).get()
+      ? await gymCollection(db, gymId, "dayLogs").where("memberId", "==", memberId).orderBy("loggedAt", "desc").limit(limit).get()
       : await db
           .collectionGroup(gymScopedCollectionPaths.dayLogs)
           .where("memberId", "==", memberId)
+          .orderBy("loggedAt", "desc")
+          .limit(limit)
           .get();
     const snapshot = scopedSnapshot.empty
       ? await db
@@ -102,7 +106,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string): Pro
   }
 }
 
-export async function getLiftLogsForMember(memberId: string, gymId?: string): Promise<{
+export async function getLiftLogsForMember(memberId: string, gymId?: string, limit = 500): Promise<{
   liftLogs: LiftLog[];
   isPersisted: boolean;
 }> {
@@ -115,10 +119,12 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string): Pr
   try {
     const { db } = getFirebaseAdminServices();
     const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "liftLogs").where("memberId", "==", memberId).get()
+      ? await gymCollection(db, gymId, "liftLogs").where("memberId", "==", memberId).orderBy("loggedAt", "desc").limit(limit).get()
       : await db
           .collectionGroup(gymScopedCollectionPaths.liftLogs)
           .where("memberId", "==", memberId)
+          .orderBy("loggedAt", "desc")
+          .limit(limit)
           .get();
     snapshot = scopedSnapshot.empty
       ? await db

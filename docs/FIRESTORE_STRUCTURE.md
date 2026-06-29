@@ -329,7 +329,6 @@ authProfiles/{uid}
 exerciseCatalog/{exerciseId}
 exerciseRequests/{requestId}
 workoutPrograms/{programId}
-workoutSplitTemplates/{templateId}   ← declared + has rules; no active read/write site (C1)
 archives/{archiveId}
 usernames/{normalizedUsername}       ← sparse uniqueness index; doc ID = normalized username
 phones/{gymId:normalizedPhone}       ← sparse uniqueness index; doc ID = gymId:phone

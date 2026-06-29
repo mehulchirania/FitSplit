@@ -151,18 +151,11 @@ export async function approveCatalogExerciseRequest(
     };
     await mirrorGymScopedRecord(db, gymId, "exerciseCatalog", exerciseId, exerciseRecord);
 
-    await db.collection(collectionPaths.exerciseRequests).doc(requestId).set(
-      { status: "approved", approvedAt: now, updatedAt: now },
-      { merge: true }
-    );
-    await requestDoc.ref.set(
-      { status: "approved", approvedAt: now, updatedAt: now },
-      { merge: true }
-    );
-    await scopedGymDoc(db, gymId, "exerciseRequests", requestId).set(
-      { status: "approved", approvedAt: now, updatedAt: now },
-      { merge: true }
-    );
+    const statusPatch = { status: "approved", approvedAt: now, updatedAt: now };
+    await Promise.all([
+      db.collection(collectionPaths.exerciseRequests).doc(requestId).set(statusPatch, { merge: true }),
+      scopedGymDoc(db, gymId, "exerciseRequests", requestId).set(statusPatch, { merge: true }),
+    ]);
 
     return success(`"${name}" added to the exercise catalog.`, gymId, ["exercises"]);
   } catch (error) {

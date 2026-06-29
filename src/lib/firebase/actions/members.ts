@@ -67,6 +67,17 @@ export async function createMemberProfile(
 
     assertCanManageGym(user, gymId);
 
+    // Enforce per-gym member cap if set.
+    const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
+    if (gymDoc.exists) {
+      const gymData = gymDoc.data() ?? {};
+      const limitsRaw = gymData.limits as Record<string, unknown> | undefined;
+      const maxMembers = limitsRaw?.maxMembers != null ? Number(limitsRaw.maxMembers) : undefined;
+      if (maxMembers !== undefined && Number(gymData.memberCount ?? 0) >= maxMembers) {
+        return failure(new Error(`Member limit reached (${maxMembers}). Upgrade your plan to add more members.`), "Member limit reached.");
+      }
+    }
+
     await upsertAuthUser(auth, {
       email: authEmail,
       fullName,

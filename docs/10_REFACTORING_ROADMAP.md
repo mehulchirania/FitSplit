@@ -52,8 +52,8 @@ the `Notification.type` union (`src/types/domain.ts`) and given dedicated icons 
 ## Dead / orphaned code
 
 ### R7 · Unused declarations — **Sev: Low · Effort: S · Risk: L**
-- `workoutSplitTemplates` collection: declared + has rules, no read/write site
-  ([DISCREPANCIES](DISCREPANCIES.md) C1).
+- ~~`workoutSplitTemplates` collection: declared + had rules, no read/write site~~ — removed from
+  collection declarations earlier and Firestore rules on 2026-06-29.
 - Root `memberships` key unused (gym-scoped only).
 - Several callable wrappers in `src/lib/firebase/functions.ts` with no confirmed UI caller (C5).
 - Legacy `profiles` collection — read-only fallback; plan removal with R4.
@@ -67,9 +67,10 @@ pages (`/trainer`, `/trainer/members`), member sub-pages (`membership`, `pt-hist
 `profile`/`activity`, `owner/members/[memberId]`, and ~15 shared components
 (`body-weight-logger`, `muscle-radar-chart`, `member-history`,
 `member-progress-panel`, `member-context-editor`, `owner-ai-capacity-panel`, etc.). The legacy CSS
-files can't be deleted until these are migrated. Undocumented `ep-modal.css` also exists.
+files can't be deleted until these are migrated. The `ep-modal` class remains live in the program
+builder/modal CSS, but the old standalone `ep-modal.css` file has been deleted.
 **Fix:** migrate per-area to `adm-card` (owner/admin) or `m3d-`/`mset-` (member) card shells, then
-delete superseded selectors and document/remove `ep-modal.css`.
+delete superseded selectors after each migrated area.
 
 ## Testing & quality
 

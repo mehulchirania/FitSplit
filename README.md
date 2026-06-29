@@ -54,9 +54,9 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **Program Assignment**: Assign programs to individual members or bulk-assign across the roster.
 - **Live Workout Console**: Members log sets and reps in real time with day navigation, skip/modify tracking, and week-over-week history.
 - **Exercise Catalog**: Global FitSplit catalog + gym-custom exercises with YouTube video embeds, muscle group tagging, equipment metadata, and per-exercise muscle-target descriptions (all 66 default catalog entries).
-- **Exercise Requests**: Members request new exercises; owners review and approve/reject.
-- **Workout Insights**: Local heuristic analysis of lift history — rest day suggestions, progressive overload coaching tips, PR callouts. No external API needed.
-- **Injury Notes**: Members record pain points or limitations (e.g. "left shoulder pain"). Trainer can see this note and adjust the plan. Rule-based exercise swap suggestions via local muscle-group logic.
+- **Exercise Requests**: Owners request new gym exercises from the custom plan builder; admins review and approve/reject them.
+- **Workout Progress Signals**: Local lift-history UI surfaces strength trends, recent PRs, progressive-overload charts, and workout history. No external API needed.
+- **Injury Notes**: Members record pain points or limitations (e.g. "left shoulder pain"). Owners/admins can view these notes and adjust the plan; the workout UI also supports same-muscle exercise swaps.
 
 ### 🤝 Personal Training
 - **PT Plan Booking**: Owners and trainers book PT plans with configurable duration (default 30 days).
@@ -69,7 +69,7 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **Body Metrics**: Weight and body fat percentage logging with trend charts.
 - **Muscle Radar Chart**: Volume distribution visualization across muscle groups.
 - **Attendance Calendar**: Member check-in/check-out history.
-- **Gym Floor Load Map**: Real-time slot occupancy heatmap — categorizes traffic (Quiet 🟢, Moderate 🟡, Crowded 🔴), surfaces top congested exercises, and provides operational coaching advice.
+- **Training Slot Distribution**: Owner dashboards summarize member counts by preferred training slot and derive commonly assigned exercises from active programs.
 - **Owner Reports**: Membership stats, activity feed, and operational summaries.
 
 ### 🔔 Notifications & Activity
@@ -87,7 +87,7 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **Membership Management**: Plan tracking with expiry warnings and automated notifications.
 - **Gym Notice Board**: Owners post rules, tips, reminders, and announcements visible to members.
 - **Profile Photos**: Members and staff upload a cropped avatar (client-side circular crop → PNG) stored in Firebase Storage; shown in the top bar and profile screens. Members self-serve in settings; owners/admins can update any member in their gym.
-- **Macro/Nutrition Targets**: Trainers prescribe daily calorie/macro targets; members track progress in the wellness panel.
+- **Macro/Nutrition Tracking**: Member profiles can store calorie/macro targets, and members track daily macro progress in the wellness panel.
 - **Multi-Gym Isolation**: All reads and writes are partitioned by `gymId` — gym-scoped Firestore collections with Firestore security rules enforcing boundaries.
 
 ### 📱 PWA
@@ -260,7 +260,7 @@ app/
       pt-history/   # Full PT session history
       settings/     # Account settings — units, PIN change, notifications
   trainer/          # Trainer PT schedule + my members list
-  styles/           # modular CSS files (21 numbered, plus forms.css, member.css, ep-modal.css)
+  styles/           # modular CSS files (21 numbered, plus forms.css, member.css, shadcn.css)
 
 components/
   member-sub-sidebar.tsx            # Member sub-pages sidebar (links, gym branding, logout)
@@ -342,7 +342,7 @@ See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
 - **Public legal pages**: `/privacy` (GDPR + CCPA/CPRA) and `/terms` (incl. a health/fitness "not medical advice" disclaimer). `/about` is public too. All three are linked from the landing footer, login modal, and member settings.
 - **Consent**: a blocking **first-login gate** (`components/terms-consent-gate.tsx`) requires every user to accept the Terms and Privacy Policy (incl. fitness-data processing) before using the app — accept to proceed, decline to log out. Acceptance is recorded per-user (`termsAcceptedAt` on the auth profile) plus a session cookie, via the `acceptTerms` server action.
 - **Data subject rights (DSAR)**: members can **export all their data as JSON** and **request account deletion** from Settings → *Privacy & your data* (`src/lib/firebase/actions/privacy.ts`). Deletion requests notify the gym owner, who performs the erasure.
-- **Still required before production**: fill the legal-entity name/address placeholder in the policies, and sign a DPA with gyms (FitSplit acts as their processor). See `PROJECT_HANDOFF.md`.
+- **Still required before production**: set `NEXT_PUBLIC_FITSPLIT_LEGAL_NAME`, `NEXT_PUBLIC_FITSPLIT_LEGAL_ADDRESS`, and `NEXT_PUBLIC_FITSPLIT_LEGAL_EMAIL` for the registered operator, and sign a DPA with gyms (FitSplit acts as their processor). See `PROJECT_HANDOFF.md`.
 
 ---
 

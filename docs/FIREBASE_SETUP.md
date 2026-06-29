@@ -90,7 +90,6 @@ memberships
 exerciseCatalog
 workoutPrograms
 notifications
-workoutSplitTemplates
 ```
 
 ## Seed Workout Data

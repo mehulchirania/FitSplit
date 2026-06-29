@@ -141,6 +141,10 @@ export type GymWorkspace = {
     billedUntil?: string;
     stripeCustomerId?: string;
   };
+  limits?: {
+    maxMembers?: number;
+    maxStorage?: number;
+  };
 };
 
 /**

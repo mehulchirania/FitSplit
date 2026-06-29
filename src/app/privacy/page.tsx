@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR_LINE, LEGAL_OPERATOR_NAME } from "@/lib/legal";
 
 export const metadata = {
   title: "Privacy Policy | FitSplit",
@@ -8,7 +9,6 @@ export const metadata = {
 
 // Keep this in sync with the date the policy text last changed.
 const LAST_UPDATED = "June 5, 2026";
-const CONTACT_EMAIL = "fitsplit.in@gmail.com";
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
@@ -50,7 +50,7 @@ export default function PrivacyPage() {
         </h1>
         <p style={{ color: "var(--fg-dim)", marginBottom: "8px" }}>Last updated: {LAST_UPDATED}</p>
         <p style={{ color: "var(--fg-dim)", lineHeight: 1.65, marginBottom: "36px" }}>
-          This Privacy Policy explains how FitSplit (&ldquo;FitSplit&rdquo;, &ldquo;we&rdquo;,
+          This Privacy Policy explains how {LEGAL_OPERATOR_NAME} (&ldquo;FitSplit&rdquo;, &ldquo;we&rdquo;,
           &ldquo;us&rdquo;) collects, uses, shares, and protects your personal data when you use the
           FitSplit gym-management platform, and the rights you have over that data &mdash; including
           under the EU/UK General Data Protection Regulation (GDPR) and the California Consumer
@@ -59,19 +59,18 @@ export default function PrivacyPage() {
 
         <Section id="controller" title="1. Who is responsible for your data">
           <p style={{ marginBottom: "12px" }}>
-            FitSplit provides the platform. Each gym that uses FitSplit decides what member data to
+            {LEGAL_OPERATOR_NAME} provides the platform. Each gym that uses FitSplit decides what member data to
             collect and why, and is the <strong>controller</strong> of its members&rsquo; data;
-            FitSplit acts as a <strong>processor</strong> on that gym&rsquo;s behalf. For data we
-            collect for our own purposes (e.g. account security, platform analytics), FitSplit is the
+            {LEGAL_OPERATOR_NAME} acts as a <strong>processor</strong> on that gym&rsquo;s behalf. For data we
+            collect for our own purposes (e.g. account security, platform analytics), {LEGAL_OPERATOR_NAME} is the
             controller.
           </p>
           <p>
             Questions, or to exercise your rights, contact us at{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
-              {CONTACT_EMAIL}
+            <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} style={linkStyle}>
+              {LEGAL_CONTACT_EMAIL}
             </a>
-            . <em>Operator: FitSplit (registered legal entity name and address to be added before
-            production launch).</em>
+            . <em>Operator: {LEGAL_OPERATOR_LINE}.</em>
           </p>
         </Section>
 
@@ -208,8 +207,8 @@ export default function PrivacyPage() {
         <Section id="exercise" title="11. How to exercise your rights">
           <p>
             Email{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
-              {CONTACT_EMAIL}
+            <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} style={linkStyle}>
+              {LEGAL_CONTACT_EMAIL}
             </a>{" "}
             with your request. Members can also ask their gym&rsquo;s owner to action many requests
             directly. We will respond within the timeframe required by applicable law (generally 30
@@ -236,8 +235,8 @@ export default function PrivacyPage() {
         <Section id="contact" title="14. Contact us">
           <p>
             For any privacy question or request, write to{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
-              {CONTACT_EMAIL}
+            <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} style={linkStyle}>
+              {LEGAL_CONTACT_EMAIL}
             </a>
             . See also our{" "}
             <Link href="/terms" style={linkStyle}>

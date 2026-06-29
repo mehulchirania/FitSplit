@@ -4,6 +4,20 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Backend hardening sprint (2026-06-29)
+
+Five remaining backlog items from the 2026-06-28 architecture audit, implemented today:
+
+- **`exercises.ts` approve redundant write removed:** `approveCatalogExerciseRequest` had 3 sequential writes for the status patch (explicit root, `requestDoc.ref`, gym-scoped). Collapsed to 2 parallel writes (root + gym-scoped via `Promise.all`). Reject already used collectionGroup fan-out correctly.
+- **`getGymFloorLoadMap` caching:** Replaced `getMembersUncached`, `getWorkoutProgramsUncached`, `getExerciseCatalogUncached` with their `unstable_cache`-backed variants (`getMembers`, `getWorkoutPrograms`, `getExerciseCatalog`). `getActiveProgramAssignments` was already `cache()`-wrapped.
+- **Per-gym resource limits:** Added `limits?: { maxMembers?, maxStorage? }` to `GymWorkspace` type and `mapWorkspace` parser. `createMemberProfile` now reads `gym.limits.maxMembers` and returns a typed `failure()` before the transaction if the cap is reached.
+- **Progress history pagination:** `getLiftLogsForMember` (default 500), `getDayLogsForMember` (365), `getBodyMetricLogsForMember` (365) now apply `.orderBy("loggedAt","desc").limit(N)` server-side. Callers that need more can pass a higher limit explicitly.
+- **FCM topic subscriptions:** `saveFcmToken` now calls `messaging.subscribeToTopic(token, \`gym-${gymId}\`)` after saving the per-device token. Enables gym-wide push broadcasts without iterating member profiles. Non-fatal on failure.
+
+`tsc --noEmit` clean after all changes.
+
+---
+
 ## Easy Firestore Cost Wins Implemented (2026-06-28)
 
 Implemented the low-effort/high-impact items from the architecture audit, with no AI features added.
@@ -372,7 +386,7 @@ Full pass through `DISCREPANCIES.md` (2026-06-05 vintage) against the live codeb
 - **`/about` is now public** (removed from `middleware.ts` `protectedRoutes` + matcher) — it was auth-gated and unreachable to visitors. Content now credits collaboration with [Blume Labs](https://blumelabs.in); landing footer carries the same credit.
 
 ### Still open (needs input / larger effort)
-- Fill the **legal-entity name + address** placeholder in `/privacy` and `/terms` before production.
+- Set `NEXT_PUBLIC_FITSPLIT_LEGAL_NAME`, `NEXT_PUBLIC_FITSPLIT_LEGAL_ADDRESS`, and `NEXT_PUBLIC_FITSPLIT_LEGAL_EMAIL` before production so `/privacy` and `/terms` show the registered operator.
 - Sign a **DPA** with gyms (FitSplit is their processor) + rely on Google's DPA.
 
 

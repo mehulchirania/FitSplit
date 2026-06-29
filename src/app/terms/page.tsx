@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR_LINE, LEGAL_OPERATOR_NAME } from "@/lib/legal";
 
 export const metadata = {
   title: "Terms of Service | FitSplit",
@@ -8,7 +9,6 @@ export const metadata = {
 
 // Keep this in sync with the date the terms text last changed.
 const LAST_UPDATED = "June 5, 2026";
-const CONTACT_EMAIL = "fitsplit.in@gmail.com";
 
 function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
   return (
@@ -53,7 +53,7 @@ export default function TermsPage() {
           These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of the FitSplit
           gym-management platform (&ldquo;FitSplit&rdquo;, the &ldquo;Service&rdquo;). By creating an
           account, logging in, or otherwise using the Service, you agree to these Terms. If you do not
-          agree, do not use the Service.
+          agree, do not use the Service. The Service is operated by {LEGAL_OPERATOR_NAME}.
         </p>
 
         <Section id="eligibility" title="1. Eligibility">
@@ -69,8 +69,8 @@ export default function TermsPage() {
           <p>
             You are responsible for keeping your credentials (password or PIN) confidential and for all
             activity under your account. Notify your gym owner or us at{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
-              {CONTACT_EMAIL}
+            <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} style={linkStyle}>
+              {LEGAL_CONTACT_EMAIL}
             </a>{" "}
             promptly if you suspect unauthorized access. We may suspend accounts that appear
             compromised or misused.
@@ -192,10 +192,10 @@ export default function TermsPage() {
         <Section id="contact" title="14. Contact us">
           <p>
             Questions about these Terms? Write to{" "}
-            <a href={`mailto:${CONTACT_EMAIL}`} style={linkStyle}>
-              {CONTACT_EMAIL}
+            <a href={`mailto:${LEGAL_CONTACT_EMAIL}`} style={linkStyle}>
+              {LEGAL_CONTACT_EMAIL}
             </a>
-            . See also our{" "}
+            . Operator: {LEGAL_OPERATOR_LINE}. See also our{" "}
             <Link href="/privacy" style={linkStyle}>
               Privacy Policy
             </Link>{" "}

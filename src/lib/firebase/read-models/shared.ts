@@ -148,6 +148,16 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
             : undefined,
         }
       : undefined,
+    limits: data.limits && typeof data.limits === "object"
+      ? {
+          maxMembers: (data.limits as Record<string, unknown>).maxMembers != null
+            ? Number((data.limits as Record<string, unknown>).maxMembers)
+            : undefined,
+          maxStorage: (data.limits as Record<string, unknown>).maxStorage != null
+            ? Number((data.limits as Record<string, unknown>).maxStorage)
+            : undefined,
+        }
+      : undefined,
   };
 }
 

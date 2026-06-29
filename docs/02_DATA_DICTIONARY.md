@@ -15,13 +15,13 @@
 ## Collection inventory
 
 **Declared gym-scoped** (`collections.ts:35-64`): members, staff, exerciseCatalog,
-exerciseRequests, workoutPrograms, workoutSplitTemplates, notifications, liftLogs,
+exerciseRequests, workoutPrograms, notifications, liftLogs,
 programAssignments, activityEvents, workoutSessions, attendanceRecords, bodyMetricLogs,
 dayLogs, ptSessions, ptLiftLogs, macroLogs, activityLogs, packages, memberships,
 paymentRequests, summaries.
 
 **Declared root** (`collections.ts:1-33`): gyms, profiles (legacy), authProfiles, memberships,
-exerciseCatalog, exerciseRequests, workoutPrograms, notifications, workoutSplitTemplates,
+exerciseCatalog, exerciseRequests, workoutPrograms, notifications,
 liftLogs, programAssignments, activityEvents, workoutSessions, contactMessages, siteLinks,
 attendanceRecords, bodyMetricLogs, dayLogs, archives, ptSessions, ptLiftLogs, macroLogs,
 activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, not in
@@ -253,14 +253,6 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Security rules (gym):** read `isGymUser`; write admin or owner (`firestore.rules:133-136`).
   **(root):** read signed-in; write admin (`firestore.rules:333-336`).
 
-## workoutSplitTemplates  *(gym-scoped + root)* — declared, low usage
-- **Scope:** `gyms/{gymId}/workoutSplitTemplates/{id}` + root (`collections.ts:14,41`).
-- **Purpose:** split templates. **Declared** in collections + rules; no active read/write site
-  found in this pass (split logic lives in `src/lib/split-library.ts` / `workouts.json`). ⚠️ likely
-  orphaned — see [10_REFACTORING_ROADMAP](10_REFACTORING_ROADMAP.md).
-- **Security rules (gym):** read `isGymUser`; write admin/owner (`firestore.rules:138-141`).
-  **(root):** read signed-in; write admin (`firestore.rules:338-341`).
-
 ## programAssignments  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/programAssignments/{id}` + root (`collections.ts:16,42`).
 - **Purpose:** which program a member is currently assigned. One active per member.
@@ -370,9 +362,9 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Purpose:** role-scoped notifications with deep-link `actionHref`.
 - **Fields:** `Notification` (`src/types/domain.ts:348-380`): `recipientRole`, `recipientId`,
   `type` (16 union values incl. PT + membership), `title`, `body`, `createdAt`, `readAt?`,
-  `actionHref?`, `memberId?`, `ptSessionId?`, `exerciseRequestId?`. Some writes use
-  `recipientUserId` (rules accept both, `firestore.rules:147-148`). Billing CFs add
-  `payment_request_pending|rejected` types not in the domain union (see DISCREPANCIES).
+  `actionHref?`, `memberId?`, `ptSessionId?`, `exerciseRequestId?`. The union includes billing
+  and DSAR types such as `payment_request_pending`, `payment_request_rejected`, and
+  `data_deletion_request`.
 - **Reads:** `getOwnerNotifications`/`getAdminNotifications`/`getMemberNotifications`
   (`read-models/notifications.ts:36,94,133`).
 - **Writes:** many actions/CFs; deterministic ids for trigger-created ones
@@ -397,9 +389,8 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `reschedulePTSession` (`actions/pt.ts:46,137,283,359,435`); `assignPTPlan` CF (`:912`);
   scheduled reminders + auto-expire (`functions/src/index.ts:1765,1859`).
 - **Security rules (gym):** read admin/staff/own-member; create/update admin/staff; delete
-  admin/owner (`firestore.rules:249-256`). **(root):** read admin/owner-trainer-of-gym/**any member
-  of gym**; write admin/owner/trainer of gym (`firestore.rules:420-428`) — note members can read
-  *any* session in their gym at root (privacy gap, see DISCREPANCIES/roadmap).
+  admin/owner (`firestore.rules:249-256`). **(root):** read admin/owner-trainer-of-gym/member-self;
+  write admin/owner/trainer of gym (`firestore.rules:420-428`).
 - **Indexes:** collection-group `gymId+scheduledAt`, `trainerId+scheduledAt`, `memberId+scheduledAt`;
   collection `status+notified24h+scheduledAt`, `status+notified1h+scheduledAt`, `status+startedAt`.
 

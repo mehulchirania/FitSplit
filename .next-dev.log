@@ -1,59 +1,18 @@
 
 > fitsplit@0.1.0 dev
-> next dev -p 3000
+> next dev --turbopack
 
-   ▲ Next.js 15.5.15
-   - Local:        http://localhost:3000
-   - Network:      http://192.168.1.70:3000
-   - Environments: .env.local
-   - Experiments (use with caution):
-     · clientTraceMetadata
+▲ Next.js 16.2.9 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.1.70:3000
+- Environments: .env.local
+✓ Ready in 1297ms
+- Experiments (use with caution):
+  · clientTraceMetadata
 
- ✓ Starting...
- ○ Compiling /instrumentation ...
- ✓ Compiled /instrumentation in 2.6s (2580 modules)
- ✓ Ready in 6s
- ○ Compiling / ...
- ✓ Compiled / in 20s (9343 modules)
- GET / 200 in 15789ms
- GET / 200 in 29652ms
- ○ Compiling /middleware ...
- ✓ Compiled /middleware in 1629ms (856 modules)
- ○ Compiling /member ...
- POST / 200 in 13004ms
- ✓ Compiled /member in 4.6s (10035 modules)
- GET /member 200 in 9954ms
- ○ Compiling /member/settings ...
- ✓ Compiled /member/settings in 3.5s (10051 modules)
- GET /member/settings 200 in 7879ms
- GET /member 200 in 3476ms
- ○ Compiling /member/programs ...
- ✓ Compiled /member/programs in 8.9s (10060 modules)
- GET /member/programs 200 in 13721ms
- GET /member/programs 200 in 4486ms
- ✓ Compiled in 2.8s (8387 modules)
- GET /member/programs 200 in 3617ms
- ✓ Compiled in 313ms (856 modules)
- GET / 200 in 2444ms
- ○ Compiling /_error ...
- ✓ Compiled /_error in 17s (10686 modules)
- GET /member 500 in 23386ms
- GET /member 500 in 627ms
- GET /member 500 in 1235ms
- GET /member 500 in 324ms
- GET /member 500 in 1076ms
- GET /member 500 in 305ms
- GET /member 500 in 1478ms
- GET /member 500 in 515ms
- GET /member 500 in 1082ms
- GET /member 500 in 98ms
- GET /member 500 in 1127ms
- GET /member 500 in 338ms
- GET / 500 in 703ms
- GET / 500 in 292ms
- GET / 500 in 643ms
- GET / 500 in 305ms
- GET / 200 in 3542ms
- POST / 200 in 4456ms
- ○ Compiling /_not-found ...
-[?25h
+ GET / 200 in 5.4s (next.js: 2.1s, proxy.ts: 417ms, application-code: 2.9s)
+ GET / 200 in 68ms (next.js: 10ms, proxy.ts: 6ms, application-code: 52ms)
+ POST / 200 in 5.2s (next.js: 22ms, proxy.ts: 17ms, application-code: 5.2s)
+  └─ ƒ loginWithCredentials({}) in 5103ms src/lib/auth.ts
+○ Compiling /member ...
+ GET /member 200 in 13.4s (next.js: 7.4s, proxy.ts: 10ms, application-code: 6.0s)

@@ -69,7 +69,7 @@ Role home redirects live in `src/proxy.ts`. Owner topbar is suppressed for `/own
 ## Collections (names only — detail in [02_DATA_DICTIONARY](02_DATA_DICTIONARY.md))
 
 **Gym-scoped** `gyms/{gymId}/…` (`collections.ts:35-64`): `members`, `staff`,
-`exerciseCatalog`, `exerciseRequests`, `workoutPrograms`, `workoutSplitTemplates`,
+`exerciseCatalog`, `exerciseRequests`, `workoutPrograms`,
 `notifications`, `liftLogs`, `programAssignments`, `activityEvents`, `workoutSessions`,
 `attendanceRecords`, `bodyMetricLogs`, `dayLogs`, `ptSessions`, `ptLiftLogs`, `macroLogs`,
 `activityLogs`, `packages`, `memberships`, `paymentRequests`, `summaries`.

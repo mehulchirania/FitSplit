@@ -3,16 +3,18 @@
   "entry": [
     "src/app/**/{page,layout,template,loading,error,not-found,route,default}.tsx",
     "src/app/**/{page,layout,template,loading,error,not-found,route,default}.ts",
-    "src/middleware.ts",
-    "src/instrumentation.ts",
-    "next.config.mjs",
-    "vitest.config.ts",
     "scripts/**/*.{js,mjs}",
     "functions/src/index.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "functions/src/**/*.ts"],
   "ignore": ["src/lib/mock-data.ts"],
-  "ignoreDependencies": ["@opentelemetry/*"],
+  "ignoreDependencies": [
+    "@opentelemetry/*",
+    "firebase-functions/v2/firestore",
+    "tailwindcss",
+    "tailwindcss-animate"
+  ],
+  "ignoreBinaries": ["firebase"],
   "next": true,
   "vitest": true
 }
