@@ -264,15 +264,16 @@ function ThreeCanvas() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const renderCanvas = canvas;
     let destroyed = false;
 
     import("three").then((THREE) => {
-      if (destroyed || !canvas) return;
+      if (destroyed) return;
       const scene = new THREE.Scene();
       const camera = new THREE.PerspectiveCamera(42, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.set(0, 0, 10);
 
-      const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+      const renderer = new THREE.WebGLRenderer({ canvas: renderCanvas, alpha: true, antialias: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
 
@@ -343,7 +344,7 @@ function ThreeCanvas() {
         const prog = Math.min(1, Math.max(0, s.scroll / docH));
 
         const fade = Math.max(0.14, 1 - prog / 0.16);
-        canvas.style.opacity = String(fade);
+        renderCanvas.style.opacity = String(fade);
 
         dumbbell.rotation.y += 0.005;
         dumbbell.rotation.x = lerp(dumbbell.rotation.x, s.my * 0.4 - 0.12 + prog * 1.0, 0.05);
