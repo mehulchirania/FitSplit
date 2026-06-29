@@ -174,10 +174,12 @@ function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
 
   return (
     <div
+      className="fs-login-overlay"
       style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", background: "rgba(4,4,4,0.7)", backdropFilter: "blur(8px)" }}
       onClick={onClose}
     >
       <div
+        className="fs-login-panel"
         style={{ position: "relative", width: "100%", maxWidth: "430px", background: "linear-gradient(180deg, rgba(26,26,26,0.96), rgba(14,14,14,0.96))", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "24px", padding: "32px", boxShadow: "0 40px 100px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.06)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -672,7 +674,7 @@ function CTA({ onLogin }: { onLogin: () => void }) {
       <div data-reveal style={{ position: "relative", overflow: "hidden", borderRadius: "28px", border: "1px solid rgba(200,241,53,0.25)", background: "linear-gradient(135deg, rgba(200,241,53,0.12), rgba(16,16,16,0.7))", backdropFilter: "blur(16px)", padding: "64px 56px", textAlign: "center" }}>
         <div style={{ position: "absolute", top: "-120px", left: "50%", transform: "translateX(-50%)", width: "600px", height: "300px", background: "radial-gradient(closest-side, rgba(200,241,53,0.22), transparent 70%)", pointerEvents: "none" }} />
         <h2 style={{ position: "relative", fontFamily: "'Sora',sans-serif", fontSize: "clamp(28px,3.6vw,42px)", fontWeight: 700, letterSpacing: "-0.035em", lineHeight: 1.1, margin: "0 0 14px", color: "#F5F5F5" }}>
-          Built for gyms that deliver coaching,<br />not just access.
+          Built for gyms that deliver coaching, <br />not just access.
         </h2>
         <p style={{ position: "relative", fontSize: "16px", color: "#b4b4b4", margin: "0 0 32px" }}>
           Sign in to your workspace and pick up where your members left off.
@@ -759,9 +761,310 @@ export function LandingPageClient() {
         [data-flowline] { transform: scaleX(0); transform-origin: left center; }
         html { scroll-behavior: smooth; }
         ::selection { background: #C8F135; color: #0A0A0A; }
+
+        @media (max-width: 900px) {
+          .fs-landing-root {
+            overflow-x: hidden;
+          }
+
+          .fs-landing-root header > div {
+            padding: 12px 20px !important;
+            gap: 14px !important;
+          }
+
+          .fs-landing-root header nav {
+            display: none !important;
+          }
+
+          .fs-landing-root header img {
+            height: 30px !important;
+          }
+
+          .fs-landing-root header a span {
+            font-size: 18px !important;
+            letter-spacing: 0 !important;
+          }
+
+          .fs-landing-root header button {
+            min-height: 40px !important;
+            padding: 9px 16px !important;
+            font-size: 13px !important;
+            box-shadow: 0 4px 18px rgba(200,241,53,0.2) !important;
+          }
+
+          .fs-landing-root canvas {
+            opacity: 0.38 !important;
+          }
+
+          .fs-landing-root #top {
+            min-height: auto !important;
+            padding: 86px 20px 74px !important;
+          }
+
+          .fs-landing-root #top h1 {
+            max-width: 12ch !important;
+            font-size: 48px !important;
+            line-height: 1.04 !important;
+            letter-spacing: 0 !important;
+            margin-bottom: 22px !important;
+          }
+
+          .fs-landing-root #top p {
+            max-width: 34rem !important;
+            font-size: 16px !important;
+            line-height: 1.65 !important;
+            margin-bottom: 30px !important;
+          }
+
+          .fs-landing-root #top > div[data-reveal]:last-child {
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+
+          .fs-landing-root #platform,
+          .fs-landing-root #product,
+          .fs-landing-root #how,
+          .fs-landing-root #faq {
+            max-width: 100% !important;
+            padding: 34px 20px 76px !important;
+          }
+
+          .fs-landing-root #platform > div:first-child,
+          .fs-landing-root #product > div:first-child,
+          .fs-landing-root #how > div:first-child,
+          .fs-landing-root #faq > div:first-child {
+            max-width: 36rem !important;
+            margin-bottom: 34px !important;
+            text-align: left !important;
+          }
+
+          .fs-landing-root #platform h2,
+          .fs-landing-root #product h2,
+          .fs-landing-root #how h2,
+          .fs-landing-root #faq h2,
+          .fs-landing-root #faq + section h2 {
+            font-size: 32px !important;
+            line-height: 1.12 !important;
+            letter-spacing: 0 !important;
+          }
+
+          .fs-landing-root #platform > div:first-child p,
+          .fs-landing-root #how > div:first-child p {
+            font-size: 15px !important;
+            line-height: 1.62 !important;
+          }
+
+          .fs-landing-root #platform [data-flowline] {
+            display: none !important;
+          }
+
+          .fs-landing-root #platform > div:last-child > div:last-child {
+            grid-template-columns: 1fr !important;
+            gap: 16px !important;
+          }
+
+          .fs-landing-root #platform > div:last-child > div:last-child > div {
+            display: grid !important;
+            grid-template-columns: 64px minmax(0, 1fr) !important;
+            column-gap: 16px !important;
+            row-gap: 4px !important;
+            align-items: start !important;
+            text-align: left !important;
+            background: rgba(15,15,15,0.84) !important;
+            border: 1px solid rgba(255,255,255,0.08) !important;
+            border-radius: 18px !important;
+            padding: 18px !important;
+          }
+
+          .fs-landing-root #platform > div:last-child > div:last-child > div > div:first-child {
+            grid-row: 1 / span 3 !important;
+            width: 58px !important;
+            height: 58px !important;
+            border-radius: 16px !important;
+            margin: 0 !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35) !important;
+          }
+
+          .fs-landing-root #platform > div:last-child > div:last-child > div > div:first-child span {
+            font-size: 20px !important;
+          }
+
+          .fs-landing-root #platform h3 {
+            font-size: 19px !important;
+            letter-spacing: 0 !important;
+            margin-bottom: 6px !important;
+          }
+
+          .fs-landing-root #platform > div:last-child p {
+            max-width: none !important;
+          }
+
+          .fs-landing-root #product > div:last-child,
+          .fs-landing-root #how > div:last-child {
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+          }
+
+          .fs-landing-root #product > div:last-child > div,
+          .fs-landing-root #how > div:last-child > div {
+            padding: 22px !important;
+            border-radius: 16px !important;
+          }
+
+          .fs-landing-root #product > div:last-child > div > span {
+            position: static !important;
+            display: inline-flex !important;
+            max-width: 100% !important;
+            margin: 0 0 14px !important;
+            white-space: normal !important;
+          }
+
+          .fs-landing-root #product h3,
+          .fs-landing-root #how h3 {
+            letter-spacing: 0 !important;
+          }
+
+          .fs-landing-root #faq button {
+            padding: 17px 18px !important;
+            align-items: flex-start !important;
+            font-size: 15px !important;
+            line-height: 1.35 !important;
+          }
+
+          .fs-landing-root #faq p {
+            padding: 0 18px 18px !important;
+          }
+
+          .fs-landing-root #faq + section {
+            max-width: 100% !important;
+            padding: 8px 20px 78px !important;
+          }
+
+          .fs-landing-root #faq + section > div {
+            padding: 38px 24px !important;
+            border-radius: 22px !important;
+          }
+
+          .fs-landing-root #faq + section h2 br {
+            display: none !important;
+          }
+
+          .fs-landing-root #faq + section p {
+            line-height: 1.55 !important;
+          }
+
+          .fs-landing-root footer > div {
+            padding: 42px 20px 28px !important;
+          }
+
+          .fs-landing-root footer > div > div:first-child {
+            grid-template-columns: 1.2fr 1fr !important;
+            gap: 30px 22px !important;
+          }
+
+          .fs-login-overlay {
+            align-items: flex-end !important;
+            padding: 14px !important;
+          }
+
+          .fs-login-panel {
+            max-height: calc(100dvh - 28px) !important;
+            overflow-y: auto !important;
+            border-radius: 22px !important;
+            padding: 26px !important;
+          }
+        }
+
+        @media (max-width: 640px) {
+          .fs-landing-root #top {
+            padding: 64px 18px 58px !important;
+          }
+
+          .fs-landing-root #top > div[data-reveal]:first-child {
+            max-width: 100% !important;
+            white-space: normal !important;
+            line-height: 1.35 !important;
+            margin-bottom: 22px !important;
+          }
+
+          .fs-landing-root #top h1 {
+            max-width: 100% !important;
+            font-size: 38px !important;
+          }
+
+          .fs-landing-root #top > div[data-reveal]:last-child {
+            width: 100% !important;
+            flex-direction: column !important;
+          }
+
+          .fs-landing-root #top > div[data-reveal]:last-child button,
+          .fs-landing-root #faq + section button {
+            width: 100% !important;
+            min-height: 52px !important;
+            justify-content: center !important;
+          }
+
+          .fs-landing-root #top > div[data-reveal]:last-child span {
+            max-width: 24rem !important;
+            line-height: 1.45 !important;
+          }
+
+          .fs-landing-root #platform,
+          .fs-landing-root #product,
+          .fs-landing-root #how,
+          .fs-landing-root #faq {
+            padding: 30px 18px 62px !important;
+          }
+
+          .fs-landing-root #platform h2,
+          .fs-landing-root #product h2,
+          .fs-landing-root #how h2,
+          .fs-landing-root #faq h2,
+          .fs-landing-root #faq + section h2 {
+            font-size: 29px !important;
+          }
+
+          .fs-landing-root #platform > div:last-child > div:last-child > div {
+            grid-template-columns: 54px minmax(0, 1fr) !important;
+            column-gap: 14px !important;
+            padding: 16px !important;
+          }
+
+          .fs-landing-root #platform > div:last-child > div:last-child > div > div:first-child {
+            width: 50px !important;
+            height: 50px !important;
+            border-radius: 14px !important;
+          }
+
+          .fs-landing-root #product > div:last-child > div,
+          .fs-landing-root #how > div:last-child > div {
+            padding: 20px !important;
+          }
+
+          .fs-landing-root #faq + section {
+            padding: 4px 18px 64px !important;
+          }
+
+          .fs-landing-root #faq + section > div {
+            padding: 32px 20px !important;
+          }
+
+          .fs-landing-root footer > div > div:first-child {
+            grid-template-columns: 1fr !important;
+            gap: 26px !important;
+          }
+
+          .fs-landing-root footer > div > div:last-child {
+            flex-direction: column !important;
+          }
+
+          .fs-login-panel {
+            padding: 22px !important;
+          }
+        }
       `}</style>
 
-      <div style={{ position: "relative", width: "100%", minHeight: "100vh", background: "#060606", color: "#F5F5F5", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", WebkitFontSmoothing: "antialiased" }}>
+      <div className="fs-landing-root" style={{ position: "relative", width: "100%", minHeight: "100vh", background: "#060606", color: "#F5F5F5", fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif", WebkitFontSmoothing: "antialiased" }}>
 
         {/* Fixed atmospheric backdrop */}
         <div style={{ position: "fixed", inset: 0, zIndex: 0, pointerEvents: "none" }}>
