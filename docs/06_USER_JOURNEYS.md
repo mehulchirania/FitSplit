@@ -82,33 +82,20 @@ notification/activity/push idempotently (deterministic ids `program_assignment_*
 
 ```mermaid
 sequenceDiagram
-  participant M as Member (workout console)
-  participant SW as startWorkoutSession (actions/progress.ts:526)
-  participant GF as validateGymGeofence (actions/shared.ts:434)
-  participant LL as logLiftSet (actions/progress.ts:57)
+  participant M as Member (focused workout view)
+  participant LL as logLiftSet (actions/progress.ts)
   participant DX as Dexie (offline-db)
-  participant SY as syncOfflineLifts (actions/progress.ts:108)
-  M->>SW: sessionId + GPS lat/lng
-  SW->>GF: check within radius (default 150m)
-  alt outside radius
-    GF-->>M: error (must be inside gym)
-  else inside / not_configured
-    SW->>SW: write workoutSessions(active) + attendanceRecords(checkIn)
-  end
-  loop each set
-    alt online
-      M->>LL: exerciseId, weight, sets, reps → liftLogs
-    else offline
-      M->>DX: queue set locally
-    end
+  participant SY as syncOfflineLifts (actions/progress.ts)
+  M->>LL: exerciseId, weight, sets, reps
+  LL->>LL: write liftLogs + upsert daily completed workoutSession/attendanceRecord
+  alt offline
+    M->>DX: queue set locally
   end
   Note over M,SY: on reconnect
   DX->>SY: batched logs
-  SY->>SY: requireAuth + assertCanManageMember per log → liftLogs (batch)
-  M->>M: endWorkoutSession → status=completed + attendance checkOut
+  SY->>SY: write liftLogs + upsert daily completed sessions/attendance
 ```
-Day skip/modify → `logDayStatus` (`actions/progress.ts:267`, upsert id
-`memberId_dayId_weekStart`) with optional makeup exercises; `updateMakeupStatus` to act on them.
+Day skip/modify -> `logDayStatus` (`actions/progress.ts`, upsert id `memberId_dayId_weekStart`) and `clearDayLog` for resets.
 
 ## 6. PT booking → session → dual-write
 

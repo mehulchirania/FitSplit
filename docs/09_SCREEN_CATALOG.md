@@ -108,7 +108,7 @@ Root App Router special files:
 | `/admin` (layout) | `src/app/admin/layout.tsx` | `requireRole[admin]` | Admin shell + notifications | `getAdminNotifications` | notifications |
 | `/admin/billing` | `src/app/admin/billing/page.tsx` | `requireRole[admin]` | Platform billing — **coming-soon placeholder** | — | — |
 | `/admin/exercises` | `src/app/admin/exercises/page.tsx` | `requireRole[admin]` | Global exercise catalog mgmt + approve requests | exercise actions, `getExerciseCatalog`, `getPendingExerciseRequests` | exerciseCatalog (global), exerciseRequests |
-| `/admin/gyms` | `src/app/admin/gyms/page.tsx` | `requireRole[admin]` | Gym list + create | `getGymWorkspaces`, `createGymWorkspace` | gyms |
+| `/admin/gyms` | `src/app/admin/gyms/page.tsx` | `requireRole[admin]` | Gym list/filtering | `getGymWorkspaces` | gyms |
 | `/admin/gyms/[gymId]` | `src/app/admin/gyms/[gymId]/page.tsx` | `requireRole[admin]` | Gym detail + staff/owner mgmt | `getGymDetail`, `getMembers`, `getOwnersForGym` | gyms, members, staff |
 | `/admin/gyms/[gymId]/edit` | `src/app/admin/gyms/[gymId]/edit/page.tsx` | `requireRole[admin]` | Edit gym details + logo | `getGymDetail`, `updateGymDetails`, `updateGymLogo` | gyms, Storage |
 | `/admin/gyms/[gymId]/members/[memberId]` | `src/app/admin/gyms/[gymId]/members/[memberId]/page.tsx` | `requireRole[admin]` | Admin member detail — `adm-gym-hero` hero, 4-KPI strip, edit profile, member info rows, account access toggle + PIN reset, collapsible danger zone | `getMemberDetail`, `getGymDetail`, `updateMemberProfile`, `toggleMemberAccess`, `resetPassword`, `deleteMemberProfile` | authProfiles, gyms/members, phones |

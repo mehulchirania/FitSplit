@@ -76,10 +76,10 @@ delete superseded selectors after each migrated area.
 
 ### R9 · Near-zero test coverage — **Sev: Med · Effort: L · Risk: L**
 Only `src/lib/__tests__/validation.test.ts` and `src/lib/__tests__/workout-utils.test.ts` exist. The
-entire data-access layer (actions, read-models, CFs), authz guards, geofence math, billing date
+entire data-access layer (actions, read-models, CFs), authz guards, billing date
 math, and dual-write mirroring are untested.
-**Priority targets:** `assertMemberBelongsToCallerGym`, `validateGymGeofence`/`distanceInMeters`,
-`addMonths`/PT date math, lockout logic, program-assignment cancel-prior behavior.
+**Priority targets:** `assertMemberBelongsToCallerGym`, `addMonths`/PT date math,
+lockout logic, program-assignment cancel-prior behavior.
 
 ## Performance / scalability
 

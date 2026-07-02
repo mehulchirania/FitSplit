@@ -90,9 +90,8 @@ FitSplit **global** library lives at root `exerciseCatalog` /
 - **Live workout / attendance** — `logLiftSet` and `syncOfflineLifts` are the reliable
   member writer path today. They upsert deterministic daily `workoutSessions` and
   `attendanceRecords` with `geofenceStatus:"location_not_provided"` so owner attendance
-  trends accrue from actual lift logs. Explicit `startWorkoutSession`/`endWorkoutSession`
-  still exist for a future geofenced Start/Finish UI, while current member day status is
-  handled via `FocusedDayView` → `logDayStatus` / `clearDayLog` for skip/modified notes.
+  trends accrue from actual lift logs. Current member day status is handled via
+  `FocusedDayView` -> `logDayStatus` / `clearDayLog` for skip/modified notes.
 - **PT** — `bookPTSession`/`assignPTPlan` → `startPTSession` → `logPTLiftSet`
   (trainer-set history also appears in member lift history with `source:"trainer"`) → `completePTSession`.
   Scheduled reminders + auto-expire of abandoned sessions.

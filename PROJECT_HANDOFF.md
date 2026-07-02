@@ -74,7 +74,7 @@ Five remaining backlog items from the 2026-06-28 architecture audit, implemented
 Implemented the low-effort/high-impact items from the architecture audit, with no AI features added.
 
 **Firestore write cost reduction:**
-- `src/lib/firebase/actions/progress.ts` no longer writes hot member progress/session data to both root and gym-scoped collections. `logLiftSet`, `logBodyWeight`, `logDayStatus`, `saveMacroLog`, `logActivity`, `startWorkoutSession`, `endWorkoutSession`, and `updateMakeupStatus` now write the canonical gym-scoped docs only.
+- `src/lib/firebase/actions/progress.ts` no longer writes hot member progress data to both root and gym-scoped collections. The remaining live progress writers (`logLiftSet`, `logBodyWeight`, `logDayStatus`, `clearDayLog`, `saveMacroLog`) write gym-scoped data; lift logging also upserts daily workout sessions and attendance records.
 - `syncOfflineLifts` now writes deterministic gym-scoped lift docs in a single batch. It reuses the offline/client ID when present and falls back to a stable composite ID, so retrying the same offline sync no longer creates duplicate random root records.
 
 **Firestore read cost reduction:**
@@ -757,7 +757,7 @@ Implemented Design 04 (Hybrid) from the Claude Design export. Replaces the old t
 - Removed the empty `Training Insights` profile card path by deleting the dead `ProfileAiSummary` component and the deleted `lib/ai.ts` dependency. The profile page now keeps concrete metrics, charts, bodyweight, and security only.
 - Member dashboard readability improved: Workout, Progress, Wellness, lift-log, and side panels now render as fully readable elevated surfaces instead of overly transparent glass.
 - Macro tracking is now wired end-to-end on the member page: today hydrates from `getMacroLogForMember`, history hydrates from `getMacroLogsForMember`, the macro panel receives history, and charts/list empty states are visible.
-- Added cardio/stretch activity logging into the member Progress tab using `ActivityLogForm`, `logActivity`, and the `activityLogs` Firestore collection path.
+- **Superseded 2026-07-02:** the standalone cardio/stretch `logActivity` action and its stale UI path were removed after Knip confirmed no live caller.
 - Member history now combines lift logs, day logs, cardio, stretches, macro logs, PR chips, and macro target hits in one collapsible timeline.
 - Workout calendar now shows distinct markers for workout, PR, cardio, stretch, macro target met, skip, and makeup activity.
 - Reward feedback added via `sonner` toasts for PRs, set logging, workout completion, macro target hits, cardio logs, and stretch logs.

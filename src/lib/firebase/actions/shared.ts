@@ -4,7 +4,7 @@ import { requireAuth, requireRole } from "@/lib/auth";
 import { collectionPaths, gymCollectionPath, gymProfileCollectionKey, PRIMARY_GYM_ID } from "../collections";
 import { getAdminMessaging, getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import type { FormActionState } from "@/types/action-state";
-import type { GymWorkspace, Role } from "@/types/domain";
+import type { Role } from "@/types/domain";
 
 const revalidateTagWithProfile = revalidateTag as (tag: string, profile?: "max") => void;
 
@@ -457,86 +457,6 @@ export async function batchMirrorGymScopedRecords(
   await batch.commit();
 }
 
-export type GymGeofenceConfig = Pick<GymWorkspace, "latitude" | "longitude" | "radiusMeters">;
-
-function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
-  const radius = 6371000;
-  const toRadians = (value: number) => (value * Math.PI) / 180;
-  const dLat = toRadians(toLat - fromLat);
-  const dLng = toRadians(toLng - fromLng);
-  const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos(toRadians(fromLat)) *
-      Math.cos(toRadians(toLat)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
-
-  return radius * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
-
-export function validateGymGeofence(
-  latitude: number,
-  longitude: number,
-  gymConfig?: GymGeofenceConfig
-) {
-  const gymLatitude = Number(
-    gymConfig?.latitude ??
-      process.env.SHG_GYM_LATITUDE ??
-      process.env.NEXT_PUBLIC_SHG_GYM_LATITUDE
-  );
-  const gymLongitude = Number(
-    gymConfig?.longitude ??
-      process.env.SHG_GYM_LONGITUDE ??
-      process.env.NEXT_PUBLIC_SHG_GYM_LONGITUDE
-  );
-  const radiusMeters = Number(
-    gymConfig?.radiusMeters ??
-      process.env.SHG_GYM_RADIUS_METERS ??
-      process.env.NEXT_PUBLIC_SHG_GYM_RADIUS_METERS ??
-      150
-  );
-
-  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-    throw new Error("Location permission is required to start workout attendance.");
-  }
-
-  if (!Number.isFinite(gymLatitude) || !Number.isFinite(gymLongitude)) {
-    return {
-      distanceMeters: null,
-      geofenceStatus: "not_configured" as const,
-      radiusMeters
-    };
-  }
-
-  const distanceMeters = distanceInMeters(gymLatitude, gymLongitude, latitude, longitude);
-
-  if (distanceMeters > radiusMeters) {
-    throw new Error(`You must be inside the gym radius to check in. Current distance is ${Math.round(distanceMeters)}m.`);
-  }
-
-  return {
-    distanceMeters: Math.round(distanceMeters),
-    geofenceStatus: "inside" as const,
-    radiusMeters
-  };
-}
-
-export async function getGymGeofenceConfig(gymId: string): Promise<GymGeofenceConfig> {
-  try {
-    const db = requireFirebase();
-    const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
-    const data = gymDoc.data() ?? {};
-
-    return {
-      latitude: data.latitude != null ? Number(data.latitude) : undefined,
-      longitude: data.longitude != null ? Number(data.longitude) : undefined,
-      radiusMeters: data.radiusMeters != null ? Number(data.radiusMeters) : undefined
-    };
-  } catch {
-    return {};
-  }
-}
-
 export function assertCanManageMember(
   user: Awaited<ReturnType<typeof requireAuth>>,
   memberId: string
@@ -588,15 +508,6 @@ export function assertCanManageGym(user: Awaited<ReturnType<typeof requireAuth>>
   }
 
   throw new Error("You can only manage records for your assigned gym.");
-}
-
-export function slugifyGymName(name: string) {
-  return name
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 64);
 }
 
 /**

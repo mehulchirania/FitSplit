@@ -23,10 +23,7 @@
    - **Impact:** B2C payments are not fully supported end-to-end.
    - **Fix Required:** Only implement if explicitly back on roadmap. Out of scope for current builds.
 
-6. **Production Geofence Coordinates for Attendance** *(backlogged 2026-06-15)*
-   - **Issue:** `validateGymGeofence` (`src/lib/firebase/actions/shared.ts`) reads `latitude`/`longitude`/`radiusMeters` from the gym doc (falling back to `SHG_GYM_*` env vars). SHG's gym doc has no coordinates set, so the function returns `geofenceStatus: "not_configured"` and **allows every check-in** — the attendance-integrity feature is effectively inert.
-   - **Impact:** Geofenced attendance does not actually constrain check-ins until coordinates are entered. Members can start a workout/attendance session from anywhere.
-   - **Fix Required:** Enter SHG's real lat/lng/radius in `/owner/settings` (or set `SHG_GYM_LATITUDE`/`SHG_GYM_LONGITUDE`/`SHG_GYM_RADIUS_METERS`). Data-entry task; no code change needed. Until then the feature is a no-op by design (fails open).
+6. ~~**Production Geofence Coordinates for Attendance**~~ � **SUPERSEDED 2026-07-02:** explicit GPS check-in/start-workout actions were removed after they had no live UI caller. Attendance now accrues from lift logging with `geofenceStatus: "location_not_provided"`.
 
 4. ~~**Security Rule Tests & Pre-commit Hooks**~~ — **RESOLVED 2026-06-28:** `.github/workflows/firestore-rules.yml` created. Triggers on push/PR to `main` when `firestore.rules` or the test script changes. Installs Node 22 + Java 21 (Temurin), runs `firebase emulators:exec --only firestore --project demo-fitsplit "npm run test:rules"` (34 tests). Husky/ESLint warning cleanup remains a separate item (low priority).
 

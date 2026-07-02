@@ -14,7 +14,6 @@ import {
   failure,
   normalizeGymStatusInput,
   parsePngDataUrl,
-  slugifyGymName,
   scopedGymDoc,
   archiveDocumentSnapshot,
   archiveQuerySnapshot,
@@ -25,16 +24,6 @@ import {
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
-
-const CreateGymSchema = z.object({
-  name: ZodHelpers.textRequired("Gym name"),
-  slug: z.string().optional(),
-  status: z.string().optional(),
-  location: z.string().optional(),
-  locationUrl: z.string().optional(),
-  phone: z.string().optional(),
-  email: z.string().optional()
-});
 
 const UpdateGymSchema = z.object({
   gymId: ZodHelpers.textRequired("Gym ID"),
@@ -255,65 +244,6 @@ export async function ensurePrimaryWorkspace() {
       }, "password", true)
     )
   ]);
-}
-
-export async function createGymWorkspace(
-  previousStateOrFormData: FormActionState | FormData,
-  maybeFormData?: FormData
-): Promise<FormActionState> {
-  try {
-    await requireRole(["admin"]);
-    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    const parsed = parseActionData(formData, CreateGymSchema);
-    if (!parsed.success) return parsed.state;
-
-    const db = requireFirebase();
-    const { name, slug: requestedSlug = "", status: rawStatus, location = "", locationUrl = "", phone = "", email = "" } = parsed.data;
-    const slug = slugifyGymName(requestedSlug || name);
-    const trimmedLocationUrl = locationUrl.trim();
-
-    if (!slug) {
-      throw new Error("Gym slug is invalid.");
-    }
-    if (trimmedLocationUrl) {
-      try {
-        new URL(trimmedLocationUrl);
-      } catch {
-        throw new Error("Location URL must be a valid URL.");
-      }
-    }
-
-    const now = new Date().toISOString();
-    const gymRef = db.collection(collectionPaths.gyms).doc(slug);
-    const existing = await gymRef.get();
-
-    if (existing.exists) {
-      throw new Error("A gym with this slug already exists.");
-    }
-
-    await gymRef.set({
-      id: slug,
-      name,
-      slug,
-      ownerName: "",
-      ownerUserId: "",
-      expiryWarningDays: 7,
-      status: normalizeGymStatusInput(rawStatus ?? null),
-      location: location.trim(),
-      locationUrl: trimmedLocationUrl || null,
-      phone: phone.trim(),
-      email: email.trim().toLowerCase(),
-      instagram: "",
-      linkedin: "",
-      youtube: "",
-      createdAt: now,
-      updatedAt: now
-    });
-
-    return success(`${name} was added.`, slug, ["gyms"]);
-  } catch (error) {
-    return failure(error, "Unable to create gym.");
-  }
 }
 
 export async function deleteGymWorkspace(

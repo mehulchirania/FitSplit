@@ -25,7 +25,7 @@ Cloud Functions are the canonical privileged surface that the `allow:false` rule
 |---|---|---|
 | Create member | `createMemberProfile` `actions/members.ts:45` | `createMemberAccount` `index.ts:346` |
 | Create staff | `createOwnerProfile` `actions/staff.ts:86` | `createStaffAccount` `index.ts:429`, `createTrainer` `index.ts:1272` |
-| Create gym | `createGymWorkspace` `actions/gyms.ts:260` | `createGymWorkspace` `index.ts:483` |
+| Create gym | � | `createGymWorkspace` `index.ts:483` |
 | Update gym details | `updateGymDetails` `actions/gyms.ts:450` | `updateGymDetails` `index.ts:538` |
 | Update gym logo | `updateGymLogo` `actions/gyms.ts:494` | `updateGymLogo` `index.ts:580` |
 | Gym status | `setGymStatus` `actions/gyms.ts:544` | `setGymAccessStatus` `index.ts:614` |
@@ -66,7 +66,6 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | `updateMemberProfile` | `:173` | `requireRole[admin,owner]` | authProfiles, members, usernames (W, txn) | updates Auth user |
 | `updateOwnerMemberContext` | `:303` | `requireRole[admin,owner]` | authProfiles, members (W) | extended profile fields |
 | `updateProfileMetrics` | `:414` | `requireAuth` + `assertCanManageMember` | authProfiles, members (W) | self or owner; member can't set trainer |
-| `saveMemberAiTrainerNote` | `:484` | `requireAuth` | members (W) | injury/AI note |
 | `changeMemberPin` | `:523` | `requireAuth` (member) | Auth (W) | verifies current PIN via REST |
 | `toggleMemberAccess` | `:579` | `requireOwner` | authProfiles, members, Auth, activityEvents (W) | enable/disable |
 | `bulkToggleMemberAccess` | `:641` | `requireOwner` | same (batch) | JSON memberIds |
@@ -88,7 +87,6 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | Name | Source | Role gate | Collections | Side effects |
 |---|---|---|---|---|
 | `ensurePrimaryWorkspace` | `:140` | (internal) | gyms, authProfiles, members, staff, Auth (W) | seeds SHG + demo accounts |
-| `createGymWorkspace` | `:260` | `requireRole[admin]` | gyms (W) | slug uniqueness |
 | `deleteGymWorkspace` | `:319` | `requireRole[admin]` | gyms + subcollections (archive+delete) | blocks if profiles assigned; protects `shg` |
 | `deleteGymWithMembers` | `:357` | `requireRole[admin]` | gyms + members + member data (archive+delete), Auth | |
 | `updateGymDetails` | `:450` | `requireRole[admin,owner]` | gyms (W) | owner only own gym |
@@ -128,10 +126,6 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | `logDayStatus` | `:267` | `requireAuth` | dayLogs (W upsert) | skip/modify + makeup |
 | `clearDayLog` | `:337` | `requireAuth` | dayLogs (delete) | |
 | `saveMacroLog` | `:375` | `requireAuth` + `assertCanManageMember` | macroLogs (W upsert) | |
-| `updateMakeupStatus` | `:422` | `requireAuth` | dayLogs (W) | added/dismissed |
-| `logActivity` | `:466` | `requireAuth` + `assertCanManageMember` | activityLogs (W) | stretch/cardio |
-| `startWorkoutSession` | `:526` | `requireAuth` + `assertCanManageMember` | workoutSessions, attendanceRecords (W) | **geofence check** |
-| `endWorkoutSession` | `:615` | `requireAuth` + `assertCanManageMember` | workoutSessions, attendanceRecords (W) | check-out |
 
 ### pt (actions/pt.ts) — all gated by `requireGymStaff` (admin or any gym staff)
 | Name | Source | Collections | Side effects |
@@ -235,8 +229,8 @@ All fall back to mock data / empty when `hasFirebaseAdminConfig()` is false. Cac
 `unstable_cache` (tag `gym:{gymId}:{collection}`) and/or `react.cache`.
 
 ### gyms.ts
-`getGymWorkspaces` `:18` · `getPrimaryWorkspace` `:73` · `getGymDetail` `:84` ·
-`getOwnersForGym` `:122` · `getRoleSummary` `:192` · `getGymFloorLoadMap` `:234` (slot occupancy).
+`getGymWorkspaces` `:18` · `getGymDetail` `:84` ·
+`getOwnersForGym` `:122` · `getGymFloorLoadMap` `:234` (slot occupancy).
 
 ### members.ts
 `getMembers` `:52` / `getMembersUncached` `:16` · `getMemberDetail` `:113` ·
@@ -253,7 +247,7 @@ All fall back to mock data / empty when `hasFirebaseAdminConfig()` is false. Cac
 
 ### progress.ts
 `getBodyMetricLogsForMember` `:7` · `getDayLogsForMember` `:47` · `getLiftLogsForMember` `:103` ·
-`getMemberCalendarData` `:168` · `getMacroLogForMember` `:227` · `getMacroLogsForMember` `:259` ·
+`getMacroLogForMember` `:227` · `getMacroLogsForMember` `:259` ·
 `getActivityLogsForMember` `:296`.
 
 ### sessions.ts
@@ -268,7 +262,7 @@ All fall back to mock data / empty when `hasFirebaseAdminConfig()` is false. Cac
 `getUnreadContactMessageCount` `:176` · `getContactMessages` `:203`.
 
 ### activity.ts / misc.ts / billing.ts
-`getActivityEvents` `activity.ts:7` · `getSiteLinks` `misc.ts:6` ·
+`getActivityEvents` `activity.ts:7` ·
 `getPackages` `billing.ts:69` · `getPaymentRequests`/`getPendingPaymentRequests` `:97,104` ·
 `getPaymentRequestsForMember` `:119` · `getMembershipsForMember` `:128` ·
 

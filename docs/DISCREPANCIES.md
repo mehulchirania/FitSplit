@@ -34,7 +34,7 @@
 | # | Item | Status | Source |
 |---|---|---|---|
 | C1 | ~~`workoutSplitTemplates` collection~~ | Resolved 2026-06-29: collection declarations were already gone; orphaned Firestore rule blocks removed. Split logic lives in `src/lib/split-library.ts` / `workouts.json`. | `firestore.rules` |
-| C2 | `siteLinks` writes | Read by `getSiteLinks` and rules allow owner/admin write, but no write call site found (seeded/manual) | `read-models/misc.ts:6` |
+| C2 | `siteLinks` writes | Declared in collection paths and rules allow owner/admin write, but no live app read/write call site remains (seeded/manual only) | `collections.ts`, `firestore.rules` |
 | C3 | root `memberships` key | Declared at root (`collections.ts:9`) but active path is gym-scoped only | `collections.ts:9` vs `:59` |
 | C4 | `profiles` (legacy) | Read-only fallback; no active writes | `firestore.rules:325` |
 | C5 | Several Cloud Functions | `createTrainer`, `assignTrainerToPTMember`, `updateTrainerVisibility`, `activateOrRenewMembership`, `generate*DashboardStats` — callable wrappers exist (`functions.ts`) but UI wiring not confirmed in this pass | `src/lib/firebase/functions.ts:345-391` |

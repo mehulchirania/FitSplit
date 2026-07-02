@@ -497,12 +497,6 @@ export type ActivityEvent = {
   createdAt: string;
 };
 
-export type SiteLink = {
-  id: string;
-  label: string;
-  href: string;
-};
-
 export type MacroNutritionTarget = {
   calories?: number;
   protein?: number;

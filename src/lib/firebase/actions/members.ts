@@ -578,44 +578,6 @@ export async function updateMemberAvatar(
   }
 }
 
-const SaveAiNoteSchema = z.object({
-  memberId: ZodHelpers.textRequired("Member"),
-  injuryNotes: z.string().optional()
-});
-
-export async function saveMemberAiTrainerNote(
-  previousStateOrFormData: FormActionState | FormData,
-  maybeFormData?: FormData
-): Promise<FormActionState> {
-  try {
-    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    const parsed = parseActionData(formData, SaveAiNoteSchema);
-    if (!parsed.success) return parsed.state;
-
-    const currentUser = await requireAuth();
-    const db = requireFirebase();
-    const { memberId, injuryNotes = "" } = parsed.data;
-    assertCanManageMember(currentUser, memberId);
-
-    const now = new Date().toISOString();
-
-    await mirrorProfileToGym(db, memberId, {
-      id: memberId,
-      role: "member",
-      defaultGymId: currentUser.gymId ?? PRIMARY_GYM_ID,
-      injuryNotes,
-      aiTrainerNote: injuryNotes,
-      aiTrainerUpdatedAt: now,
-      updatedAt: now
-    });
-
-    return success(injuryNotes ? "AI trainer note saved." : "AI trainer note cleared.", currentUser.gymId, ["members"]);
-  } catch (error) {
-    console.error("Unable to save AI trainer note", error);
-    return failure(error, "Unable to save this AI trainer note.");
-  }
-}
-
 const ChangePinSchema = z.object({
   currentPin: ZodHelpers.pin,
   newPin: ZodHelpers.pin,

@@ -94,7 +94,6 @@ flowchart TB
 | Approve/reject payment | ✅ | ✅ | ❌ | ❌ | `requireOwner` `actions/billing.ts:90`; rules update `false` `:292` |
 | Log own workout / metrics | ❌ | ❌ | ❌ | ✅ | `requireAuth`+`assertCanManageMember` `actions/progress.ts:73` |
 | Coach note on member | ✅ | ✅ | ❌(action) | read-only | `requireRole[admin,owner]` `actions/progress.ts:228` |
-| Geofenced check-in | ❌ | ❌ | ❌ | ✅ | `validateGymGeofence` `actions/progress.ts:556` |
 | View contact inbox | ✅ | (gym staff via rules) | ❌ | ❌ | `requireRole[admin]` `src/app/admin/inbox`; rules `:233` |
 | Platform/admin dashboard stats | ✅ | ❌ | ❌ | ❌ | CF admin-only `index.ts:1657` |
 | Gym dashboard stats | ✅ | ✅ | ❌ | ❌ | CF manage-gym `index.ts:1601` |

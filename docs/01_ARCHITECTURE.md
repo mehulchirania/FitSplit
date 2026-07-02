@@ -145,8 +145,7 @@ through Functions/Admin SDK:
 - **Archiving.** Deletes archive a snapshot to `archives/{id}` with 60-day retention before
   hard delete (`actions/shared.ts:231-313`, `functions/src/index.ts:281-319`); daily
   `purgeExpiredArchives` (`functions/src/index.ts:1752`).
-- **Geofencing.** `validateGymGeofence` (Haversine) gates workout check-in
-  (`actions/shared.ts:419-479`).
+- **Attendance.** Current member attendance is derived from lift logging: `logLiftSet` and `syncOfflineLifts` upsert daily completed workout sessions and attendance records with `geofenceStatus:"location_not_provided"`.
 - **Push.** `sendPushToMember` reads `authProfiles.fcmToken`, never throws, prunes stale tokens
   (`actions/shared.ts:616-663`).
 - **Scheduled jobs.** Membership expiry sweep, archive purge, PT reminders, abandoned-PT

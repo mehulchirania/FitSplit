@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { WorkoutCalendarDay } from "@/lib/firebase/read-models/progress";
 import type { ActivityLog, DayLog, LiftLog, MacroLog, MacroNutritionTarget } from "@/types/domain";
 
 type Props = {
@@ -10,6 +9,15 @@ type Props = {
   activityLogs?: ActivityLog[];
   macroLogs?: MacroLog[];
   macroTarget?: MacroNutritionTarget;
+};
+
+type WorkoutCalendarDay = {
+  date: string;
+  trained: boolean;
+  skipped: boolean;
+  makeupPending: boolean;
+  dayTitle?: string;
+  skipReason?: string;
 };
 
 const MONTH_NAMES = [

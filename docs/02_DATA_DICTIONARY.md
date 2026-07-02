@@ -51,10 +51,9 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `expiryWarningDays` (default 7); geofence `latitude/longitude/radiusMeters`; `notices[]`
   (embedded `GymNotice`, `src/types/domain.ts:31-39`).
 - **Relationships:** parent of all gym-scoped subcollections; `ownerUserId`/`ownerId` → `authProfiles`.
-- **Reads:** `read-models/gyms.ts:18-120` (`getGymWorkspaces`, `getGymDetail`, `getPrimaryWorkspace`);
-  geofence read `actions/shared.ts:481-495`.
-- **Writes:** `ensurePrimaryWorkspace` (`actions/gyms.ts:140`); `createGymWorkspace`
-  (`actions/gyms.ts:260` / CF `functions/src/index.ts:483`); `updateGymDetails`
+- **Reads:** `getGymWorkspaces`, `getGymDetail`, `getOwnersForGym`, `getGymFloorLoadMap` (`read-models/gyms.ts`).
+- **Writes:** `ensurePrimaryWorkspace` (`actions/gyms.ts`); Cloud Function `createGymWorkspace` (`functions/src/index.ts:483`); `updateGymDetails`
+  (`actions/gyms.ts` / CF `:538`); `updateGymLogo` (`actions/gyms.ts` / CF `:580`);
   (`actions/gyms.ts:450` / CF `:538`); `updateGymLogo` (`actions/gyms.ts:494` / CF `:580`);
   `setGymStatus`/`setGymAccessStatus` (`actions/gyms.ts:544` / CF `:614`); notices
   `addGymNotice`/`deleteGymNotice` (`actions/gyms.ts:609,645`); `memberCount` increment on member
@@ -297,7 +296,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Fields:** `DayLog` (`src/types/domain.ts:571-590`): `status` `skipped|modified`, `skipReason?`,
   `note?`, `makeupExerciseIds?`, `makeupStatus?` `pending|added|dismissed`, `makeupTargetDayId?`.
 - **Reads:** `getDayLogsForMember`/calendar (`read-models/progress.ts:47,168`).
-- **Writes:** `logDayStatus`/`clearDayLog`/`updateMakeupStatus` (`actions/progress.ts:267,337,422`).
+- **Writes:** `logDayStatus`/`clearDayLog` (`actions/progress.ts`).
 - **Security rules:** read admin/owner/member/trainer; create scoped; update/delete admin/owner/member
   (`firestore.rules:225-229`, root `:408-412`).
 
@@ -308,7 +307,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `startedAt`, `endedAt?`, `programDayId?`, `programId?`, `dayTitle?`, plus embedded `attendance`
   object on write (`actions/progress.ts:564-571`).
 - **Reads:** `getActiveWorkoutSessions`/`getRecentSessionCounts` (`read-models/sessions.ts:8,55`).
-- **Writes:** `startWorkoutSession`/`endWorkoutSession` (`actions/progress.ts:526,615`).
+- **Writes:** `logLiftSet`/`syncOfflineLifts` upsert deterministic daily completed sessions (`actions/progress.ts`).
 - **Security rules:** read admin/owner/member/trainer; create scoped; update keeps memberId/gymId
   fixed; delete admin/owner (`firestore.rules:204-211`, root `:377-384`).
 - **Indexes:** `workoutSessions` `status+startedAt` (`firestore.indexes.json`).
@@ -320,8 +319,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `latitude/longitude`, `distanceMeters?`, `geofenceStatus` `inside|not_configured|location_not_provided`,
   `radiusMeters?`.
 - **Reads:** `getAttendanceRecords` (`read-models/sessions.ts:108`).
-- **Writes:** `startWorkoutSession` (check-in) / `endWorkoutSession` (check-out)
-  (`actions/progress.ts:584-601,654-669`).
+- **Writes:** `logLiftSet`/`syncOfflineLifts` upsert deterministic attendance records with `geofenceStatus:"location_not_provided"` (`actions/progress.ts`).
 - **Security rules:** read admin/owner/member; create scoped; update/delete admin/owner
   (`firestore.rules:213-217`, root `:391-395`).
 
@@ -343,7 +341,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
   `duration?`, `distance?`, `notes?`, `source`, `loggedByTrainerId?`, `ptSessionId?`.
 - **Reads:** `getActivityLogsForMember` (`read-models/progress.ts:296`).
 - **Writes:** `logActivity` (`actions/progress.ts:466`).
-- **Security rules:** read admin/owner/member/trainer; create scoped or trainer; update/delete
+- **Writes:** none in the current app; the prior standalone `logActivity` action was removed after it had no UI caller.
   admin/owner/member/trainer (`firestore.rules:179-188`). *(No root-level rule block — see DISCREPANCIES.)*
 
 ## activityEvents  *(gym-scoped + root)*
@@ -469,7 +467,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 ## siteLinks  *(gym-scoped + root)*
 - **Scope:** `gyms/{gymId}/siteLinks/{id}` + root (`collections.ts:20,48`).
 - **Purpose:** public social/site links.
-- **Fields:** `SiteLink` (`src/types/domain.ts:433-437`): `label`, `href`.
-- **Reads:** `getSiteLinks` (`read-models/misc.ts:6`).
+- **Fields:** `label`, `href` (declared/manual data; no live app read-model currently).
+- **Reads:** none in the current app.
 - **Writes:** ⚠️ no write site found in this pass (likely seeded/manual). 
 - **Security rules:** read `true`; write admin or owner (`firestore.rules:236-239`, root `:397-400`).
