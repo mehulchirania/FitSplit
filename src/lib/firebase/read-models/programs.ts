@@ -11,7 +11,7 @@ import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../co
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection, gymTag } from "./shared";
 
-export async function getWorkoutProgramsUncached(gymId?: string): Promise<{
+async function getWorkoutProgramsUncached(gymId?: string): Promise<{
   programs: WorkoutProgram[];
   isPersisted: boolean;
 }> {

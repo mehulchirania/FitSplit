@@ -63,6 +63,62 @@ function stableOfflineLiftLogId(log: Record<string, unknown>, index: number, now
   return source.replace(/[\/#?[\]]/g, "_");
 }
 
+function dailyWorkoutSessionId(memberId: string, isoDate: string) {
+  return `${memberId}_${isoDate.slice(0, 10)}`.replace(/[\/#?[\]]/g, "_");
+}
+
+async function upsertImplicitWorkoutAttendance(
+  db: ReturnType<typeof requireFirebase>,
+  gymId: string,
+  memberId: string,
+  now: string
+) {
+  const sessionId = dailyWorkoutSessionId(memberId, now);
+  const sessionRef = scopedGymDoc(db, gymId, "workoutSessions", sessionId);
+  const attendanceRef = scopedGymDoc(db, gymId, "attendanceRecords", sessionId);
+  const [sessionDoc, attendanceDoc] = await Promise.all([sessionRef.get(), attendanceRef.get()]);
+  const existingSession = sessionDoc.data() ?? {};
+  const existingAttendance = attendanceDoc.data() ?? {};
+  const startedAt = String(existingSession.startedAt ?? existingAttendance.checkInAt ?? now);
+  const checkInAt = String(existingAttendance.checkInAt ?? startedAt);
+
+  await Promise.all([
+    sessionRef.set(
+      {
+        id: sessionId,
+        gymId,
+        memberId,
+        startedAt,
+        endedAt: now,
+        status: "completed",
+        updatedAt: now,
+        attendanceSource: "lift_log",
+        mirroredFromRootCollection: true
+      },
+      { merge: true }
+    ),
+    attendanceRef.set(
+      {
+        id: sessionId,
+        memberId,
+        gymId,
+        sessionId,
+        checkInAt,
+        checkOutAt: now,
+        latitude: null,
+        longitude: null,
+        distanceMeters: null,
+        geofenceStatus: "location_not_provided",
+        createdAt: String(existingAttendance.createdAt ?? checkInAt),
+        updatedAt: now,
+        source: "lift_log",
+        mirroredFromRootCollection: true
+      },
+      { merge: true }
+    )
+  ]);
+}
+
 export async function logLiftSet(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
@@ -104,9 +160,12 @@ export async function logLiftSet(
       createdAt: now,
       updatedAt: now
     };
-    await mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord);
+    await Promise.all([
+      mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord),
+      upsertImplicitWorkoutAttendance(db, gymId, memberId, now)
+    ]);
 
-    return success("Lift entry was logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    return success("Lift entry was logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics", "sessions"]);
   } catch (error) {
     console.error("Unable to log lift set", error);
     return failure(error, "Unable to log lift. Please try again.");
@@ -125,11 +184,19 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
     const db = requireFirebase();
     const batch = db.batch();
     const now = new Date().toISOString();
+    const sessionSummaries = new Map<string, {
+      gymId: string;
+      memberId: string;
+      sessionId: string;
+      startedAt: string;
+      endedAt: string;
+    }>();
 
     for (const [index, log] of logs.entries()) {
       const gymId = String(log.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
       const liftLogId = stableOfflineLiftLogId(log, index, now);
       const sessionId = String(log.sessionId || liftLogId);
+      const loggedAt = String(log.loggedAt || now);
       const liftLogRecord = {
         id: liftLogId,
         gymId,
@@ -139,10 +206,21 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
         sets: Number(log.sets),
         reps: log.reps,
         sessionId,
-        loggedAt: log.loggedAt || now,
+        loggedAt,
         createdAt: now,
         updatedAt: now
       };
+      const memberId = String(log.memberId ?? "");
+      const dailySessionId = dailyWorkoutSessionId(memberId, loggedAt);
+      const sessionKey = `${gymId}:${dailySessionId}`;
+      const existingSummary = sessionSummaries.get(sessionKey);
+      sessionSummaries.set(sessionKey, {
+        gymId,
+        memberId,
+        sessionId: dailySessionId,
+        startedAt: existingSummary && existingSummary.startedAt < loggedAt ? existingSummary.startedAt : loggedAt,
+        endedAt: existingSummary && existingSummary.endedAt > loggedAt ? existingSummary.endedAt : loggedAt
+      });
 
       batch.set(
         scopedGymDoc(db, gymId, "liftLogs", liftLogId),
@@ -151,9 +229,46 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
       );
     }
 
+    for (const summary of sessionSummaries.values()) {
+      batch.set(
+        scopedGymDoc(db, summary.gymId, "workoutSessions", summary.sessionId),
+        {
+          id: summary.sessionId,
+          gymId: summary.gymId,
+          memberId: summary.memberId,
+          startedAt: summary.startedAt,
+          endedAt: summary.endedAt,
+          status: "completed",
+          updatedAt: now,
+          attendanceSource: "offline_lift_sync",
+          mirroredFromRootCollection: true
+        },
+        { merge: true }
+      );
+      batch.set(
+        scopedGymDoc(db, summary.gymId, "attendanceRecords", summary.sessionId),
+        {
+          id: summary.sessionId,
+          memberId: summary.memberId,
+          gymId: summary.gymId,
+          sessionId: summary.sessionId,
+          checkInAt: summary.startedAt,
+          checkOutAt: summary.endedAt,
+          latitude: null,
+          longitude: null,
+          distanceMeters: null,
+          geofenceStatus: "location_not_provided",
+          updatedAt: now,
+          source: "offline_lift_sync",
+          mirroredFromRootCollection: true
+        },
+        { merge: true }
+      );
+    }
+
     await batch.commit();
 
-    return success(`${logs.length} offline lift(s) synced.`, currentUser.gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    return success(`${logs.length} offline lift(s) synced.`, currentUser.gymId, ["day-logs", "lift-logs", "activity", "body-metrics", "sessions"]);
   } catch (error) {
     console.error("Unable to sync offline lifts", error);
     return failure(error, "Unable to sync offline lifts.");

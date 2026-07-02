@@ -3,7 +3,6 @@ import type {
   GymNotice,
   GymNoticeType,
   Member,
-  Notification,
   TrainerMemberVisibility
 } from "@/types/domain";
 
@@ -78,7 +77,7 @@ export async function getMemberProfileDocument(db: FirestoreDb, memberId: string
   return authDoc;
 }
 
-export function normalizeGymStatus(status: unknown): GymWorkspace["status"] {
+function normalizeGymStatus(status: unknown): GymWorkspace["status"] {
   const value = String(status ?? "active");
   if (value === "paused" || value === "inactive") {
     return value;
@@ -162,10 +161,6 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
 }
 
 /** No-op pass-through kept for backward compat — title override was removed. */
-export function sanitizeNotification(notification: Notification): Notification {
-  return notification;
-}
-
 export function gymTag(gymId?: string, collection?: string) {
   const base = gymId ? `gym:${gymId}` : "gym:default";
   return collection ? `${base}:${collection}` : base;

@@ -12,7 +12,7 @@ import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../co
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection, gymTag } from "./shared";
 
-export async function getExerciseCatalogUncached(gymId?: string): Promise<{
+async function getExerciseCatalogUncached(gymId?: string): Promise<{
   exercises: Exercise[];
   catalog: Array<{ muscleGroup: MuscleGroup; exercises: Exercise[] }>;
   isPersisted: boolean;

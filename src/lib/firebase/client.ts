@@ -17,9 +17,9 @@ const firebaseConfig = {
 };
 
 /** Region where Cloud Functions are deployed. Must match functions/src/index.ts. */
-export const FUNCTIONS_REGION = "asia-south1";
+const FUNCTIONS_REGION = "asia-south1";
 
-export function createFirebaseApp() {
+function createFirebaseApp() {
   if (!getApps().length) {
     return initializeApp(firebaseConfig);
   }

@@ -450,7 +450,7 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Purpose:** pre-computed owner dashboard stats.
 - **Fields:** `DashboardSummary` (`src/types/domain.ts:250-262`): totals, expiring/expired counts,
   pending payments, revenue MTD, `lastComputedAt`.
-- **Reads:** `getGymDashboardSummary` (`read-models/billing.ts:150`).
+- **Reads:** no live app read-model currently; the owner dashboard now derives its current stats from live member, session, assignment, PT, and billing read-models.
 - **Writes:** `generateGymDashboardStats` CF → `computeGymDashboard` (`functions/src/index.ts:1598,1606`).
 - **Security rules:** read admin/owner; write `allow:false` (`firestore.rules:297-300`).
 
@@ -459,10 +459,9 @@ activityLogs, usernames, platformSummaries. Plus `loginAttempts` (used in code, 
 - **Purpose:** landing-page contact form submissions → admin inbox.
 - **Fields:** `ContactMessage` (`src/types/domain.ts:546-555`): `name`, `mobile`, `email?`, `body`,
   `status` `unread|read`.
-- **Reads:** `getContactMessages`/`getUnreadContactMessageCount` (`read-models/notifications.ts:203,176`),
-  `getUnreadMessageCount` (`actions/contact.ts:120`).
-- **Writes:** `submitContactMessage` (`actions/contact.ts:64`, public create); `markContactMessageRead`
-  (`:138`).
+- **Reads:** `getContactMessages`/`getUnreadContactMessageCount` (`read-models/notifications.ts:203,176`).
+- **Writes:** `submitContactMessage` (`actions/contact.ts:59`, public create); `markContactMessageRead`
+  (`:113`).
 - **Security rules (gym):** create `true` (public); read/update/delete admin or staff-for-gym
   (`firestore.rules:231-234`). **(root):** create `true`; read/update/delete admin or owner
   (`firestore.rules:386-389`).

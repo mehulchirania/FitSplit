@@ -20,7 +20,7 @@ export function hasFirebaseAdminConfig() {
   return Boolean(process.env.FIREBASE_PROJECT_ID && (hasServiceAccount || hasApplicationDefault));
 }
 
-export function createFirebaseAdminApp() {
+function createFirebaseAdminApp() {
   if (getApps().length) {
     return getApps()[0];
   }

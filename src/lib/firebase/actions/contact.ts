@@ -1,16 +1,11 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use server";
 
 import { randomUUID } from "crypto";
 import { requireRole } from "@/lib/auth";
-import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
-import { hasFirebaseAdminConfig } from "../admin";
+import { PRIMARY_GYM_ID } from "../collections";
 import type { FormActionState } from "@/types/action-state";
 import {
   requireFirebase,
-  requireText,
-  assertValidEmail,
-  assertValidPhone,
   getActionFormData,
   success,
   failure,
@@ -112,24 +107,6 @@ export async function submitContactMessage(
   } catch (error) {
     console.error("Unable to submit contact message", error);
     return failure(error, "Unable to send message. Please try again.");
-  }
-}
-
-export async function getUnreadMessageCount(): Promise<number> {
-  if (!hasFirebaseAdminConfig()) {
-    return 0;
-  }
-
-  try {
-    const db = requireFirebase();
-    const snapshot = await db
-      .collection(collectionPaths.contactMessages)
-      .where("status", "==", "unread")
-      .get();
-
-    return snapshot.size;
-  } catch {
-    return 0;
   }
 }
 

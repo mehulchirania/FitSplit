@@ -2,13 +2,13 @@ import Dexie, { type Table } from 'dexie';
 import type { LiftLog } from '@/types/domain';
 
 // Extend LiftLog slightly for IndexedDB indexing
-export type OfflineLiftLog = LiftLog & {
+type OfflineLiftLog = LiftLog & {
   // Dexie needs an auto-incrementing primary key or unique ID for easy retrieval
   offlineId?: number;
   synced: boolean;
 };
 
-export class FitSplitDB extends Dexie {
+class FitSplitDB extends Dexie {
   liftLogs!: Table<OfflineLiftLog, number>;
 
   constructor() {

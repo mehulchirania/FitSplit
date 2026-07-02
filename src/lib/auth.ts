@@ -610,7 +610,7 @@ async function clearIdentifierAttempts(identifier: string) {
   );
 }
 
-export async function resolveLoginIdentifier(identifier: string, expectedRole?: "member" | "staff") {
+async function resolveLoginIdentifier(identifier: string, expectedRole?: "member" | "staff") {
   const cleanIdentifier = identifier.trim();
 
   if (!cleanIdentifier) {
@@ -667,7 +667,7 @@ export async function resolveLoginIdentifier(identifier: string, expectedRole?: 
   };
 }
 
-export async function createLocalDemoSession(
+async function createLocalDemoSession(
   identifier: string,
   password: string,
   expectedRole?: "member" | "staff",
@@ -854,7 +854,7 @@ async function _loginWithCredentials(formData: FormData) {
   return createSession(payload.idToken, rememberMe, resolved.profile);
 }
 
-export async function createSession(idToken: string, rememberMe = false, preFetchedProfile?: ProfileRecord | null) {
+async function createSession(idToken: string, rememberMe = false, preFetchedProfile?: ProfileRecord | null) {
   if (!hasFirebaseAdminConfig()) {
     return { status: "error" as const, message: "Firebase Admin is not configured on the server yet." };
   }

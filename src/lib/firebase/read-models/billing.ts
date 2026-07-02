@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
-import type { Package, PaymentRequest, Membership, DashboardSummary } from "@/types/domain";
-import { gymCollectionPath, gymDocPath } from "../collections";
+import type { Package, PaymentRequest, Membership } from "@/types/domain";
+import { gymCollectionPath } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymTag } from "./shared";
 
@@ -146,31 +146,3 @@ export const getMembershipsForMember = (gymId: string, memberId: string) =>
   )();
 
 // ── Dashboard summary ─────────────────────────────────────────────────────────
-
-async function getGymDashboardSummaryUncached(gymId: string): Promise<DashboardSummary | null> {
-  if (!hasFirebaseAdminConfig()) return null;
-  const { db } = getFirebaseAdminServices();
-  const doc = await db.doc(gymDocPath(gymId, "summaries", "dashboard")).get();
-  if (!doc.exists) return null;
-  const d = doc.data() ?? {};
-  return {
-    gymId: String(d.gymId ?? gymId),
-    totalMembers: Number(d.totalMembers ?? 0),
-    activeMembers: Number(d.activeMembers ?? 0),
-    ptMembers: Number(d.ptMembers ?? 0),
-    expiringThisWeek: Number(d.expiringThisWeek ?? 0),
-    expiredCount: Number(d.expiredCount ?? 0),
-    pendingPaymentRequests: Number(d.pendingPaymentRequests ?? 0),
-    activeTrainers: Number(d.activeTrainers ?? 0),
-    totalRevenueMTD: Number(d.totalRevenueMTD ?? 0),
-    currency: String(d.currency ?? "INR"),
-    lastComputedAt: String(d.lastComputedAt ?? ""),
-  };
-}
-
-export const getGymDashboardSummary = (gymId: string) =>
-  unstable_cache(
-    () => getGymDashboardSummaryUncached(gymId),
-    ["read:getGymDashboardSummary", gymId],
-    { tags: [gymTag(gymId, "summaries")], revalidate: 120 }
-  )();

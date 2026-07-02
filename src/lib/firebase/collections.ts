@@ -68,16 +68,12 @@ export type GymScopedCollectionKey = keyof typeof gymScopedCollectionPaths;
 export const PRIMARY_GYM_ID = "shg";
 export const PRIMARY_OWNER_ID = "santosh-shg";
 
-export function gymPath(gymId: string) {
+function gymPath(gymId: string) {
   return `${collectionPaths.gyms}/${gymId}`;
 }
 
 export function gymCollectionPath(gymId: string, collection: GymScopedCollectionKey) {
   return `${gymPath(gymId)}/${gymScopedCollectionPaths[collection]}`;
-}
-
-export function gymDocPath(gymId: string, collection: GymScopedCollectionKey, docId: string) {
-  return `${gymCollectionPath(gymId, collection)}/${docId}`;
 }
 
 export function gymProfileCollectionKey(role?: string) {

@@ -19,7 +19,7 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 | Offline | Dexie.js (IndexedDB — offline lift logging) |
 | Charts | Recharts (lazy-loaded via `next/dynamic`, `ssr:false`) |
 | Calendar | Custom PT calendar component (`pt-calendar.tsx`) |
-| UI Primitives | Radix UI (Dialog, Dropdown, Select) + shadcn/ui (landing page) |
+| UI Primitives | Radix UI (Dialog, Dropdown, Select) |
 | Animations | Framer Motion |
 | Toasts | Sonner |
 | Validation | Zod |
@@ -41,7 +41,7 @@ The **`docs/`** directory is the single source of truth for this codebase. Start
 The docs follow a three-tier model:
 - **Tier 0** — `00_AI_CONTEXT.md`: always-loaded condensed overview.
 - **Tier 1** — `01_ARCHITECTURE.md` … `09_SCREEN_CATALOG.md`: verified facts (architecture, data model, actions, functions, roles, routes, screens).
-- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `13_UI_STYLE_GUIDE.md`, and `DISCREPANCIES.md`.
+- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `13_UI_STYLE_GUIDE.md`, `14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`, and `DISCREPANCIES.md`.
 
 This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
 
@@ -260,9 +260,14 @@ app/
       pt-history/   # Full PT session history
       settings/     # Account settings — units, PIN change, notifications
   trainer/          # Trainer PT schedule + my members list
-  styles/           # modular CSS files (21 numbered, plus forms.css, member.css, shadcn.css)
+  styles/           # modular CSS files (21 numbered, plus forms.css, member.css)
 
 components/
+  landing/                          # Public landing page (lp- CSS classes in src/app/landing.css)
+    landing-page-client.tsx         #   Composition: nav, hero, marquee, role showcase, features, steps, FAQ, footer
+    hero-visual.tsx                 #   Canvas particle field + parallax product mockups (no WebGL dependency)
+    login-modal.tsx                 #   Accessible login dialog (focus trap, ESC, inline reset confirm)
+    enquiry-section.tsx             #   Enquiry form wired to submitContactMessage → /admin/inbox
   member-sub-sidebar.tsx            # Member sub-pages sidebar (links, gym branding, logout)
   odp-sidebar.tsx                   # Owner workspace sidebar (nav, user footer, logout)
   odp-workspace-shell.tsx           # Owner workspace wrapper (sidebar + main area)

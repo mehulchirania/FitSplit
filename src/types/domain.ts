@@ -1,4 +1,4 @@
-export type MembershipStatus = "active" | "expiring_soon" | "expired";
+type MembershipStatus = "active" | "expiring_soon" | "expired";
 
 export type Role = "admin" | "owner" | "trainer" | "member";
 
@@ -12,7 +12,7 @@ export type Role = "admin" | "owner" | "trainer" | "member";
  */
 export type TrainerMemberVisibility = "assigned_only" | "all_pt_members" | "all_members";
 
-export type VideoSource = "upload" | "youtube" | "vimeo" | "none";
+type VideoSource = "upload" | "youtube" | "vimeo" | "none";
 
 export type Difficulty = "beginner" | "intermediate" | "advanced";
 
@@ -27,7 +27,7 @@ export type MuscleGroup =
   | "Cardio"
   | "Forearms";
 
-export type MuscleTargetId =
+type MuscleTargetId =
   | "chest.upper"
   | "chest.mid"
   | "chest.lower"
@@ -319,25 +319,6 @@ export type Membership = {
   renewedAt?: string;
   cancelledAt?: string;
   createdAt?: string;
-};
-
-/**
- * Pre-computed dashboard summary for a gym.
- * Lives at: gyms/{gymId}/summaries/dashboard (single doc, overwritten on recalc).
- * Avoids expensive full-collection scans on every owner dashboard load.
- */
-export type DashboardSummary = {
-  gymId: string;
-  totalMembers: number;
-  activeMembers: number;
-  ptMembers: number;
-  expiringThisWeek: number;
-  expiredCount: number;
-  pendingPaymentRequests: number;
-  activeTrainers: number;
-  totalRevenueMTD: number;
-  currency: string;
-  lastComputedAt: string;
 };
 
 export type Exercise = {
@@ -678,7 +659,7 @@ export type DayLog = {
 
 // ─── Personal Training ────────────────────────────────────────────────────────
 
-export type PTSessionStatus =
+type PTSessionStatus =
   | "scheduled"   // booked but not yet started
   | "active"      // trainer tapped "Start session"
   | "completed"   // trainer tapped "End session"

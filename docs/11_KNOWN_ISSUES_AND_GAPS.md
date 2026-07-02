@@ -1,12 +1,16 @@
 # 11 · KNOWN ISSUES & GAPS (Tier 2)
 
-`Generated: 2026-06-05 · Last updated: 2026-06-28`
+`Generated: 2026-06-05 · Last updated: 2026-07-02`
 
 > **Purpose.** This file aggregates all known bugs, incomplete functionalities, and technical debt across the FitSplit platform. It serves as the backlog for future maintenance and refactoring.
 
 ## High Priority Bugs
 
-*None currently identified. Previous high-priority bugs (Trainer auth, PT privacy, Lockout mismatch) and all High/Moderate dependency vulnerabilities (Next.js, UUID, PostCSS, Vite/protobufjs transitive advisories, etc.) were resolved. Latest dependency audit on 2026-06-28 reports 0 root and 0 `/functions` vulnerabilities. T&C gate showing on every login (not first-time-only) resolved 2026-06-06.*
+1. ~~**Attendance/workout session writers are orphaned**~~ — **RESOLVED 2026-07-02:** `logLiftSet` and `syncOfflineLifts` now upsert deterministic daily `workoutSessions` and `attendanceRecords` with `status: "completed"` and `geofenceStatus: "location_not_provided"`. This makes owner attendance trends accrue from actual lift logging without requiring a separate Start/Finish UI.
+
+2. ~~**Day completion/makeup writers are orphaned**~~ — **PARTIALLY RESOLVED 2026-07-02:** `FocusedDayView` now exposes the existing `logDayStatus` and `clearDayLog` paths for skip/modified notes on the current week. There is still no separate `"done"` day-log status; completion is currently inferred from lift logs.
+
+*Previously resolved high-priority bugs remain resolved: Trainer auth, PT privacy, lockout mismatch, high/moderate dependency vulnerabilities, and the first-login T&C gate behavior.*
 
 ## Incomplete Functionalities
 

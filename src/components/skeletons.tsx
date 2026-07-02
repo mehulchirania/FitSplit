@@ -68,7 +68,7 @@ export function SkeletonText({
   );
 }
 
-export function SkeletonStat() {
+function SkeletonStat() {
   return (
     <div
       className="sk-stat"

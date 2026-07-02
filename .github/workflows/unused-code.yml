@@ -1,0 +1,30 @@
+name: Unused Code Guardrail
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  knip-unused:
+    name: Knip unused files and dependencies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check unused files and dependencies
+        run: npm run knip -- --include files,dependencies --reporter github-actions

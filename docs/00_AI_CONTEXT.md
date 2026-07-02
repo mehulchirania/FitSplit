@@ -1,6 +1,6 @@
 # 00 · AI CONTEXT (Tier 0 — load this every session)
 
-`Generated: 2026-06-05 · Last updated: 2026-06-28`
+`Generated: 2026-06-05 · Last updated: 2026-07-02`
 
 > Condensed everything. Hard cap ~8k tokens. Links out to deeper docs — does not
 > duplicate their detail. If a fact here matters to your task, confirm it in the
@@ -87,8 +87,12 @@ FitSplit **global** library lives at root `exerciseCatalog` /
 - **Program assignment** — `assignProgramToMember`; cancels prior active assignment, writes
   assignment + member notification + activity event (+FCM push). CF version fires side-effects
   via the `onProgramAssignmentCreated` trigger (`sideEffectsMode: "trigger"`).
-- **Live workout** — member `startWorkoutSession` (geofenced) → `logLiftSet` (offline via
-  Dexie, synced by `syncOfflineLifts`) → `endWorkoutSession`. Attendance recorded alongside.
+- **Live workout / attendance** — `logLiftSet` and `syncOfflineLifts` are the reliable
+  member writer path today. They upsert deterministic daily `workoutSessions` and
+  `attendanceRecords` with `geofenceStatus:"location_not_provided"` so owner attendance
+  trends accrue from actual lift logs. Explicit `startWorkoutSession`/`endWorkoutSession`
+  still exist for a future geofenced Start/Finish UI, while current member day status is
+  handled via `FocusedDayView` → `logDayStatus` / `clearDayLog` for skip/modified notes.
 - **PT** — `bookPTSession`/`assignPTPlan` → `startPTSession` → `logPTLiftSet`
   (trainer-set history also appears in member lift history with `source:"trainer"`) → `completePTSession`.
   Scheduled reminders + auto-expire of abandoned sessions.
@@ -122,4 +126,5 @@ FitSplit **global** library lives at root `exerciseCatalog` /
 
 Data model → `02`/`03`. "How is X written/read?" → `04`. "Who can do X?" → `05`.
 "What happens end-to-end?" → `06`. "Where do I change module Y?" → `07`. Screens → `09`.
-Known bugs/debt/security → `10`, `11`, `12_ARCHITECTURE_AUDIT_2026.md`, and `DISCREPANCIES.md`.
+Known bugs/debt/security → `10`, `11`, `12_ARCHITECTURE_AUDIT_2026.md`,
+`14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`, and `DISCREPANCIES.md`.

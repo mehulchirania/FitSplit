@@ -1,8 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import type { FormEvent } from "react";
 import Link from "next/link";
-import type { WorkoutDay, Exercise, LiftLog, ProgramAssignment } from "@/types/domain";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { clearDayLog, logDayStatus } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
+import type { FormActionState } from "@/types/action-state";
+import type { WorkoutDay, Exercise, LiftLog, ProgramAssignment, DayLog } from "@/types/domain";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 
 function ChevDown() {
@@ -31,15 +37,70 @@ export function FocusedDayView({
   day,
   exercises,
   liftLogs,
-  assignment
+  assignment,
+  memberId,
+  programId,
+  weekStart,
+  currentDayLog
 }: {
   day: WorkoutDay;
   exercises: Exercise[];
   liftLogs: LiftLog[];
   assignment: ProgramAssignment | null;
+  memberId: string;
+  programId: string;
+  weekStart: string;
+  currentDayLog: DayLog | null;
   programTitle: string;
 }) {
+  const router = useRouter();
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  const [dayLogStatus, setDayLogStatus] = useState<FormActionState | null>(null);
+  const [isDayLogPending, setIsDayLogPending] = useState(false);
+  const makeupExerciseIds = day.exercises.slice(0, 3).map((exercise) => exercise.exerciseId).join(",");
+
+  async function handleDayLogSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const submitter = (event.nativeEvent as SubmitEvent).submitter;
+    if (submitter instanceof HTMLButtonElement && submitter.name) {
+      formData.set(submitter.name, submitter.value);
+    }
+
+    setIsDayLogPending(true);
+    setDayLogStatus(null);
+    try {
+      const result = await logDayStatus(initialFormActionState, formData);
+      setDayLogStatus(result);
+      if (result.status === "success") {
+        toast.success(result.message);
+        router.refresh();
+      }
+    } finally {
+      setIsDayLogPending(false);
+    }
+  }
+
+  async function handleClearDayLog() {
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("dayId", day.id);
+    formData.set("weekStart", weekStart);
+
+    setIsDayLogPending(true);
+    setDayLogStatus(null);
+    try {
+      const result = await clearDayLog(initialFormActionState, formData);
+      setDayLogStatus(result);
+      if (result.status === "success") {
+        toast.success(result.message);
+        router.refresh();
+      }
+    } finally {
+      setIsDayLogPending(false);
+    }
+  }
 
   if (day.exercises.length === 0) {
     return (
@@ -80,6 +141,67 @@ export function FocusedDayView({
         <span className="fdv-warmup__icon">🔥</span>
         <span>Warm up for 5–10 min before starting — dynamic stretches, light cardio, or joint mobility.</span>
       </div>
+
+      <form className="fdv-day-log" onSubmit={handleDayLogSubmit}>
+        <input name="memberId" type="hidden" value={memberId} />
+        <input name="programId" type="hidden" value={programId} />
+        <input name="dayId" type="hidden" value={day.id} />
+        <input name="weekStart" type="hidden" value={weekStart} />
+        <input name="makeupExerciseIds" type="hidden" value={makeupExerciseIds} />
+        <div className="fdv-day-log__head">
+          <div>
+            <span className="fdv-day-log__eyebrow">This week</span>
+            <strong>Day status</strong>
+          </div>
+          {currentDayLog ? (
+            <span className={`fdv-day-log__chip fdv-day-log__chip--${currentDayLog.status}`}>
+              {currentDayLog.status === "skipped" ? "Skipped" : "Modified"}
+            </span>
+          ) : (
+            <span className="fdv-day-log__chip">No note</span>
+          )}
+        </div>
+        <div className="fdv-day-log__fields">
+          <label>
+            Reason
+            <select name="skipReason" defaultValue={currentDayLog?.skipReason ?? "no_time"}>
+              <option value="no_time">No time</option>
+              <option value="rest">Rest day</option>
+              <option value="equipment">Equipment unavailable</option>
+              <option value="sick">Sick or injured</option>
+              <option value="other">Other</option>
+            </select>
+          </label>
+          <label>
+            Note
+            <textarea
+              name="note"
+              defaultValue={currentDayLog?.note ?? ""}
+              maxLength={400}
+              placeholder="Optional context for your coach"
+              rows={2}
+            />
+          </label>
+        </div>
+        {dayLogStatus ? (
+          <p className={`form-message form-message-${dayLogStatus.status}`}>
+            {dayLogStatus.message}
+          </p>
+        ) : null}
+        <div className="fdv-day-log__actions">
+          <button className="button button-secondary" name="status" type="submit" value="modified" disabled={isDayLogPending}>
+            {isDayLogPending ? "Saving..." : "Save note"}
+          </button>
+          <button className="button button-secondary" name="status" type="submit" value="skipped" disabled={isDayLogPending}>
+            Mark skipped
+          </button>
+          {currentDayLog ? (
+            <button className="button button-ghost" type="button" onClick={handleClearDayLog} disabled={isDayLogPending}>
+              Clear
+            </button>
+          ) : null}
+        </div>
+      </form>
 
       {/* Exercise list */}
       <div className="fdv-list">

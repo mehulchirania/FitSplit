@@ -3,6 +3,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import {
   getExerciseCatalog,
+  getDayLogsForMember,
   getLiftLogsForMember,
   getProgramAssignmentForMember,
   getWorkoutPrograms
@@ -10,6 +11,15 @@ import {
 import { FocusedDayView } from "@/components/focused-day-view";
 
 export const dynamic = "force-dynamic";
+
+function getWeekStartIso(date = new Date()) {
+  const weekStart = new Date(date);
+  const day = weekStart.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  weekStart.setDate(weekStart.getDate() + diff);
+  weekStart.setHours(0, 0, 0, 0);
+  return weekStart.toISOString().slice(0, 10);
+}
 
 export default async function FocusedDayPage({
   params
@@ -20,11 +30,12 @@ export default async function FocusedDayPage({
   const memberId = currentUser.memberId ?? currentUser.uid;
   const { id: programId, dayId } = await params;
 
-  const [{ assignment }, { programs }, { exercises }, { liftLogs }] = await Promise.all([
+  const [{ assignment }, { programs }, { exercises }, { liftLogs }, { dayLogs }] = await Promise.all([
     getProgramAssignmentForMember(memberId, currentUser.gymId),
     getWorkoutPrograms(currentUser.gymId),
     getExerciseCatalog(currentUser.gymId),
-    getLiftLogsForMember(memberId, currentUser.gymId)
+    getLiftLogsForMember(memberId, currentUser.gymId),
+    getDayLogsForMember(memberId, currentUser.gymId)
   ]);
 
   const program = programs.find((p) => p.id === programId);
@@ -32,6 +43,12 @@ export default async function FocusedDayPage({
 
   const day = program.days.find((d) => d.id === dayId);
   if (!day) notFound();
+  const weekStart = getWeekStartIso();
+  const currentDayLog = dayLogs.find((log) =>
+    log.programId === programId &&
+    log.dayId === dayId &&
+    log.weekStart === weekStart
+  ) ?? null;
 
   // Most-recent lift per exercise for the "last time" hint.
   const lastLogByExercise = new Map<string, (typeof liftLogs)[number]>();
@@ -67,6 +84,10 @@ export default async function FocusedDayPage({
         exercises={exercises}
         liftLogs={liftLogs}
         assignment={assignment}
+        memberId={memberId}
+        programId={programId}
+        weekStart={weekStart}
+        currentDayLog={currentDayLog}
         programTitle={program.title}
       />
     </div>

@@ -5,7 +5,7 @@ import type { FormActionState } from "@/types/action-state";
 
 export const FormActionContext = createContext<FormActionState | null>(null);
 
-export function useFormActionState() {
+function useFormActionState() {
   return useContext(FormActionContext);
 }
 

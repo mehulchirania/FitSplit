@@ -117,7 +117,6 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 | `setGymExerciseVideo` | `:364` | `requireOwner` | exerciseCatalog (W) | |
 | `resetExerciseVideos` | `:401` | `requireOwner` | exerciseCatalog (W) | from workouts.json defaults |
 | `setExerciseTutorialVisibility` | `:467` | `requireOwner` | exerciseCatalog (W) | |
-| `setMuscleGroupTutorialVisibility` | `:502` | `requireOwner` | exerciseCatalog (W batch) | |
 
 ### progress (actions/progress.ts)
 | Name | Source | Role gate | Collections | Side effects |
@@ -165,9 +164,8 @@ PT booking (`bookPTSession` action `actions/pt.ts:46`) overlaps the `assignPTPla
 ### contact / notifications
 | Name | Source | Role gate | Collections | Side effects |
 |---|---|---|---|---|
-| `submitContactMessage` | `contact.ts:64` | public | contactMessages, notifications (W) | notifies admin |
-| `getUnreadMessageCount` | `contact.ts:120` | public | contactMessages (R) | |
-| `markContactMessageRead` | `contact.ts:138` | `requireRole[admin]` | contactMessages (W) | |
+| `submitContactMessage` | `contact.ts:59` | public | contactMessages, notifications (W) | notifies admin |
+| `markContactMessageRead` | `contact.ts:113` | `requireRole[admin]` | contactMessages (W) | |
 | `clearUserNotifications` | `notifications.ts:14` | `requireAuth` | notifications (W readAt) | recipient-scoped |
 | `saveFcmToken` | `notifications.ts:70` | `requireAuth` | authProfiles (W) | enables push |
 
@@ -273,7 +271,6 @@ All fall back to mock data / empty when `hasFirebaseAdminConfig()` is false. Cac
 `getActivityEvents` `activity.ts:7` · `getSiteLinks` `misc.ts:6` ·
 `getPackages` `billing.ts:69` · `getPaymentRequests`/`getPendingPaymentRequests` `:97,104` ·
 `getPaymentRequestsForMember` `:119` · `getMembershipsForMember` `:128` ·
-`getGymDashboardSummary` `:150`.
 
 ## Error handling & retries
 

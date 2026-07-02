@@ -13,7 +13,7 @@ import {
 } from "./shared";
 import { PRIMARY_GYM_ID } from "../collections";
 
-export async function getMembersUncached(gymId?: string): Promise<{
+async function getMembersUncached(gymId?: string): Promise<{
   members: Member[];
   isPersisted: boolean;
 }> {
@@ -317,7 +317,7 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
   return { member, profile, isPersisted: true };
 }
 
-export async function getTrainersForGymUncached(gymId: string): Promise<Member[]> {
+async function getTrainersForGymUncached(gymId: string): Promise<Member[]> {
   const { db } = getFirebaseAdminServices();
   // Query both first-class trainer role and legacy owner+staffType="trainer" records.
   const [scopedSnap, trainerRoleSnap] = await Promise.all([

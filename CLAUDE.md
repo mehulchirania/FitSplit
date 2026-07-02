@@ -87,7 +87,7 @@ Use prose over bullet points for explanations and reasoning. Bullets are for ref
 
 **Root mirrors / dual-write debt:** gym-scoped collections are the target canonical path. R4 cleanup is complete for the hot operational write pairs, including `progress.ts` and `syncOfflineLifts`; legacy root fallbacks remain until old root data is backfilled/archived. See `docs/12_ARCHITECTURE_AUDIT_2026.md` before changing progress/offline paths.
 
-**Deterministic doc IDs:** `macroLogs` = `${memberId}_${date}`, `dayLogs` = `${memberId}_${dayId}_${weekStart}`, workout sessions = `sessionId` (UUID from client).
+**Deterministic doc IDs:** `macroLogs` = `${memberId}_${date}`, `dayLogs` = `${memberId}_${dayId}_${weekStart}`, implicit lift-derived workout sessions/attendance = `${memberId}_${yyyy-mm-dd}`. Explicit geofenced Start/Finish session actions still use a client-provided `sessionId`.
 
 ## UI / UX standards
 
@@ -153,7 +153,7 @@ Use prose over bullet points for explanations and reasoning. Bullets are for ref
 | `mhv-` | `19-members-redesign.css` | Members hybrid view |
 | `odp2-` | `20-owner-dashboard.css` | Owner workspace shell (fixed sidebar layout) |
 | `m3d-` | `21-member-redesign.css` | Member sub-pages shell + sidebar |
-| `lpd-`, `l1-` | `app/landing.css` | Landing page |
+| `lp-` | `app/landing.css` | Landing page (self-contained dark theme; components in `src/components/landing/`) |
 
 **Brand colour rules (critical):**
 - Dark mode: `--brand: #C8F135` (lime) → `--primary-foreground: #0A0A0A` (dark text on lime).
@@ -194,6 +194,7 @@ functions/src/index.ts           Cloud Functions (asia-south1, nodejs22)
 ## Known bugs
 
 - Architecture/cost issues from the 2026-06-28 backend audit are tracked in `docs/12_ARCHITECTURE_AUDIT_2026.md` and `docs/11_KNOWN_ISSUES_AND_GAPS.md`. Easy wins completed 2026-06-28: `progress.ts` hot-path root writes removed, `syncOfflineLifts` fixed, `getGymWorkspaces`/`getGymDetail` member scans removed, and member notification/body-metric reads scoped by gym at main call sites. Remaining: progress history windows/pagination, notification batching, auth-profile read cost, B2B2C subscription/resource limits, and legacy root fallback removal after migration.
+- Product-refinement easy wins from 2026-07-02 are tracked in `docs/14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md` and `PROJECT_HANDOFF.md`: lift logging now restores attendance writers, focused day skip/modified notes are wired, admin inbox mark-read is wired, and shadcn/Tailwind debris was removed.
 - **Membership expiry math now lives in ONE place — Cloud Functions.** `membershipStatus` is a **persisted Firestore field** written by `functions/src/index.ts` (`processMembershipExpiries`, package-activation handlers) and by `actions/billing.ts`; read-models just read `data.membershipStatus`. The old app-side `src/lib/memberships.ts` (`getDaysRemaining`/`getMembershipStatus`) was **deleted 2026-06-16** as dead code (zero references). The expiry warning still honors per-gym `expiryWarningDays`.
 
 ## Important gotchas

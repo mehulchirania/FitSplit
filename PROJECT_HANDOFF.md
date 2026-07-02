@@ -4,6 +4,57 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Landing page rebuilt: class-based CSS, enquiry flow restored, Three.js removed (2026-07-02)
+
+Full rebuild of the public landing page, replacing the Jun-29 inline-style implementation (1,095-line single component, hardcoded `#C8F135`, `window.confirm`/`alert`, 34px close button, Three.js hero, hotlinked Unsplash backdrop, `force-dynamic`).
+
+**New structure** — `src/components/landing/`:
+- `landing-page-client.tsx` — composition: nav, hero, marquee, interactive role showcase (Owner/Trainer/Member tablist), features, steps, FAQ, footer. Scroll reveals via IntersectionObserver.
+- `hero-visual.tsx` — cursor-reactive canvas particle field (vanilla 2D canvas, no WebGL) + parallax product mockups (session card, attendance chart, payment toast).
+- `login-modal.tsx` — same auth logic (`loginWithCredentials`/`requestPasswordReset`), now with role=dialog, focus trap, ESC dismiss, 44×44 close, inline reset confirmation + Sonner toast (no more `window.confirm`/`alert`).
+- `enquiry-section.tsx` — **wires the previously orphaned `submitContactMessage` server action** via `useActionState`: name/mobile/email/message with field-level Zod errors, success panel, toast. Restores the landing → `/admin/inbox` lead pipeline; `markContactMessageRead` is wired on the admin inbox side.
+
+**CTA hierarchy fixed** (user complaint: multiple buttons all opening the login popup): login = nav "Sign in" + hero secondary link only; primary journey ("Get FitSplit" / "Bring FitSplit to your gym" / footer "Contact us") scrolls to the enquiry form. Footer has no dead `href: null` links anymore.
+
+**CSS**: `src/app/landing.css` fully rewritten as an `lp-` class system (~700 lines). Self-contained dark theme that re-declares `--brand`/`--primary-foreground` scoped to `.lp-root` (mirrors dark tokens per CLAUDE.md rule). `prefers-reduced-motion` disables particles/tilt/marquee/reveals. Smooth anchor scroll is motion-safe (`html:has(.lp-root)`), `scroll-margin-top` offsets the sticky nav. Verified no horizontal scroll at 375px.
+
+**Removed**: old `src/components/landing-page-client.tsx`, `three` + `@types/three` dependencies, Unsplash hotlink, runtime-injected Sora font (now uses `--font-dm-sans`/`--font-inter` from the root layout), `export const dynamic = "force-dynamic"` on `/`.
+
+**Also**: `.claude/launch.json` gained `autoPort: true`. Note for future sessions: a stale `.next/lock` can block `npm run build` with "Another next build process is already running" even when no process exists — delete the lock file.
+
+**Validation**: `tsc --noEmit` clean, ESLint clean on new files, `npm run build` exit 0. Browser-verified via preview: role tabs switch, FAQ accordion + `aria-expanded` works, login modal opens with focus on the username field and closes on ESC, enquiry form renders, mobile 375px has no horizontal overflow.
+
+---
+
+## Product refinement audit added (2026-07-02)
+
+Added `docs/14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md` as the current product/UI refinement audit. It records the main July findings:
+
+- P0 orphaned attendance/session flow: owner charts read data that the current UI no longer writes.
+- P0 orphaned day completion/makeup flow: member history reads `dayLogs`, but current UI no longer writes them.
+- P1 contact/enquiry pipeline is dead end-to-end unless the landing enquiry form and admin inbox mark-read are restored.
+- Landing page cleanup is needed after the late-June rewrite churn: inline styles, hardcoded colors, shadcn/Tailwind debris, and a Three.js dependency decision.
+- Recommended next sprint is reconnection-and-deletion: restore attendance/day completion/contact or delete dead readers/actions together, then prune verified unused deps/files and rebuild graphify.
+
+`docs/_INDEX.md`, `README.md`, and `docs/11_KNOWN_ISSUES_AND_GAPS.md` were updated to point to the new audit and reflect the P0 findings.
+
+---
+
+## Product refinement easy wins started (2026-07-02)
+
+Started the reconnection sprint from `docs/14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`:
+
+- **Attendance restored from lift logging:** `logLiftSet` now upserts deterministic daily `workoutSessions` and `attendanceRecords` as completed sessions. `syncOfflineLifts` batches the same daily session/attendance upserts for offline logs. Location is recorded as `location_not_provided`, so lift logging never fails because GPS is unavailable.
+- **Focused day status restored:** `/member/programs/[id]/day/[dayId]` now loads the current week's `dayLogs`, and `FocusedDayView` exposes Save note / Mark skipped / Clear controls using the existing `logDayStatus` and `clearDayLog` actions.
+- **Admin inbox mark-read wired:** `AdminInboxClient` now calls `markContactMessageRead`, updates unread state optimistically, and refreshes the route.
+- **Landing contact restored:** the landing page now uses the refactored `src/components/landing/landing-page-client.tsx`, renders `EnquirySection`, and links primary CTAs/footer contact links to `#enquiry`.
+- **shadcn/Tailwind debris removed:** deleted orphaned `src/components/ui/*`, `src/lib/utils.ts`, `src/lib/landing-mock.ts`, `components.json`, `postcss.config.mjs`, and `src/app/styles/shadcn.css`; removed unused deps including the Tailwind stack, shadcn helper deps, the `radix-ui` umbrella package, `lucide-react`, and `three`.
+- **Unused-code CI guardrail added:** `.github/workflows/unused-code.yml` runs `npm run knip -- --include files,dependencies --reporter github-actions`; details in `docs/15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md`.
+
+Validation: `npm run typecheck`, `npm run lint`, `npm run knip -- --include files,dependencies --reporter compact`, and `npm run build` pass after the changes.
+
+---
+
 ## Backend hardening sprint (2026-06-29)
 
 Five remaining backlog items from the 2026-06-28 architecture audit, implemented today:
@@ -81,6 +132,8 @@ Additional root writes removed from `pt.ts` (ptSessions, ptLiftLogs, liftLogs, n
 ---
 
 ## Landing page redesigned with shadcn/ui (2026-06-28)
+
+**Superseded 2026-07-02:** the shadcn/Tailwind landing experiment was removed in the product-refinement cleanup. `components.json`, `postcss.config.mjs`, `src/app/styles/shadcn.css`, `src/components/ui/*`, `src/lib/utils.ts`, and the unused shadcn/Tailwind dependencies are gone. The current landing lives under `src/components/landing/` with `lp-` CSS in `src/app/landing.css`.
 
 Replaced all hand-rolled interactive components on the landing page with shadcn/ui primitives. No change to page structure, copy, or mock visuals.
 
@@ -614,7 +667,7 @@ Implemented Design 04 (Hybrid) from the Claude Design export. Replaces the old t
   - `paymentRequests`: `status + resolvedAt ASC` (MTD revenue query in Cloud Function)
   - `memberships`: `memberId + createdAt DESC` (member membership history)
   - `members`: `assignedTrainerId + isPT` (trainer assigned_only visibility filter)
-- **`app/owner/page.tsx`** — Fetches `getGymDashboardSummary` in parallel with other data. Stats bar now shows: totalMembers (from summary if available), unassigned count, live session count, and conditionally "Expiring Soon" (amber urgent) or "Active Members", plus "Revenue MTD" as a clickable link to `/owner/billing` when the summary doc exists.
+- **Superseded 2026-07-02:** `app/owner/page.tsx` no longer fetches `getGymDashboardSummary`; the dashboard derives its current stats from live member, session, assignment, PT, notification, and billing read-models.
 - **`app/styles/18-billing-trainers.css`** — Added `.odp-stat-link` class for clickable stat boxes in the dashboard stats bar (brand-colored strong, hover highlight).
 - **`package.json`** — Added `"seed:billing": "node scripts/seed-billing.mjs"` script.
 

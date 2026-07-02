@@ -7,7 +7,6 @@ export const dynamic = "force-dynamic";
 export default async function AdminInboxPage() {
   await requireRole(["admin"]);
   const { messages } = await getContactMessages();
-  const unreadCount = messages.filter(m => m.status === "unread").length;
 
   return (
     <div className="odp2-scroll">
@@ -26,7 +25,7 @@ export default async function AdminInboxPage() {
         Support requests, feature suggestions, and incident reports from gym owners.
       </p>
 
-      <AdminInboxClient messages={messages} unreadCount={unreadCount} />
+      <AdminInboxClient messages={messages} />
     </div>
   );
 }

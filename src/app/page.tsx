@@ -1,8 +1,6 @@
 import "./landing.css";
-import { LandingPageClient } from "@/components/landing-page-client";
+import { LandingPageClient } from "@/components/landing/landing-page-client";
 
-export const dynamic = "force-dynamic";
-
-export default async function Home() {
+export default function Home() {
   return <LandingPageClient />;
 }

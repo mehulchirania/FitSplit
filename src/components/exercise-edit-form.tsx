@@ -12,19 +12,19 @@ type FormAction = (prev: FormActionState, formData: FormData) => Promise<FormAct
 
 // ── constants ─────────────────────────────────────────────────────────────────
 
-export const ALL_MUSCLE_GROUPS = [
+const ALL_MUSCLE_GROUPS = [
   "Back", "Biceps", "Cardio", "Chest", "Core",
   "Forearms", "Legs", "Shoulders", "Triceps",
 ] as const;
 
-export const EQUIPMENT_OPTIONS = [
+const EQUIPMENT_OPTIONS = [
   "Barbell", "Dumbbell", "Cable", "Machine", "Bodyweight",
   "Smith Machine", "Resistance Band", "Trap Bar", "EZ Bar",
   "Kettlebell", "Pull-up Bar", "Ab Bench", "Plate", "Box",
 ] as const;
 
 /** Channel labels shown in the video-source selector and on buttons */
-export const VIDEO_CHANNELS = [
+const VIDEO_CHANNELS = [
   { value: "deltabolic",  label: "DeltaBolic" },
   { value: "tylerpath",   label: "TylerPath" },
   { value: "shg",         label: "Gym Demo" },

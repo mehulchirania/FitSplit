@@ -245,7 +245,7 @@ export function scopedGymDoc(db: ReturnType<typeof getFirebaseAdminServices>["db
   return db.collection(gymCollectionPath(gymId, collection)).doc(docId);
 }
 
-export function archiveRetentionDate() {
+function archiveRetentionDate() {
   return new Date(Date.now() + 60 * 24 * 60 * 60 * 1000);
 }
 
@@ -297,7 +297,7 @@ export async function archiveQuerySnapshot(
   );
 }
 
-export async function deleteSnapshotsInBatches(
+async function deleteSnapshotsInBatches(
   db: ReturnType<typeof getFirebaseAdminServices>["db"],
   snapshots: FirebaseFirestore.QueryDocumentSnapshot[]
 ) {
@@ -459,7 +459,7 @@ export async function batchMirrorGymScopedRecords(
 
 export type GymGeofenceConfig = Pick<GymWorkspace, "latitude" | "longitude" | "radiusMeters">;
 
-export function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
+function distanceInMeters(fromLat: number, fromLng: number, toLat: number, toLng: number) {
   const radius = 6371000;
   const toRadians = (value: number) => (value * Math.PI) / 180;
   const dLat = toRadians(toLat - fromLat);

@@ -31,12 +31,12 @@ export type FloorSlot = {
   memberCount: number;
 };
 
-export type MixItem = {
+type MixItem = {
   plan: string;
   count: number;
 };
 
-export type ActivityItem = {
+type ActivityItem = {
   id: string;
   body: string;
   createdAt: string;

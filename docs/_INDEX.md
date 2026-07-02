@@ -43,6 +43,7 @@ flowchart TD
     ISSUES[11 · KNOWN_ISSUES_AND_GAPS]
     AUDIT[12 · ARCHITECTURE_AUDIT_2026]
     STYLE[13 · UI_STYLE_GUIDE]
+    PRODUCT[14 · PRODUCT_REFINEMENT_AUDIT]
   end
 
   subgraph META[Meta · drift control]
@@ -78,6 +79,7 @@ flowchart TD
   click ISSUES "11_KNOWN_ISSUES_AND_GAPS.md" "Open 11 · KNOWN_ISSUES_AND_GAPS"
   click AUDIT "12_ARCHITECTURE_AUDIT_2026.md" "Open 12 · ARCHITECTURE_AUDIT_2026"
   click STYLE "13_UI_STYLE_GUIDE.md" "Open 13 · UI_STYLE_GUIDE"
+  click PRODUCT "14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md" "Open 14 · PRODUCT_REFINEMENT_AUDIT"
   click DISC "DISCREPANCIES.md" "Open DISCREPANCIES"
 ```
 
@@ -89,7 +91,7 @@ flowchart TD
 |---|---|---|
 | **Tier 0** | Every session (keep tiny, ~8k tokens) | `00_AI_CONTEXT.md` |
 | **Tier 1** | Current-state facts (the SSoT body) | `01`–`09` |
-| **Tier 2** | Opinion / volatile / backlog | `10`–`13` |
+| **Tier 2** | Opinion / volatile / backlog | `10`–`14` |
 | **Meta** | Navigation + drift control | `_INDEX.md`, `DISCREPANCIES.md` |
 
 ## File directory
@@ -110,6 +112,7 @@ flowchart TD
 | [11_KNOWN_ISSUES_AND_GAPS.md](11_KNOWN_ISSUES_AND_GAPS.md) | 2 | Aggregated backlog of bugs, incomplete functionalities, and tech debt. |
 | [12_ARCHITECTURE_AUDIT_2026.md](12_ARCHITECTURE_AUDIT_2026.md) | 2 | Firestore cost, backend architecture, and B2B2C scaling audit. |
 | [13_UI_STYLE_GUIDE.md](13_UI_STYLE_GUIDE.md) | 2 | Complete design system, tokens, CSS architecture, and layout paradigms. |
+| [14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md](14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md) | 2 | Product/UI refinement audit covering orphaned flows, landing-page debt, and cleanup priorities. |
 | [DISCREPANCIES.md](DISCREPANCIES.md) | Meta | README/code conflicts + dead/orphaned references. |
 
 ---

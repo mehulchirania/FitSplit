@@ -10,9 +10,8 @@
   "ignore": ["src/lib/mock-data.ts"],
   "ignoreDependencies": [
     "@opentelemetry/*",
-    "firebase-functions/v2/firestore",
-    "tailwindcss",
-    "tailwindcss-animate"
+    "firebase-functions",
+    "firebase-functions/v2/firestore"
   ],
   "ignoreBinaries": ["firebase"],
   "next": true,

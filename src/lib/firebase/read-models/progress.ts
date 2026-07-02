@@ -159,72 +159,14 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string, lim
   return { liftLogs, isPersisted: true };
 }
 
-export type WorkoutCalendarDay = {
-  date: string; // "YYYY-MM-DD"
-  trained: boolean;
-  skipped: boolean;
-  makeupPending: boolean;
-  dayTitle?: string;
-  skipReason?: SkipReason;
-};
-
 /**
  * Build a calendar data map for the given member from their lift logs and day logs.
  * Returns a record keyed by "YYYY-MM-DD" date strings for the last `daysBack` days.
  * This is computed server-side from data we already have — no extra Firestore queries.
  */
-export async function getMemberCalendarData(
-  memberId: string,
-  gymId?: string,
-  daysBack = 90
-): Promise<{ calendarDays: WorkoutCalendarDay[] }> {
-  const [{ liftLogs }, { dayLogs }] = await Promise.all([
-    getLiftLogsForMember(memberId, gymId),
-    getDayLogsForMember(memberId, gymId)
-  ]);
-
   // Build lookup: date → trained
-  const trainedDates = new Set<string>();
-  for (const log of liftLogs) {
-    if (log.loggedAt) trainedDates.add(log.loggedAt.slice(0, 10));
-  }
-
   // Build lookup: date → DayLog (using loggedAt as the calendar date)
-  const skipByDate = new Map<string, DayLog>();
-  for (const dl of dayLogs) {
-    if (dl.status === "skipped" && dl.loggedAt) {
-      const date = dl.loggedAt.slice(0, 10);
-      const existing = skipByDate.get(date);
-      // Keep most recent log per date
-      if (!existing || dl.loggedAt > existing.loggedAt) {
-        skipByDate.set(date, dl);
-      }
-    }
-  }
-
   // Build the date range
-  const now = new Date();
-  const calendarDays: WorkoutCalendarDay[] = [];
-  for (let i = 0; i < daysBack; i++) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    const date = d.toISOString().slice(0, 10);
-    const skipLog = skipByDate.get(date);
-    calendarDays.push({
-      date,
-      trained: trainedDates.has(date),
-      skipped: Boolean(skipLog),
-      makeupPending: skipLog?.makeupStatus === "pending",
-      skipReason: skipLog?.skipReason
-    });
-  }
-
-  // Return in chronological order (oldest first)
-  calendarDays.reverse();
-
-  return { calendarDays };
-}
-
 export type MacroLogEntry = {
   protein: number;
   carbs: number;

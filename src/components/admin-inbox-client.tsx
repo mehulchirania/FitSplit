@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { markContactMessageRead } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
 import type { ContactMessage } from "@/types/domain";
 
 function relTime(iso: string): string {
@@ -27,14 +31,40 @@ function threadKind(msg: ContactMessage): { label: string; cls: string } {
 
 export function AdminInboxClient({
   messages,
-  unreadCount,
 }: {
   messages: ContactMessage[];
-  unreadCount: number;
 }) {
+  const router = useRouter();
   const [selected, setSelected] = useState<string | null>(messages[0]?.id ?? null);
+  const [readIds, setReadIds] = useState(() => new Set(messages.filter((msg) => msg.status === "read").map((msg) => msg.id)));
+  const [isMarkingRead, setIsMarkingRead] = useState(false);
+  const [markReadError, setMarkReadError] = useState("");
 
-  const active = messages.find(m => m.id === selected);
+  const displayMessages = messages.map((msg) => ({
+    ...msg,
+    status: readIds.has(msg.id) ? "read" as const : msg.status
+  }));
+  const active = displayMessages.find(m => m.id === selected);
+  const displayUnreadCount = displayMessages.filter((msg) => msg.status === "unread").length;
+
+  async function handleMarkRead(messageId: string) {
+    const formData = new FormData();
+    formData.set("messageId", messageId);
+    setIsMarkingRead(true);
+    setMarkReadError("");
+    try {
+      const result = await markContactMessageRead(initialFormActionState, formData);
+      if (result.status === "success") {
+        setReadIds((current) => new Set(current).add(messageId));
+        toast.success(result.message);
+        router.refresh();
+      } else {
+        setMarkReadError(result.message);
+      }
+    } finally {
+      setIsMarkingRead(false);
+    }
+  }
 
   if (messages.length === 0) {
     return (
@@ -53,12 +83,12 @@ export function AdminInboxClient({
         <div className="adm-card adm-inbox__list-card">
           <div className="adm-card__head">
             <h3>Threads ({messages.length})</h3>
-            {unreadCount > 0 && (
-              <span className="adm-inbox-tag adm-inbox-tag--danger">{unreadCount} unread</span>
+            {displayUnreadCount > 0 && (
+              <span className="adm-inbox-tag adm-inbox-tag--danger">{displayUnreadCount} unread</span>
             )}
           </div>
           <div className="adm-card__body adm-card__body--flush">
-            {messages.map((msg, i) => {
+            {displayMessages.map((msg, i) => {
               const kind = threadKind(msg);
               const isOn = msg.id === selected;
               return (
@@ -73,7 +103,12 @@ export function AdminInboxClient({
                     <small>{relTime(msg.createdAt)}</small>
                   </div>
                   <div className="adm-inbox-thread__body">{msg.body.slice(0, 60)}…</div>
-                  <span className={kind.cls}>{kind.label}</span>
+                  <div className="adm-inbox-thread__tags">
+                    <span className={kind.cls}>{kind.label}</span>
+                    {msg.status === "unread" ? (
+                      <span className="adm-inbox-tag adm-inbox-tag--danger">UNREAD</span>
+                    ) : null}
+                  </div>
                 </button>
               );
             })}
@@ -93,8 +128,25 @@ export function AdminInboxClient({
                   {active.mobile ? ` · ${active.mobile}` : ""}
                 </span>
               </div>
+              {active.status === "unread" ? (
+                <button
+                  className="adm-btn adm-btn--ghost adm-btn--sm"
+                  disabled={isMarkingRead}
+                  onClick={() => handleMarkRead(active.id)}
+                  type="button"
+                >
+                  {isMarkingRead ? "Marking..." : "Mark read"}
+                </button>
+              ) : (
+                <span className="adm-inbox-tag adm-inbox-tag--ok">READ</span>
+              )}
             </div>
             <div className="adm-card__body">
+              {markReadError ? (
+                <p className="form-message form-message-error" role="alert">
+                  {markReadError}
+                </p>
+              ) : null}
               {/* Original message */}
               <div className="adm-inbox-bubble">
                 {active.body}

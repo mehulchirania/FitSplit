@@ -44,17 +44,6 @@ export async function getGymWorkspaces(): Promise<{
   }
 }
 
-export async function getPrimaryWorkspace(): Promise<{
-  gym: GymWorkspace;
-  isPersisted: boolean;
-}> {
-  const { gyms, isPersisted } = await getGymWorkspaces();
-  return {
-    gym: gyms.find((workspace) => workspace.slug === PRIMARY_GYM_ID || workspace.id === PRIMARY_GYM_ID) ?? gyms[0],
-    isPersisted
-  };
-}
-
 export async function getGymDetail(gymId: string): Promise<{
   gym: GymWorkspace | null;
   isPersisted: boolean;
@@ -150,40 +139,6 @@ export async function getOwnersForGym(gymId: string): Promise<{
     return { owners, isPersisted: true };
   } catch {
     return { owners: [], isPersisted: false };
-  }
-}
-
-export async function getRoleSummary(): Promise<{
-  adminName: string;
-  ownerName: string;
-  ownerAccess: string;
-  isPersisted: boolean;
-}> {
-  const fallback = {
-    adminName: "FitSplit Admin",
-    ownerName: "Santosh SHG",
-    ownerAccess: "Sri Shakthi Hanuman Gym"
-  };
-
-  if (!hasFirebaseAdminConfig()) {
-    return { ...fallback, isPersisted: false };
-  }
-
-  try {
-    const { db } = getFirebaseAdminServices();
-    const [adminSnapshot, ownerDoc, gymDoc] = await Promise.all([
-      db.collection(collectionPaths.authProfiles).where("role", "==", "admin").limit(1).get(),
-      db.collection(collectionPaths.authProfiles).doc(PRIMARY_OWNER_ID).get(),
-      db.collection(collectionPaths.gyms).doc(PRIMARY_GYM_ID).get()
-    ]);
-    return {
-      adminName: String(adminSnapshot.docs[0]?.data().fullName ?? fallback.adminName),
-      ownerName: String(ownerDoc.data()?.fullName ?? fallback.ownerName),
-      ownerAccess: String(gymDoc.data()?.name ?? fallback.ownerAccess),
-      isPersisted: true
-    };
-  } catch {
-    return { ...fallback, isPersisted: false };
   }
 }
 
