@@ -75,6 +75,7 @@ export type OdpSidebarData = {
   ownerFirstName: string;
   ownerInitials: string;
   role: string;
+  staffType?: string | null;
   totalMembers: number;
   pendingPaymentsCount: number;
   noPlanCount: number;
@@ -109,6 +110,10 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
     return pathname.startsWith(href);
   }
 
+  // Trainers share the owner workspace but must not see money/config surfaces;
+  // the matching pages redirect via requireOwnerPage() (docs/14 U2).
+  const isTrainer = data.role === "owner" && !!data.staffType && data.staffType !== "owner";
+
   const NAV_MAIN = [
     { href: "/owner",          label: "Dashboard",  icon: IC.today,    badge: 0 },
     { href: "/owner/members",  label: "Members",    icon: IC.people,   badge: data.totalMembers },
@@ -116,16 +121,16 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
     { href: "/owner/programs", label: "Programs",   icon: IC.dumbbell, badge: 0 },
     { href: "/owner/billing",  label: "Billing",    icon: IC.payment,  badge: data.pendingPaymentsCount },
     { href: "/owner/reports",  label: "Reports",    icon: IC.chart,    badge: 0 },
-  ];
+  ].filter((item) => !isTrainer || !["/owner/billing", "/owner/reports"].includes(item.href));
 
   const NAV_SETTINGS = [
     { href: "/owner/packages",  label: "Packages" },
     { href: "/owner/exercises", label: "Exercise catalog" },
     { href: "/owner/trainers",  label: "Trainers" },
     { href: "/owner/settings",  label: "Gym profile" },
-  ];
+  ].filter((item) => !isTrainer || !["/owner/packages", "/owner/settings"].includes(item.href));
 
-  const roleLabel = data.role === "admin" ? "Super Admin" : "Owner";
+  const roleLabel = data.role === "admin" ? "Super Admin" : isTrainer ? "Trainer" : "Owner";
 
   return (
     <aside className="odp2-sidebar">

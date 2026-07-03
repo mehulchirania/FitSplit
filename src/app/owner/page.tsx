@@ -193,6 +193,11 @@ export default async function OwnerDashboard() {
   // ── Owner name ────────────────────────────────────────────────────────────
   const firstName = currentUser.fullName.split(" ")[0] ?? currentUser.fullName;
 
+  // Trainers share this dashboard but money data must not reach the client:
+  // strip payment/renewal actions server-side and let the tabs hide Money (docs/14 U2).
+  const isTrainer =
+    currentUser.role === "owner" && !!currentUser.staffType && currentUser.staffType !== "owner";
+
   const data: OwnerDashboardData = {
     gymName: gym?.name ?? "Gym",
     ownerFirstName: firstName,
@@ -200,10 +205,11 @@ export default async function OwnerDashboard() {
     totalMembers: members.length,
     activeMembers: members.filter((m) => m.isActive).length,
     noPlanCount: unassigned.length,
-    pendingPaymentsCount: pendingPayments.length,
-    expiringCount: expiringMembers.length,
-    expiredCount: expiredMembers.length,
-    actions,
+    pendingPaymentsCount: isTrainer ? 0 : pendingPayments.length,
+    expiringCount: isTrainer ? 0 : expiringMembers.length,
+    expiredCount: isTrainer ? 0 : expiredMembers.length,
+    isTrainer,
+    actions: isTrainer ? actions.filter((a) => a.kind === "noplan") : actions,
     recentJoins,
     floor,
     ptSessions,

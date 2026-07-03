@@ -48,7 +48,6 @@ const Icons = {
   Video:     (p: P) => <Icon {...p} d={<><rect x="2" y="7" width="14" height="10" rx="2" /><path d="M16 11l5-4v10l-5-4" /></>} />,
   Swap:      (p: P) => <Icon {...p} d={<><path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 014-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 01-4 4H3" /></>} />,
   LogOut:    (p: P) => <Icon {...p} d={<><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></>} />,
-  Square:    (p: P) => <Icon {...p} d={<rect x="6" y="6" width="12" height="12" rx="2" />} fill="currentColor" stroke="none" />,
 };
 
 /* ── Props types ─────────────────────────────────────────────────── */
@@ -532,16 +531,15 @@ function getExerciseSwapKey(dayId: string | undefined, selectedDayIndex: number,
   return `${dayId ?? `day-${selectedDayIndex}`}:${exerciseId}:${index}`;
 }
 
-function TodaySessionList({ program, currentWeek, exercises, isWorkoutActive, onToggleWorkout, selectedDayIndex, onSelectDay }: {
+function TodaySessionList({ program, currentWeek, exercises, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
-  isWorkoutActive: boolean;
-  onToggleWorkout: () => void;
   selectedDayIndex: number;
   onSelectDay: (idx: number) => void;
 }) {
   const day = program.days?.[selectedDayIndex];
+  const focusedDayHref = day ? `/member/programs/${program.id}/day/${day.id}` : "/member/programs";
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const liftsCount = day?.exercises?.length ?? 0;
   const estMin = liftsCount * 8;
@@ -586,15 +584,10 @@ function TodaySessionList({ program, currentWeek, exercises, isWorkoutActive, on
           </span>
         </div>
         <div className="m3d-today__cta" style={{ alignSelf: 'flex-start', marginTop: '45px' }}>
-          <button 
-            className="m3d-today__start-btn" 
-            onClick={onToggleWorkout} 
-            type="button"
-            style={isWorkoutActive ? { background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-soft)' } : undefined}
-          >
-            {isWorkoutActive ? <Icons.Square size={14} /> : <Icons.Play size={16} />} 
-            {isWorkoutActive ? "Stop workout" : "Start workout"}
-          </button>
+          <Link className="m3d-today__start-btn" href={focusedDayHref}>
+            <Icons.Play size={16} />
+            Open workout
+          </Link>
         </div>
       </div>
 
@@ -660,16 +653,15 @@ function TodaySessionList({ program, currentWeek, exercises, isWorkoutActive, on
 }
 
 /* ── Mobile Today card ───────────────────────────────────────────── */
-function MobileTodayCard({ program, currentWeek, exercises, isWorkoutActive, onToggleWorkout, selectedDayIndex, onSelectDay }: {
+function MobileTodayCard({ program, currentWeek, exercises, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
-  isWorkoutActive: boolean;
-  onToggleWorkout: () => void;
   selectedDayIndex: number;
   onSelectDay: (idx: number) => void;
 }) {
   const day = program.days?.[selectedDayIndex];
+  const focusedDayHref = day ? `/member/programs/${program.id}/day/${day.id}` : "/member/programs";
   const liftsCount = day?.exercises?.length ?? 0;
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const estMin = liftsCount * 8;
@@ -770,15 +762,10 @@ function MobileTodayCard({ program, currentWeek, exercises, isWorkoutActive, onT
         })}
       </div>
 
-      <button 
-        className="mcr-today__start" 
-        onClick={onToggleWorkout} 
-        type="button"
-        style={isWorkoutActive ? { background: 'transparent', border: '1px solid var(--border)', color: 'var(--text-soft)' } : undefined}
-      >
-        {isWorkoutActive ? <Icons.Square size={14} /> : <Icons.Play size={16} />} 
-        {isWorkoutActive ? "Stop workout" : "Start workout"}
-      </button>
+      <Link className="mcr-today__start" href={focusedDayHref}>
+        <Icons.Play size={16} />
+        Open workout
+      </Link>
     </section>
   );
 }
@@ -938,7 +925,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
 
   const [tab, setTab] = useState("train");
   const [toast, setToast] = useState<string | null>(null);
-  const [isWorkoutActive, setIsWorkoutActive] = useState(false);
   const [selectedPreviewDay, setSelectedPreviewDay] = useState(0);
   const [nowMs] = useState(() => Date.now());
 
@@ -951,30 +937,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     document.body.classList.add("member-desktop-full");
     return () => document.body.classList.remove("member-desktop-full");
   }, []);
-
-  useEffect(() => {
-    const startedAt = window.localStorage.getItem("fitsplit-workout-start");
-    if (startedAt) {
-      const startMs = parseInt(startedAt, 10);
-      if (Date.now() - startMs < 4 * 60 * 60 * 1000) {
-        window.setTimeout(() => setIsWorkoutActive(true), 0);
-      } else {
-        window.localStorage.removeItem("fitsplit-workout-start");
-      }
-    }
-  }, []);
-
-  const handleToggleWorkout = () => {
-    if (isWorkoutActive) {
-      setIsWorkoutActive(false);
-      window.localStorage.removeItem("fitsplit-workout-start");
-      handleToast("Workout ended");
-    } else {
-      setIsWorkoutActive(true);
-      window.localStorage.setItem("fitsplit-workout-start", Date.now().toString());
-      handleToast("Workout started! Your streak is active.");
-    }
-  };
 
   return (
     <div className="m3d-root">
@@ -1050,8 +1012,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                           program={program}
                           currentWeek={currentWeek}
                           exercises={exercises}
-                          isWorkoutActive={isWorkoutActive}
-                          onToggleWorkout={handleToggleWorkout}
                           selectedDayIndex={selectedPreviewDay}
                           onSelectDay={setSelectedPreviewDay}
                         />
@@ -1062,8 +1022,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                           program={program}
                           currentWeek={currentWeek}
                           exercises={exercises}
-                          isWorkoutActive={isWorkoutActive}
-                          onToggleWorkout={handleToggleWorkout}
                           selectedDayIndex={selectedPreviewDay}
                           onSelectDay={setSelectedPreviewDay}
                         />

@@ -45,7 +45,7 @@ const LogDayStatusSchema = z.object({
   memberId: ZodHelpers.textRequired("Member"),
   dayId: ZodHelpers.textRequired("Day"),
   weekStart: ZodHelpers.textRequired("Week start"),
-  status: z.enum(["skipped", "modified"]),
+  status: z.enum(["completed", "skipped", "modified"]),
   skipReason: z.string().optional(),
   note: z.string().max(400).optional(),
   /** Comma-separated exercise IDs to surface as makeup suggestions */
@@ -383,7 +383,8 @@ export async function updateCoachNote(
 
 /**
  * Member records how they deviated from their planned day for a given week.
- * Two modes:
+ * Modes:
+ *   status="completed" — they finished the planned day.
  *   status="skipped"  — they didn't train (optional reason + note).
  *   status="modified" — they did something other than the plan (note describes it).
  *
@@ -407,8 +408,8 @@ export async function logDayStatus(
 
     const memberId = rawMember.trim() || currentUser.memberId || currentUser.uid;
     const programId = requireText(formData, "programId", "Program ID");
-    const status = rawStatus === "modified" ? "modified" : "skipped";
-    const skipReason = rawReason ? rawReason.trim() : null;
+    const status = rawStatus;
+    const skipReason = status === "skipped" && rawReason ? rawReason.trim() : null;
 
     if (!memberId) throw new Error("Member ID is required.");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(weekStart)) throw new Error("Invalid week start date.");
@@ -440,7 +441,13 @@ export async function logDayStatus(
 
     await mirrorGymScopedRecord(db, gymId, "dayLogs", docId, dayLogRecord);
 
-    return success(status === "skipped" ? "Day marked as skipped." : "Activity note saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    const message =
+      status === "completed"
+        ? "Day marked as done."
+        : status === "skipped"
+          ? "Day marked as skipped."
+          : "Activity note saved.";
+    return success(message, gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     console.error("Unable to log day status", error);
     return failure(error, "Could not save. Please try again.");

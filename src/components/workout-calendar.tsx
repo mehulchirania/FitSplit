@@ -107,7 +107,9 @@ function buildCalendarDays(
     const date = dateKeyFromIso(dl.loggedAt);
     if (!date) continue;
     const entry = ensure(date);
-    if (dl.status === "skipped") {
+    if (dl.status === "completed") {
+      entry.trained = true;
+    } else if (dl.status === "skipped") {
       entry.skipped = true;
       entry.skipReason = dl.skipReason;
       if (dl.makeupStatus === "pending") entry.makeupPending = true;

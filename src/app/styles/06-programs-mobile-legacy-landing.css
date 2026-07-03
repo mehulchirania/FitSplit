@@ -708,7 +708,7 @@
     radial-gradient(circle at 24% 18%, rgb(34 197 94 / 0.12), transparent 26rem),
     linear-gradient(180deg, var(--fs3-bg) 0%, var(--fs3-bg-deep) 100%);
   color: var(--fs3-text);
-  font-family: Inter, "DM Sans", Figtree, system-ui, sans-serif;
+  font-family: var(--font-inter), "Inter", "DM Sans", system-ui, sans-serif;
   min-height: 100dvh;
   overflow-x: clip;
   width: 100%;

@@ -1925,7 +1925,11 @@ details[open] > .pt-booking-summary::before { transform: rotate(90deg); }
 /* Table */
 .ptd-tablewrap {
   border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--bg-elevated); overflow: hidden;
+  background: var(--bg-elevated);
+  /* overflow-x must stay scrollable: with `hidden` the actions column is
+     clipped and unclickable below ~1060px viewports (docs/14 U4) */
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 .ptd-table { width: 100%; border-collapse: collapse; }
 .ptd-table thead th {

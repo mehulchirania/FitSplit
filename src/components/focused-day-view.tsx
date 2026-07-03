@@ -58,6 +58,13 @@ export function FocusedDayView({
   const [dayLogStatus, setDayLogStatus] = useState<FormActionState | null>(null);
   const [isDayLogPending, setIsDayLogPending] = useState(false);
   const makeupExerciseIds = day.exercises.slice(0, 3).map((exercise) => exercise.exerciseId).join(",");
+  const dayLogLabel = currentDayLog?.status === "completed"
+    ? "Done"
+    : currentDayLog?.status === "skipped"
+      ? "Skipped"
+      : currentDayLog?.status === "modified"
+        ? "Modified"
+        : "No note";
 
   async function handleDayLogSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -155,7 +162,7 @@ export function FocusedDayView({
           </div>
           {currentDayLog ? (
             <span className={`fdv-day-log__chip fdv-day-log__chip--${currentDayLog.status}`}>
-              {currentDayLog.status === "skipped" ? "Skipped" : "Modified"}
+              {dayLogLabel}
             </span>
           ) : (
             <span className="fdv-day-log__chip">No note</span>
@@ -163,7 +170,7 @@ export function FocusedDayView({
         </div>
         <div className="fdv-day-log__fields">
           <label>
-            Reason
+            Skip reason
             <select name="skipReason" defaultValue={currentDayLog?.skipReason ?? "no_time"}>
               <option value="no_time">No time</option>
               <option value="rest">Rest day</option>
@@ -189,6 +196,9 @@ export function FocusedDayView({
           </p>
         ) : null}
         <div className="fdv-day-log__actions">
+          <button className="button button-primary" name="status" type="submit" value="completed" disabled={isDayLogPending}>
+            {isDayLogPending ? "Saving..." : "Mark done"}
+          </button>
           <button className="button button-secondary" name="status" type="submit" value="modified" disabled={isDayLogPending}>
             {isDayLogPending ? "Saving..." : "Save note"}
           </button>

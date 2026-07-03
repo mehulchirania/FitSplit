@@ -623,7 +623,8 @@ export type MakeupStatus = "pending" | "added" | "dismissed";
 
 /**
  * Records when a member intentionally deviates from their planned day for a
- * given week. Two statuses:
+ * given week. Statuses:
+ *   "completed" — member explicitly marked the planned day as done.
  *   "skipped"  — member did not train that day (with an optional reason).
  *   "modified" — member did something other than the assigned plan (free-text note).
  *
@@ -638,7 +639,7 @@ export type DayLog = {
   dayId: string;
   /** ISO date string of that week's Monday, e.g. "2026-05-18" */
   weekStart: string;
-  status: "skipped" | "modified";
+  status: "completed" | "skipped" | "modified";
   skipReason?: SkipReason;
   /** Free-text note — what they did instead, or extra context for the skip */
   note?: string;

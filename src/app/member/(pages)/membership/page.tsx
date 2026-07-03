@@ -44,7 +44,11 @@ export default async function MemberMembershipPage() {
   const isExpiringSoon = daysLeft !== null && daysLeft <= 7 && daysLeft > 0;
   const isExpired = daysLeft !== null && daysLeft <= 0;
 
-  const membershipStatus = member?.membershipStatus ?? (activeMembership ? "active" : "expired");
+  // The persisted field is written by the scheduled expiry sweep and can lag the
+  // real end date by up to a day — never show an "Active" badge next to an
+  // "Expired on …" line (docs/14 U5). The date wins.
+  const persistedStatus = member?.membershipStatus ?? (activeMembership ? "active" : "expired");
+  const membershipStatus = isExpired ? "expired" : persistedStatus;
 
   return (
     <div className="m3d-subpage membership-page">

@@ -62,14 +62,14 @@ export function TermsConsentGate() {
           boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
         }}
       >
-        <h2 id="terms-gate-title" style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--fg)", margin: "0 0 12px" }}>
+        <h2 id="terms-gate-title" style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text)", margin: "0 0 12px" }}>
           Before you continue
         </h2>
-        <p style={{ color: "var(--fg-dim)", lineHeight: 1.6, margin: "0 0 16px" }}>
+        <p style={{ color: "var(--text-soft)", lineHeight: 1.6, margin: "0 0 16px" }}>
           To use FitSplit you must agree to our{" "}
-          <Link href="/terms" target="_blank" style={{ color: "var(--accent)" }}>Terms of Service</Link>{" "}
+          <Link href="/terms" target="_blank" style={{ color: "var(--brand)", fontWeight: 600 }}>Terms of Service</Link>{" "}
           and{" "}
-          <Link href="/privacy" target="_blank" style={{ color: "var(--accent)" }}>Privacy Policy</Link>,
+          <Link href="/privacy" target="_blank" style={{ color: "var(--brand)", fontWeight: 600 }}>Privacy Policy</Link>,
           including the processing of your fitness and health-related data as described there.
         </p>
 
@@ -82,10 +82,21 @@ export function TermsConsentGate() {
         <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px" }}>
           <button
             type="button"
-            className="lp-btn-primary lp-w-full"
             onClick={onAccept}
             disabled={isPending}
-            style={{ width: "100%" }}
+            style={{
+              width: "100%",
+              minHeight: "44px",
+              background: "var(--brand)",
+              border: "none",
+              borderRadius: "10px",
+              padding: "11px 14px",
+              color: "var(--primary-foreground)",
+              fontSize: "0.95rem",
+              fontWeight: 700,
+              cursor: isPending ? "default" : "pointer",
+              opacity: isPending ? 0.7 : 1,
+            }}
           >
             {isPending ? "Please wait…" : "Accept & continue"}
           </button>
@@ -95,11 +106,12 @@ export function TermsConsentGate() {
             disabled={isPending}
             style={{
               width: "100%",
+              minHeight: "44px",
               background: "transparent",
               border: "1px solid var(--border)",
               borderRadius: "10px",
               padding: "11px 14px",
-              color: "var(--fg-dim)",
+              color: "var(--text-soft)",
               fontSize: "0.95rem",
               cursor: isPending ? "default" : "pointer",
             }}

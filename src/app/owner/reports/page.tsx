@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireOwnerPage } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { AttendanceTrendChart } from "@/components/attendance-trend-chart";
 import {
@@ -16,7 +16,7 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function OwnerReportsPage() {
-  const currentUser = await requireRole(["admin", "owner"]);
+  const currentUser = await requireOwnerPage();
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [

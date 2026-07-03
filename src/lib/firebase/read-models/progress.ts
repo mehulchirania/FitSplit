@@ -76,6 +76,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
       .map((doc) => {
         const data = doc.data();
         const rawReason = data.skipReason ? String(data.skipReason) : undefined;
+        const rawStatus = String(data.status ?? "skipped");
         const validMakeupStatuses = new Set<string>(["pending", "added", "dismissed"]);
         const rawMakeupStatus = data.makeupStatus ? String(data.makeupStatus) : undefined;
         return {
@@ -85,7 +86,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
           programId: String(data.programId ?? ""),
           dayId: String(data.dayId ?? ""),
           weekStart: String(data.weekStart ?? ""),
-          status: data.status === "modified" ? "modified" : "skipped",
+          status: rawStatus === "completed" || rawStatus === "modified" ? rawStatus : "skipped",
           skipReason: rawReason && validSkipReasons.has(rawReason) ? (rawReason as SkipReason) : undefined,
           note: data.note ? String(data.note) : undefined,
           loggedAt: String(data.loggedAt ?? new Date().toISOString()),

@@ -58,7 +58,7 @@ attendance chart reflects real data.
 | Lift logging and offline sync | Member | Working | Keep | - | `logLiftSet`, `syncOfflineLifts`, and Dexie are wired through the member progress panel. |
 | Body weight and macro logging | Member | Working | Keep | - | Body weight and macro panels are wired. |
 | Workout sessions and attendance | Member -> Owner | Broken / orphaned | Fix or remove | P0 | `startWorkoutSession` and `endWorkoutSession` have no current UI call sites; owner charts read the resulting dead collection. |
-| Day status and makeup days | Member | Broken / orphaned | Fix or remove | P0 | `logDayStatus`, `clearDayLog`, and `updateMakeupStatus` have no current UI call sites. |
+| Day status and makeup days | Member | Working | Keep | - | Resolved 2026-07-03: `FocusedDayView` now writes `completed`, `skipped`, and `modified` day-log states; history and calendar read the completed state. |
 | Wellness/activity logging | Member | Broken / orphaned | Remove or fix | P1 | `logActivity` has no live writer UI. |
 | Contact/enquiry to admin inbox | Public -> Admin | Broken E2E | Fix or remove | P1 | Landing enquiry form was removed while inbox/actions remain. |
 | Geofenced attendance | Member | Double-dead | Defer | P2 | No caller, and no gym coordinates configured. |
@@ -97,17 +97,13 @@ Relevant areas:
 - `src/lib/firebase/read-models/sessions.ts`
 - `src/app/owner/page.tsx`
 
-### 4.2 Day completion and makeup days (P0)
+### 4.2 Day completion and makeup days (resolved 2026-07-03)
 
-`logDayStatus`, `clearDayLog`, and `updateMakeupStatus` have no current call sites.
-As a result, `dayLogs` can no longer gain new documents through the UI, while member
-history still renders day-log based history.
-
-Minimal fix: add Done and Skip controls to `FocusedDayView`.
-
-Preferred fix: derive done from logged sets and keep skip reason as the only manual
-input. A day with at least one logged set is more truthful than a separate completion
-checkbox.
+`FocusedDayView` now writes first-class `completed`, `skipped`, and `modified`
+day-log states through the existing deterministic `logDayStatus` / `clearDayLog`
+path. Member history and the workout calendar now read the completed state. Lift
+logs still also count as trained days, so explicit completion and actual lift
+logging both feed the member progress surfaces.
 
 ### 4.3 Contact/enquiry pipeline (P1)
 
@@ -227,7 +223,7 @@ Recommended process changes:
 
 1. Restore attendance with implicit session/attendance upsert from lift logging, or
    explicit Start/Finish controls.
-2. Restore day completion with Done/Skip, or derive Done from lift logs.
+2. ~~Restore day completion with Done/Skip, or derive Done from lift logs.~~ Done 2026-07-03.
 3. Restore the contact/enquiry flow or delete the pipeline as a unit.
 4. Delete shadcn/Tailwind debris and unused dependencies after verification.
 5. Update handoff/docs and rebuild graphify after the cleanup.
@@ -258,7 +254,7 @@ B2C expansion all remain correctly parked.
 | `src/components/ui/`, `src/lib/utils.ts`, `src/lib/landing-mock.ts` | Orphaned shadcn debris | Delete after import sweep | P0 |
 | `package.json` | Unused deps and `three` decision | Uninstall or reposition deps | P0 |
 | `src/app/layout.tsx`, `postcss.config.mjs`, `components.json`, `src/app/styles/shadcn.css` | Tailwind pipeline likely dead | Remove after utility-class grep | P0 |
-| `src/lib/firebase/actions/progress.ts`, `src/components/focused-day-view.tsx` | Orphaned session/day actions | Re-wire or derive | P0 |
+| `src/lib/firebase/actions/progress.ts`, `src/components/focused-day-view.tsx` | Day completion was partial | Completed 2026-07-03: first-class done/skip/modified day logs | - |
 | `src/lib/firebase/read-models/sessions.ts`, `src/app/owner/page.tsx` | Chart over dead collection | Fix through attendance restoration and add empty-state | P0 |
 | `src/lib/firebase/actions/contact.ts`, `src/components/admin-inbox-client.tsx`, landing page | Dead contact E2E flow | Restore form and mark-read, or delete | P1 |
 | `src/components/landing-page-client.tsx`, `src/app/landing.css`, `src/app/page.tsx` | Landing compliance issues | Incremental cleanup | P1 |
@@ -276,11 +272,47 @@ reconnection-and-deletion sprint:
 
 1. Delete verified unused shadcn/Tailwind debris and add unused-files/deps checks to CI.
 2. Restore attendance truthfully through lift logging or explicit controls.
-3. Restore day completion on the focused day view, preferably by deriving completion
-   from logged sets and keeping skip as manual input.
+3. ~~Restore day completion on the focused day view, preferably by deriving completion
+   from logged sets and keeping skip as manual input.~~ Done 2026-07-03.
 4. Restore the contact pipeline, or delete it as a unit.
 5. Re-sync docs and rebuild the graph so future sessions do not reason from stale
    deleted components.
 
 Method note: memory and graph output were used as leads, not truth. Findings should
 still be verified against the current working tree before implementation.
+
+---
+
+## UI Walkthrough Review (2026-07-02, evening pass)
+
+All four roles were exercised in a live browser session (owner `santosh-shg`, member
+`mehulchirania`, admin, trainer `shg-trainer-1`) at desktop, 1024px, and 375px.
+Findings below were measured in the running app, not inferred from code. Fix status
+is updated in place as items land.
+
+### Verified defects
+
+| # | Finding | Root cause / evidence | Fix | Status |
+|---|---|---|---|---|
+| U1 | Every native radio/checkbox renders full-width (membership package radio measured 594×44px; label crushed to 68px and clipped) | `02-shared-components.css:504` and `03-visual-refresh.css:589` apply `width:100%; min-height:40-44px; padding` to bare `input` | Add `input[type=radio], input[type=checkbox] { width:auto; min-height:0; padding:0 }` reset after the global rules | **Fixed 2026-07-02** |
+| U2 | Trainer accounts (`role:owner` + `staffType:trainer`) land on `/owner` with full owner nav; can view Billing revenue, Reports, and Gym settings; Approve buttons render but fail server-side | Pages guard with `requireRole(["admin","owner"])` only; routing keys off `role` so `/trainer` is unreachable for them | Redirect `staffType` non-owners off money pages; hide Billing/Reports/Packages/Gym profile in owner sidebar for trainers | **Fixed 2026-07-02** |
+| U3 | Member dashboard "Today's session" rows: exercise name overlaps the SETS × REPS column | `.m3d-ex__body` computes to 0 width; name overflows into sibling | `flex:1; min-width:0` + ellipsis on name | **Fixed 2026-07-02** |
+| U4 | `/owner/training` sessions table: actions column clipped and unclickable at ≤1060px | Table 931px inside 746px wrapper with `overflow-x:hidden` | `overflow-x:auto` on wrapper | **Fixed 2026-07-02** |
+| U5 | Member membership page shows green "Active" badge directly above red "Expired on 1 Jul 2026" | Badge trusts persisted `membershipStatus` even when `expiresAt` is in the past | Derive badge from expiry when it disagrees | **Fixed 2026-07-02** |
+| U6 | Owner members action queue shows "Expiring · In -24d" | Negative remaining days not handled in copy | "Expired 24d ago" + expired styling | **Fixed 2026-07-02** |
+| U7 | Owner mobile: Renew/Approve buttons 30px tall, "All actions →" 74×18 — under the 44px rule; visible scrollbar on Today/People/Money tab strip | odp2 button sizing; default scrollbar on overflow-x strip | 44px min targets at mobile; hide strip scrollbar | **Fixed 2026-07-02** |
+| U8 | Admin inbox cannot mark messages read — first real enquiry stays "unread" forever | `markContactMessageRead` orphaned (no call site) | Wire mark-read control in `admin-inbox-client.tsx` | **Fixed 2026-07-02** |
+| U9 | Dashboard "Start workout" was localStorage-only theater (toast claimed "streak is active", nothing persisted) while attendance now accrues from lift logging | `handleToggleWorkout` in `member-coach-shell.tsx` never called a persisted action | Replace the fake start/stop state with an "Open workout" link to the focused day view where lift logs and day status are persisted | **Fixed 2026-07-03** |
+
+### Polish items (lower priority)
+
+- T&C consent dialog: accept button was plain gray, not brand-styled — **fixed 2026-07-02**.
+- Admin gyms page offers "+ Add gym" and a text blurb pointing to the overview form for the same task — keep one.
+- Member profile "Fitness goals — Not set" is dead text; should be a "Set goals" affordance.
+- Owner reports "Training Activity 0 sessions" should now be checked against real lift-log attendance writes.
+
+### What is already good
+
+Owner workspace (action-queue dashboard, billing KPI/filter/list, PT filters + calendar
+toggle), admin console, and the member m3d shell are coherent and consistent. Empty
+states are designed. The defects above are point failures inside a solid system.

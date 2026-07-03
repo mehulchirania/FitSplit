@@ -287,12 +287,28 @@ function MembershipCell({ m }: { m: HybridMember }) {
 // ── Main component ────────────────────────────────────────────────────────────
 
 export function MembersHybridView({
-  initialMembers,
+  initialMembers: rawMembers,
   programs,
 }: {
   initialMembers: HybridMember[];
   programs: HybridProgram[];
 }) {
+  // The persisted membershipStatus is written by a scheduled sweep and can lag
+  // the real end date — a member at daysToExpiry <= 0 must never render as
+  // "Expiring · in -24d" (docs/14 U6). Normalize once; everything downstream
+  // (stats, queue buckets, pills, copy) stays consistent.
+  const initialMembers = useMemo(
+    () =>
+      rawMembers.map((m) =>
+        m.daysToExpiry != null &&
+        m.daysToExpiry <= 0 &&
+        (m.membershipStatus === "expiring_soon" || m.membershipStatus === "active")
+          ? { ...m, membershipStatus: "expired" as const }
+          : m
+      ),
+    [rawMembers]
+  );
+
   const [query, setQuery] = useState("");
   const [bucket, setBucket] = useState<Bucket>("all");
   const [sortKey, setSortKey] = useState<SortKey>("name");

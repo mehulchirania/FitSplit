@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PaymentRequestCard } from "@/components/payment-request-card";
-import { requireRole } from "@/lib/auth";
+import { requireOwnerPage } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { getPaymentRequests } from "@/lib/firebase/read-models";
 
@@ -20,7 +20,7 @@ export default async function BillingPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  const currentUser = await requireRole(["admin", "owner"]);
+  const currentUser = await requireOwnerPage();
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
   const { status: rawStatus } = await searchParams;
 

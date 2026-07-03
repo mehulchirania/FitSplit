@@ -8,7 +8,7 @@
 
 1. ~~**Attendance/workout session writers are orphaned**~~ — **RESOLVED 2026-07-02:** `logLiftSet` and `syncOfflineLifts` now upsert deterministic daily `workoutSessions` and `attendanceRecords` with `status: "completed"` and `geofenceStatus: "location_not_provided"`. This makes owner attendance trends accrue from actual lift logging without requiring a separate Start/Finish UI.
 
-2. ~~**Day completion/makeup writers are orphaned**~~ — **PARTIALLY RESOLVED 2026-07-02:** `FocusedDayView` now exposes the existing `logDayStatus` and `clearDayLog` paths for skip/modified notes on the current week. There is still no separate `"done"` day-log status; completion is currently inferred from lift logs.
+2. ~~**Day completion/makeup writers are orphaned**~~ - **RESOLVED 2026-07-03:** `FocusedDayView` now exposes `completed`, `skipped`, and `modified` day-log states through the existing deterministic `logDayStatus`/`clearDayLog` path. Completion is first-class in history and the workout calendar; lift logs still also count as trained days.
 
 *Previously resolved high-priority bugs remain resolved: Trainer auth, PT privacy, lockout mismatch, high/moderate dependency vulnerabilities, and the first-login T&C gate behavior.*
 

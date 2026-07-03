@@ -62,6 +62,8 @@ export type OwnerDashboardData = {
   attendanceTrend: DailySessionCount[];
   membershipMix: MixItem[];
   notifications: ActivityItem[];
+  /** staffType-trainer viewing the shared workspace — money surfaces are hidden */
+  isTrainer?: boolean;
 };
 
 // ── Icons (inline SVG) ──────────────────────────────────────────────────────
@@ -218,13 +220,15 @@ function TodayTab({ d, dismissed, setTab }: {
           </p>
         </div>
         <div className="odp2-hero__kpis">
-          <button className="odp2-hero__kpi" onClick={() => setTab("money")} title="View renewals">
-            <span className="odp2-hero__kpi-label">
-              {IC.renew} Renewals due
-            </span>
-            <span className="odp2-hero__kpi-val">{expiryTotal}</span>
-            <span className="odp2-hero__kpi-sub">{d.expiredCount} already lapsed</span>
-          </button>
+          {!d.isTrainer && (
+            <button className="odp2-hero__kpi" onClick={() => setTab("money")} title="View renewals">
+              <span className="odp2-hero__kpi-label">
+                {IC.renew} Renewals due
+              </span>
+              <span className="odp2-hero__kpi-val">{expiryTotal}</span>
+              <span className="odp2-hero__kpi-sub">{d.expiredCount} already lapsed</span>
+            </button>
+          )}
           <button className="odp2-hero__kpi" onClick={() => setTab("people")} title="View members without plans">
             <span className="odp2-hero__kpi-label">
               {IC.dumbbell} Plans pending
@@ -232,13 +236,15 @@ function TodayTab({ d, dismissed, setTab }: {
             <span className="odp2-hero__kpi-val">{d.noPlanCount}</span>
             <span className="odp2-hero__kpi-sub">members without a workout</span>
           </button>
-          <button className="odp2-hero__kpi" onClick={() => setTab("money")} title="View pending payments">
-            <span className="odp2-hero__kpi-label">
-              {IC.payment} Pending payments
-            </span>
-            <span className="odp2-hero__kpi-val">{d.pendingPaymentsCount}</span>
-            <span className="odp2-hero__kpi-sub">awaiting your approval</span>
-          </button>
+          {!d.isTrainer && (
+            <button className="odp2-hero__kpi" onClick={() => setTab("money")} title="View pending payments">
+              <span className="odp2-hero__kpi-label">
+                {IC.payment} Pending payments
+              </span>
+              <span className="odp2-hero__kpi-val">{d.pendingPaymentsCount}</span>
+              <span className="odp2-hero__kpi-sub">awaiting your approval</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -741,7 +747,7 @@ export function OwnerDashboardTabs({ data }: { data: OwnerDashboardData }) {
     { v: "money",    label: "Money",      icon: IC.money,    badge: moneyBadge },
     { v: "ops",      label: "Operations", icon: IC.ops,      badge: 0 },
     { v: "insights", label: "Insights",   icon: IC.insights, badge: 0 },
-  ];
+  ].filter((t) => !data.isTrainer || t.v !== "money");
 
   return (
     <>
@@ -764,7 +770,7 @@ export function OwnerDashboardTabs({ data }: { data: OwnerDashboardData }) {
       <div className="odp2-scroll">
         {tab === "today"    && <TodayTab    d={data} dismissed={dismissed} onDismiss={dismiss} setTab={setTab} />}
         {tab === "people"   && <PeopleTab   d={data} dismissed={dismissed} />}
-        {tab === "money"    && <MoneyTab    d={data} dismissed={dismissed} />}
+        {tab === "money" && !data.isTrainer && <MoneyTab d={data} dismissed={dismissed} />}
         {tab === "ops"      && <OpsTab      d={data} />}
         {tab === "insights" && <InsightsTab d={data} />}
       </div>

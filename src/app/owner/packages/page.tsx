@@ -1,12 +1,12 @@
 import { PackagesClient } from "./packages-client";
-import { requireRole } from "@/lib/auth";
+import { requireOwnerPage } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { getPackages } from "@/lib/firebase/read-models";
 
 export const dynamic = "force-dynamic";
 
 export default async function PackagesPage() {
-  const currentUser = await requireRole(["admin", "owner"]);
+  const currentUser = await requireOwnerPage();
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const packages = await getPackages(gymId);

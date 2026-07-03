@@ -514,6 +514,18 @@ textarea {
   width: 100%;
 }
 
+/* The bare `input` rule above (and its twin in 03-visual-refresh.css) must not
+   inflate binary controls: without this reset a radio renders 100% wide × 44px
+   tall and pushes its label out of the row (see docs/14, finding U1). */
+input[type="radio"],
+input[type="checkbox"] {
+  width: auto;
+  min-height: 0;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
 input:focus,
 select:focus,
 textarea:focus {

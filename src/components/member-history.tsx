@@ -178,9 +178,11 @@ export function MemberHistory({
                       ? "Cardio and mobility"
                       : macroLog
                         ? "Nutrition logged"
-                        : dayLog?.status === "skipped"
-                          ? "No training"
-                          : "Custom activity"}
+                        : dayLog?.status === "completed"
+                          ? "Planned day done"
+                          : dayLog?.status === "skipped"
+                            ? "No training"
+                            : "Custom activity"}
                 </p>
               </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -193,6 +195,9 @@ export function MemberHistory({
                 {cardioCount > 0 && <span className="status-pill status-neutral">{cardioCount} cardio</span>}
                 {stretchCount > 0 && <span className="status-pill status-neutral">{stretchCount} stretch</span>}
                 {macroMet && <span className="status-pill status-active">Macro target hit</span>}
+                {dayLog?.status === "completed" && (
+                  <span className="status-pill status-active">Day done</span>
+                )}
                 {dayLog?.status === "skipped" && (
                   <span className="status-pill status-inactive">
                     Skipped{dayLog.skipReason ? ` / ${SKIP_REASON_LABELS[dayLog.skipReason] ?? "Other"}` : ""}
@@ -206,7 +211,9 @@ export function MemberHistory({
 
             {dayLog?.note && (
               <div className="history-day-note">
-                <span className="history-day-note-icon">{dayLog.status === "skipped" ? "Skip" : "Note"}</span>
+                <span className="history-day-note-icon">
+                  {dayLog.status === "completed" ? "Done" : dayLog.status === "skipped" ? "Skip" : "Note"}
+                </span>
                 <span>{dayLog.note}</span>
               </div>
             )}

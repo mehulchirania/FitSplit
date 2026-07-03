@@ -14,7 +14,8 @@ const legacyCookieNames = [
   "fitsplit-role",
   "fitsplit-username",
   "fitsplit-member-id",
-  "fitsplit-gym-id"
+  "fitsplit-gym-id",
+  "fitsplit-staff-type"
 ] as const;
 const SESSION_SHORT_MS = 1000 * 60 * 60 * 2;        // 2 h  — default (no remember me)
 const SESSION_LONG_MS  = 1000 * 60 * 60 * 24 * 14; // 14 d — remember me (Firebase max)
@@ -429,6 +430,12 @@ async function setSessionCompatibilityCookies(user: AuthenticatedUser, rememberM
   cookieStore.set("fitsplit-role", user.role, options);
   cookieStore.set("fitsplit-username", user.phone || user.email || user.uid, options);
   cookieStore.set("fitsplit-gym-id", user.gymId, options);
+
+  if (user.staffType) {
+    cookieStore.set("fitsplit-staff-type", user.staffType, options);
+  } else {
+    cookieStore.delete("fitsplit-staff-type");
+  }
 
   if (user.memberId) {
     cookieStore.set("fitsplit-member-id", user.memberId, options);
@@ -910,6 +917,7 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
     const email = cookieStore.get("fitsplit-username")?.value;
     const gymId = cookieStore.get("fitsplit-gym-id")?.value;
     const memberId = cookieStore.get("fitsplit-member-id")?.value;
+    const staffType = cookieStore.get("fitsplit-staff-type")?.value;
 
     if (!role || !email || !gymId || !["admin", "owner", "trainer", "member"].includes(role)) {
       return null;
@@ -925,6 +933,7 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
       phone: demoLogin?.phone ?? "",
       fullName: demoLogin?.fullName ?? "FitSplit user",
       role,
+      staffType: staffType ?? demoLogin?.staffType,
       gymId,
       memberId: role === "member" ? memberId : undefined,
       termsAcceptedAt: "2026-01-01T00:00:00.000Z"
@@ -1021,6 +1030,22 @@ export async function requireOwner() {
 
   if (user.role === "owner" && user.staffType && user.staffType !== "owner") {
     throw new Error("Trainers and staff cannot perform this action. Contact the gym owner.");
+  }
+
+  return user;
+}
+
+/**
+ * Page-level variant of requireOwner: trainers/staff are silently redirected
+ * to the owner dashboard instead of getting a thrown error page. Use on pages
+ * that expose money or gym-configuration data (billing, reports, packages,
+ * settings) — actions on those pages still call requireOwner() server-side.
+ */
+export async function requireOwnerPage() {
+  const user = await requireRole(["admin", "owner"]);
+
+  if (user.role === "owner" && user.staffType && user.staffType !== "owner") {
+    redirect("/owner");
   }
 
   return user;

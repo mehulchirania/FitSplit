@@ -5,7 +5,7 @@
   width: 100%;
   height: 100%;
   background: var(--bg);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-inter), "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   font-size: 14px;
   position: relative;
@@ -690,7 +690,9 @@
 }
 .m3d-ex {
   display: grid;
-  grid-template-columns: 32px minmax(0, 1fr) 90px auto;
+  /* sets column sizes to content — a fixed 90px track starved the name column
+     in the narrow today-card and made it paint over "SETS × REPS" (docs/14 U3) */
+  grid-template-columns: 32px minmax(0, 1fr) auto auto;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
@@ -715,10 +717,14 @@
 }
 .m3d-ex__body { min-width: 0; }
 .m3d-ex__name {
+  display: block;
   font-size: 14.5px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.01em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .m3d-ex__group {
   font-size: 11.5px;
@@ -1127,6 +1133,7 @@
   font-weight: 700;
   padding: 11px 18px;
   cursor: pointer;
+  text-decoration: none;
   transition: background 120ms, transform 100ms;
   white-space: nowrap;
 }
@@ -1558,6 +1565,7 @@
   font-weight: 700;
   padding: 14px 18px;
   cursor: pointer;
+  text-decoration: none;
   transition: background 120ms, transform 100ms;
 }
 .mcr-today__start:hover { background: var(--brand-strong); }
@@ -2257,7 +2265,7 @@ body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex
   margin: 0 auto;
   background: var(--bg);
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  font-family: var(--font-inter), "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 .mcv-header {
@@ -3091,6 +3099,11 @@ a.mcr-tabbar__item:hover {
   background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
   border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
   color: var(--accent);
+}
+.fdv-day-log__chip--completed {
+  background: color-mix(in srgb, var(--success) 12%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--success) 26%, var(--border));
+  color: var(--success);
 }
 .fdv-day-log__fields {
   display: grid;

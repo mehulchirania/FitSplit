@@ -16,11 +16,13 @@ export default async function OwnerLayout({
 }) {
   const currentUser = await requireRole(["admin", "owner"]);
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+  const isTrainer =
+    currentUser.role === "owner" && !!currentUser.staffType && currentUser.staffType !== "owner";
 
   const [{ gym }, { members }, pendingPayments, { assignments }] = await Promise.all([
     getGymDetail(gymId),
     getMembers(gymId),
-    getPendingPaymentRequests(gymId),
+    isTrainer ? Promise.resolve([]) : getPendingPaymentRequests(gymId),
     getActiveProgramAssignments(gymId),
   ]);
 
@@ -38,8 +40,9 @@ export default async function OwnerLayout({
     ownerFirstName: nameParts[0] ?? currentUser.fullName,
     ownerInitials,
     role: currentUser.role ?? "owner",
+    staffType: currentUser.staffType ?? null,
     totalMembers: members.length,
-    pendingPaymentsCount: pendingPayments.length,
+    pendingPaymentsCount: isTrainer ? 0 : pendingPayments.length,
     noPlanCount,
   };
 
