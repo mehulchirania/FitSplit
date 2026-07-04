@@ -463,6 +463,21 @@ body:has(.odp2-workspace) .mobile-bottom-nav {
   padding: 20px 24px 40px;
 }
 
+/* Content enter transition — replays on tab switches and page navigations.
+   No fill-mode: the transform is dropped once the animation ends, so
+   position:fixed dialogs opened later are not trapped by a transformed
+   ancestor. Covers owner AND admin (AdminWorkspaceShell reuses odp2-*). */
+@media (prefers-reduced-motion: no-preference) {
+  .odp2-scroll > * {
+    animation: odp2-enter 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+@keyframes odp2-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Sub-pages using .page class directly render inside odp2-main — give them scroll */
 .odp2-main > .page,
 .odp2-main > main.page {

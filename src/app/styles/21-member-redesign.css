@@ -374,6 +374,21 @@
   border: 2px solid var(--bg);
 }
 
+/* Content enter transition — replays on tab switches and page navigations.
+   No fill-mode: the transform drops when the animation ends, so
+   position:fixed modals opened later are not trapped by a transformed
+   ancestor. */
+@media (prefers-reduced-motion: no-preference) {
+  .m3d-content > * {
+    animation: m3d-enter 0.24s cubic-bezier(0.2, 0.7, 0.2, 1);
+  }
+}
+
+@keyframes m3d-enter {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* Page header */
 .m3d-pagehead {
   display: flex;

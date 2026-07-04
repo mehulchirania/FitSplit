@@ -4,6 +4,16 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## UI defect sprint from the 2026-07-02 walkthrough closed out (2026-07-03)
+
+UI defect sprint from the 2026-07-02 walkthrough (docs/14 "UI Walkthrough Review" section, findings U1–U11): global input CSS reset so radios/checkboxes are no longer inflated to full width (02-shared-components.css); member exercise-row overlap fixed (m3d-ex grid + name ellipsis, 21-member-redesign.css); PT table wrapper overflow-x:auto (10-pt-training.css); trainer money gating (requireOwnerPage() in auth.ts, applied to /owner/billing|reports|settings|packages pages; sidebar + dashboard Money tab/KPIs/actions hidden and stripped server-side for staffType trainers); membership Active/Expired badge contradiction fixed (expiry date wins); "-24d" expiring copy normalized to expired (members-hybrid-view); 44px mobile touch targets + hidden tabbar scrollbar (20-owner-dashboard.css); T&C consent gate rebranded (dead lp-btn-primary class + nonexistent tokens replaced); app typography unified on next/font Inter + DM Sans (00-base-shell, 21-member-redesign, 06-programs legacy); content enter animations for odp2 + m3d shells, reduced-motion gated.
+
+Verified live in browser: radio fix, membership badge, "-24d" reclassification, PT table scroll, trainer sidebar/tab/KPI gating + /owner/billing redirect.
+
+Note: attendance is now implicit (logLiftSet/syncOfflineLifts upsert sessions/attendance); the dashboard's localStorage-only "Start workout" toggle was removed by the parallel reconnection sprint.
+
+---
+
 ## Landing page rebuilt: class-based CSS, enquiry flow restored, Three.js removed (2026-07-02)
 
 Full rebuild of the public landing page, replacing the Jun-29 inline-style implementation (1,095-line single component, hardcoded `#C8F135`, `window.confirm`/`alert`, 34px close button, Three.js hero, hotlinked Unsplash backdrop, `force-dynamic`).
