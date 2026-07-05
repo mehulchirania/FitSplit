@@ -37,7 +37,7 @@
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@radix-ui/react-dialog": "^1.1.17",
     "@radix-ui/react-dropdown-menu": "^2.1.18",
-    "@radix-ui/react-select": "^2.3.1",
+    "@radix-ui/react-select": "^2.3.2",
     "dexie": "^4.4.4",
     "firebase": "^12.15.0",
     "firebase-admin": "^14.1.0",
