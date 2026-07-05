@@ -78,7 +78,7 @@ flowchart TD
   click ROADMAP "10_REFACTORING_ROADMAP.md" "Open 10 · REFACTORING_ROADMAP"
   click ISSUES "11_KNOWN_ISSUES_AND_GAPS.md" "Open 11 · KNOWN_ISSUES_AND_GAPS"
   click AUDIT "12_ARCHITECTURE_AUDIT_2026.md" "Open 12 · ARCHITECTURE_AUDIT_2026"
-  click STYLE "13_UI_STYLE_GUIDE.md" "Open 13 · UI_STYLE_GUIDE"
+  click STYLE "12_UI_STYLE_GUIDE.md" "Open 12 · UI_STYLE_GUIDE"
   click PRODUCT "14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md" "Open 14 · PRODUCT_REFINEMENT_AUDIT"
   click DISC "DISCREPANCIES.md" "Open DISCREPANCIES"
 ```
@@ -111,7 +111,7 @@ flowchart TD
 | [10_REFACTORING_ROADMAP.md](10_REFACTORING_ROADMAP.md) | 2 | Dated point-in-time opinion: debt, risks, dead code. |
 | [11_KNOWN_ISSUES_AND_GAPS.md](11_KNOWN_ISSUES_AND_GAPS.md) | 2 | Aggregated backlog of bugs, incomplete functionalities, and tech debt. |
 | [12_ARCHITECTURE_AUDIT_2026.md](12_ARCHITECTURE_AUDIT_2026.md) | 2 | Firestore cost, backend architecture, and B2B2C scaling audit. |
-| [13_UI_STYLE_GUIDE.md](13_UI_STYLE_GUIDE.md) | 2 | Complete design system, tokens, CSS architecture, and layout paradigms. |
+| [12_UI_STYLE_GUIDE.md](12_UI_STYLE_GUIDE.md) | 2 | Complete design system, tokens, CSS architecture, and layout paradigms. |
 | [14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md](14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md) | 2 | Product/UI refinement audit covering orphaned flows, landing-page debt, and cleanup priorities. |
 | [15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md](15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md) | 2 | knip-based unused-files/deps CI workflow. |
 | [16_FABLE_AUDIT_2026-07-05.md](16_FABLE_AUDIT_2026-07-05.md) | 2 | Go-live readiness audit: consolidated defects (F1–F5), completed task plan T1–T6, validation evidence, and human go-live checklist. |

@@ -987,7 +987,7 @@ Implemented Design 04 (Hybrid) from the Claude Design export. Replaces the old t
 
 ## 🎨 Design System Standards
 
-The complete Design System (tokens, CSS architecture, prefixes, layouts) has been moved to **[`docs/13_UI_STYLE_GUIDE.md`](docs/13_UI_STYLE_GUIDE.md)**. Please refer to that document for all styling guidelines.
+The complete Design System (tokens, CSS architecture, prefixes, layouts) has been moved to **[`docs/12_UI_STYLE_GUIDE.md`](docs/12_UI_STYLE_GUIDE.md)**. Please refer to that document for all styling guidelines.
 
 ---
 
