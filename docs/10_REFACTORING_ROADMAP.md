@@ -1,6 +1,6 @@
 # 10 · REFACTORING ROADMAP (Tier 2 — point-in-time opinion)
 
-`Generated: 2026-06-05 · Commit: a0be3a8`
+`Generated: 2026-06-05 · Last updated: 2026-07-06`
 
 > ⚠️ **This is dated opinion, not fact.** Unlike Tier-0/1 docs, this file is NOT kept in sync
 > with every PR — regenerate on demand. It captures the author's assessment as of the commit
@@ -27,22 +27,17 @@ direct-SDK sign-ins aren't counted — Firebase per-IP throttling is the backsto
 
 ## Architecture / tech debt
 
-### R4 · Dual-write (root mirror + gym-scoped) is the dominant complexity — **Sev: High · Effort: L · Risk: H**
+### R4 · ~~Dual-write (root mirror + gym-scoped) is the dominant complexity~~ — **RESOLVED (2026-07-05)**
 Almost every collection is written twice (`mirrorGymScopedRecord`/`mirrorProfileToGym`) and every
 read-model has a "scoped, else root" fallback. This doubles write cost, invites drift, and forces
-defensive read logic everywhere. The README itself notes this is legacy migration scaffolding.
-**Direction:** pick the gym-scoped path as canonical, backfill any root-only data, delete the root
-mirrors collection-by-collection, and remove the read fallbacks. Sequence behind R2 (PT) since the
-root PT rules are also the privacy gap. High risk — do per-collection with verification.
+defensive read logic everywhere.
+**Resolution:** Root writes were systematically removed across `members.ts`, `staff.ts`, `programs.ts`, `pt.ts`, `exercises.ts`, and `contact.ts`. A backfill script was introduced to migrate legacy data, and root fallbacks were removed from read models.
 
-### R5 · Server Action ↔ Cloud Function duplication — **Sev: Med · Effort: M · Risk: M**
+### R5 · ~~Server Action ↔ Cloud Function duplication~~ — **RESOLVED (2026-06-28)**
 Member/staff/gym/program/billing operations exist as both a Server Action (used by UI) and a
 Cloud Function (often unused; the `allow:false` rules assume it). Two implementations of the same
-invariant drift (e.g. side-effect handling differs: CF uses `onProgramAssignmentCreated` trigger,
-the action writes notifications inline).
-**Direction:** decide one surface per operation. If Server Actions remain the path, treat the CFs
-as dead code (R7) except where genuine client-callable privilege is needed. Document the decision
-in `00_AI_CONTEXT.md`.
+invariant drift.
+**Resolution:** All 11 UI components migrated from CF-primary/SA-fallback to SA-only. `functions.ts` trimmed to ~80 lines.
 
 ### R6 · ~~Notification `type` union drift~~ — **RESOLVED (2026-06-05)**
 `payment_request_pending`, `payment_request_rejected`, and `data_deletion_request` were added to
@@ -78,32 +73,30 @@ delete superseded selectors after each migrated area.
 Only `src/lib/__tests__/validation.test.ts` and `src/lib/__tests__/workout-utils.test.ts` exist. The
 entire data-access layer (actions, read-models, CFs), authz guards, billing date
 math, and dual-write mirroring are untested.
-**Priority targets:** `assertMemberBelongsToCallerGym`, `addMonths`/PT date math,
-lockout logic, program-assignment cancel-prior behavior.
+**Progress (2026-07-05):** Added test coverage for billing approval transitions (`billing-logic.test.ts`) and membership expiry logic (`membership-expiry-logic.test.ts`).
+**Priority targets:** `assertMemberBelongsToCallerGym`, lockout logic, program-assignment cancel-prior behavior.
 
 ## Performance / scalability
 
-### R10 · Collection-group + full-collection scans — **Sev: Med · Effort: M · Risk: M**
+### R10 · ~~Collection-group + full-collection scans~~ — **RESOLVED (2026-06-28)**
 - `getGymWorkspaces` reads the entire `members` collection group + all member authProfiles to
   count members (`read-models/gyms.ts:28-35`).
 - Member delete fires ~10 collection-group queries (`actions/members.ts:754-768`).
 - `generateAdminDashboardStats` iterates all gyms with per-gym count queries (`index.ts:1662-1670`).
-**Direction:** lean on denormalised counters (`gyms.memberCount`, `summaries/dashboard`) and avoid
-collection-group scans as gyms grow.
+**Resolution:** Replaced with denormalized counters (`gyms.memberCount`, `summaries/dashboard`). Passed `gymId` to read models to avoid collection group scans.
 
-### R11 · Embedded `notices` array read-modify-write — **Sev: Low · Effort: S · Risk: M**
+### R11 · ~~Embedded `notices` array read-modify-write~~ — **RESOLVED (2026-06-28)**
 `addGymNotice`/`deleteGymNotice` rewrite the whole `gyms.notices[]` array (`actions/gyms.ts:636-637`)
-— concurrent edits clobber. **Fix:** move notices to a subcollection or use array-union/transaction.
+— concurrent edits clobber. 
+**Resolution:** Wrapped in Firestore transaction.
 
 ## Suggested order
 
-~~1. R1 (trainer login)~~ · ~~2. R3 (lockout) + R2 (PT privacy)~~ · ~~3. R6 (notification types)~~ — **all done 2026-06-05.**
+> **Updated 2026-07-06**: Major items R1-R6 and R10-R11 are completed.
 
-Remaining:
-1. **R9** (tests around the invariants you're about to touch).
-2. **R5** (decide action vs CF) → enables **R7** dead-code removal.
-3. **R4** (dual-write consolidation) — largest, do per-collection behind tests.
-4. **R8** (legacy CSS) — blocked on migrating the ~26 files still using the old
+Remaining priorities:
+1. **R9** (expand tests around the invariants).
+2. **R8** (legacy CSS) — blocked on migrating the ~26 files still using the old
    `list-panel`/`panel-title`/`stat-card` cards to `adm-card`/`m3d-` (trainer pages, member
    sub-pages, profile/activity, and ~15 shared components). See the card-migration plan.
-5. **R10/R11** (perf) opportunistically.
+3. **R7** (dead-code removal for remaining orphaned declarations).

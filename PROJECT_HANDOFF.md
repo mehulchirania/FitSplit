@@ -4,6 +4,16 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Script Archival & Documentation Audit (2026-07-06)
+
+Archived legacy one-off scripts, updated the dependencies, and synchronized documentation.
+
+- **Script Archival:** Moved obsolete scripts (migrations, patches, video-syncs) out of the root into `archive/scripts/` (categorized into `migrations/`, `patches/`, `video-imports/`, and `misc-queries/`).
+- **Dependencies:** Merged PR #28 (`@radix-ui/react-dropdown-menu`), resolving `package.json` conflicts. Removed script aliases from `package.json`.
+- **Documentation:** Swept through Tier 2 documents (`11_KNOWN_ISSUES_AND_GAPS.md`, `10_REFACTORING_ROADMAP.md`) and pruned resolved bugs/technical debt. Updated `README.md` and `00_AI_CONTEXT.md` to accurately reflect the active architecture and available commands.
+
+---
+
 ## T5/T6 — Go-live polish + release readiness sweep (Fable audit) (2026-07-06)
 
 Closes T5 and T6 from `docs/16_FABLE_AUDIT_2026-07-05.md`.
