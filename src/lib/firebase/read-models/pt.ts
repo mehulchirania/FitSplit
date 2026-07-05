@@ -1,7 +1,6 @@
 import { unstable_cache } from "next/cache";
 import type { PTLiftLog, PTSession } from "@/types/domain";
 
-import { collectionPaths } from "../collections";
 import { getFirebaseAdminServices } from "../admin";
 import { gymCollection, gymTag } from "./shared";
 
@@ -124,21 +123,21 @@ export async function getPTSessionsForMember(gymId: string, memberId: string): P
 }
 
 /**
- * Fetch a single PT session by ID (reads from root collection for speed).
+ * Fetch a single PT session by ID from the canonical gym-scoped collection.
  */
-async function getPTSessionDetailUncached(ptSessionId: string): Promise<PTSession | null> {
+async function getPTSessionDetailUncached(gymId: string, ptSessionId: string): Promise<PTSession | null> {
   const { db } = getFirebaseAdminServices();
-  const snap = await db.collection(collectionPaths.ptSessions).doc(ptSessionId).get();
+  const snap = await gymCollection(db, gymId, "ptSessions").doc(ptSessionId).get();
   if (!snap.exists) return null;
   return mapPTSession(snap.id, snap.data() as Record<string, unknown>);
 }
 
-export async function getPTSessionDetail(ptSessionId: string): Promise<PTSession | null> {
+export async function getPTSessionDetail(gymId: string, ptSessionId: string): Promise<PTSession | null> {
   return unstable_cache(
     getPTSessionDetailUncached,
-    ["read:getPTSessionDetail", ptSessionId],
-    { tags: ["pt-sessions"], revalidate: 15 }
-  )(ptSessionId);
+    ["read:getPTSessionDetail", gymId, ptSessionId],
+    { tags: ["pt-sessions", gymTag(gymId, "pt-sessions")], revalidate: 15 }
+  )(gymId, ptSessionId);
 }
 
 /**

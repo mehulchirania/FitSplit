@@ -1,6 +1,6 @@
 import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MakeupStatus, SkipReason } from "@/types/domain";
 
-import { collectionPaths, gymScopedCollectionPaths } from "../collections";
+import { gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection } from "./shared";
 
@@ -21,13 +21,7 @@ export async function getBodyMetricLogsForMember(memberId: string, gymId?: strin
           .orderBy("loggedAt", "desc")
           .limit(limit)
           .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.bodyMetricLogs)
-          .where("memberId", "==", memberId)
-          .get()
-      : scopedSnapshot;
-    const logs: BodyMetricLog[] = snapshot.docs
+    const logs: BodyMetricLog[] = scopedSnapshot.docs
       .map((doc) => {
         const data = doc.data();
         return {
@@ -65,14 +59,8 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
           .orderBy("loggedAt", "desc")
           .limit(limit)
           .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.dayLogs)
-          .where("memberId", "==", memberId)
-          .get()
-      : scopedSnapshot;
     const validSkipReasons = new Set<string>(["rest", "no_time", "equipment", "sick", "other"]);
-    const dayLogs: DayLog[] = snapshot.docs
+    const dayLogs: DayLog[] = scopedSnapshot.docs
       .map((doc) => {
         const data = doc.data();
         const rawReason = data.skipReason ? String(data.skipReason) : undefined;
@@ -127,12 +115,7 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string, lim
           .orderBy("loggedAt", "desc")
           .limit(limit)
           .get();
-    snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.liftLogs)
-          .where("memberId", "==", memberId)
-          .get()
-      : scopedSnapshot;
+    snapshot = scopedSnapshot;
   } catch {
     return { liftLogs: [], isPersisted: false };
   }

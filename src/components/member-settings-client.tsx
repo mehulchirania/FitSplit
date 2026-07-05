@@ -266,7 +266,17 @@ function ProfileTab({ member, profile, memberId }: {
 
           <Section title="TRAINING PREFERENCES">
             <Row label="Preferred slot" sub={["Morning (6–9 AM)", "Midday (10 AM–1 PM)", "Afternoon (2–5 PM)", "Evening (6–9 PM)"][["A","B","C","D"].indexOf(profile.primarySlot ?? "A")] ?? "Morning"} />
-            <Row label="Fitness goals" sub={profile.fitnessGoals || "Not set"} last />
+            <Row
+              label="Fitness goals"
+              sub={profile.fitnessGoals || "Tell your coach what you are working toward"}
+              last
+            >
+              {!profile.fitnessGoals && (
+                <button type="button" className="mset-action-btn" onClick={() => setEditing(true)}>
+                  Set goals
+                </button>
+              )}
+            </Row>
           </Section>
 
           <Section title="ACCOUNT">

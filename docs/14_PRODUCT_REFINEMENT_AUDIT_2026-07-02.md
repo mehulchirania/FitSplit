@@ -309,9 +309,9 @@ is updated in place as items land.
 ### Polish items (lower priority)
 
 - T&C consent dialog: accept button was plain gray, not brand-styled — **fixed 2026-07-02**.
-- Admin gyms page offers "+ Add gym" and a text blurb pointing to the overview form for the same task — keep one.
-- Member profile "Fitness goals — Not set" is dead text; should be a "Set goals" affordance.
-- Owner reports "Training Activity 0 sessions" should now be checked against real lift-log attendance writes.
+- Admin gyms page duplicate "+ Add gym" affordance — **fixed 2026-07-06**: the header duplicate was removed; the remaining provisioning guidance stays in the add-gym section.
+- Member profile "Fitness goals — Not set" dead text — **fixed 2026-07-06**: unset goals now show a "Set goals" button that opens the existing profile editor.
+- Owner reports "Training Activity 0 sessions" — **verified 2026-07-06**: `logLiftSet` and `syncOfflineLifts` upsert completed `workoutSessions`; `getRecentSessionCounts` reads those completed sessions for the chart.
 
 ### What is already good
 

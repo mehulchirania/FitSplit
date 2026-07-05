@@ -4,6 +4,197 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## T5/T6 — Go-live polish + release readiness sweep (Fable audit) (2026-07-06)
+
+Closes T5 and T6 from `docs/16_FABLE_AUDIT_2026-07-05.md`.
+
+T5 polish landed:
+
+- `src/components/attendance-trend-chart.impl.tsx` now has a designed empty state that explains lift-log-driven attendance.
+- `src/app/admin/gyms/page.tsx` no longer has the duplicate header "+ Add gym" affordance; the provisioning guidance remains in the add-gym section.
+- `src/components/member-settings-client.tsx` turns unset fitness goals into a real "Set goals" button that opens the existing profile editor.
+- Owner reports were verified against the actual data path: `logLiftSet` and `syncOfflineLifts` upsert completed gym-scoped `workoutSessions`, and `getRecentSessionCounts` reads those completed sessions for the Training Activity chart.
+
+T6 release gate:
+
+- CSP sweep found no app-level `next/script` usage beyond the nonce-aware root theme script; `src/proxy.ts` still forwards `x-nonce`/CSP and `layout.tsx` passes the nonce.
+- `npm run knip` clean after deleting the unused `src/lib/legal.ts` shim and removing the stale `firebase-functions/v2/firestore` ignore.
+- Restored `scripts/backfill-root-to-gym.mjs` from the archive and added the missing `npm run backfill:root` command so `docs/17_ROOT_BACKFILL_RUNBOOK.md` and README commands are executable.
+- Validation clean: `npm run typecheck`, `npm run lint`, Firestore rules 34/34 via Java 21 + Node 22 runner (`firebase emulators:exec --only firestore --project demo-fitsplit "npx -y node@22 --experimental-vm-modules scripts/test-firestore-rules.mjs"`), and the single final `npm run build` after stopping the local Next dev server.
+
+Note: local default Node is v24 and crashed the rules runner on Windows before assertions completed; Node 22 matches CI and passes.
+
+---
+
+## T4 — Money-path tests: billing approval + membership expiry (Fable audit) (2026-07-05)
+
+Closes T4 from `docs/16_FABLE_AUDIT_2026-07-05.md` (F5). The billing approval and
+membership-expiry money paths had zero test coverage. Following the repo's
+extract-pure-logic pattern (`notifications.test.ts`), the decision logic was pulled
+out of the Firestore-coupled call sites into two dependency-free modules that the
+originals now call — tests exercise real production code, not copies:
+
+- `src/lib/firebase/actions/billing-logic.ts` — payment-request approval/rejection
+  transition validation and membership date math for package activation; imported
+  by `actions/billing.ts`.
+- `functions/src/membership-expiry-logic.ts` — `computeMembershipStatus`,
+  `planExpiryTransition`, `warningWindowEnd`, `addMonths`, `daysUntilExpiry`;
+  imported by `functions/src/index.ts` (`processMembershipExpiries` et al.). Also
+  fixed a `Math.ceil` `-0` quirk in `daysUntilExpiry` surfaced by the new tests.
+
+New suites: `billing-logic.test.ts` and `membership-expiry-logic.test.ts` covering
+approval state transitions (double-approve/reject rejected), expiry boundaries
+(expires today / expired yesterday / exactly at the `expiryWarningDays` threshold /
+per-gym override / missing endDate), and renewal date math.
+
+Validation: `npx vitest run` — 110/110 pass (5 files); `npx tsc --noEmit` clean;
+`npm run lint` clean; `functions` bundle compiles under its own tsconfig
+(`npm run build` in `functions/`).
+
+---
+
+## T3 — Composite index audit (Fable audit) (2026-07-05)
+
+Closes T3 from `docs/16_FABLE_AUDIT_2026-07-05.md` (F4). The 2026-06-29 pagination
+sprint and this week's root-fallback-removal sprint changed several query shapes
+(gym-scoped `orderBy` + `limit`, collectionGroup fallbacks, the new
+`getAdminNotifications` collectionGroup query from T1) without a full re-audit of
+`firestore.indexes.json` — F4 flagged this as a P1 risk since a missing composite
+index fails hard in production (mock mode and local dev never surface the gap).
+
+Enumerated every `.where(`/`.orderBy(`/`.collectionGroup(` chain across
+`src/lib/firebase/read-models/*.ts`, `src/lib/firebase/actions/*.ts`,
+`src/lib/auth.ts`, and `functions/src/index.ts` (~90 query sites) and reconciled
+each against the existing 22-entry index file. Confirmed the T1-added
+`notifications` COLLECTION_GROUP index (`recipientRole`, `createdAt`) is correct
+and not duplicated.
+
+Added 10 missing composite indexes (file now has 32 entries): `programAssignments`
+needed four variants (`gymId+memberId+status` for the root cancel-existing-active
+lookup in `actions/programs.ts` and `functions/src/index.ts`; `memberId+status` for
+the gym-scoped equivalent and for `read-models/programs.ts`'s
+`getProgramAssignmentForMemberUncached`; the same fields again as a
+COLLECTION_GROUP for its no-gymId fallback; and `gymId+status` for
+`getActiveProgramAssignmentsUncached`'s root fallback). Added `activityEvents`
+(`gymId+audience`) and `workoutPrograms` (`gymId+isActive`) for their respective
+root fallbacks in `read-models/activity.ts` and `read-models/programs.ts`. Added
+four `authProfiles` indexes (`defaultGymId+role`, `phone+role`, `email+role`,
+`username+role`) — these serve `read-models/gyms.ts`/`members.ts` and
+`functions/src/index.ts`'s `lookupLoginEmail`/`setGymAccess`, none of which had
+composite coverage even though `authProfiles` is the primary login-resolution
+collection.
+
+Flagged (not removed): the pre-existing `profiles` COLLECTION index
+(`defaultGymId, role, isActive`) doesn't match any live query — every
+`collectionPaths.profiles` read in the codebase is a single-field `where` or a
+direct `.doc()` lookup, and the real compound queries run against `authProfiles`
+instead. Likely a stale leftover from before the `authProfiles`/`profiles` split.
+Left in place (extra indexes are cheap; deleting on a guess is not) — see the new
+"Composite index audit (2026-07-05)" section appended to
+`docs/16_FABLE_AUDIT_2026-07-05.md` for the full table and the
+`firebase deploy --only firestore:indexes` deploy step.
+
+`npx tsc --noEmit` and `npm run lint` both clean (no source changes, JSON + docs
+only). Not deployed — human runs `firebase deploy --only firestore:indexes` as
+part of the go-live checklist.
+
+---
+
+## T2 — Legacy root-data backfill tooling (Fable audit) (2026-07-05)
+
+Closes T2 from `docs/16_FABLE_AUDIT_2026-07-05.md` (F3). T1 (same day) removed
+read-model root fallbacks from hot paths, which means any operational data
+still living only in a legacy root collection (`/liftLogs`, `/dayLogs`, etc.)
+became invisible to the app — no backfill tooling existed to move it into the
+canonical `gyms/{gymId}/...` path before that sprint shipped.
+
+Added `scripts/backfill-root-to-gym.mjs` (`npm run backfill:root`), a plain
+ESM script (no tsx/ts-node dependency, matches the existing `.mjs` script
+convention in `scripts/`) covering `liftLogs`, `bodyMetricLogs`, `dayLogs`,
+`macroLogs`, `activityLogs`, `workoutSessions`, `attendanceRecords`,
+`ptSessions`, `ptLiftLogs`, `notifications`, `contactMessages`,
+`exerciseRequests`, `memberships`, `paymentRequests`, `activityEvents`,
+`packages`. Excludes the intentional global catalogs (`exerciseCatalog`,
+`workoutPrograms`) and intentionally-root-only collections (`authProfiles`,
+`usernames`, `phones`, `loginAttempts`, `archives`).
+
+Dry-run by default — prints a per-collection report (root doc count, already
+gym-scoped, would-copy, and docs with no resolvable `gymId` that fall back to
+the default gym). Writes only with `--apply`; also supports
+`--collections=a,b,c` and `--gym=<id>` overrides. Per-doc gym resolution reads
+`data.gymId` first, falling back to `PRIMARY_GYM_ID` ("shg") when absent (and
+counting that fallback separately in the report). Writes are batched at ~400
+ops (Firestore's cap is 500) via `set(..., { merge: true })` to
+`gyms/{gymId}/<collection>/{sameDocId}`, stamping `gymId` and
+`mirroredFromRootCollection: true` — the same shape `mirrorGymScopedRecord`
+(`src/lib/firebase/actions/shared.ts:416`) produces, so re-running is always
+idempotent and never creates duplicates or clobbers concurrent live writes.
+Root documents are never modified or deleted (archival is a separate later
+step). Credentials reuse the same env vars as `src/lib/firebase/admin.ts`
+(`FIREBASE_PROJECT_ID` + `FIREBASE_CLIENT_EMAIL`/`FIREBASE_PRIVATE_KEY` or
+`GOOGLE_APPLICATION_CREDENTIALS`), failing fast with a clear message if
+absent.
+
+Added `docs/17_ROOT_BACKFILL_RUNBOOK.md` (prerequisites, dry-run command, how
+to read the report, apply command, post-apply verification steps, rollback
+note, and the archival follow-up) and registered it in `docs/_INDEX.md`.
+Updated `README.md`'s "Data Fixes & Backfills" section with the new script.
+Not run against production by this change — dry-run/apply is a human step per
+the go-live checklist in `docs/16_FABLE_AUDIT_2026-07-05.md` §5.
+
+`npx tsc --noEmit` and `npm run lint` both clean.
+
+---
+
+## T1 — Root-fallback removal sprint finished (Fable audit) (2026-07-05)
+
+Closes T1 from `docs/16_FABLE_AUDIT_2026-07-05.md` (F1 + F2). The in-progress "legacy
+root-fallback removal" sprint left `getAdminNotifications` (`src/lib/firebase/read-models/notifications.ts`)
+reading the ROOT `notifications` collection only — but admin notifications (`contact.ts`,
+`exercises.ts`, `auth.ts` staff-login alerts) are written **gym-scoped only** via
+`mirrorGymScopedRecord`, so new enquiry/exercise-request/login notifications would never
+reach the admin bell. Fixed: `getAdminNotifications` now queries
+`db.collectionGroup(gymScopedCollectionPaths.notifications)` with the same
+`recipientRole == "admin"` filter + `orderBy("createdAt", "desc").limit(50)` — a
+collectionGroup query also matches the legacy root `notifications` collection (same
+collection ID), so old data stays visible with no separate read. Added the matching
+composite index to `firestore.indexes.json` (`notifications`, `COLLECTION_GROUP`,
+`recipientRole` ASC + `createdAt` DESC) — not yet deployed, needs
+`firebase deploy --only firestore:indexes`.
+
+Also fixed the stale doc comment above `loadPTSessionForWrite` in
+`src/lib/firebase/actions/pt.ts` (leftover "fall back to root... keeping both mirrors in
+sync" text that no longer matched the single-path gym-scoped behavior).
+
+Swept `read-models/` and `actions/` for other leftovers of this sprint. Nothing else
+needed a code change: `sessions.ts`, `progress.ts`, `contact.ts` are already gym-scoped
+only with no stray `collectionPaths` imports; `pt.ts` has no `collectionPaths` import at
+all. Left in place (out of scope, pre-existing/defensive, not broken):
+`getOwnerNotifications`/`getMemberNotifications`/`getContactMessages`/`getUnreadContactMessageCount`
+in `notifications.ts`, `getExerciseCatalogUncached`/`getPendingExerciseRequests` in
+`read-models/exercises.ts`, and `getActivityEvents` in `activity.ts` — all still do a
+working "read gym-scoped, fall back to root if empty" (not broken like F1 was); the
+member/gym delete sweeps in `actions/members.ts` and `actions/gyms.ts` that clean up both
+root and scoped copies of a deleted member's data (intentional until T2 backfill/archival
+lands); and the `exerciseRequests` root-read-with-collectionGroup-fallback plus
+conditional root write in `actions/exercises.ts`'s `approveCatalogExerciseRequest` /
+`rejectCatalogExerciseRequest` (still needed to support any pre-migration pending
+requests until T2 backfills them — flagged for review, not touched).
+
+`npx tsc --noEmit` and `npm run lint` both clean.
+
+---
+
+## Root `/` now redirects already-authenticated users to their role dashboard (2026-07-05)
+
+Follow-up on the 2026-07-04 deep evaluation (Fable-orchestrated audit, session S18): of the issues that audit's live browser passes flagged, most were false alarms caught mid-fix or already-correct behavior once re-verified against current source (login modal "broken" was a stale `.next` build artifact, not a code bug; fonts not using `next/font` was Fable testing a build that predated the same-morning font fix; the owner dashboard's ~3s blank-DOM concern is just `src/app/owner/loading.tsx`'s Suspense skeleton working as designed). One finding held up: **`src/app/page.tsx` never checked auth state**, so a logged-in member/owner/trainer/admin who navigated to `/` saw the public marketing page instead of being routed to their workspace.
+
+Fixed: `page.tsx` now calls `getCurrentUser()` and redirects to `/admin`, `/owner`, `/trainer`, or `/member` per role before rendering `LandingPageClient`. Unauthenticated visitors are unaffected. Verified in-browser: login as `mehulchirania` → `/member`, then navigating back to `/` redirects straight back to `/member` instead of showing the landing page.
+
+`npx tsc --noEmit` and `npm run lint` both clean.
+
+---
+
 ## UI defect sprint from the 2026-07-02 walkthrough closed out (2026-07-03)
 
 UI defect sprint from the 2026-07-02 walkthrough (docs/14 "UI Walkthrough Review" section, findings U1–U11): global input CSS reset so radios/checkboxes are no longer inflated to full width (02-shared-components.css); member exercise-row overlap fixed (m3d-ex grid + name ellipsis, 21-member-redesign.css); PT table wrapper overflow-x:auto (10-pt-training.css); trainer money gating (requireOwnerPage() in auth.ts, applied to /owner/billing|reports|settings|packages pages; sidebar + dashboard Money tab/KPIs/actions hidden and stripped server-side for staffType trainers); membership Active/Expired badge contradiction fixed (expiry date wins); "-24d" expiring copy normalized to expired (members-hybrid-view); 44px mobile touch targets + hidden tabbar scrollbar (20-owner-dashboard.css); T&C consent gate rebranded (dead lp-btn-primary class + nonexistent tokens replaced); app typography unified on next/font Inter + DM Sans (00-base-shell, 21-member-redesign, 06-programs legacy); content enter animations for odp2 + m3d shells, reduced-motion gated.

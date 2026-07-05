@@ -10,6 +10,13 @@ import { onDocumentCreated } from "firebase-functions/v2/firestore";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import { beforeUserSignedIn } from "firebase-functions/v2/identity";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import {
+  addMonths,
+  computeMembershipStatus,
+  daysUntilExpiry,
+  planExpiryTransition,
+  warningWindowEnd,
+} from "./membership-expiry-logic.js";
 
 initializeApp();
 
@@ -1615,7 +1622,6 @@ async function computeGymDashboard(gymId: string) {
   ]);
 
   const expiryWarningDays = Number(gymDoc.data()?.expiryWarningDays ?? 7);
-  const inNDays = addMonths(todayStr, 0, expiryWarningDays);
 
   let totalMembers = 0, activeMembers = 0, ptMembers = 0, expiringThisWeek = 0, expiredCount = 0, revenueMTD = 0;
   for (const doc of membersSnap.docs) {
@@ -1624,10 +1630,9 @@ async function computeGymDashboard(gymId: string) {
     totalMembers++;
     if (d.isActive !== false) activeMembers++;
     if (d.isPT === true) ptMembers++;
-    if (d.membershipEndDate) {
-      if (d.membershipEndDate < todayStr) expiredCount++;
-      else if (d.membershipEndDate <= inNDays) expiringThisWeek++;
-    }
+    const status = computeMembershipStatus(d.membershipEndDate, todayStr, expiryWarningDays);
+    if (status === "expired") expiredCount++;
+    else if (status === "expiring_soon") expiringThisWeek++;
   }
 
   // Rough MTD revenue from approved payment requests this month.
@@ -1679,14 +1684,6 @@ export const generateAdminDashboardStats = onCall({ region }, async (request) =>
   return { status: "success", message: "Admin platform stats updated." };
 });
 
-// Utility: add N months (and optional extra days) to a YYYY-MM-DD string.
-function addMonths(dateStr: string, months: number, days = 0): string {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
 export const processMembershipExpiries = onSchedule({ region, schedule: "every 24 hours", retryCount: 0 }, async () => {
   const todayStr = new Date().toISOString().slice(0, 10);
   const gymsSnap = await db.collection("gyms").where("status", "==", "active").get();
@@ -1694,7 +1691,7 @@ export const processMembershipExpiries = onSchedule({ region, schedule: "every 2
   for (const gymDoc of gymsSnap.docs) {
     const gymId = gymDoc.id;
     const expiryWarningDays = Number(gymDoc.data().expiryWarningDays ?? 7);
-    const inNDays = addMonths(todayStr, 0, expiryWarningDays);
+    const inNDays = warningWindowEnd(todayStr, expiryWarningDays);
     const membersSnap = await db.collection(`gyms/${gymId}/members`)
       .where("membershipEndDate", "<=", inNDays).get();
 
@@ -1704,22 +1701,19 @@ export const processMembershipExpiries = onSchedule({ region, schedule: "every 2
     for (const memberDoc of membersSnap.docs) {
       const d = memberDoc.data();
       const endDate = String(d.membershipEndDate ?? "");
-      if (!endDate) continue;
 
-      const isExpired = endDate < todayStr;
-      const isExpiringSoon = !isExpired && endDate <= inNDays;
-      const newStatus = isExpired ? "expired" : "expiring_soon";
-      const currentStatus = d.membershipStatus;
+      const transition = planExpiryTransition({
+        endDate, currentStatus: d.membershipStatus, todayStr, expiryWarningDays
+      });
+      if (!transition) continue; // missing endDate, still active, or already up-to-date
 
-      if (currentStatus === newStatus) continue; // already up-to-date
-
-      const update = { membershipStatus: newStatus, updatedAt: new Date().toISOString() };
+      const update = { membershipStatus: transition.newStatus, updatedAt: new Date().toISOString() };
       batch.set(memberDoc.ref, update, { merge: true });
       batch.set(db.doc(`authProfiles/${memberDoc.id}`), update, { merge: true });
       batchCount += 2;
 
       // Send notification once per status transition.
-      if (isExpired && currentStatus !== "expired") {
+      if (transition.notificationType === "membership_expired") {
         await db.collection(`gyms/${gymId}/notifications`).add({
           recipientId: memberDoc.id, recipientRole: "member",
           type: "membership_expired",
@@ -1728,8 +1722,8 @@ export const processMembershipExpiries = onSchedule({ region, schedule: "every 2
           actionHref: "/member/membership", memberId: memberDoc.id,
           createdAt: new Date().toISOString()
         });
-      } else if (isExpiringSoon && currentStatus !== "expiring_soon") {
-        const days = Math.ceil((new Date(`${endDate}T00:00:00Z`).getTime() - Date.now()) / 86400000);
+      } else {
+        const days = daysUntilExpiry(endDate, Date.now());
         await db.collection(`gyms/${gymId}/notifications`).add({
           recipientId: memberDoc.id, recipientRole: "member",
           type: "membership_expiring_soon",

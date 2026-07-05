@@ -164,15 +164,19 @@ export function AttendanceTrendChart({ data }: { data: DailySessionCount[] }) {
           </ResponsiveContainer>
         </div>
       ) : (
-        <p style={{
+        <div style={{
           textAlign: "center",
-          color: "var(--text-faint)",
-          fontSize: "0.85rem",
-          padding: "48px 24px",
+          padding: "40px 24px",
           margin: 0,
         }}>
-          No completed sessions in the last 30 days.
-        </p>
+          <p style={{ color: "var(--text)", fontSize: "0.9rem", fontWeight: 600, margin: 0 }}>
+            No sessions logged yet
+          </p>
+          <p style={{ color: "var(--text-faint)", fontSize: "0.8125rem", margin: "6px 0 0", lineHeight: 1.5 }}>
+            Attendance is tracked automatically the first time a member logs a lift each day —
+            there&apos;s nothing to set up. This chart fills in as members start training.
+          </p>
+        </div>
       )}
 
       {/* Footer legend */}

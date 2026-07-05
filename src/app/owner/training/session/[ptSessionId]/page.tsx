@@ -19,7 +19,7 @@ export default async function PTSessionConsolePage({
   const currentUser = await requireRole(["admin", "owner"]);
   const { ptSessionId } = await params;
 
-  const session = await getPTSessionDetail(ptSessionId);
+  const session = await getPTSessionDetail(currentUser.gymId, ptSessionId);
   if (!session) notFound();
   if (currentUser.role !== "admin" && currentUser.gymId !== session.gymId) notFound();
 

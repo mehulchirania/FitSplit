@@ -113,6 +113,9 @@ flowchart TD
 | [12_ARCHITECTURE_AUDIT_2026.md](12_ARCHITECTURE_AUDIT_2026.md) | 2 | Firestore cost, backend architecture, and B2B2C scaling audit. |
 | [13_UI_STYLE_GUIDE.md](13_UI_STYLE_GUIDE.md) | 2 | Complete design system, tokens, CSS architecture, and layout paradigms. |
 | [14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md](14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md) | 2 | Product/UI refinement audit covering orphaned flows, landing-page debt, and cleanup priorities. |
+| [15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md](15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md) | 2 | knip-based unused-files/deps CI workflow. |
+| [16_FABLE_AUDIT_2026-07-05.md](16_FABLE_AUDIT_2026-07-05.md) | 2 | Go-live readiness audit: consolidated defects (F1–F5), completed task plan T1–T6, validation evidence, and human go-live checklist. |
+| [17_ROOT_BACKFILL_RUNBOOK.md](17_ROOT_BACKFILL_RUNBOOK.md) | 2 | Operational runbook for `scripts/backfill-root-to-gym.mjs` — copies legacy root-collection data into `gyms/{gymId}/...` ahead of root-collection archival. |
 | [DISCREPANCIES.md](DISCREPANCIES.md) | Meta | README/code conflicts + dead/orphaned references. |
 
 ---

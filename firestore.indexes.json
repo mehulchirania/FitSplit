@@ -109,6 +109,14 @@
       ]
     },
     {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "recipientRole", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "liftLogs",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
@@ -171,6 +179,87 @@
       "fields": [
         { "fieldPath": "memberId", "order": "ASCENDING" },
         { "fieldPath": "createdAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "programAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "programAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "programAssignments",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "memberId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "programAssignments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "activityEvents",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "audience", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "workoutPrograms",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "gymId", "order": "ASCENDING" },
+        { "fieldPath": "isActive", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "authProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "defaultGymId", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "authProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "phone", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "authProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "email", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "authProfiles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "username", "order": "ASCENDING" },
+        { "fieldPath": "role", "order": "ASCENDING" }
       ]
     }
   ],

@@ -2,7 +2,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
+import { PRIMARY_GYM_ID } from "../collections";
 import type { FormActionState } from "@/types/action-state";
 import {
   requireFirebase,
@@ -134,11 +134,9 @@ const SessionIdSchema = z.object({
 });
 
 /**
- * Resolve a PT session for a lifecycle write. The UI lists sessions from the
- * gym-scoped path (`gyms/{gymId}/ptSessions`), but legacy data may live only
- * there OR only in the root mirror — so look up the gym-scoped copy first and
- * fall back to root. Returns an `applyPatch` that updates whichever copies
- * exist (never creating a partial doc), keeping both mirrors in sync.
+ * Resolve a PT session for a lifecycle write from the canonical gym-scoped
+ * path (`gyms/{gymId}/ptSessions`). Returns an `applyPatch` that updates that
+ * same gym-scoped doc.
  */
 async function loadPTSessionForWrite(
   db: ReturnType<typeof requireFirebase>,
@@ -146,12 +144,7 @@ async function loadPTSessionForWrite(
   currentUser: { role: string; gymId?: string }
 ) {
   const fallbackGym = currentUser.gymId ?? PRIMARY_GYM_ID;
-  const rootRef = db.collection(collectionPaths.ptSessions).doc(ptSessionId);
-
-  let snap = await scopedGymDoc(db, fallbackGym, "ptSessions", ptSessionId).get();
-  if (!snap.exists) {
-    snap = await rootRef.get();
-  }
+  const snap = await scopedGymDoc(db, fallbackGym, "ptSessions", ptSessionId).get();
   if (!snap.exists) return null;
 
   const session = snap.data()!;
@@ -160,8 +153,7 @@ async function loadPTSessionForWrite(
   async function applyPatch(patch: Record<string, unknown>) {
     // `.update()` throws on a missing doc — catch so we only touch existing
     // copies and never write an incomplete mirror.
-    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch).catch(() => {});
-    await rootRef.update(patch).catch(() => {});
+    await scopedGymDoc(db, gymId, "ptSessions", ptSessionId).update(patch);
   }
 
   return { session, gymId, applyPatch };
@@ -244,11 +236,9 @@ export async function logPTLiftSet(
 
     const db = requireFirebase();
 
-    // Verify session is active
-    const sessionSnap = await db.collection(collectionPaths.ptSessions).doc(ptSessionId).get();
-    if (!sessionSnap.exists) throw new Error("PT session not found.");
-    const session = sessionSnap.data()!;
-    const gymId = String(session.gymId ?? currentUser.gymId ?? PRIMARY_GYM_ID);
+    const loaded = await loadPTSessionForWrite(db, ptSessionId, currentUser);
+    if (!loaded) throw new Error("PT session not found.");
+    const { session, gymId } = loaded;
     if (currentUser.role !== "admin" && currentUser.gymId !== gymId) {
       throw new Error("This PT session belongs to another gym.");
     }

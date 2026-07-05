@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { HeroVisual } from "./hero-visual";
 import { LoginModal } from "./login-modal";
 import { EnquirySection } from "./enquiry-section";
+import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
 
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
@@ -466,8 +467,16 @@ function Footer({ onLogin }: { onLogin: () => void }) {
             <h4>Company</h4>
             <ul>
               <li><Link href="/about">About</Link></li>
-              <li><Link href="/privacy">Privacy</Link></li>
-              <li><Link href="/terms">Terms</Link></li>
+            </ul>
+          </div>
+          <div className="lp-footer__col lp-footer__col--legal">
+            <h4>Legal</h4>
+            <ul>
+              {LEGAL_DOCUMENTS.map((document) => (
+                <li key={document.key}>
+                  <Link href={document.href}>{document.title}</Link>
+                </li>
+              ))}
             </ul>
           </div>
           <div className="lp-footer__col">

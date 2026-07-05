@@ -101,20 +101,16 @@ export async function getAdminNotifications(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
+    // Admin notifications are written gym-scoped only (mirrorGymScopedRecord),
+    // so query across every gym's `notifications` subcollection via a
+    // collectionGroup. This also matches any legacy root `notifications` docs
+    // (same collection ID), so old data remains visible without a separate read.
+    const snapshot = await db
       .collectionGroup(gymScopedCollectionPaths.notifications)
       .where("recipientRole", "==", "admin")
       .orderBy("createdAt", "desc")
       .limit(50)
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.notifications)
-          .where("recipientRole", "==", "admin")
-          .orderBy("createdAt", "desc")
-          .limit(50)
-          .get()
-      : scopedSnapshot;
 
     const notifications: Notification[] = snapshot.docs
       .map(mapNotificationDoc)

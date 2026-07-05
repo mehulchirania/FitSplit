@@ -10,6 +10,11 @@ import {
   failure,
 } from "./shared";
 import { parseActionData } from "./validation";
+import {
+  canResolvePaymentRequest,
+  computeMembershipActivation,
+  isAuthorizedForGym,
+} from "./billing-logic";
 
 // ── Package CRUD ──────────────────────────────────────────────────────────────
 
@@ -32,7 +37,7 @@ export async function savePackage(
 ): Promise<FormActionState> {
   try {
     const user = await requireOwner();
-    if (user.gymId !== gymId) return failure(null, "Not authorised for this gym.");
+    if (!isAuthorizedForGym(user.gymId, gymId)) return failure(null, "Not authorised for this gym.");
 
     const parsed = parseActionData(formData, PackageSchema);
     if (!parsed.success) return parsed.state;
@@ -70,7 +75,7 @@ export async function archivePackage(
 ): Promise<FormActionState> {
   try {
     const user = await requireOwner();
-    if (user.gymId !== gymId) return failure(null, "Not authorised for this gym.");
+    if (!isAuthorizedForGym(user.gymId, gymId)) return failure(null, "Not authorised for this gym.");
     const db = requireFirebase();
     await db.collection(gymCollectionPath(gymId, "packages")).doc(packageId)
       .set({ isActive: false, updatedAt: new Date().toISOString() }, { merge: true });
@@ -88,14 +93,14 @@ export async function approvePaymentRequestAction(
 ): Promise<FormActionState> {
   try {
     const user = await requireOwner();
-    if (user.gymId !== gymId) return failure(null, "Not authorised for this gym.");
+    if (!isAuthorizedForGym(user.gymId, gymId)) return failure(null, "Not authorised for this gym.");
     const db = requireFirebase();
 
     const reqRef = db.collection(gymCollectionPath(gymId, "paymentRequests")).doc(requestId);
     const reqDoc = await reqRef.get();
     if (!reqDoc.exists) return failure(null, "Payment request not found.");
     const reqData = reqDoc.data() ?? {};
-    if (reqData.status !== "pending") return failure(null, "Request is not pending.");
+    if (!canResolvePaymentRequest(reqData.status)) return failure(null, "Request is not pending.");
 
     const pkgDoc = await db.collection(gymCollectionPath(gymId, "packages"))
       .doc(String(reqData.packageId)).get();
@@ -103,8 +108,7 @@ export async function approvePaymentRequestAction(
     const pkg = pkgDoc.data() ?? {};
 
     const now = new Date().toISOString();
-    const startDate = now.slice(0, 10);
-    const endDate = addMonths(startDate, Number(pkg.durationMonths ?? 1));
+    const { startDate, endDate } = computeMembershipActivation(Number(pkg.durationMonths ?? 1), new Date(now));
     const membershipId = crypto.randomUUID();
     const memberId = String(reqData.memberId ?? "");
     const packageName = String(pkg.name ?? "");
@@ -152,13 +156,13 @@ export async function rejectPaymentRequestAction(
 ): Promise<FormActionState> {
   try {
     const user = await requireOwner();
-    if (user.gymId !== gymId) return failure(null, "Not authorised for this gym.");
+    if (!isAuthorizedForGym(user.gymId, gymId)) return failure(null, "Not authorised for this gym.");
     const db = requireFirebase();
 
     const reqRef = db.collection(gymCollectionPath(gymId, "paymentRequests")).doc(requestId);
     const reqDoc = await reqRef.get();
     if (!reqDoc.exists) return failure(null, "Request not found.");
-    if ((reqDoc.data() ?? {}).status !== "pending") return failure(null, "Request is not pending.");
+    if (!canResolvePaymentRequest((reqDoc.data() ?? {}).status)) return failure(null, "Request is not pending.");
 
     const now = new Date().toISOString();
     const resolvedReason = reason?.trim() || "Declined by gym.";
@@ -190,7 +194,7 @@ export async function updateTrainerVisibilityAction(
 ): Promise<FormActionState> {
   try {
     const user = await requireOwner();
-    if (user.gymId !== gymId) return failure(null, "Not authorised for this gym.");
+    if (!isAuthorizedForGym(user.gymId, gymId)) return failure(null, "Not authorised for this gym.");
     const visibility = String(formData.get("trainerMemberVisibility") ?? "").trim();
     if (!["assigned_only", "all_pt_members", "all_members"].includes(visibility)) {
       return failure(null, "Invalid visibility setting.");
@@ -202,11 +206,4 @@ export async function updateTrainerVisibilityAction(
   } catch (err) {
     return failure(err, "Failed to update trainer visibility.");
   }
-}
-
-// Utility — add N months to YYYY-MM-DD string.
-function addMonths(dateStr: string, months: number): string {
-  const d = new Date(`${dateStr}T00:00:00Z`);
-  d.setUTCMonth(d.getUTCMonth() + months);
-  return d.toISOString().slice(0, 10);
 }

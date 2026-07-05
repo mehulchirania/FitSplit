@@ -176,6 +176,12 @@ npm run build
 ```bash
 npm test
 ```
+Vitest unit suite covers the money paths (billing approval transitions in
+`src/lib/firebase/actions/billing-logic.test.ts`, membership-expiry boundaries in
+`src/lib/firebase/actions/membership-expiry-logic.test.ts`), notification auth,
+action validation, and workout utils. Firestore rules: `npm run test:rules`
+(CI uses Node 22 + Java 21; on local Node 24, run the script through Node 22 if
+the emulator runner hits the Windows cleanup crash).
 
 ---
 
@@ -199,6 +205,8 @@ npm run migrate:tenant-cleanup -- --write
 ### Data Fixes & Backfills
 ```bash
 npm run backfill:member-access    # Repair missing usernames and auth profiles
+npm run backfill:root             # Dry run: copy legacy root docs → gyms/{gymId}/... (docs/17)
+npm run backfill:root -- --apply  # Write: execute the backfill (see docs/17_ROOT_BACKFILL_RUNBOOK.md)
 npm run fix:exercises             # Title Case cleanup, re-categorize, map videos
 npm run fix:gym-video-urls        # Fix gym-scoped exercise video URLs
 npm run patch:videos              # Backfill catalog video URLs from workout models
@@ -292,6 +300,7 @@ lib/
   workout-utils.ts                  # Workout calculation helpers
   firebase/
     actions/                        # Server Actions (mutations) — one file per domain
+      billing.ts                    # Packages + payment approval/rejection (pure logic in billing-logic.ts, unit-tested)
       gyms.ts                       # updateGymDetails + updateGymLogo allow owner role (not admin-only)
       members.ts                    # changeMemberPin verifies current PIN via Firebase Auth REST
       pt.ts                         # PT booking, session management, live logging
@@ -303,6 +312,7 @@ lib/
     functions.ts                    # Cloud Functions callable wrappers
 
 functions/src/index.ts              # All Cloud Functions (~2000+ lines)
+functions/src/membership-expiry-logic.ts  # Pure membership-expiry math (imported by index.ts; unit-tested from root Vitest)
 types/domain.ts                     # Domain types — Notification has actionHref, memberId, ptSessionId
 src/proxy.ts                        # Route protection, role redirects, per-request CSP nonce
 firestore.rules                     # Firestore security rules

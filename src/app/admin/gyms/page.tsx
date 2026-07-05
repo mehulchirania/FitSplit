@@ -51,7 +51,6 @@ export default async function ManageGymsPage({
         </div>
         <div className="adm-head-actions">
           <Link href="/admin/inbox" className="adm-btn adm-btn--ghost">Inbox</Link>
-          <Link href="#add-gym" className="adm-btn">+ Add gym</Link>
         </div>
       </div>
 

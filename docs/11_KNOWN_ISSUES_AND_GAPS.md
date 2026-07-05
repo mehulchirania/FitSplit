@@ -1,6 +1,6 @@
 # 11 · KNOWN ISSUES & GAPS (Tier 2)
 
-`Generated: 2026-06-05 · Last updated: 2026-07-02`
+`Generated: 2026-06-05 · Last updated: 2026-07-06`
 
 > **Purpose.** This file aggregates all known bugs, incomplete functionalities, and technical debt across the FitSplit platform. It serves as the backlog for future maintenance and refactoring.
 
@@ -36,7 +36,8 @@
    - **Impact:** Doubles write cost, invites drift, forces defensive read logic.
    - **Progress 2026-06-28:** Root writes removed from `members.ts` (activityEvents ×3), `staff.ts` (activityEvents ×2), `programs.ts` (programAssignments + notifications + activityEvents ×7), `pt.ts` (ptSessions, ptLiftLogs, liftLogs, notifications ×3), `exercises.ts` (exerciseCatalog, exerciseRequests, notifications), `contact.ts` (contactMessages, notifications). Gym-scoped writes via `mirrorGymScopedRecord` are now the sole path for all operational collections.
    - **Progress 2026-06-28:** `progress.ts` hot paths now write gym-scoped only for lift logs, body metrics, day logs, macro logs, activity logs, workout sessions, and attendance records. `syncOfflineLifts` now writes deterministic gym-scoped lift docs instead of root-only random IDs.
-   - **Remaining:** Keep root fallbacks only until legacy data is backfilled or archived; then remove fallback queries collection by collection.
+   - **Progress 2026-07-05:** `scripts/backfill-root-to-gym.mjs` and `docs/17_ROOT_BACKFILL_RUNBOOK.md` now cover the dry-run-first legacy root data copy into `gyms/{gymId}/...`; not run against production by agents.
+   - **Remaining:** Run the backfill against production data, verify history, then archive/remove legacy root collections when safe.
    - **Remaining:** `exercises.ts` lines 272/346/435 are intentional admin-global catalog writes, not dual-write pairs.
 
 2. ~~**Server Action vs Cloud Function Duplication**~~ — **RESOLVED 2026-06-28 (R5):** All 11 UI components migrated from CF-primary/SA-fallback to SA-only. `functions.ts` trimmed to ~80 lines (archive, lookup, stats, membership activation CFs only). Server Actions are now the sole write path for all member/staff/gym/program/PT operations.

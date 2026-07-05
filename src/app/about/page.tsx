@@ -22,11 +22,11 @@ export default function AboutPage() {
         <h1 className="lpd-h2" style={{ marginBottom: "24px" }}>About FitSplit</h1>
         <div style={{ fontSize: "1.125rem", color: "var(--fg-dim)", lineHeight: 1.6 }}>
           <p style={{ marginBottom: "20px" }}>
-            FitSplit was built to give gym owners, trainers, and members a single, focused workspace 
+            FitSplit was built to give gym owners, trainers, and members a single, focused workspace
             to assign plans, guide sessions, and track progress without stitching together spreadsheets and messaging apps.
           </p>
           <p style={{ marginBottom: "20px" }}>
-            Developed with ❤️ by <strong>Mehul</strong>, in collaboration with{" "}
+            FitSplit is owned and operated by{" "}
             <a
               href="https://blumelabs.in"
               target="_blank"
@@ -36,6 +36,9 @@ export default function AboutPage() {
               Blume Labs
             </a>
             .
+          </p>
+          <p style={{ marginBottom: "20px" }}>
+            Developed by <strong>Mehul</strong>.
           </p>
           <p style={{ marginBottom: "20px" }}>
             For any enquiries, please write to us at <a href="mailto:fitsplit.in@gmail.com" style={{ color: "var(--accent)" }}>fitsplit.in@gmail.com</a>.

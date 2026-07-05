@@ -1,7 +1,7 @@
 import type { AttendanceRecord, WorkoutSession } from "@/types/domain";
 
 import { attendanceRecords as mockAttendanceRecords } from "@/lib/mock-data";
-import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
+import { gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection } from "./shared";
 
@@ -20,14 +20,7 @@ export async function getActiveWorkoutSessions(gymId?: string): Promise<{
     const scopedSnapshot = await gymCollection(db, targetGymId, "workoutSessions")
       .where("status", "==", "active")
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.workoutSessions)
-          .where("gymId", "==", targetGymId)
-          .where("status", "==", "active")
-          .get()
-      : scopedSnapshot;
-    const sessions: WorkoutSession[] = snapshot.docs.map((doc) => {
+    const sessions: WorkoutSession[] = scopedSnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -82,16 +75,7 @@ export async function getRecentSessionCounts(
       .where("status", "==", "completed")
       .where("startedAt", ">=", sinceIso)
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.workoutSessions)
-          .where("gymId", "==", targetGymId)
-          .where("status", "==", "completed")
-          .where("startedAt", ">=", sinceIso)
-          .get()
-      : scopedSnapshot;
-
-    for (const doc of snapshot.docs) {
+    for (const doc of scopedSnapshot.docs) {
       const startedAt = String(doc.data().startedAt ?? "");
       const dateKey = startedAt.slice(0, 10);
       if (countMap.has(dateKey)) {
@@ -105,7 +89,7 @@ export async function getRecentSessionCounts(
   return labels.map((date) => ({ date, sessions: countMap.get(date) ?? 0 }));
 }
 
-export async function getAttendanceRecords(memberId: string): Promise<{
+export async function getAttendanceRecords(memberId: string, gymId?: string): Promise<{
   records: AttendanceRecord[];
   isPersisted: boolean;
 }> {
@@ -118,18 +102,14 @@ export async function getAttendanceRecords(memberId: string): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
-      .collectionGroup(gymScopedCollectionPaths.attendanceRecords)
-      .where("memberId", "==", memberId)
-      .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.attendanceRecords)
+    const scopedSnapshot = gymId
+      ? await gymCollection(db, gymId, "attendanceRecords").where("memberId", "==", memberId).get()
+      : await db
+          .collectionGroup(gymScopedCollectionPaths.attendanceRecords)
           .where("memberId", "==", memberId)
-          .get()
-      : scopedSnapshot;
+          .get();
 
-    const records: AttendanceRecord[] = snapshot.docs.map(doc => {
+    const records: AttendanceRecord[] = scopedSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,

@@ -91,7 +91,7 @@ export async function exportMyData(gymId: string): Promise<DataExportResult> {
       getDayLogsForMember(memberId, gymId),
       getMacroLogsForMember(memberId, gymId, ALL),
       getActivityLogsForMember(memberId, gymId, ALL),
-      getAttendanceRecords(memberId),
+      getAttendanceRecords(memberId, gymId),
       getPTSessionsForMember(gymId, memberId),
       getMembershipsForMember(gymId, memberId),
       getPaymentRequestsForMember(gymId, memberId),
