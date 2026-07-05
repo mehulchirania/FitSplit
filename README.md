@@ -41,7 +41,7 @@ The **`docs/`** directory is the single source of truth for this codebase. Start
 The docs follow a three-tier model:
 - **Tier 0** — `00_AI_CONTEXT.md`: always-loaded condensed overview.
 - **Tier 1** — `01_ARCHITECTURE.md` … `09_SCREEN_CATALOG.md`: verified facts (architecture, data model, actions, functions, roles, routes, screens).
-- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `13_UI_STYLE_GUIDE.md`, `14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`, and `DISCREPANCIES.md`.
+- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `13_UI_STYLE_GUIDE.md`, `14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`, `17_ROOT_BACKFILL_RUNBOOK.md`, and `DISCREPANCIES.md`.
 
 This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
 
@@ -194,25 +194,8 @@ npm run seed:firebase      # Seed Firestore with base data
 npm run seed:demo          # Full demo seed — gyms, members, programs, mock logs
 ```
 
-### Data Migrations
-```bash
-npm run migrate:gym-scoped        # Dry run: migrate root collections → gym-scoped
-npm run migrate:gym-scoped -- --write   # Write: execute the migration
-npm run migrate:tenant-cleanup          # Dry run: rebuild authProfiles, clean root
-npm run migrate:tenant-cleanup -- --write
-```
-
-### Data Fixes & Backfills
-```bash
-npm run backfill:member-access    # Repair missing usernames and auth profiles
-npm run backfill:root             # Dry run: copy legacy root docs → gyms/{gymId}/... (docs/17)
-npm run backfill:root -- --apply  # Write: execute the backfill (see docs/17_ROOT_BACKFILL_RUNBOOK.md)
-npm run fix:exercises             # Title Case cleanup, re-categorize, map videos
-npm run fix:gym-video-urls        # Fix gym-scoped exercise video URLs
-npm run patch:videos              # Backfill catalog video URLs from workout models
-npm run sync:exercise-videos      # Sync exercise videos from workout definitions
-npm run fetch:channel-videos      # Fetch YouTube channel video metadata
-```
+### Data Migrations & Fixes (Archived)
+Most one-off migration, patch, and video-sync scripts have been successfully executed in production and are now archived in `archive/scripts/`. They are categorized into `migrations/`, `patches/`, `video-imports/`, and `misc-queries/`. See `docs/14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md` and `docs/17_ROOT_BACKFILL_RUNBOOK.md` for historical context.
 
 ### Deployment
 ```bash
