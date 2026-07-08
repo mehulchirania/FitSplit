@@ -1,0 +1,822 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   22-owner-detail-reports.css — Owner member-detail page (`mpd-`, `tpp-`) and
+   owner reports page (`rpt-`). Matches the visual language introduced in
+   19-members-redesign.css (`mhv-`): elevated surfaces, 1280px page shell,
+   1080px two-column breakpoint, token-only color.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 1 — Member detail page (`mpd-*`, `tpp-*`)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+.mpd-hero {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(10, 24, 28, 0.07);
+  padding: 22px 24px 0;
+  margin-bottom: 18px;
+}
+
+.mpd-hero-body { display: block; }
+
+.mpd-hero-identity {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.mpd-avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 800;
+  font-size: 22px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+[data-theme="light"] .mpd-avatar { color: var(--brand-strong); }
+
+.mpd-hero-name-block {
+  flex: 1;
+  min-width: 0;
+}
+
+.mpd-name-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mpd-name {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--text);
+}
+
+.mpd-program-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.mpd-program-pill svg { width: 13px; height: 13px; flex-shrink: 0; }
+
+.mpd-hero-subline {
+  font-size: 13.5px;
+  color: var(--text-soft);
+  margin: 6px 0 0;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.mpd-hero-sep { opacity: 0.45; }
+.mpd-hero-dim { color: var(--text-faint); }
+
+.mpd-hero-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.mpd-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12.5px;
+  color: var(--text-soft);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+.mpd-contact-chip svg { width: 13px; height: 13px; flex-shrink: 0; }
+.mpd-username-at { color: var(--text-faint); }
+
+/* ── Metrics strip ──────────────────────────────────────────────────────── */
+
+.mpd-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  border-top: 1px solid var(--border);
+  margin-top: 18px;
+  margin-left: -24px;
+  margin-right: -24px;
+  width: calc(100% + 48px);
+}
+
+.mpd-metric {
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 3px;
+}
+.mpd-metric + .mpd-metric { border-left: 1px solid var(--border); }
+.mpd-metric strong {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+.mpd-metric span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.mpd-metric--empty strong { color: var(--text-faint); }
+.mpd-metric--brand strong { color: var(--brand); }
+[data-theme="light"] .mpd-metric--brand strong { color: var(--brand-strong); }
+
+@media (max-width: 640px) {
+  .mpd-avatar { width: 52px; height: 52px; font-size: 18px; }
+  .mpd-name { font-size: 20px; }
+  .mpd-metrics { grid-template-columns: repeat(2, 1fr); }
+  .mpd-metric:nth-child(odd) { border-left: 0; }
+  .mpd-metric:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
+
+/* ── Workspace grid ─────────────────────────────────────────────────────── */
+
+.mpd-workspace-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+.mpd-primary-stack,
+.mpd-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-width: 0;
+}
+
+@media (max-width: 1080px) {
+  .mpd-workspace-layout { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ── Primary column: schedule panel ─────────────────────────────────────── */
+
+.mpd-main-schedule .weekly-schedule { overflow-x: auto; }
+
+.mpd-main-schedule .selected-workout-day {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.mpd-empty-schedule {
+  text-align: center;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.mpd-empty-schedule svg {
+  width: 36px;
+  height: 36px;
+  color: var(--text-faint);
+}
+.mpd-empty-schedule h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+.mpd-empty-schedule p {
+  font-size: 13.5px;
+  color: var(--text-soft);
+  max-width: 40ch;
+  margin: 0;
+}
+
+/* ── Member context panel ───────────────────────────────────────────────── */
+
+.mpd-context-panel .mpd-edit-trigger { flex-shrink: 0; }
+
+.mpd-context-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mpd-context-card {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.mpd-context-card span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.mpd-context-card strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+.mpd-context-card strong:empty::before,
+.mpd-context-card--empty strong {
+  color: var(--text-faint);
+  font-weight: 500;
+}
+
+.mpd-edit-form { display: grid; gap: 14px; }
+.mpd-edit-form .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mpd-cancel-edit { justify-self: start; }
+
+@media (max-width: 640px) {
+  .mpd-context-grid { grid-template-columns: 1fr; }
+  .mpd-edit-form .form-grid { grid-template-columns: 1fr; }
+}
+
+/* ── Coach note panel ───────────────────────────────────────────────────── */
+
+.mpd-note-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+.mpd-note-hint {
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.mpd-note-meta {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+  margin: 4px 0 0;
+}
+.mpd-note-clear-hint {
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  margin: 4px 0 0;
+}
+
+/* ── Assign program panel ───────────────────────────────────────────────── */
+
+.mpd-assign-submit {
+  width: 100%;
+  padding: 12px;
+  font-size: 14px;
+  border-radius: 12px;
+  margin-top: 8px;
+}
+
+.mpd-plan-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+/* ── Collapsible panels ─────────────────────────────────────────────────── */
+
+.mpd-collapsible-panel summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 14px;
+  list-style: none;
+  min-height: 44px;
+}
+.mpd-collapsible-panel summary::-webkit-details-marker { display: none; }
+
+.mpd-collapsible-chevron {
+  transition: transform 140ms;
+  color: var(--text-faint);
+}
+.mpd-collapsible-panel[open] .mpd-collapsible-chevron { transform: rotate(180deg); }
+@media (prefers-reduced-motion: reduce) {
+  .mpd-collapsible-chevron { transition: none; }
+}
+
+.mpd-collapsible-body {
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.mpd-danger-panel {
+  border-color: color-mix(in srgb, var(--danger) 35%, var(--border));
+}
+.mpd-danger-panel summary { color: var(--danger); }
+
+/* ── Account access / danger zone shared sections ───────────────────────── */
+
+.mpd-account-panel .panel-title { margin-bottom: 0; }
+
+.mpd-login-username {
+  font-size: 12.5px;
+  color: var(--text-soft);
+  margin: 4px 0 0;
+}
+.mpd-login-username strong {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  background: var(--bg-subtle);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.mpd-account-section {
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mpd-account-panel .mpd-account-section:first-of-type { border-top: none; padding-top: 0; }
+
+.mpd-section-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+
+.mpd-section-hint {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* ── Sidebar: Trainer & PT panel (tpp-*) ─────────────────────────────────── */
+
+.tpp-panel { display: flex; flex-direction: column; gap: 0; }
+
+.tpp-header-btn {
+  font-size: 0.8rem;
+  padding: 6px 14px;
+  white-space: nowrap;
+}
+
+.tpp-trainer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.tpp-trainer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-muted);
+  color: var(--text-soft);
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.tpp-trainer-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tpp-trainer-info span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.tpp-trainer-info strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tpp-edit-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+.tpp-edit-row select,
+.tpp-edit-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.88rem;
+}
+
+.tpp-pt-section {
+  border-top: 1px solid var(--border);
+  margin-top: 14px;
+  padding-top: 14px;
+}
+
+.tpp-pt-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.tpp-pt-empty {
+  text-align: center;
+  padding: 20px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.tpp-pt-empty svg { width: 28px; height: 28px; color: var(--text-faint); }
+.tpp-pt-empty p {
+  font-size: 13px;
+  color: var(--text-soft);
+  margin: 0;
+}
+.tpp-pt-empty-btn { font-size: 0.82rem; }
+
+.tpp-pt-view-all {
+  padding: 8px 0;
+  text-align: center;
+  font-size: 0.82rem;
+}
+.tpp-pt-view-all a { color: var(--brand); text-decoration: none; }
+[data-theme="light"] .tpp-pt-view-all a { color: var(--brand-strong); }
+.tpp-pt-view-all a:hover { text-decoration: underline; }
+
+.tpp-notify-note {
+  font-size: 12px;
+  color: var(--text-faint);
+  background: var(--bg-subtle);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 10px 0 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   SECTION 2 — Reports page (`rpt-*`)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.rpt-root {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px 28px 80px;
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+
+.rpt-header { display: flex; flex-direction: column; gap: 2px; }
+.rpt-crumbs {
+  font-size: 12.5px;
+  color: var(--text-faint);
+  margin-bottom: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.rpt-crumbs a { color: inherit; text-decoration: none; }
+.rpt-crumbs a:hover { color: var(--text-soft); }
+.rpt-title {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 2px;
+  color: var(--text);
+}
+.rpt-subtitle {
+  font-size: 13.5px;
+  color: var(--text-soft);
+  margin: 0;
+}
+.rpt-subtitle strong { color: var(--text); font-weight: 700; }
+
+/* ── Empty state (zero members) ─────────────────────────────────────────── */
+
+.rpt-empty {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(10, 24, 28, 0.07);
+  text-align: center;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.rpt-empty svg { width: 36px; height: 36px; color: var(--text-faint); }
+.rpt-empty h2 { font-size: 17px; font-weight: 700; margin: 0; color: var(--text); }
+.rpt-empty p { font-size: 13.5px; color: var(--text-soft); max-width: 40ch; margin: 0; }
+
+/* ── KPI row ────────────────────────────────────────────────────────────── */
+
+.rpt-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.rpt-kpi {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(10, 24, 28, 0.07);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  min-height: 44px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 120ms, background 120ms;
+}
+a.rpt-kpi:hover {
+  border-color: var(--border-strong);
+  background: var(--bg-subtle);
+}
+.rpt-kpi__label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-weight: 600;
+}
+.rpt-kpi__value {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+.rpt-kpi__delta {
+  font-size: 12.5px;
+  color: var(--text-soft);
+}
+.rpt-kpi--warn { border-color: color-mix(in srgb, var(--warning) 40%, var(--border)); }
+.rpt-kpi--warn .rpt-kpi__label { color: var(--warning); }
+.rpt-kpi--brand { border-color: color-mix(in srgb, var(--brand) 40%, var(--border)); }
+.rpt-kpi--brand .rpt-kpi__label { color: var(--brand); }
+[data-theme="light"] .rpt-kpi--brand .rpt-kpi__label { color: var(--brand-strong); }
+
+@media (max-width: 900px) {
+  .rpt-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ── Attendance section ─────────────────────────────────────────────────── */
+
+.rpt-section { display: flex; flex-direction: column; gap: 10px; }
+.rpt-section-title {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin: 0;
+}
+
+/* ── Insight grid ───────────────────────────────────────────────────────── */
+
+.rpt-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+@media (max-width: 1080px) {
+  .rpt-grid { grid-template-columns: 1fr; }
+}
+
+/* Workout coverage */
+.rpt-coverage-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.rpt-progress {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+.rpt-progress-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 300ms ease;
+}
+.rpt-progress-fill--ok { background: var(--success, #22c55e); }
+.rpt-progress-fill--mid { background: var(--accent); }
+.rpt-progress-fill--low { background: var(--warning); }
+.rpt-coverage-value {
+  font-weight: 700;
+  font-size: 1rem;
+  min-width: 2.5rem;
+  text-align: right;
+  color: var(--text);
+}
+.rpt-statline {
+  display: flex;
+  gap: 1.5rem;
+  font-size: 0.875rem;
+  color: var(--text-soft);
+  flex-wrap: wrap;
+}
+.rpt-statline strong { color: var(--text); }
+.rpt-statline a {
+  color: var(--warning);
+  text-decoration: none;
+  font-weight: 600;
+}
+.rpt-statline a:hover { text-decoration: underline; }
+
+/* PT plans */
+.rpt-quad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.rpt-quad-cell {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.rpt-quad-cell strong {
+  font-size: 1.25rem;
+  color: var(--text);
+  display: block;
+}
+.rpt-quad-cell span {
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+}
+.rpt-quad-cell--active {
+  background: var(--brand-soft);
+  border-color: color-mix(in srgb, var(--brand) 30%, var(--border));
+}
+.rpt-quad-cell--active span { color: var(--brand); }
+[data-theme="light"] .rpt-quad-cell--active span { color: var(--brand-strong); }
+.rpt-quad-cell--cancelled {
+  background: var(--danger-soft);
+  border-color: color-mix(in srgb, var(--danger) 30%, var(--border));
+}
+.rpt-quad-cell--cancelled span { color: var(--danger); }
+.rpt-quad-footer {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--text-soft);
+}
+.rpt-quad-footer strong { color: var(--text); }
+.rpt-quad-footer a { color: var(--brand); text-decoration: none; font-weight: 600; }
+[data-theme="light"] .rpt-quad-footer a { color: var(--brand-strong); }
+.rpt-quad-footer a:hover { text-decoration: underline; }
+
+/* Programs by assignments */
+.rpt-bars {
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+}
+.rpt-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 8px 16px;
+}
+.rpt-bar-row--zero { opacity: 0.55; }
+.rpt-bar-label {
+  flex: 0 0 9rem;
+  font-size: 0.875rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rpt-bar-track {
+  flex: 1;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--bg-muted);
+  overflow: hidden;
+}
+.rpt-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+}
+.rpt-bar-count {
+  flex: 0 0 2rem;
+  text-align: right;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-soft);
+}
+.rpt-more-link {
+  display: block;
+  text-align: center;
+  padding: 10px 16px;
+  font-size: 0.85rem;
+  color: var(--brand);
+  text-decoration: none;
+  font-weight: 600;
+}
+[data-theme="light"] .rpt-more-link { color: var(--brand-strong); }
+.rpt-more-link:hover { text-decoration: underline; }
+
+/* Slot distribution */
+.rpt-slots {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+@media (max-width: 640px) {
+  .rpt-slots { grid-template-columns: repeat(2, 1fr); }
+}
+.rpt-slot-cell {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.75rem;
+  text-align: center;
+}
+.rpt-slot-cell strong {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text);
+  display: block;
+  margin-bottom: 2px;
+}
+.rpt-slot-cell span {
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+.rpt-slot-cell em {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  font-style: normal;
+  display: block;
+  margin-top: 2px;
+}
+
+/* Attendance chart empty state (attendance-trend-chart.impl.tsx) */
+.atc-empty {
+  text-align: center;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.atc-empty svg {
+  width: 32px;
+  height: 32px;
+  color: var(--text-faint);
+}
+.atc-empty__title {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin: 0;
+}
+.atc-empty__body {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+  margin: 0;
+  line-height: 1.5;
+  max-width: 52ch;
+}
+
+@media (max-width: 660px) {
+  .rpt-root { padding: 16px 16px 80px; }
+}

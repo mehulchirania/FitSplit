@@ -177,6 +177,7 @@ const GYMS = [
   {
     id: "shg",
     isNew: false,
+    seedOffset: 0,
     name: "Sri Shakthi Hanuman Gym",
     ownerName: "Santosh SHG",
     ownerId: "santosh-shg",
@@ -184,11 +185,11 @@ const GYMS = [
     trainerId: "shg-trainer-1",
     trainerName: "Ravi Kumar",
     trainerEmail: "shg-trainer-1@fitsplit.app",
-    location: "Coimbatore, Tamil Nadu",
   },
   {
     id: "ironcore-blr",
     isNew: true,
+    seedOffset: 20,
     name: "IronCore Fitness",
     ownerName: "Arvind Rajagopal",
     ownerId: "ironcore-owner-1",
@@ -201,6 +202,7 @@ const GYMS = [
   {
     id: "pulse-hyd",
     isNew: true,
+    seedOffset: 40,
     name: "Pulse Fitness Studio",
     ownerName: "Rehana Fatima",
     ownerId: "pulse-owner-1",
@@ -256,28 +258,28 @@ for (const gym of GYMS) {
   let membersUpdated = 0;
   let logsWritten = 0;
 
-  // 1. Gym doc
-  gymSetGymDoc(gym);
-
-  // 2. Staff: owner + trainer
-  const staff = [
-    { id: gym.ownerId, fullName: gym.ownerName, email: gym.ownerEmail, staffType: "owner", role: "owner" },
-    { id: gym.trainerId, fullName: gym.trainerName, email: gym.trainerEmail, staffType: "trainer", role: "owner" },
-  ];
-  for (const s of staff) {
-    const staffData = {
-      id: s.id, fullName: s.fullName, email: s.email, phone: "",
-      avatarInitials: initials(s.fullName),
-      role: s.role, staffType: s.staffType,
-      defaultGymId: gym.id, gymId: gym.id, isActive: true,
-      username: s.id, authEmail: s.email, authUid: s.id, authIndexOnly: false,
-      mustChangePassword: false,
-      createdAt: NOW, updatedAt: NOW,
-    };
-    set("authProfiles", s.id, staffData);
-    gymSet(gym.id, "staff", s.id, staffData);
-    set("usernames", s.id, { uid: s.id, gymId: gym.id, createdAt: NOW });
-    if (gym.isNew) {
+  // 1 + 2. Gym doc and staff (owner + trainer) — NEW gyms only. shg's gym doc,
+  // owner (santosh-shg), and trainers already exist live and must not be
+  // overwritten (blank phone / reset createdAt would pollute pilot data).
+  if (gym.isNew) {
+    gymSetGymDoc(gym);
+    const staff = [
+      { id: gym.ownerId, fullName: gym.ownerName, email: gym.ownerEmail, staffType: "owner", role: "owner" },
+      { id: gym.trainerId, fullName: gym.trainerName, email: gym.trainerEmail, staffType: "trainer", role: "owner" },
+    ];
+    for (const s of staff) {
+      const staffData = {
+        id: s.id, fullName: s.fullName, email: s.email, phone: "",
+        avatarInitials: initials(s.fullName),
+        role: s.role, staffType: s.staffType,
+        defaultGymId: gym.id, gymId: gym.id, isActive: true,
+        username: s.id, authEmail: s.email, authUid: s.id, authIndexOnly: false,
+        mustChangePassword: false,
+        createdAt: NOW, updatedAt: NOW,
+      };
+      set("authProfiles", s.id, staffData);
+      gymSet(gym.id, "staff", s.id, staffData);
+      set("usernames", s.id, { uid: s.id, gymId: gym.id, createdAt: NOW });
       queueAuthUser({ uid: s.id, email: s.email, displayName: s.fullName, password: STAFF_PASSWORD, role: s.role, gymId: gym.id });
     }
   }
@@ -318,12 +320,12 @@ for (const gym of GYMS) {
     // / demo firestore). We only need to know how many more to add.
     const need = Math.max(0, targetCount - existingShgIds.size);
     for (let i = 0; i < need; i++) {
-      gymMembers.push(makeNewMemberSpec(gym.id, i, existingShgIds.size + i, PROGRAM_IDS));
+      gymMembers.push(makeNewMemberSpec(gym.id, i, existingShgIds.size + i, PROGRAM_IDS, gym.seedOffset));
     }
     console.log(`  shg: ${existingShgIds.size} existing kept, adding ${need} new to reach ${targetCount}`);
   } else {
     for (let i = 0; i < targetCount; i++) {
-      gymMembers.push(makeNewMemberSpec(gym.id, i, i, PROGRAM_IDS));
+      gymMembers.push(makeNewMemberSpec(gym.id, i, i, PROGRAM_IDS, gym.seedOffset));
     }
   }
 
@@ -583,44 +585,48 @@ function pickExercisesForMember(m, pool) {
   return [pool[start], pool[(start + 3) % pool.length], pool[(start + 6) % pool.length]];
 }
 
-function makeNewMemberSpec(gymId, i, seedIndex, programIds) {
-  const fullName = nameFor(seedIndex);
+function makeNewMemberSpec(gymId, i, seedIndex, programIds, seedOffset = 0) {
+  // `variety` decorrelates identity (name/PIN/phone/body stats) across gyms so
+  // the three gyms don't get clone rosters, and — critically — so Firebase
+  // Auth phone numbers stay globally unique (Auth rejects duplicate phones).
+  const variety = seedIndex + seedOffset;
+  const fullName = nameFor(variety);
   const state = STATE_CYCLE[i % STATE_CYCLE.length];
   const slot = SLOTS[i % SLOTS.length];
   const id = `${gymId}-m-${seedIndex.toString().padStart(2, "0")}`;
-  const pin = String(1000 + ((seedIndex * 37 + 7) % 9000)).padStart(4, "0");
-  const goal = GOALS[seedIndex % GOALS.length];
-  const age = 20 + (seedIndex * 7) % 40;
-  const h = 155 + (seedIndex * 3) % 40;
-  const w = 52 + (seedIndex * 5) % 45;
-  const joinedDaysAgo = state === "no_membership" ? (seedIndex % 5) + 1 : 20 + (seedIndex * 11) % 260;
+  const pin = String(1000 + ((variety * 37 + 7) % 9000)).padStart(4, "0");
+  const goal = GOALS[variety % GOALS.length];
+  const age = 20 + (variety * 7) % 40;
+  const h = 155 + (variety * 3) % 40;
+  const w = 52 + (variety * 5) % 45;
+  const joinedDaysAgo = state === "no_membership" ? (variety % 5) + 1 : 20 + (variety * 11) % 260;
 
   let plan = null;
   let pkg = null;
   let memberEnd = null;
-  let assignedDaysAgo = 10 + (seedIndex * 5) % 60;
+  let assignedDaysAgo = 10 + (variety * 5) % 60;
 
   switch (state) {
     case "active":
     case "active_pt":
-      plan = programIds[seedIndex % programIds.length];
-      pkg = state === "active_pt" ? "pkg-pt-monthly" : ["pkg-monthly", "pkg-quarterly", "pkg-annual"][seedIndex % 3];
-      memberEnd = aheadStr(15 + (seedIndex * 9) % 200);
+      plan = programIds[variety % programIds.length];
+      pkg = state === "active_pt" ? "pkg-pt-monthly" : ["pkg-monthly", "pkg-quarterly", "pkg-annual"][variety % 3];
+      memberEnd = aheadStr(15 + (variety * 9) % 200);
       break;
     case "expiring_soon":
-      plan = programIds[seedIndex % programIds.length];
-      pkg = ["pkg-monthly", "pkg-quarterly"][seedIndex % 2];
-      memberEnd = aheadStr(2 + (seedIndex % 10));
+      plan = programIds[variety % programIds.length];
+      pkg = ["pkg-monthly", "pkg-quarterly"][variety % 2];
+      memberEnd = aheadStr(2 + (variety % 10));
       break;
     case "expired":
-      plan = programIds[seedIndex % programIds.length];
-      pkg = ["pkg-monthly", "pkg-quarterly"][seedIndex % 2];
-      memberEnd = dateStr(5 + (seedIndex % 40));
+      plan = programIds[variety % programIds.length];
+      pkg = ["pkg-monthly", "pkg-quarterly"][variety % 2];
+      memberEnd = dateStr(5 + (variety % 40));
       break;
     case "no_plan":
       plan = null;
-      pkg = ["pkg-monthly", "pkg-quarterly"][seedIndex % 2];
-      memberEnd = aheadStr(10 + (seedIndex % 60));
+      pkg = ["pkg-monthly", "pkg-quarterly"][variety % 2];
+      memberEnd = aheadStr(10 + (variety % 60));
       break;
     case "no_membership":
       plan = null;
@@ -632,13 +638,16 @@ function makeNewMemberSpec(gymId, i, seedIndex, programIds) {
   // Vary training volume so lists/charts look organic:
   // just-joined members get almost nothing; long-tenured get more.
   const tenureWeeks = Math.max(1, Math.floor(joinedDaysAgo / 7));
-  const historyWeeks = state === "no_membership" ? 0 : Math.min(6, Math.max(1, Math.min(tenureWeeks, 2 + (seedIndex % 5))));
-  const sessionsPerWeek = [2, 3, 4, 5][seedIndex % 4];
+  const historyWeeks = state === "no_membership" ? 0 : Math.min(6, Math.max(1, Math.min(tenureWeeks, 2 + (variety % 5))));
+  const sessionsPerWeek = [2, 3, 4, 5][variety % 4];
 
+  // Valid 10-digit Indian mobile, globally unique per `variety` so Firebase
+  // Auth (which enforces unique phoneNumber across the project) never collides.
+  const phoneDigits = String(9800000000 + variety * 1237);
   return {
-    id, fullName, phone: `+91 98${(50000000 + seedIndex * 137).toString().slice(0, 7)}`,
+    id, fullName, phone: `+91 ${phoneDigits}`,
     joinedAt: daysAgo(joinedDaysAgo), goal, age, h, w, slot, state, plan, pkg, memberEnd,
-    pin, seedIndex, assignedDaysAgo, historyWeeks, sessionsPerWeek,
+    pin, seedIndex: variety, assignedDaysAgo, historyWeeks, sessionsPerWeek,
   };
 }
 

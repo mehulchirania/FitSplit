@@ -91,7 +91,7 @@ flowchart TD
 |---|---|---|
 | **Tier 0** | Every session (keep tiny, ~8k tokens) | `00_AI_CONTEXT.md` |
 | **Tier 1** | Current-state facts (the SSoT body) | `01`–`09` |
-| **Tier 2** | Opinion / volatile / backlog | `10`–`14` |
+| **Tier 2** | Opinion / volatile / backlog | `10`–`19` |
 | **Meta** | Navigation + drift control | `_INDEX.md`, `DISCREPANCIES.md` |
 
 ## File directory
@@ -116,6 +116,8 @@ flowchart TD
 | [15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md](15_UNUSED_CODE_CI_GUARDRAIL_2026-07-02.md) | 2 | knip-based unused-files/deps CI workflow. |
 | [16_FABLE_AUDIT_2026-07-05.md](16_FABLE_AUDIT_2026-07-05.md) | 2 | Go-live readiness audit: consolidated defects (F1–F5), completed task plan T1–T6, validation evidence, and human go-live checklist. |
 | [17_ROOT_BACKFILL_RUNBOOK.md](17_ROOT_BACKFILL_RUNBOOK.md) | 2 | Operational runbook for `scripts/backfill-root-to-gym.mjs` — copies legacy root-collection data into `gyms/{gymId}/...` ahead of root-collection archival. |
+| [18_DEMO_USERS.md](18_DEMO_USERS.md) | 2 | Every demo login on live Firestore (3 gyms × 20 members + staff), PINs/passwords, membership states, and the E2E scenario each account covers. Seeded by `npm run seed:demo-gyms`. |
+| [19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md](19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md) | 2 | Implementation-ready redesign plan for `/owner/members/[memberId]` (missing `mpd-`/`tpp-` stylesheet) and `/owner/reports` (`rpt-` class system, actionable KPIs). |
 | [DISCREPANCIES.md](DISCREPANCIES.md) | Meta | README/code conflicts + dead/orphaned references. |
 
 ---

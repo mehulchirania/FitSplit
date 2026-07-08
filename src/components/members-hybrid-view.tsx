@@ -29,23 +29,6 @@ export type HybridProgram = { id: string; title: string };
 
 // ── Icon helpers (inline SVG) ────────────────────────────────────────────────
 
-function IconAlertTriangle() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-      <line x1="12" y1="9" x2="12" y2="13"/>
-      <line x1="12" y1="17" x2="12.01" y2="17"/>
-    </svg>
-  );
-}
-function IconCalendar() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
-      <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
-    </svg>
-  );
-}
 function IconDumbbell() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -144,13 +127,6 @@ function IconMail() {
     </svg>
   );
 }
-function IconSparkle() {
-  return (
-    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
-    </svg>
-  );
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -167,81 +143,47 @@ function formatDate(iso: string): string {
 }
 
 const PAGE_SIZE = 10;
+const RAIL_CAP = 5;
 
-type Bucket = "all" | "active" | "no-plan" | "expiring";
+export type Bucket = "all" | "active" | "no-plan" | "expiring";
 type SortKey = "name" | "newest" | "oldest" | "expiry" | "status";
+type QType = "expired" | "expiring" | "noplan";
 
-// ── Queue card ────────────────────────────────────────────────────────────────
+// ── Attention rail row ────────────────────────────────────────────────────────
 
-type QCardType = "expired" | "expiring" | "noplan";
-
-function QCard({ m, type, onDismiss }: {
+function RailRow({ m, type, onDismiss }: {
   m: HybridMember;
-  type: QCardType;
+  type: QType;
   onDismiss: (id: string) => void;
 }) {
-  const config = {
-    expired: {
-      tone: "danger" as const,
-      icon: <IconAlertTriangle />,
-      label: "Expired",
-      sub: `${Math.abs(m.daysToExpiry ?? 0)}d ago${m.currentPackageName ? ` · ${m.currentPackageName}` : ""}`,
-      actionLabel: "View member",
-      actionIcon: <IconRepeat />,
-    },
-    expiring: {
-      tone: "warn" as const,
-      icon: <IconCalendar />,
-      label: "Expiring",
-      sub: `in ${m.daysToExpiry ?? "?"}d${m.currentPackageName ? ` · ${m.currentPackageName}` : ""}`,
-      actionLabel: "Send renewal",
-      actionIcon: <IconRepeat />,
-    },
-    noplan: {
-      tone: "accent" as const,
-      icon: <IconDumbbell />,
-      label: "No plan",
-      sub: m.goal ? `Goal: ${m.goal}` : "Workout unassigned",
-      actionLabel: "Assign plan",
-      actionIcon: <IconSparkle />,
-    },
-  }[type];
+  const sub =
+    type === "expired"
+      ? `Expired ${Math.abs(m.daysToExpiry ?? 0)}d ago${m.currentPackageName ? ` · ${m.currentPackageName}` : ""}`
+      : type === "expiring"
+        ? `Expires in ${m.daysToExpiry ?? "?"}d${m.currentPackageName ? ` · ${m.currentPackageName}` : ""}`
+        : m.goal ? `Goal: ${m.goal}` : "Workout unassigned";
 
   return (
-    <div className={`mhv-qcard mhv-qcard--${config.tone}`}>
-      <div className="mhv-qcard__top">
-        <div className={`mhv-avatar ${avatarColor(m.id)}`} aria-hidden>
+    <div className="mhv-rrow" role="listitem">
+      <Link href={`/owner/members/${m.id}`} className="mhv-rrow__link">
+        <span className={`mhv-avatar mhv-avatar--sm ${avatarColor(m.id)}`} aria-hidden>
           {m.avatarInitials}
-        </div>
-        <div className="mhv-qcard__id">
-          <div className="mhv-qcard__name">{m.fullName}</div>
-          {m.username && <div className="mhv-qcard__handle">@{m.username}</div>}
-        </div>
-        <button
-          className="mhv-qcard__dismiss"
-          onClick={() => onDismiss(m.id)}
-          aria-label="Dismiss"
-          title="Snooze for now"
-          type="button"
-        >
-          <IconX size={12} />
-        </button>
-      </div>
-
-      <div className="mhv-qcard__reason">
-        <span className={`mhv-qcard__tag mhv-qcard__tag--${config.tone}`}>
-          {config.icon} {config.label}
         </span>
-        <span className="mhv-qcard__sub">{config.sub}</span>
-      </div>
-
-      <Link
-        href={`/owner/members/${m.id}`}
-        className="mhv-qcard__action"
-        onClick={() => onDismiss(m.id)}
-      >
-        {config.actionIcon} {config.actionLabel}
+        <span className="mhv-rrow__text">
+          <span className="mhv-rrow__name">{m.fullName}</span>
+          <span className="mhv-rrow__sub">{sub}</span>
+        </span>
+        <span className="mhv-rrow__chev" aria-hidden><IconChevRight /></span>
       </Link>
+      <button
+        type="button"
+        className="mhv-rrow__dismiss"
+        onClick={() => onDismiss(m.id)}
+        aria-label={`Snooze ${m.fullName}`}
+        title="Snooze for now"
+      >
+        <IconX size={11} />
+      </button>
     </div>
   );
 }
@@ -289,14 +231,16 @@ function MembershipCell({ m }: { m: HybridMember }) {
 export function MembersHybridView({
   initialMembers: rawMembers,
   programs,
+  initialBucket = "all",
 }: {
   initialMembers: HybridMember[];
   programs: HybridProgram[];
+  initialBucket?: Bucket;
 }) {
   // The persisted membershipStatus is written by a scheduled sweep and can lag
   // the real end date — a member at daysToExpiry <= 0 must never render as
   // "Expiring · in -24d" (docs/14 U6). Normalize once; everything downstream
-  // (stats, queue buckets, pills, copy) stays consistent.
+  // (stats, rail buckets, pills, copy) stays consistent.
   const initialMembers = useMemo(
     () =>
       rawMembers.map((m) =>
@@ -310,11 +254,12 @@ export function MembersHybridView({
   );
 
   const [query, setQuery] = useState("");
-  const [bucket, setBucket] = useState<Bucket>("all");
+  const [bucket, setBucket] = useState<Bucket>(initialBucket);
   const [sortKey, setSortKey] = useState<SortKey>("name");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [pageState, setPageState] = useState({ key: "all||name", page: 1 });
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [openGroups, setOpenGroups] = useState<Set<QType>>(new Set());
   const [bulkMode, setBulkMode] = useState<"assign" | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState(programs[0]?.id ?? "");
   const [showAddMember, setShowAddMember] = useState(false);
@@ -336,18 +281,35 @@ export function MembersHybridView({
     return { total, active, noPlan, expiring, expired };
   }, [initialMembers, accessById]);
 
-  // ── Action queue ───────────────────────────────────────────────────────────
+  // ── Attention rail groups ──────────────────────────────────────────────────
 
-  const queue = useMemo(() => {
-    const items: { m: HybridMember; type: QCardType; priority: number }[] = [];
+  const railGroups = useMemo(() => {
+    const defs: { type: QType; label: string; tone: "danger" | "warn" | "accent" }[] = [
+      { type: "expired", label: "Expired", tone: "danger" },
+      { type: "expiring", label: "Expiring soon", tone: "warn" },
+      { type: "noplan", label: "No workout plan", tone: "accent" },
+    ];
+    const byType: Record<QType, HybridMember[]> = { expired: [], expiring: [], noplan: [] };
     for (const m of initialMembers) {
       if (dismissed.has(m.id)) continue;
-      if (m.membershipStatus === "expired") items.push({ m, type: "expired", priority: 3 });
-      else if (m.membershipStatus === "expiring_soon") items.push({ m, type: "expiring", priority: 2 });
-      else if (!m.hasPlan) items.push({ m, type: "noplan", priority: 1 });
+      if (m.membershipStatus === "expired") byType.expired.push(m);
+      else if (m.membershipStatus === "expiring_soon") byType.expiring.push(m);
+      else if (!m.hasPlan) byType.noplan.push(m);
     }
-    return items.sort((a, b) => b.priority - a.priority);
+    return defs
+      .map((d) => ({ ...d, items: byType[d.type] }))
+      .filter((g) => g.items.length > 0);
   }, [initialMembers, dismissed]);
+
+  const queueCount = railGroups.reduce((sum, g) => sum + g.items.length, 0);
+
+  function toggleGroup(type: QType) {
+    setOpenGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) { next.delete(type); } else { next.add(type); }
+      return next;
+    });
+  }
 
   // ── Filtered + sorted directory ────────────────────────────────────────────
 
@@ -451,37 +413,13 @@ export function MembersHybridView({
     });
   }
 
-  // ── KPI chips ──────────────────────────────────────────────────────────────
+  // ── Filter tabs ────────────────────────────────────────────────────────────
 
-  const kpis: { key: Bucket; label: string; value: number; hint: string; tone: string }[] = [
-    {
-      key: "all",
-      label: "Total members",
-      value: stats.total,
-      hint: "All profiles",
-      tone: "neutral",
-    },
-    {
-      key: "active",
-      label: "Active",
-      value: stats.active,
-      hint: `${stats.total > 0 ? Math.round((stats.active / stats.total) * 100) : 0}% of base`,
-      tone: "brand",
-    },
-    {
-      key: "no-plan",
-      label: "Needs a plan",
-      value: stats.noPlan,
-      hint: "Workout unassigned",
-      tone: "warn",
-    },
-    {
-      key: "expiring",
-      label: "Renewals due",
-      value: stats.expiring + stats.expired,
-      hint: stats.expired > 0 ? `${stats.expired} expired` : "Within 21 days",
-      tone: "danger",
-    },
+  const tabs: { key: Bucket; label: string; value: number; tone?: string }[] = [
+    { key: "all", label: "All", value: stats.total },
+    { key: "active", label: "Active", value: stats.active, tone: "brand" },
+    { key: "no-plan", label: "Needs plan", value: stats.noPlan, tone: "accent" },
+    { key: "expiring", label: "Renewals", value: stats.expiring + stats.expired, tone: "danger" },
   ];
 
   // ── Render ─────────────────────────────────────────────────────────────────
@@ -492,17 +430,17 @@ export function MembersHybridView({
       {/* ── Header ── */}
       <header className="mhv-header">
         <div className="mhv-header-copy">
-          <nav aria-label="breadcrumb" style={{ fontSize: "12.5px", color: "var(--text-faint)", marginBottom: 6, display: "flex", gap: 6, alignItems: "center" }}>
-            <Link href="/owner" style={{ color: "inherit", textDecoration: "none" }}>Dashboard</Link>
-            <span style={{ opacity: 0.5 }}>/</span>
+          <nav aria-label="breadcrumb" className="mhv-crumbs">
+            <Link href="/owner">Dashboard</Link>
+            <span aria-hidden>/</span>
             <span>Members</span>
           </nav>
           <h1 className="mhv-title">Members</h1>
           <p className="mhv-subtitle">
-            {queue.length > 0 ? (
-              <><strong>{queue.length}</strong> {queue.length === 1 ? "member needs" : "members need"} your attention. {stats.total} in the directory.</>
+            {queueCount > 0 ? (
+              <><strong>{queueCount}</strong> {queueCount === 1 ? "member needs" : "members need"} your attention · {stats.total} in the directory.</>
             ) : (
-              <>Queue is clear — {stats.total} members in the directory.</>
+              <>All caught up — {stats.total} members in the directory.</>
             )}
           </p>
         </div>
@@ -525,262 +463,275 @@ export function MembersHybridView({
         </div>
       )}
 
-      {/* ── Action queue ── */}
-      {queue.length > 0 ? (
-        <section className="mhv-queue-section" aria-label="Action queue">
-          <div className="mhv-queue-head">
-            <h2 className="mhv-section-title">
-              <span className="mhv-section-title__pulse" aria-hidden />
-              Action queue
-              <span className="mhv-section-title__count">{queue.length}</span>
-            </h2>
-            <div className="mhv-queue-legend" aria-hidden>
-              {stats.expired > 0 && (
-                <><span className="mhv-ldot mhv-ldot--danger" /><span>{stats.expired} expired</span></>
-              )}
-              {stats.expiring > 0 && (
-                <><span className="mhv-ldot mhv-ldot--warn" /><span>{stats.expiring} expiring</span></>
-              )}
-              {stats.noPlan > 0 && (
-                <><span className="mhv-ldot mhv-ldot--accent" /><span>{stats.noPlan} no plan</span></>
-              )}
+      {/* ── Two-column workspace ── */}
+      <div className="mhv-layout">
+
+        {/* ── Directory (primary) ── */}
+        <section className="mhv-panel" aria-label="Member directory">
+          {/* Toolbar */}
+          <div className="mhv-toolbar">
+            <div className="mhv-tabs" role="group" aria-label="Filter members">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  className={`mhv-tab${bucket === t.key ? " mhv-tab--on" : ""}`}
+                  onClick={() => setBucket(t.key)}
+                  aria-pressed={bucket === t.key}
+                >
+                  {t.tone && <span className={`mhv-ldot mhv-ldot--${t.tone}`} aria-hidden />}
+                  {t.label}
+                  <span className="mhv-tab__count">{t.value}</span>
+                </button>
+              ))}
             </div>
+
+            <label className="mhv-search" aria-label="Search members">
+              <IconSearch />
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search name or @username"
+                aria-label="Search members"
+              />
+              {query && (
+                <button
+                  type="button"
+                  className="mhv-search__clear"
+                  onClick={() => setQuery("")}
+                  aria-label="Clear search"
+                >
+                  <IconX size={12} />
+                </button>
+              )}
+            </label>
+
+            <select
+              className="mhv-sort-select"
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as SortKey)}
+              aria-label="Sort members"
+            >
+              <option value="name">Name (A–Z)</option>
+              <option value="newest">Newest first</option>
+              <option value="oldest">Oldest first</option>
+              <option value="expiry">Expiring soonest</option>
+              <option value="status">Active first</option>
+            </select>
           </div>
-          <div className="mhv-queue" role="list" aria-label="Members needing action">
-            {queue.map(({ m, type }) => (
-              <div key={m.id} role="listitem">
-                <QCard m={m} type={type} onDismiss={(id) => setDismissed((prev) => new Set([...prev, id]))} />
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : (
-        <div className="mhv-queue-empty" role="status" aria-live="polite">
-          <div className="mhv-queue-empty__icon"><IconTrophy /></div>
-          <div>
-            <strong>All clear.</strong>
-            <p>No renewals due, no plans missing.</p>
-          </div>
-        </div>
-      )}
 
-      {/* ── KPI strip ── */}
-      <div className="mhv-kpis" role="group" aria-label="Filter members">
-        {kpis.map((k) => (
-          <button
-            key={k.key}
-            type="button"
-            className={`mhv-kpi mhv-kpi--${k.tone} ${bucket === k.key ? "mhv-kpi--active" : ""}`}
-            onClick={() => setBucket(k.key)}
-            aria-pressed={bucket === k.key}
-          >
-            <span className="mhv-kpi__value">{k.value}</span>
-            <span className="mhv-kpi__label">{k.label}</span>
-            <span className="mhv-kpi__hint">{k.hint}</span>
-          </button>
-        ))}
-      </div>
+          {/* Table */}
+          <div className="mhv-table-wrap">
+            <table className="mhv-table">
+              <colgroup>
+                <col style={{ width: 44 }} />
+                <col />
+                <col style={{ width: 190 }} />
+                <col style={{ width: 175 }} />
+                <col className="mhv-col-joined" style={{ width: 100 }} />
+                <col style={{ width: 48 }} />
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>
+                    <input
+                      type="checkbox"
+                      className="mhv-check"
+                      ref={cbAllRef}
+                      checked={allOnPageSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all on this page"
+                    />
+                  </th>
+                  <th>Member</th>
+                  <th>Membership</th>
+                  <th>Workout plan</th>
+                  <th className="mhv-col-joined">Joined</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {slice.map((m) => {
+                  const sel = selected.has(m.id);
+                  const isActive = accessById.get(m.id) ?? m.isActive;
+                  return (
+                    <tr
+                      key={m.id}
+                      className={`mhv-row${sel ? " mhv-row--sel" : ""}`}
+                      onClick={() => toggleOne(m.id)}
+                    >
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <input
+                          type="checkbox"
+                          className="mhv-check"
+                          checked={sel}
+                          onChange={() => toggleOne(m.id)}
+                          aria-label={`Select ${m.fullName}`}
+                        />
+                      </td>
 
-      {/* ── Directory ── */}
-      <section className="mhv-panel" aria-label="Member directory">
-        {/* Toolbar */}
-        <div className="mhv-toolbar">
-          <h2 className="mhv-section-title mhv-section-title--sm">
-            Directory
-            <span className="mhv-section-title__count mhv-section-title__count--muted">
-              {filtered.length}
-            </span>
-          </h2>
-
-          <label className="mhv-search" aria-label="Search members">
-            <IconSearch />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name or @username"
-              aria-label="Search members"
-            />
-            {query && (
-              <button
-                type="button"
-                className="mhv-search__clear"
-                onClick={() => setQuery("")}
-                aria-label="Clear search"
-              >
-                <IconX size={12} />
-              </button>
-            )}
-          </label>
-
-          <select
-            className="mhv-sort-select"
-            value={sortKey}
-            onChange={(e) => setSortKey(e.target.value as SortKey)}
-            aria-label="Sort members"
-          >
-            <option value="name">Sort · Name (A–Z)</option>
-            <option value="newest">Sort · Newest first</option>
-            <option value="oldest">Sort · Oldest first</option>
-            <option value="expiry">Sort · Expiring soonest</option>
-            <option value="status">Sort · Active first</option>
-          </select>
-        </div>
-
-        {/* Table */}
-        <div className="mhv-table-wrap">
-          <table className="mhv-table">
-            <colgroup>
-              <col style={{ width: 44 }} />
-              <col />
-              <col style={{ width: 210 }} />
-              <col style={{ width: 195 }} />
-              <col className="mhv-col-joined" style={{ width: 110 }} />
-              <col style={{ width: 48 }} />
-            </colgroup>
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    className="mhv-check"
-                    ref={cbAllRef}
-                    checked={allOnPageSelected}
-                    onChange={toggleAll}
-                    aria-label="Select all on this page"
-                  />
-                </th>
-                <th>Member</th>
-                <th>Membership</th>
-                <th>Workout plan</th>
-                <th className="mhv-col-joined">Joined</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {slice.map((m) => {
-                const sel = selected.has(m.id);
-                const isActive = accessById.get(m.id) ?? m.isActive;
-                return (
-                  <tr
-                    key={m.id}
-                    className={`mhv-row${sel ? " mhv-row--sel" : ""}`}
-                    onClick={() => toggleOne(m.id)}
-                  >
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        className="mhv-check"
-                        checked={sel}
-                        onChange={() => toggleOne(m.id)}
-                        aria-label={`Select ${m.fullName}`}
-                      />
-                    </td>
-
-                    <td>
-                      <div className="mhv-member">
-                        <div className={`mhv-avatar ${avatarColor(m.id)}`} aria-hidden>
-                          {m.avatarInitials}
-                          <span className={`mhv-avatar__dot mhv-avatar__dot--${isActive ? "active" : "suspended"}`} />
-                        </div>
-                        <div>
-                          <Link
-                            href={`/owner/members/${m.id}`}
-                            className="mhv-member__name"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {m.fullName}
-                          </Link>
-                          <div className="mhv-member__sub">
-                            {m.username && <span>@{m.username}</span>}
-                            {m.username && m.goal && <span> · </span>}
-                            {m.goal && <span className="mhv-member__goal">{m.goal}</span>}
+                      <td>
+                        <div className="mhv-member">
+                          <div className={`mhv-avatar ${avatarColor(m.id)}`} aria-hidden>
+                            {m.avatarInitials}
+                            <span className={`mhv-avatar__dot mhv-avatar__dot--${isActive ? "active" : "suspended"}`} />
+                          </div>
+                          <div>
+                            <Link
+                              href={`/owner/members/${m.id}`}
+                              className="mhv-member__name"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {m.fullName}
+                            </Link>
+                            <div className="mhv-member__sub">
+                              {m.username && <span>@{m.username}</span>}
+                              {m.username && m.goal && <span> · </span>}
+                              {m.goal && <span className="mhv-member__goal">{m.goal}</span>}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td><MembershipCell m={m} /></td>
+                      <td><MembershipCell m={m} /></td>
 
-                    <td>
-                      {m.hasPlan ? (
-                        <div className="mhv-plan">
-                          <span className="mhv-pill mhv-pill--ghost">{m.programTitle ?? "Assigned"}</span>
-                          {m.assignedTrainer && (
-                            <span className="mhv-plan__trainer">w/ {m.assignedTrainer}</span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="mhv-pill mhv-pill--outline">No plan</span>
-                      )}
-                    </td>
+                      <td>
+                        {m.hasPlan ? (
+                          <div className="mhv-plan">
+                            <span className="mhv-pill mhv-pill--ghost">{m.programTitle ?? "Assigned"}</span>
+                            {m.assignedTrainer && (
+                              <span className="mhv-plan__trainer">w/ {m.assignedTrainer}</span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="mhv-pill mhv-pill--outline">No plan</span>
+                        )}
+                      </td>
 
-                    <td className="mhv-col-joined">
-                      <span className="mhv-joined">{formatDate(m.joinedAt)}</span>
-                    </td>
+                      <td className="mhv-col-joined">
+                        <span className="mhv-joined">{formatDate(m.joinedAt)}</span>
+                      </td>
 
-                    <td onClick={(e) => e.stopPropagation()}>
-                      <Link
-                        href={`/owner/members/${m.id}`}
-                        className="mhv-btn mhv-btn--ghost mhv-btn--icon mhv-row__more"
-                        aria-label={`Open ${m.fullName}`}
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <IconMoreDots />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <td onClick={(e) => e.stopPropagation()}>
+                        <Link
+                          href={`/owner/members/${m.id}`}
+                          className="mhv-btn mhv-btn--ghost mhv-btn--icon mhv-row__more"
+                          aria-label={`Open ${m.fullName}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <IconMoreDots />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
 
-          {filtered.length === 0 && (
-            <div className="mhv-empty" role="status">
-              <IconInbox />
-              <p>{query ? `No matches for "${query}"` : "Nothing here."}</p>
+            {filtered.length === 0 && (
+              <div className="mhv-empty" role="status">
+                <IconInbox />
+                <p>{query ? `No matches for "${query}"` : "Nothing here."}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          {filtered.length > 0 && (
+            <div className="mhv-foot">
+              <span className="mhv-foot__info">
+                {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
+              </span>
+              <div className="mhv-pager">
+                <button
+                  type="button"
+                  className="mhv-btn mhv-btn--ghost mhv-btn--sm"
+                  disabled={safePage <= 1}
+                  onClick={() => setPageState((current) => ({
+                    key: pageKey,
+                    page: Math.max(1, (current.key === pageKey ? current.page : safePage) - 1)
+                  }))}
+                  aria-label="Previous page"
+                >
+                  <IconChevLeft /> Prev
+                </button>
+                <span className="mhv-pager__label">
+                  Page <strong>{safePage}</strong> of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  className="mhv-btn mhv-btn--ghost mhv-btn--sm"
+                  disabled={safePage >= totalPages}
+                  onClick={() => setPageState((current) => ({
+                    key: pageKey,
+                    page: Math.min(totalPages, (current.key === pageKey ? current.page : safePage) + 1)
+                  }))}
+                  aria-label="Next page"
+                >
+                  Next <IconChevRight />
+                </button>
+              </div>
             </div>
           )}
-        </div>
+        </section>
 
-        {/* Footer */}
-        {filtered.length > 0 && (
-          <div className="mhv-foot">
-            <span className="mhv-foot__info">
-              {(safePage - 1) * PAGE_SIZE + 1}–{Math.min(safePage * PAGE_SIZE, filtered.length)} of {filtered.length}
-            </span>
-            <div className="mhv-pager">
-              <button
-                type="button"
-                className="mhv-btn mhv-btn--ghost mhv-btn--sm"
-                disabled={safePage <= 1}
-                onClick={() => setPageState((current) => ({
-                  key: pageKey,
-                  page: Math.max(1, (current.key === pageKey ? current.page : safePage) - 1)
-                }))}
-                aria-label="Previous page"
-              >
-                <IconChevLeft /> Prev
-              </button>
-              <span className="mhv-pager__label">
-                Page <strong>{safePage}</strong> of {totalPages}
-              </span>
-              <button
-                type="button"
-                className="mhv-btn mhv-btn--ghost mhv-btn--sm"
-                disabled={safePage >= totalPages}
-                onClick={() => setPageState((current) => ({
-                  key: pageKey,
-                  page: Math.min(totalPages, (current.key === pageKey ? current.page : safePage) + 1)
-                }))}
-                aria-label="Next page"
-              >
-                Next <IconChevRight />
-              </button>
-            </div>
+        {/* ── Attention rail ── */}
+        <aside className="mhv-rail" aria-label="Members needing attention">
+          <div className="mhv-rail__head">
+            <h2 className="mhv-section-title">
+              {queueCount > 0 && <span className="mhv-section-title__pulse" aria-hidden />}
+              Needs attention
+              {queueCount > 0 && (
+                <span className="mhv-section-title__count">{queueCount}</span>
+              )}
+            </h2>
           </div>
-        )}
-      </section>
+
+          {queueCount === 0 ? (
+            <div className="mhv-rail__clear" role="status" aria-live="polite">
+              <div className="mhv-rail__clear-icon"><IconTrophy /></div>
+              <div>
+                <strong>All clear.</strong>
+                <p>No renewals due, no plans missing.</p>
+              </div>
+            </div>
+          ) : (
+            railGroups.map((g) => {
+              const open = openGroups.has(g.type);
+              const shown = open ? g.items : g.items.slice(0, RAIL_CAP);
+              return (
+                <section key={g.type} className="mhv-rgroup">
+                  <header className="mhv-rgroup__head">
+                    <span className={`mhv-ldot mhv-ldot--${g.tone}`} aria-hidden />
+                    <span className="mhv-rgroup__label">{g.label}</span>
+                    <span className="mhv-rgroup__count">{g.items.length}</span>
+                  </header>
+                  <div role="list" aria-label={g.label}>
+                    {shown.map((m) => (
+                      <RailRow
+                        key={m.id}
+                        m={m}
+                        type={g.type}
+                        onDismiss={(id) => setDismissed((prev) => new Set([...prev, id]))}
+                      />
+                    ))}
+                  </div>
+                  {g.items.length > RAIL_CAP && (
+                    <button
+                      type="button"
+                      className="mhv-rgroup__more"
+                      onClick={() => toggleGroup(g.type)}
+                    >
+                      {open ? "Show less" : `Show ${g.items.length - RAIL_CAP} more`}
+                    </button>
+                  )}
+                </section>
+              );
+            })
+          )}
+        </aside>
+      </div>
 
       {/* ── Dark bulk dock ── */}
       {selected.size > 0 && (

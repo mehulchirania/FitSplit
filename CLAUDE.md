@@ -143,7 +143,7 @@ Use prose over bullet points for explanations and reasoning. Bullets are for ref
 
 ## CSS system
 
-21 files in `src/app/styles/`, all imported in `app/layout.tsx`.
+22 files in `src/app/styles/`, all imported in `app/layout.tsx`.
 
 | Prefix | File | Scope |
 |---|---|---|
@@ -153,6 +153,7 @@ Use prose over bullet points for explanations and reasoning. Bullets are for ref
 | `mhv-` | `19-members-redesign.css` | Members hybrid view |
 | `odp2-` | `20-owner-dashboard.css` | Owner workspace shell (fixed sidebar layout) |
 | `m3d-` | `21-member-redesign.css` | Member sub-pages shell + sidebar |
+| `mpd-` `tpp-` `rpt-` `atc-` | `22-owner-detail-reports.css` | Owner member detail + reports |
 | `lp-` | `app/landing.css` | Landing page (self-contained dark theme; components in `src/components/landing/`) |
 
 **Brand colour rules (critical):**

@@ -820,15 +820,6 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
   gap: 14px;
 }
 
-/* ── 40. Owner workout day view — keep consistent with member ─────────────── */
-
-.mpd-main-schedule .selected-workout-day {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 18px;
-}
-
 /* ── 41. Member tab list — light mode & sticky fix ───────────────────────── */
 
 /* Fix barely-visible border in light and dark themes */

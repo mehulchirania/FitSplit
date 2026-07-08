@@ -72,7 +72,7 @@ function PickPlanForm({
       <input name="programTitle" type="hidden" value={selected?.title ?? ""} />
       <div style={{ marginBottom: "12px" }}>
         <p style={{ fontSize: "0.9rem", color: "var(--text-soft)", marginBottom: "8px", fontWeight: 600 }}>1. Select a Plan</p>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "360px", overflowY: "auto", paddingRight: "4px" }}>
+        <div className="mpd-plan-list" style={{ display: "flex", flexDirection: "column", gap: "10px", paddingRight: "4px" }}>
           {programs.map((p) => {
             const isSelected = selectedId === p.id;
             return (
@@ -130,7 +130,7 @@ function PickPlanForm({
           {feedback.message}
         </p>
       ) : null}
-      <button className="button button-primary" disabled={isPending || !selectedId} type="submit" style={{ width: "100%", padding: "16px", fontSize: "1.15rem", borderRadius: "14px", marginTop: "8px" }}>
+      <button className="button button-primary mpd-assign-submit" disabled={isPending || !selectedId} type="submit">
         {isPending ? "Assigning…" : "3. Assign Plan to Member"}
       </button>
     </form>

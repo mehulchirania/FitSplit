@@ -46,7 +46,7 @@ export function TrainerPtPanel({
   return (
     <section className="form-panel tpp-panel">
       {/* ── Header ── */}
-      <div className="panel-title" style={{ marginBottom: 14 }}>
+      <div className="panel-title">
         <div>
           <p className="eyebrow">Personal training</p>
           <h2>
@@ -55,9 +55,8 @@ export function TrainerPtPanel({
           </h2>
         </div>
         <Link
-          className="button button-primary"
+          className="button button-primary tpp-header-btn"
           href={`/owner/training?memberId=${memberId}`}
-          style={{ fontSize: "0.8rem", padding: "6px 14px", whiteSpace: "nowrap" }}
         >
           <Calendar /> Assign PT
         </Link>
@@ -71,14 +70,13 @@ export function TrainerPtPanel({
           <strong>{liveTrainer || "Unassigned"}</strong>
         </div>
         <button
-          className="button button-secondary"
+          className="button button-secondary tpp-header-btn"
           onClick={() => {
             setIsEditing((v) => !v);
             setSelectedTrainer(liveTrainer);
             setFeedback(null);
           }}
           type="button"
-          style={{ fontSize: "0.78rem", padding: "5px 11px" }}
         >
           {isEditing ? "Cancel" : "Change"}
         </button>
@@ -91,15 +89,6 @@ export function TrainerPtPanel({
             <select
               value={selectedTrainer}
               onChange={(e) => setSelectedTrainer(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "8px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border)",
-                background: "var(--bg-elevated)",
-                color: "var(--text)",
-                fontSize: "0.88rem",
-              }}
             >
               <option value="">— Unassigned —</option>
               {trainers.map((t) => (
@@ -113,15 +102,6 @@ export function TrainerPtPanel({
               placeholder="No trainers added yet — type a name"
               value={selectedTrainer}
               onChange={(e) => setSelectedTrainer(e.target.value)}
-              style={{
-                flex: 1,
-                padding: "8px 10px",
-                borderRadius: "var(--radius-sm)",
-                border: "1px solid var(--border)",
-                background: "var(--bg-elevated)",
-                color: "var(--text)",
-                fontSize: "0.88rem",
-              }}
             />
           )}
           <button
@@ -139,7 +119,6 @@ export function TrainerPtPanel({
         <p
           className={`form-message form-message-${feedback.type}`}
           role="status"
-          style={{ margin: "8px 0 0" }}
         >
           {feedback.text}
         </p>
@@ -152,9 +131,8 @@ export function TrainerPtPanel({
             <Calendar />
             <p>No PT sessions yet.</p>
             <Link
-              className="button button-secondary"
+              className="button button-secondary tpp-pt-empty-btn"
               href={`/owner/training?memberId=${memberId}`}
-              style={{ fontSize: "0.82rem" }}
             >
               Book first PT session
             </Link>
@@ -202,11 +180,8 @@ export function TrainerPtPanel({
                 </li>
               ))}
               {ptSessions.length > 5 && (
-                <li style={{ padding: "8px 0", textAlign: "center" }}>
-                  <Link
-                    href={`/owner/training?memberId=${memberId}`}
-                    style={{ fontSize: "0.82rem", color: "var(--brand)" }}
-                  >
+                <li className="tpp-pt-view-all">
+                  <Link href={`/owner/training?memberId=${memberId}`}>
                     View all {ptSessions.length} sessions →
                   </Link>
                 </li>

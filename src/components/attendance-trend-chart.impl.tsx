@@ -9,6 +9,7 @@ import {
   Cell,
   ReferenceLine,
 } from "recharts";
+import { Activity } from "@/components/icons";
 import type { DailySessionCount } from "@/lib/firebase/read-models";
 
 function shortLabel(iso: string) {
@@ -164,15 +165,10 @@ export function AttendanceTrendChart({ data }: { data: DailySessionCount[] }) {
           </ResponsiveContainer>
         </div>
       ) : (
-        <div style={{
-          textAlign: "center",
-          padding: "40px 24px",
-          margin: 0,
-        }}>
-          <p style={{ color: "var(--text)", fontSize: "0.9rem", fontWeight: 600, margin: 0 }}>
-            No sessions logged yet
-          </p>
-          <p style={{ color: "var(--text-faint)", fontSize: "0.8125rem", margin: "6px 0 0", lineHeight: 1.5 }}>
+        <div className="atc-empty">
+          <Activity />
+          <p className="atc-empty__title">No sessions logged yet</p>
+          <p className="atc-empty__body">
             Attendance is tracked automatically the first time a member logs a lift each day —
             there&apos;s nothing to set up. This chart fills in as members start training.
           </p>

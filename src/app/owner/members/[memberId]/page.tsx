@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { notFound } from "next/navigation";
-import { Breadcrumb } from "@/components/breadcrumb";
 import { ConfirmActionForm } from "@/components/confirm-action-form";
 import Link from "next/link";
 import { Dumbbell, Mail, Phone } from "@/components/icons";
@@ -77,7 +75,6 @@ export default async function MemberDetailPage({
       ? (profile.weightKg / Math.pow(profile.heightCm / 100, 2)).toFixed(1)
       : null;
   const trainingDays = program?.days.filter((day) => day.exercises.length > 0) ?? [];
-  const totalExercises = trainingDays.reduce((count, day) => count + day.exercises.length, 0);
   const lastLiftLog = liftLogs[0];
   const upcomingPT = ptSessions.filter(
     (s) => s.status === "scheduled" || s.status === "active"
@@ -126,7 +123,7 @@ export default async function MemberDetailPage({
                   {member.goal && <span>{member.goal}</span>}
                   {member.goal && member.joinedAt && <span className="mpd-hero-sep">·</span>}
                   {member.joinedAt && (
-                    <span className="mpd-hero-dim">Joined {member.joinedAt}</span>
+                    <span className="mpd-hero-dim">Joined {formatShortDate(member.joinedAt)}</span>
                   )}
                 </p>
               )}
@@ -164,16 +161,12 @@ export default async function MemberDetailPage({
             <strong>{lastLiftLog ? formatShortDate(lastLiftLog.loggedAt) : "No logs"}</strong>
             <span>Last active</span>
           </div>
-          <div className="mpd-metric">
-            <strong style={profile.assignedTrainer ? {} : { color: "var(--text-faint)" }}>
-              {profile.assignedTrainer || "None"}
-            </strong>
+          <div className={`mpd-metric${profile.assignedTrainer ? "" : " mpd-metric--empty"}`}>
+            <strong>{profile.assignedTrainer || "None"}</strong>
             <span>Trainer</span>
           </div>
-          <div className="mpd-metric">
-            <strong style={upcomingPT > 0 ? { color: "var(--brand)" } : {}}>
-              {upcomingPT}
-            </strong>
+          <div className={`mpd-metric${upcomingPT > 0 ? " mpd-metric--brand" : ""}`}>
+            <strong>{upcomingPT}</strong>
             <span>PT Sessions</span>
           </div>
         </div>
@@ -220,11 +213,9 @@ export default async function MemberDetailPage({
             requireConfirmation={false}
             submitLabel={profile.coachNote ? "Update coach note" : "Send coach note"}
           >
-            <h2 style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 }}>
+            <h2 className="mpd-note-head">
               <span>Coach note</span>
-              <span style={{ fontSize: "0.72rem", color: "var(--text-faint)", fontWeight: 500, textTransform: "none", letterSpacing: 0 }}>
-                shows on member dashboard
-              </span>
+              <span className="mpd-note-hint">shows on member dashboard</span>
             </h2>
             <input name="memberId" type="hidden" value={member.id} />
             <label>
@@ -238,7 +229,7 @@ export default async function MemberDetailPage({
               />
             </label>
             {profile.coachNoteUpdatedAt && (
-              <p style={{ fontSize: "0.78rem", color: "var(--text-soft)", margin: "4px 0 0" }}>
+              <p className="mpd-note-meta">
                 Last updated{" "}
                 {new Date(profile.coachNoteUpdatedAt).toLocaleString("en-IN", {
                   day: "numeric",
@@ -249,7 +240,7 @@ export default async function MemberDetailPage({
                 {profile.coachNoteUpdatedByName ? ` by ${profile.coachNoteUpdatedByName}` : ""}
               </p>
             )}
-            <p style={{ fontSize: "0.78rem", color: "var(--text-faint)", margin: "4px 0 0" }}>
+            <p className="mpd-note-clear-hint">
               Leave the field empty and save to clear the note.
             </p>
           </ConfirmActionForm>
@@ -289,7 +280,7 @@ export default async function MemberDetailPage({
               <span>Account access</span>
               <span className="mpd-collapsible-chevron">▾</span>
             </summary>
-            <div style={{ paddingTop: "14px", borderTop: "1px solid var(--border)" }}>
+            <div className="mpd-collapsible-body">
               <MemberAccessActions
                 isActive={member.isActive}
                 memberId={member.id}
@@ -304,7 +295,7 @@ export default async function MemberDetailPage({
               <span>Danger zone</span>
               <span className="mpd-collapsible-chevron">▾</span>
             </summary>
-            <div style={{ paddingTop: "14px", borderTop: "1px solid var(--border)" }}>
+            <div className="mpd-collapsible-body">
               <MemberDeleteAction memberId={member.id} />
             </div>
           </details>

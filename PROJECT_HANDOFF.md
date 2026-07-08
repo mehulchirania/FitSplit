@@ -4,6 +4,57 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Implemented: Owner Member Detail + Reports Redesign (2026-07-07, evening)
+
+Implemented `docs/19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md` (Sonnet agent did the bulk; the agent hit a session limit near the end, so §5.5 deep-link wiring, the `atc-empty` chart empty-state CSS, and all doc updates were finished by Fable in the same session).
+
+- **New:** `src/app/styles/22-owner-detail-reports.css` (~745 lines) — full `mpd-`/`tpp-` stylesheet for member detail (hero, 4-stat metrics strip, `1fr/340px` two-column workspace, context cards, trainer/PT panel, `<details>` collapsibles with rotating chevron, danger zone) + `rpt-` system for reports + `atc-empty` chart empty state. Imported in `app/layout.tsx`; stray `.mpd-main-schedule` rule moved out of `16-ux-improvements.css`.
+- **Member detail markup fixes:** `formatShortDate` on joined date, removed masked unused-vars eslint-disable + dead `totalExercises`, coach-note inline styles → classes, assign-program submit de-inlined, loading skeleton mirrors the new anatomy.
+- **Reports:** header + subtitle, KPI cards are now links (`/owner/members`, `?tab=all`), "N unassigned" links to `/owner/members?tab=no-plan`, all ~40 inline styles moved to classes (only dynamic bar widths remain inline), coverage fill uses tokens (`--success`/`--accent`/`--warning`), attendance-chart empty state redesigned in `attendance-trend-chart.impl.tsx`.
+- **Deep-link enabler (§5.5):** `owner/members/page.tsx` awaits `searchParams`, validates `?tab=` against the `Bucket` union, passes `initialBucket` to `MembersHybridView` (init-only, no URL sync on tab click).
+- **Verified in browser** (admin login, gym `shg`): member-mehul (empty-schedule state) + member-aarav (full weekly schedule) at 1366px two-column and 375px single-column (no horizontal scroll, metrics 2×2); reports KPIs/links at both widths; `?tab=no-plan` lands on the Needs plan tab; light mode legible; collapsibles are 44px targets with rotating chevron; console clean. `npx tsc --noEmit` and `npm run build` clean.
+- **Known data issue found (not fixed, out of scope):** `getProgramAssignmentForMember` doesn't see the seeded `shg-m-*` assignments that `getActiveProgramAssignments` returns — e.g. `shg-m-arjun` shows "Push Pull Legs Upper Lower" in the members list but "Needs program" on his detail page. Likely a root vs gym-scoped read path mismatch between the two read-models.
+
+---
+
+## Redesign Plan: Owner Member Detail + Reports Pages (2026-07-07)
+
+Diagnosed why `/owner/members/[memberId]` and `/owner/reports` look broken and wrote an implementation-ready plan: **`docs/19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md`** (Sonnet is expected to implement it as specified).
+
+- **Root cause (member detail):** the page and 4 client components (`member-context-editor`, `trainer-pt-panel`, `member-access-actions`, `member-delete-action`) were written against `mpd-*`/`tpp-*` CSS classes **that were never created** — the only `mpd-` rule in the repo is one stray selector in `16-ux-improvements.css:825`. Icons from `src/components/icons.tsx` have no intrinsic size, so the hero's Mail/Dumbbell SVGs render at full viewport width. Verified live in browser 2026-07-07.
+- **Root cause (reports):** page renders but ~40 inline `style={{}}` objects, no hierarchy, and every stat is a dead end (no links).
+- **Plan highlights:** new `src/app/styles/22-owner-detail-reports.css` (sections `mpd-`/`tpp-` + `rpt-`); keep both pages' data layer untouched; member-detail keeps its hero → metrics → two-column anatomy, just styled to the `mhv-` design language; reports gets navigable KPI links + `?tab=` deep-link init support in `members-hybrid-view.tsx` (init-only, no URL sync); full verification checklist incl. 375px, both themes, reduced motion.
+- No code changed in this session beyond docs (`docs/19_…`, `docs/_INDEX.md`, this entry). Stopped/restarted the stale dev server on port 3000 via preview tooling for the visual audit.
+
+---
+
+## Owner Members Page Redesign — Directory-First Two-Column Layout (2026-07-07)
+
+Redesigned `/owner/members` (`src/components/members-hybrid-view.tsx` + `src/app/styles/19-members-redesign.css`, same `mhv-` scope). The old layout buried the directory under a horizontally scrolling action-card queue (11 near-identical 256px cards) and a 4-box KPI strip that duplicated the queue legend.
+
+- **Layout:** two-column grid on desktop (≥1080px) — directory table left, sticky "Needs attention" rail (300px) right. Single column below 1080px (directory first), verified no horizontal scroll at 375px.
+- **Attention rail:** replaces the horizontal card queue. Grouped dense rows (Expired / Expiring soon / No workout plan), capped at 5 per group with "Show N more" expander, per-row snooze, whole row links to member detail.
+- **Filter tabs:** replace the KPI boxes. Segmented control in the table toolbar (All / Active / Needs plan / Renewals) with live counts — same `bucket` filter state as before.
+- **Fixes along the way:** sort `<select>` no longer stretches full width (global `select { width: 100% }` was the culprit — `width: auto` on `.mhv-sort-select`); pulse + dock animations now respect `prefers-reduced-motion`; breadcrumb inline styles moved to `.mhv-crumbs`.
+- **Unchanged logic:** search/sort/pagination, bulk dock (assign/renew/message/restore/suspend), optimistic access state, membershipStatus lag normalization (docs/14 U6).
+- `loading.tsx` skeleton updated to mirror the new structure. Verified in browser (dark + light, desktop + 375px, tab filters, group expand, bulk dock). `tsc --noEmit` and `npm run build` clean.
+
+---
+
+## Multi-Gym Demo Data Seeding for E2E Testing (2026-07-06)
+
+Seeded rich multi-gym demo data into **live** Firestore (`fitsplit-29215`) so every feature can be manually E2E-tested before go-live. New script: `scripts/seed-demo-gyms.mjs` (`npm run seed:demo-gyms`), idempotent — deterministic doc IDs + merge writes, safe to re-run.
+
+- **Gyms:** kept `shg` untouched (already at 20 members — its gym doc, staff, and members were NOT modified; only its 3 package docs were merge-refreshed). Created two new gyms with full data: `ironcore-blr` (IronCore Fitness, Bengaluru) and `pulse-hyd` (Pulse Fitness Studio, Hyderabad), each with 1 owner + 1 trainer (staff + authProfiles, password `password`, `mustChangePassword: false`), 3 packages, and the predefined `split_01`–`split_04` program catalog copied into `gyms/{gymId}/workoutPrograms`.
+- **Members:** 20 per new gym (40 new), states cycled for E2E coverage: active, expiring-soon, expired, no-plan, no-membership, 2 PT members per gym. Persisted `membershipStatus` set consistent with membership dates. Programs assigned round-robin from the gym's real (runtime-queried) `workoutPrograms` doc IDs.
+- **History:** 1–6 weeks of varied training data per active member — lift logs with progressive overload, day logs (`{memberId}_{dayId}_{weekStart}`), attendance + workout sessions (`{memberId}_{yyyy-mm-dd}`), macro logs (`{memberId}_{date}`), body-metric logs, activity logs. Volume varies per member so lists/charts look organic. Live-run totals: ironcore-blr 1337 docs, pulse-hyd 1365 docs.
+- **Billing/PT:** 3 pending + 3 approved payment requests and 5 PT sessions (4 completed + 1 scheduled) per PT member, per gym; owner notifications for expiring/expired/no-plan/payment-request cases.
+- **Auth:** 44 Firebase Auth users created (40 members with unique per-member PINs — password `pin-{PIN}`, email `{memberId}@members.fitsplit.app`, unique phone numbers, custom claims `{gymId, role, memberId}` — plus 4 staff). `usernames/` and `phones/` registries written. `member-mehul` and `santosh-shg` credentials untouched (verified post-run).
+- **Docs:** new `docs/18_DEMO_USERS.md` — complete login table (all 60 members + staff + admin) with PINs, membership state, assigned program, and the E2E scenario each account covers. Registered in `docs/_INDEX.md`; README scripts section updated.
+- **Notable findings:** `workoutPrograms` live gym-scoped only (root collection is empty — `collections.ts` still lists it as root); the twelve `shg-m-*` members from `seed-shg-full.mjs` have no Firebase Auth users and cannot log in (owner-side demo data only) — documented in 18_DEMO_USERS.md.
+
+---
+
 ## Script Archival & Documentation Audit (2026-07-06)
 
 Archived legacy one-off scripts, updated the dependencies, and synchronized documentation.

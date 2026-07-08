@@ -1,5 +1,5 @@
 import { MembersHybridView } from "@/components/members-hybrid-view";
-import type { HybridMember } from "@/components/members-hybrid-view";
+import type { Bucket, HybridMember } from "@/components/members-hybrid-view";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import {
@@ -15,8 +15,16 @@ function daysToExpiry(endDate?: string): number | null {
   return Math.ceil((new Date(endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
 }
 
-export default async function MembersPage() {
+const BUCKETS: readonly Bucket[] = ["all", "active", "no-plan", "expiring"];
+
+export default async function MembersPage({
+  searchParams
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}) {
   const currentUser = await requireRole(["admin", "owner"]);
+  const { tab } = await searchParams;
+  const initialBucket = BUCKETS.find((b) => b === tab) ?? "all";
   const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
 
   const [{ members }, { assignments }, { programs }] = await Promise.all([
@@ -59,6 +67,7 @@ export default async function MembersPage() {
     <MembersHybridView
       initialMembers={hybridMembers}
       programs={hybridPrograms}
+      initialBucket={initialBucket}
     />
   );
 }

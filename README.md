@@ -192,6 +192,10 @@ the emulator runner hits the Windows cleanup crash).
 npm run seed:auth          # Create/update Firebase Auth demo accounts
 npm run seed:firebase      # Seed Firestore with base data
 npm run seed:demo          # Full demo seed — gyms, members, programs, mock logs
+npm run seed:demo-gyms     # Multi-gym E2E seed — 3 gyms x 20 members with varied
+                           # membership states, training history, PT + billing data,
+                           # and Auth users with per-member PINs. Idempotent.
+                           # Full login table: docs/18_DEMO_USERS.md
 ```
 
 ### Data Migrations & Fixes (Archived)
@@ -251,7 +255,7 @@ app/
       pt-history/   # Full PT session history
       settings/     # Account settings — units, PIN change, notifications
   trainer/          # Trainer PT schedule + my members list
-  styles/           # modular CSS files (21 numbered, plus forms.css, member.css)
+  styles/           # modular CSS files (22 numbered, plus forms.css, member.css) — 22-owner-detail-reports.css: owner member detail (mpd-/tpp-) + reports (rpt-)
 
 components/
   landing/                          # Public landing page (lp- CSS classes in src/app/landing.css)
@@ -271,7 +275,7 @@ components/
   progress-chart.tsx                # Lift history area chart (styled empty state)
   progressive-overload-chart.tsx    # Progressive overload line chart (PR reference line, kg units)
   muscle-radar-chart.tsx            # Muscle group volume radar
-  members-hybrid-view.tsx           # D4 Hybrid members page (action queue, KPI strip, table)
+  members-hybrid-view.tsx           # Members workspace: filter-tab toolbar + table, "Needs attention" right rail
   macro-progress-panel.tsx          # Nutrition target tracking
   staff-access-actions.tsx          # Inline staff edit/reset-password/delete with useActionState
   avatar-uploader.tsx               # Reusable circular avatar crop+upload (member avatar / staff image)
