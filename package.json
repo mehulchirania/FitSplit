@@ -15,6 +15,7 @@
     "seed:firebase": "node scripts/seed-firebase.mjs",
     "seed:demo": "node scripts/seed-demo-firestore.mjs",
     "seed:demo-gyms": "node scripts/seed-demo-gyms.mjs",
+    "backfill:root": "node scripts/backfill-root-to-gym.mjs",
     "split:css": "node scripts/split-css.js",
     "start": "next start",
     "lint": "eslint .",

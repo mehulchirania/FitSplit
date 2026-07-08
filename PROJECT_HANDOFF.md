@@ -4,6 +4,18 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Go-live deployment executed (2026-07-08)
+
+Ran the §5 go-live checklist from `docs/16_FABLE_AUDIT_2026-07-05.md` against prod (`fitsplit-29215`):
+
+1. **Composite indexes deployed** — `firebase deploy --only firestore:indexes` succeeded (all 32 entries incl. the T3 additions and the COLLECTION_GROUP notifications index the admin bell needs).
+2. **Root→gym backfill applied** — restored the missing `backfill:root` npm alias (lost in the 2026-07-06 script-archival sweep; script itself was intact), repaired a corrupted `node_modules/firebase-admin` install (`npm install`), then dry-run → `--apply` → verification dry-run. Copied to `gyms/shg/...`: 9 liftLogs, 1 dayLog, 1 macroLog, 10 notifications, 7 memberships, 10 activityEvents. Zero errors; post-apply dry run shows `wouldCopy=0` everywhere. Root docs untouched per runbook.
+3. **Cloud Functions deployed** (asia-south1) — 39 of 40 functions live. Notably `processMembershipExpiries`, the payment-request callables, and gym-workspace functions were **first-time creates** — the scheduled expiry job had never been live in prod before this deploy. **One failure: `beforeSignInHandler`** — blocking auth triggers require upgrading Firebase Auth to Identity Platform (GCIP), which this project hasn't done. It is defense-in-depth only (lockout re-check + SSR claims optimization; `loginWithCredentials` + `requireRole` don't depend on it) and has never been deployed. Decision needed: upgrade to Identity Platform (billing-model change) or remove the function. Deploy reported "Skipping deletes" due to this error.
+4. **App Hosting rollout** — pinned rollout of `main` created after committing this sprint's alias/doc fixes.
+5. Post-deploy smoke test performed against the live URL (see session notes).
+
+---
+
 ## Fix: member detail page missed gym-scoped program assignments (2026-07-07, late evening)
 
 `/owner/members/[memberId]` showed "Needs program" and an empty schedule for seeded shg members (e.g. `shg-m-arjun`) while `/owner/members` correctly showed their program (the "known data issue" flagged in the redesign entry below). Root cause: the members list uses `getActiveProgramAssignments(gymId)`, which reads the canonical gym-scoped `gyms/{gymId}/programAssignments` directly, but the detail page called `getProgramAssignmentForMember(memberId)` without a `gymId`, which routed into a `collectionGroup("programAssignments")` query. That query depends on the COLLECTION_GROUP-scoped `(memberId, status)` composite index; when it fails, the bare `catch` in the read-model silently returned the mock-data fallback (which has no `shg-m-*` entries), so the assignment resolved to null.

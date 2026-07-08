@@ -198,6 +198,13 @@ npm run seed:demo-gyms     # Multi-gym E2E seed — 3 gyms x 20 members with var
                            # Full login table: docs/18_DEMO_USERS.md
 ```
 
+### Data Migration
+```bash
+npm run backfill:root      # Copy legacy root-collection docs to gyms/{gymId}/... (dry-run
+                           # by default; --apply to write). Runbook: docs/17_ROOT_BACKFILL_RUNBOOK.md
+                           # Run against prod 2026-07-08 — all root docs now gym-scoped.
+```
+
 ### Data Migrations & Fixes (Archived)
 Most one-off migration, patch, and video-sync scripts have been successfully executed in production and are now archived in `archive/scripts/`. They are categorized into `migrations/`, `patches/`, `video-imports/`, and `misc-queries/`. See `docs/14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md` and `docs/17_ROOT_BACKFILL_RUNBOOK.md` for historical context.
 
