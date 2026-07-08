@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { HeroVisual } from "./hero-visual";
 import { LoginModal } from "./login-modal";
+import { ComingSoonModal } from "./coming-soon-modal";
 import { EnquirySection } from "./enquiry-section";
 import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
 
@@ -26,19 +27,20 @@ function IconCalendar({ size = 22 }: IconProps) {
     </svg>
   );
 }
-function IconChart({ size = 22 }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M3 3v18h18M18 17V9M13 17V5M8 17v-3" />
-    </svg>
-  );
-}
 function IconUsers({ size = 22 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
       <circle cx="9" cy="7" r="4" />
       <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  );
+}
+function IconMapPin({ size = 22 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+      <circle cx="12" cy="10" r="3" />
     </svg>
   );
 }
@@ -67,115 +69,173 @@ function IconSpark({ size = 13 }: IconProps) {
 function featIcon(icon: string) {
   if (icon === "dumbbell") return <IconDumbbell />;
   if (icon === "calendar") return <IconCalendar />;
-  if (icon === "chart") return <IconChart />;
+  if (icon === "mappin") return <IconMapPin />;
   return <IconUsers />;
 }
 
 // ─── Content ──────────────────────────────────────────────────────────────────
 
 const NAV_LINKS = [
-  { label: "Platform", href: "#platform" },
-  { label: "Features", href: "#features" },
-  { label: "How it works", href: "#how" },
+  { label: "The model", href: "#model" },
+  { label: "Athletes", href: "#athletes" },
+  { label: "Gyms", href: "#gyms" },
   { label: "FAQ", href: "#faq" }
 ];
 
 const MARQUEE_ITEMS = [
   "Workout programs",
-  "Lift logging",
-  "Offline-first member app",
-  "Attendance",
-  "PT scheduling",
-  "Renewals & billing",
-  "Push notifications",
-  "Progress charts",
+  "Offline-first lift logging",
+  "Progress trend charts",
   "Macro tracking",
+  "Member management",
+  "PT scheduling",
+  "Geofenced attendance",
+  "Renewals & payments",
+  "Push notifications",
   "Exercise video library"
 ];
 
-type RoleKey = "owners" | "trainers" | "members";
+type CtaAction = { label: string; kind: "modal" | "href"; href?: string };
 
-const ROLES: Record<
-  RoleKey,
+const HERO_PATHS: {
+  eyebrow: string;
+  badge: string;
+  live: boolean;
+  title: string;
+  body: string;
+  cta: CtaAction;
+}[] = [
   {
-    tab: string;
-    kicker: string;
-    title: string;
-    points: { strong: string; rest: string }[];
-    stats: { label: string; value: string; accent?: string }[];
-  }
-> = {
-  owners: {
-    tab: "Owners",
-    kicker: "Run the business",
-    title: "The whole gym at a glance.",
-    points: [
-      { strong: "Renewals and payments", rest: " — see who's due, approve requests, and never chase a membership again." },
-      { strong: "Live floor view", rest: " — today's roster, PT schedule, and which equipment is in demand." },
-      { strong: "Member management", rest: " — onboard in minutes with PIN logins members actually use." }
-    ],
-    stats: [
-      { label: "Renewals due this week", value: "6 members" },
-      { label: "Active members", value: "128" },
-      { label: "Attendance today", value: "42", accent: "↑ 12%" }
-    ]
+    eyebrow: "I run a gym",
+    badge: "Live now",
+    live: true,
+    title: "Give the whole floor structure.",
+    body: "Assign programs, run PT bookings, track geofenced attendance, approve renewals — from one workspace.",
+    cta: { label: "Get FitSplit for your gym", kind: "href", href: "#enquiry" }
   },
-  trainers: {
-    tab: "Trainers",
-    kicker: "Deliver the coaching",
-    title: "Assign a split in seconds.",
-    points: [
-      { strong: "Reusable program templates", rest: " — build a split once, assign it to any member instantly." },
-      { strong: "PT calendar", rest: " — bookings, reschedules, and session history in one view." },
-      { strong: "Live session console", rest: " — log sets with the member and track every PT block." }
-    ],
-    stats: [
-      { label: "Today's PT sessions", value: "5 booked" },
-      { label: "Programs assigned", value: "34" },
-      { label: "Next session", value: "6:30 pm", accent: "Rahul · Push" }
-    ]
-  },
-  members: {
-    tab: "Members",
-    kicker: "Train with structure",
-    title: "Open the app, see today's session.",
-    points: [
-      { strong: "Today's workout, ready", rest: " — exercises, targets, and video guides for every movement." },
-      { strong: "Log every set — even offline", rest: " — poor gym signal never loses a rep; it syncs when you're back." },
-      { strong: "Progress you can see", rest: " — lift charts, body metrics, and macros in one place." }
-    ],
-    stats: [
-      { label: "This week", value: "4 of 5 days", accent: "on track" },
-      { label: "Bench press", value: "+10 kg", accent: "in 8 weeks" },
-      { label: "Today", value: "Push day" }
-    ]
+  {
+    eyebrow: "I train myself",
+    badge: "Coming soon",
+    live: false,
+    title: "Follow a plan. Log every set.",
+    body: "A proven split, offline-first lift logging, and progress you can actually see — no gym membership required.",
+    cta: { label: "Join the waitlist", kind: "modal" }
   }
+];
+
+const MODEL_STEPS = [
+  {
+    n: "01",
+    title: "Gyms subscribe",
+    body: "Owners get the operating workspace: member management, renewals, payments, PT delivery, geofenced attendance, trainer seats.",
+    pill: "Business · live",
+    live: true
+  },
+  {
+    n: "02",
+    title: "Every member gets full Pro",
+    body: "Included with the gym's plan, at no extra cost. Members get the complete training app — programs, offline logging, trends — plus everything their gym assigns.",
+    pill: "Included · live",
+    live: true
+  },
+  {
+    n: "03",
+    title: "Solo athletes train free",
+    body: "No gym? Start free with real programs and logging, upgrade to Pro for the full library and unlimited history. Leave a gym — your data stays yours.",
+    pill: "Consumer · coming soon",
+    live: false
+  }
+];
+
+const INDIVIDUAL_POINTS = [
+  { strong: "Follow a proven split", rest: " — structured programs built around a goal, not a routine you made up at 6am." },
+  { strong: "Log every set, even offline", rest: " — poor gym signal never loses a rep; it syncs the moment you're back." },
+  { strong: "Watch your progress trend", rest: " — lift charts, body metrics, and macros, all in one place." }
+];
+
+type Plan = {
+  name: string;
+  badge: string;
+  tagline: string;
+  features: string[];
+  cta: string;
+  highlight?: boolean;
 };
 
-const FEATURES = [
-  { icon: "dumbbell", tag: "Owners & trainers", title: "Assign workouts faster", body: "Pick a saved split, pick a member, done. Programs sync to the member app instantly." },
-  { icon: "calendar", tag: "Members", title: "Keep training structured", body: "Members get a clear weekly plan and today's session — not scattered notes or chat messages." },
-  { icon: "chart", tag: "Members & coaches", title: "Track every set", body: "Lift logs, progressive-overload hints, body metrics, and macros — all in one place." },
-  { icon: "users", tag: "Owners", title: "Coordinate the floor", body: "Live floor view, in-gym roster, PT schedule, and renewals — the owner sees everything." }
+const PLANS: Plan[] = [
+  {
+    name: "Free",
+    badge: "Coming soon",
+    tagline: "Everything you need to start training with structure.",
+    features: [
+      "Unlimited workout logging with offline sync",
+      "Starter workout splits",
+      "This week's analytics",
+      "Macro and body-metric logging"
+    ],
+    cta: "Start free"
+  },
+  {
+    name: "Pro",
+    badge: "Coming soon",
+    tagline: "For lifters who want the full library and long-term tracking.",
+    features: [
+      "Full split library with weekly variations",
+      "Custom programs built around you",
+      "Unlimited history",
+      "Trend and PR charts",
+      "Macro targets and history"
+    ],
+    cta: "Join the waitlist",
+    highlight: true
+  }
+];
+
+const GYM_FEATURES = [
+  { icon: "users", tag: "Members", title: "Member management & renewals", body: "Onboard members with PIN logins, see who's due, and approve renewal requests without chasing anyone." },
+  { icon: "dumbbell", tag: "Programs", title: "Assign programs in seconds", body: "Pick a saved split, pick a member, done. Programs sync to the member app instantly." },
+  { icon: "calendar", tag: "Training", title: "PT scheduling", body: "Bookings, reschedules, and session history — trainers run their calendar from one screen." },
+  { icon: "mappin", tag: "Attendance", title: "Geofenced attendance", body: "Members check in on-site, so you get an accurate floor view without a manual register." }
 ];
 
 const STEPS = [
-  { n: "01", label: "Build your library", body: "Reusable workout splits, exercises, and program templates." },
-  { n: "02", label: "Assign in seconds", body: "Pick a plan for a member; they get it instantly in the app." },
-  { n: "03", label: "Members follow along", body: "Today's session, targets, and check-offs on mobile." },
-  { n: "04", label: "Track the floor", body: "Renewals, attendance, and payments — at a glance." }
+  { n: "01", label: "Add your gym", body: "Bring on your members and staff — PIN logins mean no one needs to remember a password." },
+  { n: "02", label: "Build your library", body: "Create reusable workout splits and program templates once." },
+  { n: "03", label: "Assign & members train", body: "Pick a plan for a member; they see today's session instantly in the app." },
+  { n: "04", label: "Track the floor", body: "Renewals, attendance, and PT sessions — all from one workspace." }
 ];
 
-const FAQ_ITEMS = [
-  { q: "How long does setup take?", a: "Most gyms are live in under a week. Import your member list, build your first program templates, and you're delivering structured workouts." },
-  { q: "Do you support mobile apps?", a: "Yes — native-feel web apps for members and trainers. PWA install works on iOS and Android." },
-  { q: "Can I migrate from spreadsheets or chat?", a: "We import members from CSV. Programs are quick to build once and reused forever." },
-  { q: "Is there a free trial?", a: "Yes. Add as many members as you want during the trial, no card required." }
+const FAQ_ITEMS: { q: string; a: ReactNode }[] = [
+  {
+    q: "How long does setup take?",
+    a: "Most gyms are live within a week. Add your members and staff, build your first program templates, and you're delivering structured workouts."
+  },
+  {
+    q: "Do you support mobile apps?",
+    a: "Yes — native-feel web apps for members and trainers. PWA install works on both iOS and Android."
+  },
+  {
+    q: "How do I get my members set up?",
+    a: "We'll help you add your member list and build your first program templates together — most gyms don't need more than a short onboarding call."
+  },
+  {
+    q: "Can I use FitSplit without a gym?",
+    a: (
+      <>
+        Individual accounts are coming soon. Leave your interest via the{" "}
+        <a href="#enquiry">enquiry form</a> below and we&apos;ll let you know the moment it&apos;s open.
+      </>
+    )
+  },
+  {
+    q: "Is there a free trial?",
+    a: "Yes. Add your full member list during the trial, no card required."
+  }
 ];
 
 // ─── Scroll reveal ────────────────────────────────────────────────────────────
 
-function useReveal(rootRef: React.RefObject<HTMLDivElement | null>) {
+function useReveal(rootRef: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -203,6 +263,31 @@ function useReveal(rootRef: React.RefObject<HTMLDivElement | null>) {
   }, [rootRef]);
 }
 
+// ─── Shared bits ──────────────────────────────────────────────────────────────
+
+function CtaButton({
+  action,
+  className,
+  onComingSoon
+}: {
+  action: CtaAction;
+  className: string;
+  onComingSoon: () => void;
+}) {
+  if (action.kind === "href") {
+    return (
+      <a className={className} href={action.href}>
+        {action.label} <IconArrow />
+      </a>
+    );
+  }
+  return (
+    <button type="button" className={className} onClick={onComingSoon}>
+      {action.label} <IconArrow />
+    </button>
+  );
+}
+
 // ─── Sections ─────────────────────────────────────────────────────────────────
 
 function Nav({ onLogin }: { onLogin: () => void }) {
@@ -225,42 +310,44 @@ function Nav({ onLogin }: { onLogin: () => void }) {
           <button type="button" className="lp-btn lp-btn--ghost" onClick={onLogin}>
             Sign in
           </button>
-          <a className="lp-btn lp-btn--primary" href="#enquiry">
-            Get FitSplit
-          </a>
         </div>
       </div>
     </header>
   );
 }
 
-function Hero({ onLogin }: { onLogin: () => void }) {
+function Hero({ onComingSoon }: { onComingSoon: () => void }) {
   return (
     <section id="top" className="lp-container lp-hero">
       <div>
         <span className="lp-chip lp-reveal" data-reveal>
           <span className="lp-chip__dot" />
-          Workout delivery for modern gyms
+          Now onboarding gyms across India
         </span>
         <h1 className="lp-hero__title lp-reveal" data-reveal>
-          Structured workouts, delivered to <em>every member.</em>
+          Run the floor.
+          <br />
+          <em>Own your training.</em>
         </h1>
         <p className="lp-hero__sub lp-reveal" data-reveal>
-          One focused workspace where gym owners assign plans, trainers guide sessions, and members train with
-          structure — not scattered notes and chat threads.
+          One app, both sides of the gym. Owners and trainers run members, payments, PT, and attendance — and
+          every athlete on the floor gets the full training app, not a stripped-down view.
         </p>
-        <div className="lp-hero__ctas lp-reveal" data-reveal>
-          <a className="lp-btn lp-btn--primary lp-btn--lg" href="#enquiry">
-            Bring FitSplit to your gym <IconArrow />
-          </a>
-          <button type="button" className="lp-link-arrow" onClick={onLogin}>
-            Sign in to your workspace <IconArrow />
-          </button>
+        <div className="lp-hero__paths lp-reveal" data-reveal>
+          {HERO_PATHS.map((path) => (
+            <div key={path.eyebrow} className={path.live ? "lp-path lp-path--live" : "lp-path"}>
+              <div className="lp-path__head">
+                <span className="lp-path__eyebrow">{path.eyebrow}</span>
+                <span className={path.live ? "lp-path__badge lp-path__badge--live" : "lp-path__badge"}>
+                  {path.badge}
+                </span>
+              </div>
+              <h2 className="lp-path__title">{path.title}</h2>
+              <p className="lp-path__body">{path.body}</p>
+              <CtaButton action={path.cta} className="lp-btn lp-btn--primary" onComingSoon={onComingSoon} />
+            </div>
+          ))}
         </div>
-        <p className="lp-hero__proof lp-reveal" data-reveal>
-          <IconSpark />
-          Running live at Sri Shakthi Hanuman Gym, Bengaluru
-        </p>
       </div>
       <HeroVisual />
     </section>
@@ -283,89 +370,103 @@ function Marquee() {
   );
 }
 
-function RoleShowcase() {
-  const [active, setActive] = useState<RoleKey>("owners");
-  const role = ROLES[active];
-  const keys = Object.keys(ROLES) as RoleKey[];
-
+function Model() {
   return (
-    <section id="platform" className="lp-section">
+    <section id="model" className="lp-section">
       <div className="lp-container">
-        <div className="lp-section__head lp-section__head--center lp-reveal" data-reveal>
-          <span className="lp-eyebrow">One platform · three roles</span>
-          <h2 className="lp-h2">The whole gym, on one thread.</h2>
+        <div className="lp-section__head lp-reveal" data-reveal>
+          <span className="lp-eyebrow">How it fits together</span>
+          <h2 className="lp-h2">One app, two jobs.</h2>
           <p className="lp-lede">
-            FitSplit connects the people who run the gym to the people who train in it — pick a role to see their
-            side of it.
+            Business plans help you run a roster. Consumer plans help you train yourself. Neither is a bigger
+            version of the other — and that&apos;s the point.
           </p>
         </div>
-
-        <div className="lp-roles__tabs lp-reveal" data-reveal role="tablist" aria-label="Choose a role">
-          {keys.map((key) => (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              id={`lp-role-tab-${key}`}
-              aria-selected={active === key}
-              aria-controls="lp-role-panel"
-              className="lp-roles__tab"
-              onClick={() => setActive(key)}
-            >
-              {ROLES[key].tab}
-            </button>
+        <div className="lp-model__grid">
+          {MODEL_STEPS.map((step) => (
+            <div key={step.n} className="lp-model__cell lp-reveal" data-reveal>
+              <span className="lp-model__num">{step.n}</span>
+              <h3 className="lp-model__title">{step.title}</h3>
+              <p className="lp-model__body">{step.body}</p>
+              <span className={step.live ? "lp-model__pill lp-model__pill--live" : "lp-model__pill"}>
+                {step.pill}
+              </span>
+            </div>
           ))}
-        </div>
-
-        <div
-          key={active}
-          id="lp-role-panel"
-          role="tabpanel"
-          aria-labelledby={`lp-role-tab-${active}`}
-          className="lp-roles__panel"
-        >
-          <div>
-            <p className="lp-roles__kicker">{role.kicker}</p>
-            <h3 className="lp-roles__title">{role.title}</h3>
-            <ul className="lp-roles__list">
-              {role.points.map((point) => (
-                <li key={point.strong}>
-                  <IconCheck />
-                  <span>
-                    <strong>{point.strong}</strong>
-                    {point.rest}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div className="lp-roles__art" aria-hidden="true">
-            {role.stats.map((stat) => (
-              <div key={stat.label} className="lp-roles__stat">
-                <span className="lp-roles__stat-label">{stat.label}</span>
-                <span className="lp-roles__stat-value">
-                  {stat.value}
-                  {stat.accent && <em> · {stat.accent}</em>}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </section>
   );
 }
 
-function Features() {
+function Athletes({ onComingSoon }: { onComingSoon: () => void }) {
   return (
-    <section id="features" className="lp-section">
+    <section id="athletes" className="lp-section">
       <div className="lp-container">
-        <div className="lp-section__head lp-section__head--center lp-reveal" data-reveal>
-          <span className="lp-eyebrow">Features</span>
-          <h2 className="lp-h2">Everything a coaching gym needs.</h2>
+        <div className="lp-section__head lp-reveal" data-reveal>
+          <span className="lp-eyebrow">For athletes</span>
+          <h2 className="lp-h2">
+            Structured,
+            <br />
+            not scattered.
+          </h2>
+          <p className="lp-lede">Follow a split, log your sets, and see your progress instead of guessing.</p>
         </div>
+
+        <ul className="lp-checklist lp-checklist--lede lp-reveal" data-reveal>
+          {INDIVIDUAL_POINTS.map((point) => (
+            <li key={point.strong}>
+              <IconCheck />
+              <span>
+                <strong>{point.strong}</strong>
+                {point.rest}
+              </span>
+            </li>
+          ))}
+        </ul>
+
+        <div className="lp-plans">
+          {PLANS.map((plan) => (
+            <div key={plan.name} className={plan.highlight ? "lp-plan lp-plan--highlight lp-reveal" : "lp-plan lp-reveal"} data-reveal>
+              <div className="lp-plan__head">
+                <span className="lp-plan__name">{plan.name}</span>
+                <span className="lp-plan__badge">{plan.badge}</span>
+              </div>
+              <p className="lp-plan__tagline">{plan.tagline}</p>
+              <ul className="lp-plan__list">
+                {plan.features.map((feature) => (
+                  <li key={feature}>
+                    <IconCheck />
+                    <span>{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" className="lp-btn lp-btn--primary lp-plan__cta" onClick={onComingSoon}>
+                {plan.cta}
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function Gyms() {
+  return (
+    <section id="gyms" className="lp-section">
+      <div className="lp-container">
+        <div className="lp-section__head lp-reveal" data-reveal>
+          <span className="lp-eyebrow">For gyms</span>
+          <h2 className="lp-h2">Run the floor. Give every member the app.</h2>
+          <p className="lp-lede">
+            Members, programs, PT bookings, and attendance in one workspace — and every member on your roster gets
+            the full training app, not a stripped-down view.
+          </p>
+        </div>
+
         <div className="lp-features">
-          {FEATURES.map((f) => (
+          {GYM_FEATURES.map((f) => (
             <div key={f.title} className="lp-card lp-reveal" data-reveal>
               <span className="lp-card__icon">{featIcon(f.icon)}</span>
               <span className="lp-card__tag">{f.tag}</span>
@@ -373,6 +474,19 @@ function Features() {
               <p className="lp-card__body">{f.body}</p>
             </div>
           ))}
+        </div>
+
+        <div className="lp-highlight lp-reveal" data-reveal>
+          <div>
+            <h3 className="lp-highlight__title">Every member gets the full training app.</h3>
+            <p className="lp-highlight__body">
+              Not a stripped-down view for members — the same structured workouts, offline logging, and progress
+              tracking, for every person on your floor.
+            </p>
+          </div>
+          <a className="lp-btn lp-btn--primary lp-btn--lg" href="#enquiry">
+            Get FitSplit for your gym <IconArrow />
+          </a>
         </div>
       </div>
     </section>
@@ -387,7 +501,7 @@ function HowItWorks() {
           <span className="lp-eyebrow">How it works</span>
           <h2 className="lp-h2">Live in under a week.</h2>
           <p className="lp-lede">
-            Import your members, build your first templates, and start delivering structured workouts.
+            Add your members, build your first templates, and start delivering structured workouts.
           </p>
         </div>
         <div className="lp-steps">
@@ -451,15 +565,15 @@ function Footer({ onLogin }: { onLogin: () => void }) {
               <span>FitSplit</span>
             </a>
             <p className="lp-footer__about">
-              Workout delivery, trainer coordination, and member progress — one workspace.
+              Structured training for individuals, and a full operating workspace for the gyms that run it.
             </p>
           </div>
           <div className="lp-footer__col">
             <h4>Product</h4>
             <ul>
-              <li><a href="#platform">Platform</a></li>
-              <li><a href="#features">Features</a></li>
-              <li><a href="#how">How it works</a></li>
+              <li><a href="#model">The model</a></li>
+              <li><a href="#athletes">For athletes</a></li>
+              <li><a href="#gyms">For gyms</a></li>
               <li><a href="#faq">FAQ</a></li>
             </ul>
           </div>
@@ -510,6 +624,7 @@ function Footer({ onLogin }: { onLogin: () => void }) {
 
 export function LandingPageClient() {
   const [loginOpen, setLoginOpen] = useState(false);
+  const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   useReveal(rootRef);
 
@@ -519,10 +634,11 @@ export function LandingPageClient() {
       <div className="lp-content">
         <Nav onLogin={() => setLoginOpen(true)} />
         <main>
-          <Hero onLogin={() => setLoginOpen(true)} />
+          <Hero onComingSoon={() => setComingSoonOpen(true)} />
           <Marquee />
-          <RoleShowcase />
-          <Features />
+          <Model />
+          <Athletes onComingSoon={() => setComingSoonOpen(true)} />
+          <Gyms />
           <HowItWorks />
           <FAQ />
           <EnquirySection />
@@ -530,6 +646,7 @@ export function LandingPageClient() {
         <Footer onLogin={() => setLoginOpen(true)} />
       </div>
       <LoginModal open={loginOpen} onClose={() => setLoginOpen(false)} />
+      <ComingSoonModal open={comingSoonOpen} onClose={() => setComingSoonOpen(false)} />
     </div>
   );
 }

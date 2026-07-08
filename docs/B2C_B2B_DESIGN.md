@@ -1,6 +1,6 @@
 # FitSplit — B2C + B2B Model Design Plan
 
-> Status: **Design / not yet implemented.** Authored 2026-06-15.
+> Status: **Design / not yet implemented.** Authored 2026-06-15. §8–§10 added 2026-07-08.
 > Decision locked: gym members of a paying gym receive the **full Consumer Pro** feature set at no extra cost ("members get full Pro free").
 > This is a functional + architecture plan, not an implementation plan. See §6 for phasing.
 
@@ -241,3 +241,85 @@ updated per change.
 - **Entitlement enforcement on the server**, not just UI — must hold the `requireRole` bar or Pro features leak.
 - **Free-tier generosity calibration** — too thin and the habit never forms; too rich and Pro/Business erode. Instrument retention by tier from day one.
 - **Don't fork the data model** — the self-gym approach only pays off if `gymId === null` special cases are resisted. Hold the line in review.
+
+---
+
+## 8. Experience design — individual users vs gym members (added 2026-07-08)
+
+**One app, two contexts — never two products.** An individual user and a gym member are the
+same person in different rooms. Both get the identical self-coaching core: logging, programs,
+progress, macros, body metrics. Only the *context wrapped around it* differs.
+
+- **Individual (personal workspace):** the app opens on *their* program and today's session.
+  No attendance, no payments, no PT booking, no gym notices — those surfaces don't render.
+  Emotional job: "my pocket coach." The app's voice is self-directed: "here's your week."
+- **Gym member (business workspace):** same core, plus the gym layer — geofenced check-in,
+  trainer-assigned programs, PT sessions, membership status, gym notices. Emotional job:
+  "my gym in my pocket." Their training data is **theirs**, not the gym's: leaving the gym
+  keeps the history on the account and lands them gracefully in the individual experience
+  (per §4.4 / the identity spike). Leaving a gym is a downgrade, not an amputation.
+
+**Design trap to avoid:** the individual experience must never feel like a gym app with holes
+in it. A solo user should never see a greyed-out "attendance" or "your trainer" surface — if it
+doesn't apply, it doesn't exist. Empty states are designed for the *individual's* journey
+(pick a program → train), not as disabled gym features.
+
+## 9. Free vs paid split — the gating principle (added 2026-07-08)
+
+**Never gate the act of logging; gate the insight on the accumulated data.** The logging habit
+is the acquisition asset — the moment a free user hesitates to log a set because of a limit,
+the thing that makes them convert later is dead.
+
+| Capability | Free | Pro |
+|---|---|---|
+| Workout logging, offline sync | Unlimited, forever | Unlimited |
+| Split library | 2–3 starter splits | Full library + weekly variations |
+| Custom / self-built programs | — | ✅ |
+| History | Last 60–90 days *visible* | Unlimited |
+| Analytics | This week's numbers | Trends, PRs, volume charts |
+| Macros | Log today | Targets + history |
+| Body metrics | Log + current | Trends |
+
+Two load-bearing subtleties:
+
+1. **History is hidden, never deleted.** The free cap is on the *view*, not the data. "Go Pro
+   to see your full year" is an upsell; "we deleted your March" is a betrayal that gets
+   screenshotted. The cap bites at the right psychological moment (~week 10–12, when the user
+   is invested enough to care what their squat did in month one).
+2. **The starter splits must be genuinely good.** A free user following a real PPL for three
+   months and getting stronger *is* the growth engine. The upgrade trigger is "I've outgrown
+   the default," not "free is bad."
+
+**Pricing posture (India):** Pro ≈ ₹149–199/month, annual ≈ ₹999–1,199 — push annual (fitness
+motivation is seasonal; annual smooths churn). UPI autopay via Razorpay (§4.5). Cheap enough
+to be an impulse decision: B2C Pro exists to prove consumer value and catch gym-churn revenue,
+not to carry the company — B2B carries the company.
+
+## 10. Acquisition strategy (added 2026-07-08)
+
+Pre-billing, the free tier **is** the marketing budget. Three loops, by leverage:
+
+1. **Gym seeding loop (already owned).** Every B2B gym is a physical acquisition channel:
+   members get full Pro free and use the app daily inside the gym where others see it.
+   Members who leave a gym auto-convert to free B2C users with history intact — B2B churn
+   manufactures B2C signups.
+2. **Share-card loop (build early; India-shaped).** After a session or PR, generate a
+   shareable card ("Bench PR 80 kg · 12-week trend") — one tap to WhatsApp status and
+   Instagram stories. WhatsApp status is the social feed for this demographic; every share is
+   a branded ad delivered by a trusted friend. Highest-ROI acquisition feature once analytics
+   exist.
+3. **Content loop (slow burn).** The split library doubles as SEO content: public pages per
+   split ("6-day PPL with weekly variation") with a "Start this program free" CTA into signup.
+   People google programs constantly; almost nobody serves a program that becomes a live app
+   experience in one tap.
+
+Plus the **reverse B2B funnel** (§2): a free user taps "get your gym on FitSplit" → a warm
+lead with a named gym attached. Consumer growth becomes the B2B sales pipeline.
+
+**Metric discipline:** instrument signup → first logged workout → second-week retention before
+tightening anything. Don't rearrange the paywall on an app nobody's addicted to yet.
+
+**Public positioning (landing page, decided 2026-07-08):** the landing page presents both
+audiences — individuals (self-coaching, marked "coming soon" until Phase 2 ships) and gyms
+(the operational pitch + enquiry funnel). Individual CTAs open a coming-soon dialog; gym CTAs
+go to the enquiry form. No fabricated stats/member counts, no client gym names on the page.

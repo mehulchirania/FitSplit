@@ -1,4 +1,4 @@
-import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MakeupStatus, SkipReason } from "@/types/domain";
+import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MealLog, MakeupStatus, SkipReason } from "@/types/domain";
 
 import { gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
@@ -221,6 +221,43 @@ export async function getMacroLogsForMember(
     return { macroLogs };
   } catch {
     return { macroLogs: [] };
+  }
+}
+
+/** Fetch the itemized meal list for one calendar day — the "meal log" feed on the Macros screen. */
+export async function getMealLogsForMember(
+  memberId: string,
+  gymId: string,
+  date: string
+): Promise<{ mealLogs: MealLog[] }> {
+  if (!hasFirebaseAdminConfig()) return { mealLogs: [] };
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection(`gyms/${gymId}/mealLogs`)
+      .where("memberId", "==", memberId)
+      .where("date", "==", date)
+      .orderBy("loggedAt", "asc")
+      .get();
+    const mealLogs: MealLog[] = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        memberId: String(data.memberId ?? memberId),
+        gymId: String(data.gymId ?? gymId),
+        date: String(data.date ?? date),
+        name: String(data.name ?? "Meal"),
+        items: data.items ? String(data.items) : undefined,
+        kcal: Number(data.kcal ?? 0),
+        protein: Number(data.protein ?? 0),
+        carbs: Number(data.carbs ?? 0),
+        fat: Number(data.fat ?? 0),
+        loggedAt: String(data.loggedAt ?? new Date().toISOString())
+      };
+    });
+    return { mealLogs };
+  } catch {
+    return { mealLogs: [] };
   }
 }
 

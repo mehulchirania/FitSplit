@@ -24,6 +24,7 @@ export const collectionPaths = {
   ptSessions: "ptSessions",
   ptLiftLogs: "ptLiftLogs",
   macroLogs: "macroLogs",
+  mealLogs: "mealLogs",
   activityLogs: "activityLogs",
   // Sparse index for atomic username uniqueness. Doc ID = normalized username.
   usernames: "usernames",
@@ -52,6 +53,7 @@ export const gymScopedCollectionPaths = {
   ptSessions: "ptSessions",
   ptLiftLogs: "ptLiftLogs",
   macroLogs: "macroLogs",
+  mealLogs: "mealLogs",
   activityLogs: "activityLogs",
   // Membership package definitions set by the gym owner.
   packages: "packages",

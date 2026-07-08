@@ -208,8 +208,8 @@ export function HeroVisual() {
 
         <div className="lp-mock lp-mock--chart">
           <div className="lp-mock__head">
-            <span className="lp-mock__title">Attendance</span>
-            <span className="lp-mock__meta">This week</span>
+            <span className="lp-mock__title">Bench press</span>
+            <span className="lp-mock__meta">8-week trend</span>
           </div>
           <div className="lp-mock__bars">
             {CHART_BARS.map((h, i) => (

@@ -171,6 +171,16 @@ service cloud.firestore {
         allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
       }
 
+      match /mealLogs/{mealLogId} {
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || trainerCanReadMember(gymId)
+          || memberOwned(resource.data);
+        allow create: if request.resource.data.gymId == gymId
+          && adminOrOwnerOrMemberScoped(request.resource.data);
+        allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+      }
+
       match /activityLogs/{activityLogId} {
         allow read: if isAdmin()
           || isOwnerForGym(gymId)
@@ -353,6 +363,13 @@ service cloud.firestore {
 
     // Root mirror of macroLogs (dual-write). Scoped like liftLogs; written via Admin SDK.
     match /macroLogs/{macroLogId} {
+      allow read: if adminOrOwnerOrMemberScoped(resource.data);
+      allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
+      allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+    }
+
+    // Root mirror of mealLogs (dual-write). Scoped like macroLogs; written via Admin SDK.
+    match /mealLogs/{mealLogId} {
       allow read: if adminOrOwnerOrMemberScoped(resource.data);
       allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
       allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);

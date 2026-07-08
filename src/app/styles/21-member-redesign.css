@@ -389,6 +389,10 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .m3d-ex__open, .mcr-ex__open { transition: none; }
+}
+
 /* Page header */
 .m3d-pagehead {
   display: flex;
@@ -444,6 +448,61 @@
   color: var(--text-soft);
   font-weight: 600;
 }
+
+/* ── Header "this week" progress strip — single source of truth, links to Progress tab ── */
+.m3d-progress-strip {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 44px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 120ms, border-color 120ms;
+}
+.m3d-progress-strip:hover { background: var(--bg-subtle); border-color: var(--border-strong); }
+.m3d-progress-strip:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.m3d-progress-strip__streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--warning);
+  padding-right: 12px;
+  border-right: 1px solid var(--border);
+}
+.m3d-progress-strip__week {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--text-soft);
+}
+.m3d-progress-strip__week strong {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.015em;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 2px;
+}
+.m3d-progress-strip__week strong small {
+  font-size: 11px;
+  color: var(--text-soft);
+  font-weight: 500;
+}
+.m3d-progress-strip__week > span:last-child {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.m3d-progress-strip__chev { color: var(--text-faint); }
 
 /* ── Grid ──────────────────────────────────────────────────────────────── */
 .m3d-grid {
@@ -674,6 +733,76 @@
   display: block;
 }
 .m3d-today__cta { flex-shrink: 0; }
+
+/* Hero — today's session leads with one primary CTA */
+.m3d-today__hero {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.m3d-today__start-btn--hero { margin-top: 10px; }
+
+/* Demoted day picker — secondary affordance under the hero */
+.m3d-today__preview {
+  margin-bottom: 16px;
+}
+.m3d-today__preview-label {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+.m3d-today__daypicker,
+.mcr-today__daypicker {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+}
+.m3d-daychip {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-soft);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.m3d-daychip--on {
+  border: 1px solid color-mix(in srgb, var(--brand) 38%, var(--border));
+  background: color-mix(in srgb, var(--brand) 12%, var(--bg-elevated));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand) 12%, transparent);
+}
+
+/* Collapsible exercise-row detail (swap + video) */
+.m3d-ex-wrap { display: flex; flex-direction: column; gap: 6px; }
+.m3d-ex__open--on { background: var(--bg-elevated); color: var(--text-soft); transform: rotate(90deg); }
+.m3d-ex__detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: -2px 0 2px 44px;
+  border-radius: 12px;
+  background: var(--bg-muted);
+  border: 1px dashed var(--border);
+}
+.m3d-ex__detail-note {
+  font-size: 11.5px;
+  color: var(--text-soft);
+}
 .m3d-today__active {
   display: flex;
   flex-direction: column;
@@ -704,15 +833,15 @@
   gap: 6px;
 }
 .m3d-ex {
-  display: grid;
-  /* sets column sizes to content — a fixed 90px track starved the name column
-     in the narrow today-card and made it paint over "SETS × REPS" (docs/14 U3) */
-  grid-template-columns: 32px minmax(0, 1fr) auto auto;
+  /* flex, not grid — the trailing "last" column is optional (only when lift history
+     exists), so a fixed column count would misalign rows that omit it */
+  display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
   border-radius: 12px;
   background: var(--bg-subtle);
+  cursor: pointer;
   transition: opacity 120ms, background 120ms;
 }
 .m3d-ex:hover { background: var(--bg-muted); }
@@ -721,6 +850,7 @@
 .m3d-ex__num {
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
   border-radius: 8px;
   background: var(--bg-elevated);
   display: flex;
@@ -730,7 +860,7 @@
   font-weight: 700;
   color: var(--text-soft);
 }
-.m3d-ex__body { min-width: 0; }
+.m3d-ex__body { flex: 1; min-width: 0; }
 .m3d-ex__name {
   display: block;
   font-size: 14.5px;
@@ -754,9 +884,29 @@
   font-weight: 700;
   line-height: 1.3;
 }
+/* One-tap revert to the original exercise — subtle inline text button */
+.m3d-ex__swap-note--btn {
+  background: transparent;
+  border: none;
+  padding: 4px 0;
+  min-height: 24px;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  align-self: flex-start;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 120ms;
+}
+.m3d-ex__swap-note--btn:hover { color: var(--brand-strong); }
+.m3d-ex__swap-note--btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+[data-theme="light"] .m3d-ex__swap-note--btn { color: var(--brand-strong); }
 .m3d-ex__sets, .m3d-ex__last, .m3d-ex__target {
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: 2px;
 }
 .m3d-ex__sets small, .m3d-ex__last small, .m3d-ex__target small {
@@ -813,6 +963,7 @@
   border: none;
   width: 28px;
   height: 28px;
+  flex-shrink: 0;
   border-radius: 50%;
   color: var(--text-faint);
   cursor: pointer;
@@ -820,7 +971,7 @@
   align-items: center;
   justify-content: center;
   justify-self: end;
-  transition: background 120ms;
+  transition: background 120ms, transform 160ms;
 }
 .m3d-ex__open:hover { background: var(--bg-elevated); color: var(--text-soft); }
 .m3d-ex__actions {
@@ -1324,7 +1475,11 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+  /* --bg-elevated is a translucent glass tint (rgba(255,255,255,.03) in dark mode) meant
+     to sit on the solid --bg beneath it — fine for in-flow cards, but this bar is fixed
+     over scrolling content, so layer the tint on an opaque --bg backing to stay solid. */
+  background-color: var(--bg);
+  background-image: linear-gradient(var(--bg-elevated), var(--bg-elevated));
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-top: 1px solid var(--border);
@@ -1369,7 +1524,11 @@
 }
 .mcr-stats__grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Column auto-flow: the streak card is hidden when there is no streak, so
+     the row must divide evenly among either 3 or 4 cards. (auto-fit can't be
+     used here — it rejects flexible 1fr tracks.) */
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
   gap: 8px;
 }
 .mcr-stat {
@@ -1481,6 +1640,8 @@
   padding: 10px;
   border-radius: 12px;
   background: var(--bg-subtle);
+  cursor: pointer;
+  min-height: 44px;
 }
 .mcr-ex__num {
   width: 26px;
@@ -1520,6 +1681,27 @@
   line-height: 1.35;
   margin-top: 4px;
 }
+/* One-tap revert to the original exercise — inline text button, 44px touch target */
+.mcr-ex__swap-note--btn {
+  display: inline-flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  min-height: 44px;
+  margin-top: 0;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 120ms;
+}
+.mcr-ex__swap-note--btn:hover { color: var(--brand-strong); }
+.mcr-ex__swap-note--btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
+[data-theme="light"] .mcr-ex__swap-note--btn { color: var(--brand-strong); }
 .mcr-ex__actions {
   display: flex;
   flex-wrap: wrap;
@@ -1585,6 +1767,50 @@
 }
 .mcr-today__start:hover { background: var(--brand-strong); }
 .mcr-today__start:active { transform: scale(0.98); }
+.mcr-today__start--hero { margin-top: 12px; margin-bottom: 18px; }
+
+/* Demoted day picker — secondary affordance under the hero */
+.mcr-today__preview { margin-bottom: 16px; }
+.mcr-today__preview-label {
+  display: block;
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--text-faint);
+  margin-bottom: 8px;
+}
+
+/* Collapsible exercise-row detail (swap + video) */
+.mcr-ex-wrap { display: flex; flex-direction: column; gap: 8px; }
+.mcr-ex__open {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, transform 160ms;
+}
+.mcr-ex__open--on { background: var(--bg-elevated); color: var(--text-soft); transform: rotate(90deg); }
+.mcr-ex__detail {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  margin: -4px 0 0 38px;
+  border-radius: 12px;
+  background: var(--bg-muted);
+  border: 1px dashed var(--border);
+}
+.mcr-ex__detail-note {
+  font-size: 11px;
+  color: var(--text-soft);
+}
 
 /* ── Membership row ─────────────────────────────────────────────────────── */
 .mcr-membership {

@@ -1,0 +1,150 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Member Logs screen — m3d-lg- prefix
+   Grouped-by-date activity feed replacing the old MemberHistory markup.
+   Reuses m3d-pagehead / m3d-card / m3d-btn-ghost from 21-member-redesign.css.
+───────────────────────────────────────────────────────────────────────── */
+
+.m3d-lg__intro {
+  margin: -14px 0 22px;
+  font-size: 13.5px;
+  color: var(--text-soft);
+}
+
+.m3d-lg__pt-card {
+  display: block;
+  margin-bottom: 24px;
+  text-decoration: none;
+  transition: background 120ms, border-color 120ms;
+}
+.m3d-lg__pt-card:hover { background: var(--bg-subtle); border-color: var(--border-strong); }
+.m3d-lg__pt-card .m3d-card__head { margin-bottom: 0; }
+.m3d-lg__pt-icon {
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.m3d-lg__empty {
+  text-align: center;
+  padding: 48px 24px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text-soft);
+}
+.m3d-lg__empty h2 {
+  margin: 10px 0 4px;
+  font-size: 16px;
+  color: var(--text);
+}
+.m3d-lg__empty p { margin: 0; font-size: 13px; }
+
+.m3d-lg__feed {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.m3d-lg__group-label {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-faint);
+  margin-bottom: 10px;
+}
+
+.m3d-lg__rows {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.m3d-lg__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 120ms;
+}
+.m3d-lg__rows .m3d-lg__row:last-child { border-bottom: none; }
+.m3d-lg__row:hover,
+.m3d-lg__row:focus-visible { background: var(--bg-subtle); }
+.m3d-lg__row:focus-visible { outline: 2px solid var(--brand); outline-offset: -2px; }
+
+.m3d-lg__row-icon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  background: var(--bg-subtle);
+  color: var(--text-soft);
+}
+.m3d-lg__row-icon--pr { background: var(--brand-soft); color: var(--brand); }
+.m3d-lg__row-icon--lift { background: var(--info-soft); color: var(--info); }
+.m3d-lg__row-icon--cardio { background: var(--info-soft); color: var(--info); }
+.m3d-lg__row-icon--stretch { background: var(--warning-soft); color: var(--warning); }
+.m3d-lg__row-icon--macro { background: var(--brand-soft); color: var(--brand); }
+.m3d-lg__row-icon--day-done { background: var(--brand-soft); color: var(--brand); }
+.m3d-lg__row-icon--day-skip { background: var(--danger-soft); color: var(--danger); }
+.m3d-lg__row-icon--day-mod { background: var(--bg-subtle); color: var(--text-soft); }
+
+.m3d-lg__row-title {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m3d-lg__row-meta {
+  flex: 1;
+  min-width: 0;
+  font-size: 12.5px;
+  color: var(--text-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m3d-lg__row-time {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+  margin-left: auto;
+}
+
+.m3d-lg__row-arrow {
+  color: var(--text-faint);
+}
+
+.m3d-lg__more-wrap {
+  display: flex;
+  justify-content: center;
+  padding-top: 4px;
+}
+
+@media (max-width: 640px) {
+  .m3d-lg__row-meta { display: none; }
+}

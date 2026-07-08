@@ -87,7 +87,7 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 - **Membership Management**: Plan tracking with expiry warnings and automated notifications.
 - **Gym Notice Board**: Owners post rules, tips, reminders, and announcements visible to members.
 - **Profile Photos**: Members and staff upload a cropped avatar (client-side circular crop → PNG) stored in Firebase Storage; shown in the top bar and profile screens. Members self-serve in settings; owners/admins can update any member in their gym.
-- **Macro/Nutrition Tracking**: Member profiles can store calorie/macro targets, and members track daily macro progress in the wellness panel.
+- **Macro/Nutrition Tracking**: Member profiles can store calorie/macro targets; members track daily macro progress in the wellness panel, either via manual daily totals or by logging itemized meals (quick-add presets or manual entry), which increment the day's macro totals automatically.
 - **Multi-Gym Isolation**: All reads and writes are partitioned by `gymId` — gym-scoped Firestore collections with Firestore security rules enforcing boundaries.
 
 ### 📱 PWA
@@ -262,13 +262,14 @@ app/
       pt-history/   # Full PT session history
       settings/     # Account settings — units, PIN change, notifications
   trainer/          # Trainer PT schedule + my members list
-  styles/           # modular CSS files (22 numbered, plus forms.css, member.css) — 22-owner-detail-reports.css: owner member detail (mpd-/tpp-) + reports (rpt-)
+  styles/           # modular CSS files (27 numbered, plus forms.css, member.css) — 22-owner-detail-reports.css: owner member detail (mpd-/tpp-) + reports (rpt-); 23-member-overview.css: member desktop Overview screen (m3d-ov-); 24-member-workout.css: member desktop Workout screen + exercise drawer (m3d-wk-); 25-member-logs.css: member desktop Logs screen (m3d-lg-); 26-member-progress-screen.css: member desktop Progress screen (m3d-pg-); 27-member-macros.css: member desktop Macros screen (m3d-mc-)
 
 components/
   landing/                          # Public landing page (lp- CSS classes in src/app/landing.css)
-    landing-page-client.tsx         #   Composition: nav, hero, marquee, role showcase, features, steps, FAQ, footer
+    landing-page-client.tsx         #   Composition: nav, dual-audience hero (gym-first "Live now" path + athlete "Coming soon" path), marquee, model (B2B2C explainer), athletes (Free/Pro "coming soon" cards), gyms, steps, FAQ, enquiry, footer
+    coming-soon-modal.tsx           #   Accessible dialog for individual-account CTAs (pre-B2C launch): focus trap, ESC, click-outside
     hero-visual.tsx                 #   Canvas particle field + parallax product mockups (no WebGL dependency)
-    login-modal.tsx                 #   Accessible login dialog (focus trap, ESC, inline reset confirm)
+    login-modal.tsx                 #   Accessible login dialog (focus trap, ESC, inline reset confirm, Enter-to-submit on password/PIN field)
     enquiry-section.tsx             #   Enquiry form wired to submitContactMessage → /admin/inbox
   member-sub-sidebar.tsx            # Member sub-pages sidebar (links, gym branding, logout)
   odp-sidebar.tsx                   # Owner workspace sidebar (nav, user footer, logout)

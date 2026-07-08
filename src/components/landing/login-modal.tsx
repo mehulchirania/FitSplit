@@ -157,9 +157,13 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
         </div>
 
         <h2 className="lp-modal__title" id="lp-login-title">
-          Access your workspace
+          Welcome back.
         </h2>
-        <p className="lp-modal__sub">Members use mobile / username + PIN. Staff use username + password.</p>
+        <p className="lp-modal__sub">
+          {isMember
+            ? "Sign in with your mobile number or username and 4-digit PIN."
+            : "Trainers and owners sign in with username and password."}
+        </p>
 
         <div className="lp-modal__tabs" role="tablist" aria-label="Login type">
           <button
@@ -206,6 +210,12 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
               onChange={(e) =>
                 setPassword(isMember ? e.target.value.replace(/\D/g, "").slice(0, 4) : e.target.value)
               }
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !isPending && !resetConfirmOpen) {
+                  e.preventDefault();
+                  e.currentTarget.form?.requestSubmit();
+                }
+              }}
             />
           </div>
 

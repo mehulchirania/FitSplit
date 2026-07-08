@@ -182,6 +182,7 @@
 }
 
 .lp-nav__inner {
+  max-width: none;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -309,25 +310,88 @@
   margin: 0 0 34px;
 }
 
-.lp-hero__ctas {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
-  margin-bottom: 26px;
+/* Hero dual-audience paths */
+.lp-hero__paths {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 8px;
 }
 
-.lp-hero__proof {
+.lp-path {
+  border: 1px solid var(--lp-border);
+  border-radius: 20px;
+  background: rgba(14, 14, 14, 0.88);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lp-path:hover {
+  border-color: var(--lp-border-brand);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+}
+
+.lp-path--live {
+  border-color: var(--lp-border-brand);
+  background: linear-gradient(160deg, rgba(200, 241, 53, 0.1), rgba(200, 241, 53, 0.02) 55%);
+}
+
+.lp-path__head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 13px;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.lp-path__eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
   color: var(--lp-text-3);
 }
 
-.lp-hero__proof svg {
-  color: var(--brand);
-  flex-shrink: 0;
+.lp-path__badge {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--lp-text-2);
+  border: 1px solid var(--lp-border);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lp-path__badge--live {
+  color: var(--primary-foreground);
+  background: var(--brand);
+  border-color: transparent;
+}
+
+.lp-path__title {
+  font-family: var(--lp-font-display);
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0 0 8px;
+}
+
+.lp-path__body {
+  font-size: 13.5px;
+  color: var(--lp-text-2);
+  line-height: 1.55;
+  margin: 0 0 18px;
+  flex: 1;
+}
+
+.lp-path .lp-btn {
+  align-self: stretch;
+  width: 100%;
+  white-space: normal;
 }
 
 /* Hero visual — layered product mockups over a canvas particle field */
@@ -591,72 +655,70 @@
   margin: 0;
 }
 
-/* ── Role showcase ───────────────────────────────────────────────────────── */
+/* ── Model (B2B2C explainer) ─────────────────────────────────────────────── */
 
-.lp-roles__tabs {
-  display: flex;
-  gap: 6px;
-  padding: 5px;
-  border-radius: 999px;
+.lp-model__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--lp-border);
   border: 1px solid var(--lp-border);
-  background: rgba(16, 16, 16, 0.85);
-  width: max-content;
-  margin: 0 auto 40px;
+  border-radius: 20px;
+  overflow: hidden;
 }
 
-.lp-roles__tab {
-  min-height: 44px;
-  padding: 10px 26px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
+.lp-model__cell {
+  background: rgba(14, 14, 14, 0.92);
+  padding: 34px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.lp-model__num {
   font-family: var(--lp-font-display);
+  font-size: 38px;
+  font-weight: 800;
+  color: rgba(200, 241, 53, 0.9);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+.lp-model__title {
+  font-family: var(--lp-font-display);
+  font-size: 18.5px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.lp-model__body {
   font-size: 14.5px;
+  color: var(--lp-text-2);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.lp-model__pill {
+  margin-top: auto;
+  align-self: flex-start;
+  font-size: 12.5px;
   font-weight: 600;
   color: var(--lp-text-2);
-  cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease;
-}
-
-.lp-roles__tab:hover {
-  color: var(--lp-text);
-}
-
-.lp-roles__tab[aria-selected="true"] {
-  background: var(--brand);
-  color: var(--primary-foreground);
-}
-
-.lp-roles__panel {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 44px;
-  align-items: center;
   border: 1px solid var(--lp-border);
-  border-radius: 24px;
-  background: rgba(13, 13, 13, 0.85);
-  padding: 44px;
-  animation: lp-panel-in 0.35s ease both;
+  padding: 5px 12px;
+  border-radius: 999px;
 }
 
-.lp-roles__kicker {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.11em;
-  color: var(--lp-text-3);
-  margin: 0 0 10px;
+.lp-model__pill--live {
+  color: var(--brand);
+  background: rgba(200, 241, 53, 0.1);
+  border-color: transparent;
 }
 
-.lp-roles__title {
-  font-family: var(--lp-font-display);
-  font-size: 26px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  margin: 0 0 18px;
-}
+/* ── Checklist (reused by individuals bullets) ──────────────────────────── */
 
-.lp-roles__list {
+.lp-checklist {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -665,7 +727,12 @@
   gap: 13px;
 }
 
-.lp-roles__list li {
+.lp-checklist--lede {
+  max-width: 640px;
+  margin-bottom: 48px;
+}
+
+.lp-checklist li {
   display: flex;
   gap: 12px;
   align-items: flex-start;
@@ -674,50 +741,145 @@
   line-height: 1.55;
 }
 
-.lp-roles__list svg {
+.lp-checklist svg {
   color: var(--brand);
   flex-shrink: 0;
   margin-top: 2px;
 }
 
-.lp-roles__list strong {
+.lp-checklist strong {
   color: var(--lp-text);
   font-weight: 600;
 }
 
-.lp-roles__art {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+/* ── Plan cards (Free / Pro) ─────────────────────────────────────────────── */
+
+.lp-plans {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
 }
 
-.lp-roles__stat {
+.lp-plan {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--lp-border);
+  border-radius: 22px;
+  background: rgba(14, 14, 14, 0.88);
+  padding: 30px;
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.lp-plan:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.4);
+}
+
+.lp-plan--highlight {
+  border-color: var(--lp-border-brand);
+  background:
+    radial-gradient(ellipse 90% 60% at 100% 0%, rgba(200, 241, 53, 0.08), transparent 70%),
+    rgba(14, 14, 14, 0.88);
+}
+
+.lp-plan__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 14px;
-  border: 1px solid var(--lp-border);
-  border-radius: 14px;
-  background: rgba(255, 255, 255, 0.03);
-  padding: 15px 18px;
+  gap: 12px;
+  margin-bottom: 10px;
 }
 
-.lp-roles__stat-label {
-  font-size: 12.5px;
-  color: var(--lp-text-3);
-  font-weight: 600;
-}
-
-.lp-roles__stat-value {
+.lp-plan__name {
   font-family: var(--lp-font-display);
-  font-size: 17px;
+  font-size: 21px;
   font-weight: 700;
-  color: var(--lp-text);
+  letter-spacing: -0.02em;
 }
 
-.lp-roles__stat-value em {
-  font-style: normal;
+.lp-plan__badge {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--brand);
+  background: rgba(200, 241, 53, 0.12);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.lp-plan__tagline {
+  font-size: 14px;
+  color: var(--lp-text-2);
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.lp-plan__list {
+  list-style: none;
+  margin: 0 0 26px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+.lp-plan__list li {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  font-size: 13.5px;
+  color: var(--lp-text-2);
+  line-height: 1.5;
+}
+
+.lp-plan__list svg {
+  color: var(--brand);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.lp-plan__cta {
+  width: 100%;
+}
+
+/* ── Gym highlight banner ────────────────────────────────────────────────── */
+
+.lp-highlight {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  margin-top: 20px;
+  border: 1px solid var(--lp-border-brand);
+  border-radius: 24px;
+  background:
+    radial-gradient(ellipse 70% 90% at 0% 0%, rgba(200, 241, 53, 0.1), transparent 60%),
+    rgba(13, 13, 13, 0.9);
+  padding: 40px 44px;
+}
+
+.lp-highlight__title {
+  font-family: var(--lp-font-display);
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0 0 10px;
+  max-width: 26ch;
+}
+
+.lp-highlight__body {
+  font-size: 14.5px;
+  color: var(--lp-text-2);
+  line-height: 1.6;
+  margin: 0;
+  max-width: 48ch;
+}
+
+.lp-highlight .lp-btn {
+  flex-shrink: 0;
 }
 
 /* ── Feature cards ───────────────────────────────────────────────────────── */
@@ -899,6 +1061,13 @@
   font-size: 14.5px;
   color: var(--lp-text-2);
   line-height: 1.65;
+}
+
+.lp-faq__a p a {
+  color: var(--brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-weight: 600;
 }
 
 /* ── Enquiry ─────────────────────────────────────────────────────────────── */
@@ -1153,6 +1322,36 @@
   background: linear-gradient(90deg, transparent, rgba(200, 241, 53, 0.6), transparent);
 }
 
+.lp-modal--sm {
+  max-width: 400px;
+}
+
+.lp-modal--sm .lp-modal__head {
+  justify-content: space-between;
+}
+
+.lp-comingsoon__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 13px;
+  background: rgba(200, 241, 53, 0.14);
+  color: var(--brand);
+}
+
+.lp-comingsoon__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.lp-comingsoon__actions .lp-btn {
+  width: 100%;
+}
+
 .lp-modal__head {
   display: flex;
   justify-content: space-between;
@@ -1359,10 +1558,8 @@
     min-height: 420px;
   }
 
-  .lp-roles__panel {
+  .lp-hero__paths {
     grid-template-columns: 1fr;
-    gap: 30px;
-    padding: 30px;
   }
 
   .lp-enquiry {
@@ -1373,6 +1570,20 @@
 
   .lp-steps {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .lp-plans {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-model__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lp-highlight {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 32px;
   }
 
   .lp-footer__grid {
@@ -1408,15 +1619,6 @@
     margin: 0 0 14px;
   }
 
-  .lp-roles__tabs {
-    width: 100%;
-  }
-
-  .lp-roles__tab {
-    flex: 1;
-    padding-inline: 10px;
-  }
-
   .lp-modal-overlay {
     align-items: flex-end;
     padding: 12px;
@@ -1439,15 +1641,6 @@
 
   .lp-hero__title {
     font-size: 37px;
-  }
-
-  .lp-hero__ctas {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .lp-hero__ctas .lp-btn {
-    width: 100%;
   }
 
   .lp-hero__visual {
@@ -1477,6 +1670,16 @@
 
   .lp-enquiry {
     padding: 26px 20px;
+  }
+
+  .lp-highlight {
+    padding: 26px 20px;
+  }
+
+  .lp-highlight .lp-btn {
+    width: 100%;
+    white-space: normal;
+    text-align: center;
   }
 
   .lp-footer__grid {

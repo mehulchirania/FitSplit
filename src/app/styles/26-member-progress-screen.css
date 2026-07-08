@@ -1,0 +1,89 @@
+/* Member Progress screen — desktop-only, "m3d-pg-" prefix. */
+
+.m3d-pg {
+  display: flex;
+  flex-direction: column;
+  max-width: 900px;
+}
+
+.m3d-pg__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0 24px;
+  margin-top: 22px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 0;
+}
+.m3d-pg__stat {
+  min-width: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--border);
+}
+.m3d-pg__stat:first-child {
+  border-left: none;
+  padding-left: 0;
+}
+.m3d-pg__stat strong {
+  display: block;
+  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.m3d-pg__stat span {
+  display: block;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--text-soft);
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.m3d-pg__prs {
+  margin-top: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+}
+.m3d-pg__pr-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 8px;
+  margin: 0 -8px;
+  border-bottom: 1px solid var(--border);
+}
+.m3d-pg__pr-row:last-child {
+  border-bottom: none;
+}
+.m3d-pg__pr-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand);
+  flex-shrink: 0;
+}
+.m3d-pg__pr-name {
+  font-weight: 600;
+  color: var(--text);
+}
+.m3d-pg__pr-value {
+  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
+  color: var(--text-soft);
+  font-variant-numeric: tabular-nums;
+}
+.m3d-pg__pr-date {
+  margin-left: auto;
+  color: var(--text-faint);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .m3d-pg__stats { padding: 14px 0; }
+  .m3d-pg__stat { padding-left: 18px; margin-right: 18px; }
+}

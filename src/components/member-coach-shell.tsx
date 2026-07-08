@@ -2,17 +2,22 @@
 
 import { MemberProgressPanel } from "@/components/member-progress-panel";
 import { MemberHistory } from "@/components/member-history";
-import { WorkoutCalendar } from "@/components/workout-calendar";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
-import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
+import { OverviewScreen } from "@/components/member-overview-screen";
+import { WorkoutScreen } from "@/components/member-workout-screen";
+import { LogsScreen } from "@/components/member-logs-screen";
+import { ProgressScreen } from "@/components/member-progress-screen";
+import { MacrosScreen } from "@/components/member-macros-screen";
+import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, MealLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
 import type { MemberProfile, Member } from "@/types/domain";
 import React, { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { logoutUser } from "@/lib/auth";
+import { getAlternateExercises, getNextExerciseSwap, getExerciseSwapKey, getLastLiftForExercise, hasLoggedWeight } from "@/lib/workout-utils";
 
 /* ── Inline SVG icon helpers ──────────────────────── */
 // Omit conflicting SVG attrs (d is string in SVG spec but we pass ReactNode; strokeWidth handled via sw)
@@ -61,7 +66,6 @@ interface MemberCoachShellProps {
   gymNotices?: GymNotice[] | null;
   weeklyStreak: number;
   daysTrainedThisWeek: number;
-  liftLogCount: number;
   membershipStatus?: string | null;
   membershipEndDate?: string | null;
   coachNote?: string | null;
@@ -74,6 +78,7 @@ interface MemberCoachShellProps {
   dayLogs: DayLog[];
   activityLogs: ActivityLog[];
   macroLogs: MacroLog[];
+  mealLogs: MealLog[];
   macroLog?: MacroLog | null;
   macroTarget?: MemberProfile["macroNutritionTarget"];
   injuryNote?: string | null;
@@ -109,10 +114,10 @@ function LogOutIco() {
 
 /* ── Sidebar (Desktop) ───────────────────────────────────────────── */
 function Sidebar({
-  tab, setTab, firstName, gymName, gymLogoUrl,
+  screen, setScreen, firstName, gymName, gymLogoUrl,
 }: {
-  tab: string;
-  setTab: (t: string) => void;
+  screen: string;
+  setScreen: (t: string) => void;
   firstName: string;
   gymName: string;
   gymLogoUrl?: string | null;
@@ -140,12 +145,12 @@ function Sidebar({
     });
   };
 
-  const tabItems = [
-    { v: "train",    label: "Train",    icon: <Icons.Dumbbell size={18} /> },
+  const screenItems = [
+    { v: "overview", label: "Overview", icon: <Icons.Home size={18} /> },
+    { v: "workout",  label: "Workout",  icon: <Icons.Dumbbell size={18} /> },
+    { v: "logs",     label: "Logs",     icon: <Icons.Note size={18} /> },
     { v: "progress", label: "Progress", icon: <Icons.Chart size={18} /> },
-    { v: "calendar", label: "Calendar", icon: <Icons.Calendar size={18} /> },
-    { v: "body",     label: "Body",     icon: <Icons.Heart size={18} /> },
-    { v: "coach",    label: "Coach",    icon: <Icons.Mail size={18} /> },
+    { v: "macros",   label: "Macros",   icon: <Icons.Heart size={18} /> },
   ];
 
   const gymShort = gymName.split(" · ")[0];
@@ -156,7 +161,7 @@ function Sidebar({
       {/* Brand + gym co-brand lockup — clicking goes to dashboard */}
       <button
         className="m3d-side__logo m3d-side__logo--btn"
-        onClick={() => setTab("train")}
+        onClick={() => setScreen("overview")}
         type="button"
         aria-label="Go to dashboard"
       >
@@ -186,11 +191,11 @@ function Sidebar({
 
       {/* Nav */}
       <nav className="m3d-side__nav">
-        {tabItems.map((it) => (
+        {screenItems.map((it) => (
           <button
             key={it.v}
-            className={`m3d-side__item${tab === it.v ? " m3d-side__item--on" : ""}`}
-            onClick={() => setTab(it.v)}
+            className={`m3d-side__item${screen === it.v ? " m3d-side__item--on" : ""}`}
+            onClick={() => setScreen(it.v)}
             type="button"
           >
             {it.icon}
@@ -280,13 +285,17 @@ function Sidebar({
 }
 
 /* ── Desktop TopBar ──────────────────────────────────────────────── */
-function DesktopTopBar({ onToast, unreadCount = 0 }: { onToast: (t: string) => void; unreadCount?: number }) {
+const SCREEN_CRUMBS: Record<string, string> = {
+  overview: "Overview", workout: "Workout", logs: "Logs", progress: "Progress", macros: "Macros",
+};
+
+function DesktopTopBar({ screen, onToast, unreadCount = 0 }: { screen: string; onToast: (t: string) => void; unreadCount?: number }) {
   return (
     <header className="m3d-top">
       <div className="m3d-top__crumbs">
         <span className="m3d-top__crumb">Dashboard</span>
         <span className="m3d-top__crumb-sep">/</span>
-        <span className="m3d-top__crumb m3d-top__crumb--current">Today</span>
+        <span className="m3d-top__crumb m3d-top__crumb--current">{SCREEN_CRUMBS[screen] ?? "Overview"}</span>
       </div>
       <div className="m3d-top__right">
         <button className="m3d-top__icon" onClick={() => unreadCount > 0 ? onToast(`${unreadCount} new notification${unreadCount > 1 ? "s" : ""}`) : onToast("No new notifications")} type="button" aria-label="Notifications">
@@ -445,11 +454,13 @@ function StatsSection({ weeklyStreak, daysTrainedThisWeek, weeklyTarget, profile
     <section className="mcr-stats">
       <h3 className="mcr-stats__title">Your progress</h3>
       <div className="mcr-stats__grid">
-        <div className="mcr-stat">
-          <div className="mcr-stat__icon" style={{ color: "var(--warning)" }}><Icons.Flame size={16} /></div>
-          <strong>{weeklyStreak > 0 ? weeklyStreak : "—"}<small>w</small></strong>
-          <span>streak</span>
-        </div>
+        {weeklyStreak >= 1 && (
+          <div className="mcr-stat">
+            <div className="mcr-stat__icon" style={{ color: "var(--warning)" }}><Icons.Flame size={16} /></div>
+            <strong>{weeklyStreak}<small>w</small></strong>
+            <span>streak</span>
+          </div>
+        )}
         <div className="mcr-stat">
           <div className="mcr-stat__icon" style={{ color: "var(--brand)" }}><Icons.Dumbbell size={16} /></div>
           <strong>{daysTrainedThisWeek}<small>/{weeklyTarget}</small></strong>
@@ -501,162 +512,17 @@ function MembershipRow({ membershipStatus, membershipEndDate }: {
   );
 }
 
-/* ── Today's session — desktop table view ───────────────────────── */
-function normalizeMuscleToken(value?: string | null) {
-  return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
-}
-
-function getAlternateExercises(original: Exercise | undefined, exercises: Exercise[]) {
-  if (!original) return [];
-
-  const originalGroup = normalizeMuscleToken(original.muscleGroup);
-
-  return exercises
-    .filter((candidate) => {
-      if (candidate.id === original.id) return false;
-      return normalizeMuscleToken(candidate.muscleGroup) === originalGroup;
-    })
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-function getNextExerciseSwap(original: Exercise | undefined, currentExerciseId: string, exercises: Exercise[]) {
-  const alternates = getAlternateExercises(original, exercises);
-  if (!alternates.length) return null;
-
-  const currentIndex = alternates.findIndex((candidate) => candidate.id === currentExerciseId);
-  return alternates[(currentIndex + 1) % alternates.length] ?? alternates[0];
-}
-
-function getExerciseSwapKey(dayId: string | undefined, selectedDayIndex: number, exerciseId: string, index: number) {
-  return `${dayId ?? `day-${selectedDayIndex}`}:${exerciseId}:${index}`;
-}
-
-function TodaySessionList({ program, currentWeek, exercises, selectedDayIndex, onSelectDay }: {
-  program: WorkoutProgram;
-  currentWeek: number | null;
-  exercises: Exercise[];
-  selectedDayIndex: number;
-  onSelectDay: (idx: number) => void;
-}) {
-  const day = program.days?.[selectedDayIndex];
-  const focusedDayHref = day ? `/member/programs/${program.id}/day/${day.id}` : "/member/programs";
-  const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
-  const liftsCount = day?.exercises?.length ?? 0;
-  const estMin = liftsCount * 8;
-  const [exerciseSwaps, setExerciseSwaps] = useState<Record<string, string>>({});
-
-  return (
-    <section className="m3d-today">
-      <div className="m3d-today__head">
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div className="m3d-today__eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <Icons.Note size={13} />
-            Your coach&apos;s plan
-          </div>
-          
-          <div style={{ display: 'flex', gap: '8px', marginTop: '12px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }} className="hide-scrollbar">
-            {program.days?.map((d, i) => (
-              <button
-                key={d.id}
-                onClick={() => onSelectDay(i)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  border: selectedDayIndex === i ? '1px solid color-mix(in srgb, var(--brand) 38%, var(--border))' : '1px solid var(--border)',
-                  background: selectedDayIndex === i ? 'color-mix(in srgb, var(--brand) 12%, var(--bg-elevated))' : 'transparent',
-                  color: selectedDayIndex === i ? 'var(--text)' : 'var(--text-soft)',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease',
-                  whiteSpace: 'nowrap',
-                  boxShadow: selectedDayIndex === i ? 'inset 0 0 0 1px color-mix(in srgb, var(--brand) 12%, transparent)' : 'none'
-                }}
-              >
-                Day {d.dayNumber}: {d.title}
-              </button>
-            ))}
-          </div>
-
-          <h2 className="m3d-today__title" style={{ marginTop: 0 }}>{day?.title ?? program.title}</h2>
-          <span className="m3d-today__sub">
-            Week {currentWeek ?? 1} · {liftsCount} lifts · {totalSets} sets · est. {estMin} min
-          </span>
-        </div>
-        <div className="m3d-today__cta" style={{ alignSelf: 'flex-start', marginTop: '45px' }}>
-          <Link className="m3d-today__start-btn" href={focusedDayHref}>
-            <Icons.Play size={16} />
-            Open workout
-          </Link>
-        </div>
-      </div>
-
-      <div className="m3d-today__exercises">
-        {(day?.exercises ?? []).map((ex, idx) => {
-          const rowKey = getExerciseSwapKey(day?.id, selectedDayIndex, ex.exerciseId, idx);
-          const originalEx = exercises.find((e) => e.id === ex.exerciseId);
-          const activeExerciseId = exerciseSwaps[rowKey] ?? ex.exerciseId;
-          const dictEx = exercises.find((e) => e.id === activeExerciseId) ?? originalEx;
-          const nextSwap = getNextExerciseSwap(originalEx, activeExerciseId, exercises);
-          const isSwapped = Boolean(exerciseSwaps[rowKey]) && Boolean(originalEx) && dictEx?.id !== originalEx?.id;
-          return (
-            <div key={ex.exerciseId + idx} className="m3d-ex">
-              <div className="m3d-ex__num">{idx + 1}</div>
-              <div className="m3d-ex__body">
-                <span className="m3d-ex__name">{dictEx?.name ?? "Unknown"}</span>
-                <div className="m3d-ex__group">
-                  <span>{dictEx?.muscleGroup ?? "—"}</span>
-                  {isSwapped && originalEx ? (
-                    <span className="m3d-ex__swap-note">Alternative for {originalEx.name}</span>
-                  ) : null}
-                </div>
-              </div>
-              <div className="m3d-ex__sets">
-                <small>SETS × REPS</small>
-                <strong>{ex.sets} × {ex.reps}</strong>
-              </div>
-              <div className="m3d-ex__actions">
-                <button
-                  className="m3d-ex__swap"
-                  disabled={!nextSwap}
-                  title={nextSwap ? `Swap with ${nextSwap.name}` : "No same-muscle alternative found"}
-                  type="button"
-                  onClick={() => {
-                    if (!nextSwap) return;
-                    setExerciseSwaps((current) => ({ ...current, [rowKey]: nextSwap.id }));
-                  }}
-                >
-                  <Icons.Swap size={13} />
-                  <span>{nextSwap ? "Swap" : "No swap"}</span>
-                </button>
-                <div className="m3d-ex__video-wrap">
-                  {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) ? (
-                    <CatalogVideoPreview
-                      exerciseName={dictEx.name}
-                      gymVideoUrl={dictEx.gymVideoUrl}
-                      muscleGroup={dictEx.muscleGroup ?? ""}
-                      videoUrl={dictEx.videoUrl}
-                    />
-                  ) : (
-                    <button className="m3d-ex__open" aria-label="Open details" type="button">
-                      <Icons.ChevR size={14} />
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  );
+/** Weekly training-day target derived from the assigned program; falls back to 4 with no program. */
+function getWeeklyTarget(program: WorkoutProgram | null) {
+  return program?.days?.length ? program.days.length : 4;
 }
 
 /* ── Mobile Today card ───────────────────────────────────────────── */
-function MobileTodayCard({ program, currentWeek, exercises, selectedDayIndex, onSelectDay }: {
+function MobileTodayCard({ program, currentWeek, exercises, liftLogs, selectedDayIndex, onSelectDay }: {
   program: WorkoutProgram;
   currentWeek: number | null;
   exercises: Exercise[];
+  liftLogs: LiftLog[];
   selectedDayIndex: number;
   onSelectDay: (idx: number) => void;
 }) {
@@ -666,46 +532,36 @@ function MobileTodayCard({ program, currentWeek, exercises, selectedDayIndex, on
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
   const estMin = liftsCount * 8;
   const [exerciseSwaps, setExerciseSwaps] = useState<Record<string, string>>({});
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   return (
     <section className="mcr-today">
-      <div className="mcr-today__eyebrow" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+      {/* Hero — today's session leads, one primary CTA */}
+      <div className="mcr-today__eyebrow">
         <Icons.Note size={13} />
         Your coach&apos;s plan
       </div>
+      <h2 className="mcr-today__title">{day?.title ?? program.title}</h2>
+      <span className="mcr-today__sub">Week {currentWeek ?? 1} · {liftsCount} lifts · {totalSets} sets · ~{estMin}m</span>
+      <Link className="mcr-today__start mcr-today__start--hero" href={focusedDayHref}>
+        <Icons.Play size={16} />
+        Start workout
+      </Link>
 
-      <div style={{ display: 'flex', gap: '8px', marginTop: '12px', marginBottom: '16px', overflowX: 'auto', paddingBottom: '4px', WebkitOverflowScrolling: 'touch' }} className="hide-scrollbar">
-        {program.days?.map((d, i) => (
-          <button
-            key={d.id}
-            onClick={() => onSelectDay(i)}
-            style={{
-              padding: '6px 14px',
-              borderRadius: '20px',
-              border: selectedDayIndex === i ? '1px solid color-mix(in srgb, var(--brand) 38%, var(--border))' : '1px solid var(--border)',
-              background: selectedDayIndex === i ? 'color-mix(in srgb, var(--brand) 12%, var(--bg-elevated))' : 'transparent',
-              color: selectedDayIndex === i ? 'var(--text)' : 'var(--text-soft)',
-              fontSize: '13px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              whiteSpace: 'nowrap',
-              boxShadow: selectedDayIndex === i ? 'inset 0 0 0 1px color-mix(in srgb, var(--brand) 12%, transparent)' : 'none'
-            }}
-          >
-            Day {d.dayNumber}: {d.title}
-          </button>
-        ))}
-      </div>
-
-      <div className="mcr-today__head">
-        <div>
-          <h2 className="mcr-today__title">{day?.title ?? program.title}</h2>
-          <span className="mcr-today__sub">Week {currentWeek ?? 1} · {liftsCount} lifts · {totalSets} sets · ~{estMin}m</span>
-        </div>
-        <div className="mcr-today__day-num">
-          <strong>{liftsCount}</strong>
-          <small>lifts</small>
+      {/* Demoted day picker — previews another day without changing the default */}
+      <div className="mcr-today__preview">
+        <span className="mcr-today__preview-label">Preview other days</span>
+        <div className="mcr-today__daypicker hide-scrollbar">
+          {program.days?.map((d, i) => (
+            <button
+              key={d.id}
+              className={`m3d-daychip${selectedDayIndex === i ? " m3d-daychip--on" : ""}`}
+              onClick={() => onSelectDay(i)}
+              type="button"
+            >
+              Day {d.dayNumber}: {d.title}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -717,31 +573,65 @@ function MobileTodayCard({ program, currentWeek, exercises, selectedDayIndex, on
           const dictEx = exercises.find((e) => e.id === activeExerciseId) ?? originalEx;
           const nextSwap = getNextExerciseSwap(originalEx, activeExerciseId, exercises);
           const isSwapped = Boolean(exerciseSwaps[rowKey]) && Boolean(originalEx) && dictEx?.id !== originalEx?.id;
+          const lastLift = getLastLiftForExercise(activeExerciseId, liftLogs);
+          const isExpanded = expandedKey === rowKey;
+          const hasVideo = Boolean(dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl));
           return (
-            <div key={ex.exerciseId + idx} className="mcr-ex">
-              <div className="mcr-ex__num">{idx + 1}</div>
-              <div className="mcr-ex__body">
-                <div className="mcr-ex__name">{dictEx?.name ?? "Unknown"}</div>
-                <div className="mcr-ex__meta">
-                  <span>{ex.sets} × {ex.reps}</span>
-                  {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) && (
-                    <>
-                      <span className="mcr-ex__sep">·</span>
-                      <span className="mcr-ex__video-wrap-sm">
-                        <CatalogVideoPreview
-                          exerciseName={dictEx.name}
-                          gymVideoUrl={dictEx.gymVideoUrl}
-                          muscleGroup={dictEx.muscleGroup ?? ""}
-                          videoUrl={dictEx.videoUrl}
-                        />
-                      </span>
-                    </>
-                  )}
+            <div key={ex.exerciseId + idx} className="mcr-ex-wrap">
+              <div
+                className="mcr-ex"
+                role="button"
+                tabIndex={0}
+                aria-expanded={isExpanded}
+                onClick={() => setExpandedKey(isExpanded ? null : rowKey)}
+                onKeyDown={(e) => {
+                  // Only toggle when the row itself is focused — not the inner revert button
+                  if (e.target !== e.currentTarget) return;
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setExpandedKey(isExpanded ? null : rowKey);
+                  }
+                }}
+              >
+                <div className="mcr-ex__num">{idx + 1}</div>
+                <div className="mcr-ex__body">
+                  <div className="mcr-ex__name">{dictEx?.name ?? "Unknown"}</div>
+                  <div className="mcr-ex__meta">
+                    <span>{ex.sets} × {ex.reps}</span>
+                    {lastLift ? (
+                      <>
+                        <span className="mcr-ex__sep">·</span>
+                        <span>
+                          {hasLoggedWeight(lastLift)
+                            ? `last: ${lastLift.weight}kg × ${lastLift.reps}`
+                            : `last: ${lastLift.reps} reps`}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
+                  {isSwapped && originalEx ? (
+                    <button
+                      className="mcr-ex__swap-note mcr-ex__swap-note--btn"
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setExerciseSwaps((current) => {
+                          const rest = { ...current };
+                          delete rest[rowKey];
+                          return rest;
+                        });
+                      }}
+                    >
+                      ↩ Back to {originalEx.name}
+                    </button>
+                  ) : null}
                 </div>
-                {isSwapped && originalEx ? (
-                  <div className="mcr-ex__swap-note">Alternative for {originalEx.name}</div>
-                ) : null}
-                <div className="mcr-ex__actions">
+                <div className={`mcr-ex__open${isExpanded ? " mcr-ex__open--on" : ""}`} aria-hidden="true">
+                  <Icons.ChevR size={14} />
+                </div>
+              </div>
+              {isExpanded && (
+                <div className="mcr-ex__detail">
                   <button
                     className="mcr-ex__swap"
                     disabled={!nextSwap}
@@ -749,162 +639,37 @@ function MobileTodayCard({ program, currentWeek, exercises, selectedDayIndex, on
                     type="button"
                     onClick={() => {
                       if (!nextSwap) return;
-                      setExerciseSwaps((current) => ({ ...current, [rowKey]: nextSwap.id }));
+                      setExerciseSwaps((current) => {
+                        // Wrapping back to the original clears the override instead of storing it
+                        if (nextSwap.id === originalEx?.id) {
+                          const rest = { ...current };
+                          delete rest[rowKey];
+                          return rest;
+                        }
+                        return { ...current, [rowKey]: nextSwap.id };
+                      });
                     }}
                   >
                     <Icons.Swap size={12} />
                     <span>{nextSwap ? "Swap" : "No swap"}</span>
                   </button>
+                  {hasVideo && dictEx ? (
+                    <span className="mcr-ex__video-wrap-sm">
+                      <CatalogVideoPreview
+                        exerciseName={dictEx.name}
+                        gymVideoUrl={dictEx.gymVideoUrl}
+                        muscleGroup={dictEx.muscleGroup ?? ""}
+                        videoUrl={dictEx.videoUrl}
+                      />
+                    </span>
+                  ) : (
+                    <span className="mcr-ex__detail-note">No form video available</span>
+                  )}
                 </div>
-              </div>
+              )}
             </div>
           );
         })}
-      </div>
-
-      <Link className="mcr-today__start" href={focusedDayHref}>
-        <Icons.Play size={16} />
-        Open workout
-      </Link>
-    </section>
-  );
-}
-
-/* ── PT card ─────────────────────────────────────────────────────── */
-function PTCard() {
-  return (
-    <section className="m3d-card">
-      <div className="m3d-card__head">
-        <div className="m3d-card__head-icon" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
-          <Icons.Calendar size={16} />
-        </div>
-        <div>
-          <span className="m3d-card__eyebrow">PERSONAL TRAINING</span>
-          <strong className="m3d-card__title">PT History</strong>
-        </div>
-      </div>
-      <p style={{ fontSize: 13, color: "var(--text-soft)", margin: "0 0 12px", lineHeight: 1.6 }}>
-        View your personal training sessions, session notes, and exercise logs from your trainer.
-      </p>
-      <Link href="/member/pt-history" className="m3d-btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-        <Icons.Calendar size={13} /> View PT sessions →
-      </Link>
-    </section>
-  );
-}
-
-/* ── PRs card ────────────────────────────────────────────────────── */
-function PRsCard({ liftLogs, exercises }: { liftLogs: LiftLog[]; exercises: Exercise[] }) {
-  // Find top-3 PRs (max weight per exercise)
-  const prsByEx = new Map<string, { weight: number; reps?: number; loggedAt?: string }>();
-  for (const log of liftLogs) {
-    if (!log.exerciseId) continue;
-    const current = prsByEx.get(log.exerciseId);
-    if (!current || (log.weight ?? 0) > current.weight) {
-      prsByEx.set(log.exerciseId, { weight: log.weight ?? 0, reps: log.reps ? Number(log.reps) : undefined, loggedAt: log.loggedAt });
-    }
-  }
-  const prs = [...prsByEx.entries()]
-    .sort((a, b) => b[1].weight - a[1].weight)
-    .slice(0, 3)
-    .map(([exId, data]) => {
-      const ex = exercises.find((e) => e.id === exId);
-      return { name: ex?.name ?? exId, ...data };
-    });
-
-  return (
-    <section className="m3d-card">
-      <div className="m3d-card__head">
-        <div className="m3d-card__head-icon" style={{ background: "color-mix(in srgb, var(--warning) 18%, transparent)", color: "var(--warning)" }}>
-          <Icons.Trophy size={16} />
-        </div>
-        <div>
-          <span className="m3d-card__eyebrow">RECENT PRs</span>
-          <strong className="m3d-card__title">Personal records</strong>
-        </div>
-      </div>
-      {prs.length === 0 ? (
-        <p className="mcr-empty-small">No lift logs yet — start your first workout!</p>
-      ) : (
-        <ul className="m3d-prs">
-          {prs.map((pr) => (
-            <li key={pr.name}>
-              <div>
-                <strong>{pr.name}</strong>
-                <span>{pr.loggedAt ? new Date(pr.loggedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "—"}</span>
-              </div>
-              <span className="m3d-prs__weight">{pr.weight}<small>kg{pr.reps ? ` × ${pr.reps}` : ""}</small></span>
-            </li>
-          ))}
-        </ul>
-      )}
-    </section>
-  );
-}
-
-/* ── Body & Macros card ──────────────────────────────────────────── */
-function BodyMacrosCard({ profile, macroLog }: { member?: Member; profile: MemberProfile; macroLog?: MacroLog | null }) {
-  const targetKcal = profile.macroNutritionTarget?.calories ?? 1800;
-  const actualKcal = macroLog ? ((macroLog.protein ?? 0) * 4 + (macroLog.carbs ?? 0) * 4 + (macroLog.fat ?? 0) * 9) : 0;
-  const kcalPct = Math.min(100, Math.round((actualKcal / targetKcal) * 100));
-
-  const tp = profile.macroNutritionTarget?.protein ?? 110;
-  const tc = profile.macroNutritionTarget?.carbs ?? 210;
-  const tf = profile.macroNutritionTarget?.fat ?? 55;
-  const ap = macroLog?.protein ?? 0;
-  const ac = macroLog?.carbs ?? 0;
-  const af = macroLog?.fat ?? 0;
-
-  return (
-    <section className="m3d-card">
-      <div className="m3d-card__head">
-        <div className="m3d-card__head-icon" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
-          <Icons.Heart size={16} />
-        </div>
-        <div>
-          <span className="m3d-card__eyebrow">BODY · TODAY</span>
-          <strong className="m3d-card__title">Weight & macros</strong>
-        </div>
-        <button className="m3d-btn-ghost m3d-body-log" type="button">
-          <Icons.Plus size={13} /> Log
-        </button>
-      </div>
-      <div className="m3d-body-row">
-        <div className="m3d-body-stat">
-          <span>Weight</span>
-          <strong>{profile.weightKg ?? "—"}<small>{profile.weightKg ? "kg" : ""}</small></strong>
-          <em>body weight</em>
-        </div>
-        <div className="m3d-body-stat">
-          <span>Height</span>
-          <strong>{profile.heightCm ?? "—"}<small>{profile.heightCm ? "cm" : ""}</small></strong>
-          <em>stature</em>
-        </div>
-        <div className="m3d-body-stat">
-          <span>Kcal</span>
-          <strong>{actualKcal > 0 ? actualKcal : "—"}</strong>
-          <em>of {targetKcal} target</em>
-        </div>
-      </div>
-      <div className="m3d-macros">
-        <div className="m3d-macros__head">
-          <span>Today&apos;s intake</span>
-          <strong>{actualKcal > 0 ? actualKcal : 0}<small> / {targetKcal} kcal · {kcalPct}%</small></strong>
-        </div>
-        <div className="m3d-macros__row">
-          <div className="m3d-macro">
-            <div className="m3d-macro__head"><span>Protein</span><small>{ap}/{tp}g</small></div>
-            <div className="m3d-macro__bar"><div className="m3d-macro__fill m3d-macro__fill--p" style={{ width: `${Math.min(100, (ap/tp)*100)}%` }} /></div>
-          </div>
-          <div className="m3d-macro">
-            <div className="m3d-macro__head"><span>Carbs</span><small>{ac}/{tc}g</small></div>
-            <div className="m3d-macro__bar"><div className="m3d-macro__fill m3d-macro__fill--c" style={{ width: `${Math.min(100, (ac/tc)*100)}%` }} /></div>
-          </div>
-          <div className="m3d-macro">
-            <div className="m3d-macro__head"><span>Fat</span><small>{af}/{tf}g</small></div>
-            <div className="m3d-macro__bar"><div className="m3d-macro__fill m3d-macro__fill--f" style={{ width: `${Math.min(100, (af/tf)*100)}%` }} /></div>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -914,19 +679,23 @@ function BodyMacrosCard({ profile, macroLog }: { member?: Member; profile: Membe
 export function MemberCoachShell(props: MemberCoachShellProps) {
   const {
     firstName, gymName, gymLogoUrl, gymNotices,
-    weeklyStreak, daysTrainedThisWeek, liftLogCount,
+    weeklyStreak, daysTrainedThisWeek,
     membershipStatus, membershipEndDate,
     coachNote, coachNoteFrom,
     program, currentWeek, exercises, liftLogs, dayLogs, activityLogs,
-    macroLogs, macroLog, macroTarget,
+    macroLogs, mealLogs, macroLog, macroTarget,
     memberId, gymId, todayDate,
     member, profile,
   } = props;
 
+  const weeklyTarget = getWeeklyTarget(program);
+
+  // Mobile bottom-tab nav — unchanged, fully independent from desktop nav.
   const [tab, setTab] = useState("train");
+  // Desktop sidebar nav — Overview/Workout/Logs/Progress/Macros.
+  const [screen, setScreen] = useState("overview");
   const [toast, setToast] = useState<string | null>(null);
   const [selectedPreviewDay, setSelectedPreviewDay] = useState(0);
-  const [nowMs] = useState(() => Date.now());
 
   function handleToast(msg: string) {
     setToast(msg);
@@ -941,194 +710,147 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
   return (
     <div className="m3d-root">
       {/* ── Desktop Sidebar ── */}
-      <Sidebar tab={tab} setTab={setTab} firstName={firstName} gymName={gymName} gymLogoUrl={gymLogoUrl} />
+      <Sidebar screen={screen} setScreen={setScreen} firstName={firstName} gymName={gymName} gymLogoUrl={gymLogoUrl} />
 
       {/* ── Main Content ── */}
       <div className="m3d-main">
         {/* Desktop topbar (hidden on mobile) */}
-        <DesktopTopBar onToast={handleToast} />
+        <DesktopTopBar screen={screen} onToast={handleToast} />
 
         <div className="m3d-content">
-
-          {/* coach tab redirected — kept as no-op since nav links to /member/coach directly */}
-
-          {/* ── Train tab (default home) ── */}
-          {tab === "train" && (
-            <>
-              {/* Desktop page header */}
-              <div className="m3d-pagehead">
-                <div>
-                  <span className="m3d-pagehead__eyebrow">
-                    {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
-                  </span>
-                  <h1 className="m3d-pagehead__title">Hi, {firstName} — let&apos;s train.</h1>
-                </div>
-                <div className="m3d-pagehead__chips">
-                  <div className="m3d-chip">
-                    <Icons.Flame size={14} />
-                    <strong>{weeklyStreak > 0 ? weeklyStreak : "—"}<small>w</small></strong>
-                    <span>streak</span>
-                  </div>
-                  <div className="m3d-chip">
-                    <Icons.Dumbbell size={14} />
-                    <strong>{daysTrainedThisWeek}<small>/7</small></strong>
-                    <span>this week</span>
-                  </div>
-                  <div className="m3d-chip">
-                    <Icons.Trophy size={14} />
-                    <strong>{liftLogCount}</strong>
-                    <span>sets logged</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Mobile top bar (hidden on desktop) */}
-              <MobileTopBar
+          {/* ══ Desktop screens ══ */}
+          <div className="mcr-desktop-only">
+            {screen === "overview" && (
+              <OverviewScreen
                 firstName={firstName}
                 gymName={gymName}
-                gymLogoUrl={gymLogoUrl}
-                onNotif={() => handleToast("No new notifications")}
+                program={program}
+                currentWeek={currentWeek}
+                exercises={exercises}
+                liftLogs={liftLogs}
+                dayLogs={dayLogs}
+                weeklyStreak={weeklyStreak}
+                daysTrainedThisWeek={daysTrainedThisWeek}
+                weeklyTarget={weeklyTarget}
+                coachNote={coachNote}
+                coachNoteFrom={coachNoteFrom}
+                gymNotices={gymNotices}
+                goWorkout={() => setScreen("workout")}
+                goLogs={() => setScreen("logs")}
               />
+            )}
 
-              <div className="m3d-grid">
-                <div className="m3d-grid__left">
-                  {/* Compact coach note banner */}
-                  <CoachNoteBanner coachNote={coachNote} coachNoteFrom={coachNoteFrom} />
-
-                  {/* Mobile-only stats strip */}
-                  <StatsSection
-                    weeklyStreak={weeklyStreak}
-                    daysTrainedThisWeek={daysTrainedThisWeek}
-                    weeklyTarget={4}
-                    profile={profile}
-                    liftLogs={liftLogs}
-                  />
-
-                  {program ? (
-                    <>
-                      {/* Desktop view: table layout */}
-                      <div className="mcr-desktop-only">
-                        <TodaySessionList
-                          program={program}
-                          currentWeek={currentWeek}
-                          exercises={exercises}
-                          selectedDayIndex={selectedPreviewDay}
-                          onSelectDay={setSelectedPreviewDay}
-                        />
-                      </div>
-                      {/* Mobile view: card layout */}
-                      <div className="mcr-mobile-only">
-                        <MobileTodayCard
-                          program={program}
-                          currentWeek={currentWeek}
-                          exercises={exercises}
-                          selectedDayIndex={selectedPreviewDay}
-                          onSelectDay={setSelectedPreviewDay}
-                        />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="mcr-no-plan">
-                      <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
-                      <h2>No workout plan assigned</h2>
-                      <p>Your trainer hasn&apos;t assigned a program yet. <Link href="/member/coach">Reach out to your coach →</Link></p>
+            {screen === "workout" && (
+              program ? (
+                <WorkoutScreen
+                  memberId={memberId}
+                  gymId={gymId}
+                  program={program}
+                  exercises={exercises}
+                  liftLogs={liftLogs}
+                  dayLogs={dayLogs}
+                  selectedDayIndex={selectedPreviewDay}
+                  onSelectDay={setSelectedPreviewDay}
+                />
+              ) : (
+                <>
+                  <div className="m3d-pagehead">
+                    <div>
+                      <span className="m3d-pagehead__eyebrow">
+                        {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
+                      </span>
+                      <h1 className="m3d-pagehead__title">Workout</h1>
                     </div>
-                  )}
+                  </div>
+                  <div className="mcr-no-plan">
+                    <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
+                    <h2>No workout plan assigned</h2>
+                    <p>Your trainer hasn&apos;t assigned a program yet. <Link href="/member/coach">Reach out to your coach →</Link></p>
+                  </div>
+                </>
+              )
+            )}
 
-                  {gymNotices && gymNotices.length > 0 && (
-                    <div className="mcr-notices-wrap">
-                      <GymNoticeBoard notices={gymNotices} />
-                    </div>
-                  )}
+            {screen === "logs" && (
+              <LogsScreen liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} activityLogs={activityLogs} macroLogs={macroLogs} macroTarget={macroTarget} />
+            )}
 
-                  {/* Mobile-only membership row */}
-                  <div className="mcr-mobile-only">
+            {screen === "progress" && (
+              <ProgressScreen exercises={exercises} liftLogs={liftLogs} dayLogs={dayLogs} activityLogs={activityLogs} macroLogs={macroLogs} macroTarget={macroTarget} memberId={memberId} program={program} />
+            )}
+
+            {screen === "macros" && (
+              <MacrosScreen memberId={memberId} gymId={gymId} todayDate={todayDate} macroLog={macroLog} macroTarget={macroTarget} macroLogs={macroLogs} mealLogs={mealLogs} profile={profile} member={member} />
+            )}
+          </div>
+
+          {/* ══ Mobile screens (unchanged) ══ */}
+          <div className="mcr-mobile-only">
+            {tab === "train" && (
+              <>
+                <MobileTopBar
+                  firstName={firstName}
+                  gymName={gymName}
+                  gymLogoUrl={gymLogoUrl}
+                  onNotif={() => handleToast("No new notifications")}
+                />
+
+                <div className="m3d-grid">
+                  <div className="m3d-grid__left">
+                    <CoachNoteBanner coachNote={coachNote} coachNoteFrom={coachNoteFrom} />
+
+                    <StatsSection
+                      weeklyStreak={weeklyStreak}
+                      daysTrainedThisWeek={daysTrainedThisWeek}
+                      weeklyTarget={weeklyTarget}
+                      profile={profile}
+                      liftLogs={liftLogs}
+                    />
+
+                    {program ? (
+                      <MobileTodayCard
+                        program={program}
+                        currentWeek={currentWeek}
+                        exercises={exercises}
+                        liftLogs={liftLogs}
+                        selectedDayIndex={selectedPreviewDay}
+                        onSelectDay={setSelectedPreviewDay}
+                      />
+                    ) : (
+                      <div className="mcr-no-plan">
+                        <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
+                        <h2>No workout plan assigned</h2>
+                        <p>Your trainer hasn&apos;t assigned a program yet. <Link href="/member/coach">Reach out to your coach →</Link></p>
+                      </div>
+                    )}
+
+                    {gymNotices && gymNotices.length > 0 && (
+                      <div className="mcr-notices-wrap">
+                        <GymNoticeBoard notices={gymNotices} />
+                      </div>
+                    )}
+
                     <MembershipRow membershipStatus={membershipStatus} membershipEndDate={membershipEndDate} />
                   </div>
                 </div>
+              </>
+            )}
 
-                <div className="m3d-grid__right">
-                  <BodyMacrosCard member={member} profile={profile} macroLog={macroLog} />
-                  <PRsCard liftLogs={liftLogs} exercises={exercises} />
-                  <PTCard />
-                  {/* Desktop-only membership */}
-                  <section className="m3d-card">
-                    <div className="m3d-membership">
-                      <div>
-                        <small className="mcr-eyebrow-tiny">Membership</small>
-                        <strong>
-                          {membershipStatus === "active" ? "Active" :
-                           membershipStatus === "expiring_soon" ? "Expiring soon" :
-                           membershipStatus === "expired" ? "Expired" : "—"}
-                          {membershipEndDate ? ` · ${Math.ceil((new Date(membershipEndDate).getTime() - nowMs) / 86400000)}d left` : ""}
-                        </strong>
-                      </div>
-                      <Link href="/member/membership" className="m3d-btn-ghost m3d-btn-sm">Manage</Link>
-                    </div>
-                  </section>
-                </div>
+            {tab === "progress" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <MemberProgressPanel exercises={exercises} initialLiftLogs={liftLogs} memberId={memberId} program={program} />
+                <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} activityLogs={activityLogs} macroLogs={macroLogs} macroTarget={macroTarget} />
               </div>
-            </>
-          )}
+            )}
 
-          {/* ── Progress tab ── */}
-          {tab === "progress" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <MemberProgressPanel exercises={exercises} initialLiftLogs={liftLogs} memberId={memberId} program={program} />
-              <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} activityLogs={activityLogs} macroLogs={macroLogs} macroTarget={macroTarget} />
-            </div>
-          )}
-
-          {/* ── Calendar tab ── */}
-          {tab === "calendar" && (
-            <WorkoutCalendar liftLogs={liftLogs} dayLogs={dayLogs} activityLogs={activityLogs} macroLogs={macroLogs} macroTarget={macroTarget} />
-          )}
-
-          {/* ── Body tab ── */}
-          {tab === "body" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              <ProfileMetricsWidget profile={profile} />
-              <EditableMetrics member={{ ...member, ...profile }} />
-              <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
-            </div>
-          )}
-
-          {/* ── Coach tab (inline) ── */}
-          {tab === "coach" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px", maxWidth: 640 }}>
-              <div className="m3d-pagehead" style={{ marginBottom: 0 }}>
-                <div>
-                  <span className="m3d-pagehead__eyebrow">Coach</span>
-                  <h1 className="m3d-pagehead__title" style={{ fontSize: 22 }}>Message your coach</h1>
-                </div>
+            {tab === "body" && (
+              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+                <ProfileMetricsWidget profile={profile} />
+                <EditableMetrics member={{ ...member, ...profile }} />
+                <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
               </div>
-              {coachNote ? (
-                <div className="m3d-card" style={{ padding: "20px 22px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-                    <div className="m3d-card__head-icon" style={{ background: "var(--brand-soft)", color: "var(--brand)" }}>
-                      <Icons.Mail size={15} />
-                    </div>
-                    <div>
-                      <span className="m3d-card__eyebrow">LATEST NOTE FROM YOUR COACH</span>
-                      <strong className="m3d-card__title" style={{ display: "block" }}>{coachNoteFrom ?? "Your trainer"}</strong>
-                    </div>
-                  </div>
-                  <p style={{ margin: "0 0 16px", fontSize: 14, lineHeight: 1.7, color: "var(--text)" }}>{coachNote}</p>
-                  <Link href="/member/coach" className="m3d-btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-                    <Icons.Mail size={13} /> Open full conversation →
-                  </Link>
-                </div>
-              ) : (
-                <div className="m3d-card" style={{ padding: "32px 24px", textAlign: "center" }}>
-                  <Icons.Mail size={28} style={{ color: "var(--text-faint)", marginBottom: 12 }} />
-                  <p style={{ color: "var(--text-soft)", marginBottom: 16 }}>No coach note yet. Your trainer will leave you a message here before your session.</p>
-                  <Link href="/member/coach" className="m3d-btn-ghost" style={{ display: "inline-flex", alignItems: "center", gap: 6, textDecoration: "none" }}>
-                    <Icons.Mail size={13} /> Open conversation →
-                  </Link>
-                </div>
-              )}
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

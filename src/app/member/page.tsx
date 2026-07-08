@@ -8,6 +8,7 @@ import {
   getGymDetail,
   getLiftLogsForMember,
   getMacroLogsForMember,
+  getMealLogsForMember,
   getActivityLogsForMember,
   getMacroLogForMember,
   getMemberWithProfile,
@@ -34,7 +35,8 @@ export default async function MemberDashboard() {
     { dayLogs },
     { macroLog: initialMacroLog },
     { macroLogs },
-    { activityLogs }
+    { activityLogs },
+    { mealLogs }
   ] = await Promise.all([
     getMemberWithProfile(currentMemberId),
     getProgramAssignmentForMember(currentMemberId, gymId),
@@ -46,7 +48,8 @@ export default async function MemberDashboard() {
     getDayLogsForMember(currentMemberId, gymId),
     getMacroLogForMember(currentMemberId, gymId, todayDate),
     getMacroLogsForMember(currentMemberId, gymId, 14),
-    getActivityLogsForMember(currentMemberId, gymId, 30)
+    getActivityLogsForMember(currentMemberId, gymId, 30),
+    getMealLogsForMember(currentMemberId, gymId, todayDate)
   ]);
 
   if (!member) return null;
@@ -120,7 +123,6 @@ export default async function MemberDashboard() {
       gymNotices={gym?.notices}
       weeklyStreak={weeklyStreak}
       daysTrainedThisWeek={daysTrainedThisWeek}
-      liftLogCount={liftLogs.length}
       membershipStatus={member.membershipStatus}
       membershipEndDate={member.membershipEndDate}
       coachNote={profile.coachNote}
@@ -134,6 +136,7 @@ export default async function MemberDashboard() {
       dayLogs={dayLogs}
       activityLogs={activityLogs}
       macroLogs={macroLogs}
+      mealLogs={mealLogs}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       macroLog={initialMacroLog as any}
       macroTarget={profile.macroNutritionTarget}

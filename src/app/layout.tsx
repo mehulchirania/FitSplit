@@ -45,6 +45,11 @@ import "./styles/19-members-redesign.css";
 import "./styles/20-owner-dashboard.css";
 import "./styles/21-member-redesign.css";
 import "./styles/22-owner-detail-reports.css";
+import "./styles/23-member-overview.css";
+import "./styles/24-member-workout.css";
+import "./styles/25-member-logs.css";
+import "./styles/26-member-progress-screen.css";
+import "./styles/27-member-macros.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });

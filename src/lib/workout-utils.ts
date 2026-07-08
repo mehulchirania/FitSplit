@@ -1,4 +1,4 @@
-import type { Exercise, SkipReason, WorkoutExercise } from "@/types/domain";
+import type { Exercise, LiftLog, SkipReason, WorkoutExercise } from "@/types/domain";
 
 export const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -152,4 +152,48 @@ export function getDayMuscleTargets(items: WorkoutExercise[], exercises: Exercis
     primary: sortedGroups[0] ?? "Full body",
     secondary: sortedGroups.slice(1, 4)
   };
+}
+
+function normalizeMuscleToken(value?: string | null) {
+  return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+/** Same-muscle-group alternatives for a swap-exercise affordance. */
+export function getAlternateExercises(original: Exercise | undefined, exercises: Exercise[]) {
+  if (!original) return [];
+  const originalGroup = normalizeMuscleToken(original.muscleGroup);
+  return exercises
+    .filter((candidate) => candidate.id !== original.id && normalizeMuscleToken(candidate.muscleGroup) === originalGroup)
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Cycles through same-muscle alternatives (including back to the original) each time it's called. */
+export function getNextExerciseSwap(original: Exercise | undefined, currentExerciseId: string, exercises: Exercise[]) {
+  if (!original) return null;
+  const cycle = [original, ...getAlternateExercises(original, exercises)];
+  if (cycle.length < 2) return null;
+  const currentIndex = cycle.findIndex((candidate) => candidate.id === currentExerciseId);
+  return cycle[(currentIndex + 1) % cycle.length] ?? null;
+}
+
+export function getExerciseSwapKey(dayId: string | undefined, selectedDayIndex: number, exerciseId: string, index: number) {
+  return `${dayId ?? `day-${selectedDayIndex}`}:${exerciseId}:${index}`;
+}
+
+/** Most recent logged set for an exercise, used to show "last: 60kg × 8" on a row. */
+export function getLastLiftForExercise(exerciseId: string | undefined, liftLogs: LiftLog[]) {
+  if (!exerciseId) return null;
+  let best: LiftLog | null = null;
+  for (const log of liftLogs) {
+    if (log.exerciseId !== exerciseId || !log.loggedAt) continue;
+    if (!best || new Date(log.loggedAt).getTime() > new Date(best.loggedAt).getTime()) {
+      best = log;
+    }
+  }
+  return best;
+}
+
+/** Whether a lift log carries a real load — bodyweight sets are logged with weight 0/null. */
+export function hasLoggedWeight(log: LiftLog) {
+  return typeof log.weight === "number" && log.weight > 0;
 }

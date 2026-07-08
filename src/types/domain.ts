@@ -526,6 +526,27 @@ export type MacroLog = {
 };
 
 /**
+ * A single logged meal (quick-add or manual entry) — many per member per day.
+ * Logging a meal also increments the day's `MacroLog` protein/carbs/fat totals,
+ * so MacroLog stays the source of truth for daily progress bars.
+ * Lives at: gyms/{gymId}/mealLogs/{id}
+ */
+export type MealLog = {
+  id: string;
+  memberId: string;
+  gymId: string;
+  /** Calendar date in YYYY-MM-DD format (local timezone) */
+  date: string;
+  name: string;
+  items?: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  loggedAt: string;
+};
+
+/**
  * Activity log entry for stretch or cardio sessions.
  * Lives at: gyms/{gymId}/activityLogs/{id}
  */

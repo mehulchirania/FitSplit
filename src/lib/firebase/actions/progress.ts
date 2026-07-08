@@ -2,6 +2,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
+import { FieldValue } from "firebase-admin/firestore";
 import { requireAuth, requireRole } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
@@ -540,6 +541,80 @@ export async function saveMacroLog(
     return success("Macros saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
     return failure(error, "Could not save macro log.");
+  }
+}
+
+// ── Meal logging ──────────────────────────────────────────────────────────────
+// A meal is its own record (for the "meal log" list / quick-add UX). Logging one
+// also increments the day's macroLogs totals via FieldValue.increment, so it stays
+// additive with the existing "type in today's totals" saveMacroLog flow above —
+// a manual edit resets the baseline, later meals keep incrementing from there.
+
+const LogMealSchema = z.object({
+  memberId: ZodHelpers.textRequired("Member"),
+  date: ZodHelpers.textRequired("Date"),
+  name: ZodHelpers.textRequired("Meal name"),
+  items: z.string().max(300).optional(),
+  kcal: z.coerce.number().min(0).max(5000),
+  protein: z.coerce.number().min(0).max(500),
+  carbs: z.coerce.number().min(0).max(500),
+  fat: z.coerce.number().min(0).max(500)
+});
+
+export async function logMeal(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, LogMealSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { memberId, date, name, items, kcal, protein, carbs, fat } = parsed.data;
+    assertCanManageMember(currentUser, memberId);
+
+    if (!hasFirebaseAdminConfig()) {
+      return success("Meal logged (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    }
+
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const now = new Date().toISOString();
+    const mealId = randomUUID();
+
+    const mealRecord = {
+      id: mealId,
+      memberId,
+      gymId,
+      date,
+      name,
+      items: items ?? "",
+      kcal,
+      protein,
+      carbs,
+      fat,
+      loggedAt: now
+    };
+
+    await mirrorGymScopedRecord(db, gymId, "mealLogs", mealId, mealRecord);
+
+    const macroDocId = `${memberId}_${date}`;
+    const macroIncrement = {
+      memberId,
+      gymId,
+      date,
+      protein: FieldValue.increment(protein),
+      carbs: FieldValue.increment(carbs),
+      fat: FieldValue.increment(fat),
+      water: FieldValue.increment(0),
+      updatedAt: now
+    };
+    await scopedGymDoc(db, gymId, "macroLogs", macroDocId).set({ ...macroIncrement, id: macroDocId }, { merge: true });
+
+    return success("Meal logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+  } catch (error) {
+    return failure(error, "Could not log this meal.");
   }
 }
 
