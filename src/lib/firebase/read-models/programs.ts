@@ -7,7 +7,7 @@ import {
   programs as mockPrograms
 } from "@/lib/mock-data";
 import { applyCurrentWeeklyVariation } from "@/lib/split-library";
-import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
+import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymCollection, gymTag } from "./shared";
 
@@ -168,18 +168,12 @@ async function getProgramAssignmentForMemberUncached(memberId: string, gymId?: s
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "programAssignments")
-          .where("memberId", "==", memberId)
-          .where("status", "==", "active")
-          .limit(1)
-          .get()
-      : await db
-          .collectionGroup(gymScopedCollectionPaths.programAssignments)
-          .where("memberId", "==", memberId)
-          .where("status", "==", "active")
-          .limit(1)
-          .get();
+    const targetGymId = gymId ?? PRIMARY_GYM_ID;
+    const scopedSnapshot = await gymCollection(db, targetGymId, "programAssignments")
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .limit(1)
+      .get();
     const snapshot = scopedSnapshot.empty
       ? await db
           .collection(collectionPaths.programAssignments)

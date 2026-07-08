@@ -4,6 +4,19 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Fix: member detail page missed gym-scoped program assignments (2026-07-07, late evening)
+
+`/owner/members/[memberId]` showed "Needs program" and an empty schedule for seeded shg members (e.g. `shg-m-arjun`) while `/owner/members` correctly showed their program (the "known data issue" flagged in the redesign entry below). Root cause: the members list uses `getActiveProgramAssignments(gymId)`, which reads the canonical gym-scoped `gyms/{gymId}/programAssignments` directly, but the detail page called `getProgramAssignmentForMember(memberId)` without a `gymId`, which routed into a `collectionGroup("programAssignments")` query. That query depends on the COLLECTION_GROUP-scoped `(memberId, status)` composite index; when it fails, the bare `catch` in the read-model silently returned the mock-data fallback (which has no `shg-m-*` entries), so the assignment resolved to null.
+
+Fix (read path only, per the R4 pattern in `docs/12_ARCHITECTURE_AUDIT_2026.md`):
+
+- `src/lib/firebase/read-models/programs.ts` — `getProgramAssignmentForMemberUncached` now always reads the gym-scoped path (`gymId ?? PRIMARY_GYM_ID`, same default as `getActiveProgramAssignments`) with the existing legacy root-collection fallback intact. The cross-tenant `collectionGroup` branch was removed.
+- `src/app/owner/members/[memberId]/page.tsx` — passes `gymId` to `getProgramAssignmentForMember`, matching every other call site (member dashboard, member programs pages), so non-primary demo gyms resolve correctly too.
+
+Verified: `npx tsc --noEmit` and `npm run build` clean; `/owner/members/shg-m-arjun` in the browser now shows the "Push Pull Legs Upper Lower" assignment and the full weekly schedule (Mon Push → Fri Lower) instead of the "Needs program" pill.
+
+---
+
 ## Implemented: Owner Member Detail + Reports Redesign (2026-07-07, evening)
 
 Implemented `docs/19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md` (Sonnet agent did the bulk; the agent hit a session limit near the end, so §5.5 deep-link wiring, the `atc-empty` chart empty-state CSS, and all doc updates were finished by Fable in the same session).

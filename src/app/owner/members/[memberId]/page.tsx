@@ -57,7 +57,7 @@ export default async function MemberDetailPage({
     ptSessions
   ] = await Promise.all([
     getMemberDetail(memberId),
-    getProgramAssignmentForMember(memberId),
+    getProgramAssignmentForMember(memberId, gymId),
     getWorkoutPrograms(gymId),
     getExerciseCatalog(gymId),
     getProfileMetrics(memberId),
