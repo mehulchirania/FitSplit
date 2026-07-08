@@ -3,7 +3,7 @@
 ## Project identity
 
 Gym management platform. Pilot gym: **Sri Shakthi Hanuman Gym** (`shg`).  
-Firebase project: `fitsplit-29215`. Live: https://fitsplit--fitsplit-29215.us-central1.hosted.app  
+Firebase project: `fitsplit-29215`. Live: https://fitsplit.in (custom domain; the default `*.hosted.app` domain was disabled 2026-05-19 and 404s by design — not an outage)  
 Developer: Mehul Chirania (`mehulchirania@gmail.com`), Bengaluru. Also a demo member: uid `member-mehul`, username `mehulchirania`, PIN `1234`.
 
 ## Stack
