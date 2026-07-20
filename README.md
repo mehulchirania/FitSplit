@@ -32,6 +32,8 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 **B2C + B2B Evolution (Planned):** FitSplit is evolving from a pure gym-scoped multi-tenant architecture into a hybrid B2C/B2B platform. Standalone consumers will have their own "personal gym" workspaces (`gyms/personal-{uid}`), allowing them to track progress independently or seamlessly join a real gym later.
 
+**Repo layout:** npm workspaces, root `src/` is the Next.js app. `packages/core` (`@fitsplit/core`) holds framework-agnostic code shared with a future mobile app — domain types, `workout-utils`, `split-library`, and Zod validation helpers. The original `src/types/domain.ts`, `src/lib/workout-utils.ts`, `src/lib/split-library.ts`, and `src/lib/firebase/actions/validation.ts` are now thin re-export shims at their old paths, so nothing importing them changed. See [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md).
+
 ---
 
 ## 📚 Documentation
@@ -44,6 +46,8 @@ The docs follow a three-tier model:
 - **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `12_UI_STYLE_GUIDE.md`, `14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`, `17_ROOT_BACKFILL_RUNBOOK.md`, and `DISCREPANCIES.md`.
 
 This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
+
+**Native mobile (in progress — phase 1 of the plan done):** a design plan for a React Native/Expo mobile app lives at [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md). Phase 1 (extracting `packages/core`, see above) is done; the Expo app itself hasn't been scaffolded yet. The web app is unaffected and keeps deploying as-is; the pre-initiative state is tagged `archive/nextjs-web-2026-07-20`.
 
 ---
 

@@ -4,6 +4,46 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Expo/React Native migration — phase 1, `packages/core` extraction (2026-07-20)
+
+First implementation step of the migration plan below: extracted the framework-agnostic code identified in `docs/20_EXPO_MIGRATION_PLAN.md` §1 into a new npm workspace package, `packages/core` (`@fitsplit/core`), so a future Expo app can depend on it without pulling in anything Next.js-specific.
+
+**What moved (via `git mv`, preserving history):**
+- `src/types/domain.ts` → `packages/core/src/domain.ts` (743 lines, no imports — pure move)
+- `src/types/action-state.ts` → `packages/core/src/action-state.ts` (pure move)
+- `src/lib/workout-utils.ts` → `packages/core/src/workout-utils.ts` (import path adjusted to relative)
+- `src/lib/split-library.ts` → `packages/core/src/split-library.ts` (import path adjusted to relative)
+- `src/lib/firebase/actions/validation.ts` → `packages/core/src/validation.ts` (import path adjusted to relative)
+- `src/lib/split-library-source.json` → `packages/core/src/split-library-source.json`
+
+**Deliberate risk-reduction choice:** rather than rewriting the ~140 existing import sites across the app (`@/types/domain` alone has 82 importers, `@/types/action-state` has 51), the four original `src/` paths were left in place as one-line re-export shims (e.g. `src/types/domain.ts` now reads `export * from "@fitsplit/core/domain";`). Every existing import in the Next.js app is unchanged. This keeps the diff for this step small and low-risk against a production app that auto-deploys on push to `main`, at the cost of one extra indirection layer that can be flattened later if worth it.
+
+**One deliberate non-move:** `workouts.json` (the exercise catalog, 1,305 lines) is duplicated rather than shared — a copy lives in `packages/core/src/workouts.json` for `split-library.ts`, and the original stays at `src/lib/workouts.json` for three web-only direct importers (`actions/exercises.ts`, `actions/programs.ts`, `mock-data.ts`) that have no reason to ever be part of the shared package. The alternative (having `packages/core` reach back into `src/`) would have undermined the point of the extraction. If this file needs to change, both copies need the edit.
+
+**Also required, and easy to miss:** Next.js doesn't transpile raw TypeScript source sitting in `node_modules` by default — `packages/core` ships `.ts` source directly with no build step, so `next.config.mjs` now sets `transpilePackages: ["@fitsplit/core"]`. Root `package.json` gained `"workspaces": ["packages/*"]` and a `"@fitsplit/core": "*"` dependency entry. **Flagged for the Expo step, not yet solved:** Metro (React Native's bundler) has the same non-transpilation default for `node_modules` and will need its own equivalent handling — don't assume this config carries over.
+
+**Verified clean:** `npx tsc --noEmit` (0 errors — one real catch: `workouts.json` needed restoring at its original path since three files imported it directly, not just through `split-library.ts`, before this was clean), `npm run build` (all 47 routes compiled, zero errors), `npx vitest run` (110/110 tests passing, including `src/lib/__tests__/validation.test.ts` unchanged against the new shim), `npx eslint .` (0 errors; the 6 pre-existing warnings are all in `member-workout-screen.tsx`, untouched by this change). Not yet committed — working tree only, pending review.
+
+**Archive tag from the same initiative, still local-only, not pushed to `origin`.**
+
+---
+
+## Expo/React Native migration — archive tag + design plan (2026-07-20)
+
+Initiative kicked off to eventually target native Android/iOS via Expo, driven by an explicit user decision after scoping showed this is a rewrite (Server Actions, Radix UI, the CSS system, and cookie-session auth have no React Native equivalent), not a refactor.
+
+**Archival:** tagged the pre-initiative state as `archive/nextjs-web-2026-07-20` on `main` (commit `d7f6842`) — a git tag, not a physical folder copy, per explicit decision. **No files were moved.** The Next.js web app is untouched and fitsplit.in keeps deploying from `main` exactly as before; nothing about the current build/deploy path changes. (Tag is local only — not yet pushed to `origin`.)
+
+Also found and fixed: the repo was in a detached-HEAD state at session start (pointing at the same commit as `main`, so no work was at risk). Checked out `main` properly before tagging/committing so nothing gets orphaned.
+
+**Design plan written:** [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md) — no implementation yet. Key finding from reading `src/lib/auth.ts` and `functions/src/index.ts`: auth reuse is stronger than expected. Firebase Auth custom claims (`role`/`gymId`/`memberId`, set in `functions/src/index.ts:346`) are already the source of truth `_getCurrentUserImpl` prefers over a Firestore read — any future mobile backend can `verifyIdToken()` and read the same claims a bearer token carries, with zero new authorization model. The `beforeUserSignIn` lockout trigger already protects at the Auth layer, client-agnostic. Only the session **transport** is web-specific (HttpOnly cookie via `auth.createSessionCookie()`) — RN replaces that with the Firebase client SDK's own token persistence/refresh, which is less code, not more. The identifier-resolution logic (username/phone → Firebase Auth email, demo login table, lockout bookkeeping) is pure Admin-SDK/Firestore code entangled with Next's `cookies()` only incidentally — it relocates almost unchanged into a shared Cloud Function callable that both a future web login and the RN app can call.
+
+The plan also flags the actual largest chunk of new work: turning the 18 files / ~6,036 lines in `src/lib/firebase/actions/` (Next.js Server Actions, which have no RN transport) into real HTTP/callable endpoints. That's a backend-work prerequisite before any native screen can read or write real data — not a UI-porting problem.
+
+**Next steps (not started):** extract `packages/core` (types, Zod schemas, `workout-utils`, `split-library`) into a shared workspace package; stand up the new API layer; prove the shared identifier-resolution callable against the existing web login first; then scaffold the Expo app itself. See the phased rollout in doc 20 for the full sequence.
+
+---
+
 ## Member desktop workspace redesign — Logs/Progress/Macros complete (increments 3–5 of 5) (2026-07-08, night)
 
 Completes the Claude Design workspace redesign across all 5 screens (Overview, Workout, Logs, Progress, Macros). Per explicit "deploy subagents and complete everything" direction, the three remaining screens were built by three parallel agents against self-contained new files (no shared-file edits), then integrated by hand into `member-coach-shell.tsx` afterward to avoid concurrent-edit conflicts on one file.

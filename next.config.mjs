@@ -21,6 +21,9 @@ const securityHeaders = [
 
 const nextConfig = {
   output: "standalone",
+  // @fitsplit/core (packages/core) ships raw TS source with no build step —
+  // Next doesn't transpile node_modules packages by default, so this is required.
+  transpilePackages: ["@fitsplit/core"],
   // React Compiler (React 19): auto-memoizes components, removing most manual
   // useMemo/useCallback and cutting re-renders. Requires babel-plugin-react-compiler.
   reactCompiler: true,

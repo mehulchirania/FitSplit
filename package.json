@@ -2,6 +2,9 @@
   "name": "fitsplit",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
@@ -27,6 +30,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@fitsplit/core": "*",
     "@opentelemetry/api": "^1.9.1",
     "@opentelemetry/context-async-hooks": "^2.9.0",
     "@opentelemetry/core": "^2.8.0",
