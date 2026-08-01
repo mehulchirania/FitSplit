@@ -3555,3 +3555,13 @@ a.mcr-tabbar__item:hover {
     grid-template-columns: 1fr;
   }
 }
+
+.m3d-wk__video-preview-inline {
+  display: inline-flex;
+  align-items: center;
+}
+.m3d-wk__video-preview-inline .video-preview-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  border-radius: 6px;
+}

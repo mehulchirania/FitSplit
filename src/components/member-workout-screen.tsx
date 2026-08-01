@@ -292,6 +292,16 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
                       </button>
                     )}
                     <span className="m3d-wk__status">{complete ? "DONE" : isActive ? "ACTIVE" : "UP NEXT"}</span>
+                    {dictEx && (dictEx.gymVideoUrl || dictEx.videoUrl) && (
+                      <div className="m3d-wk__video-preview-inline" onClick={(e) => e.stopPropagation()}>
+                        <CatalogVideoPreview
+                          exerciseName={dictEx.name}
+                          gymVideoUrl={dictEx.gymVideoUrl}
+                          muscleGroup={dictEx.muscleGroup ?? ""}
+                          videoUrl={dictEx.videoUrl}
+                        />
+                      </div>
+                    )}
                     {nextSwap && (
                       <button
                         type="button"
