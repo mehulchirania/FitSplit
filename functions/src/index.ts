@@ -359,6 +359,8 @@ async function createAuthUser(params: {
   gymId: string;
   memberId?: string;
   isActive?: boolean;
+  staffType?: StaffType;
+  mustChangePassword?: boolean;
 }) {
   await auth.createUser({
     uid: params.uid,
@@ -371,8 +373,30 @@ async function createAuthUser(params: {
   await auth.setCustomUserClaims(params.uid, {
     gymId: params.gymId,
     role: params.role,
+    // SSR Profile Optimization (mirrors src/lib/auth.ts _getCurrentUserImpl /
+    // src/lib/firebase/actions/shared.ts upsertAuthUser) — keep these three in
+    // sync with the authProfiles doc so the web app's fast path doesn't need a
+    // Firestore read on every request.
+    isActive: params.isActive !== false,
+    mustChangePassword: params.mustChangePassword === true,
+    ...(params.staffType ? { staffType: params.staffType } : {}),
     ...(params.memberId ? { memberId: params.memberId } : {})
   });
+}
+
+/**
+ * Patches a single field into a user's EXISTING persistent custom claims
+ * without clobbering the rest. Mirrors patchUserClaims in
+ * src/lib/firebase/actions/shared.ts — see that function's doc comment.
+ */
+async function patchUserClaims(uid: string, patch: Record<string, unknown>) {
+  try {
+    const userRecord = await auth.getUser(uid);
+    const existingClaims = (userRecord.customClaims ?? {}) as Record<string, unknown>;
+    await auth.setCustomUserClaims(uid, { ...existingClaims, ...patch });
+  } catch (error: any) {
+    if (error?.code !== "auth/user-not-found") throw error;
+  }
 }
 
 export const createMemberAccount = onCall({ region }, async (request) => {
@@ -487,7 +511,9 @@ export const createStaffAccount = onCall({ region }, async (request) => {
     password: "password",
     role: authRole,
     gymId,
-    isActive: true
+    isActive: true,
+    staffType: normalizedStaffType,
+    mustChangePassword: true
   });
 
   const staffProfile = {

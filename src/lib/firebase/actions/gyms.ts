@@ -102,8 +102,8 @@ const demoMembers = [
   {
     id: "member-mehul",
     fullName: "Mehul Chirania",
-    email: "mehul@example.com",
-    username: "mehulchirania",
+    email: "mehul@members.fitsplit.app",
+    username: "mehul",
     phone: "+91 9688227039",
     avatarInitials: "MC",
     goal: "Improve strength and mobility"

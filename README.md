@@ -120,30 +120,42 @@ This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dat
 
 ## 🔑 Demo Login Credentials
 
-### Staff & Admin Logins
-Use the **Staff** login tab:
+### Staff Logins (1 Owner + 3 Trainers per Gym)
+Use the **Staff** login tab with password **`password`**:
 
-| Role | Username | Password |
-|---|---|---|
-| Admin | `admin` | `password` |
-| Owner (SHG) | `santosh-shg` | `password` |
-| Trainer (SHG) | `shg-trainer-1` | `password` |
-| Trainer (SHG) | `shg-trainer-2` | `password` |
-| Owner (Titan) | `titan-owner-1` | `password` |
-| Owner (Dummy) | `dummy-gym-owner-1` | `password` |
+| Gym Name | Gym ID | Staff Role | Name | Username | Password |
+|---|---|---|---|---|---|
+| **Sri Shakthi Hanuman Gym** | `shg` | Owner | Santosh SHG | `santosh-shg` | `password` |
+| | | Trainer | Ravi Kumar | `shg-trainer-1` | `password` |
+| | | Trainer | Priya Nair | `shg-trainer-2` | `password` |
+| | | Trainer | Vikram Seth | `shg-trainer-3` | `password` |
+| **IronCore Fitness** | `ironcore-blr` | Owner | Arvind Rajagopal | `ironcore-owner-1` | `password` |
+| | | Trainer | Meghana Suresh | `ironcore-trainer-1` | `password` |
+| | | Trainer | Karthik Raja | `ironcore-trainer-2` | `password` |
+| | | Trainer | Ananya Roy | `ironcore-trainer-3` | `password` |
+| **Pulse Fitness Studio** | `pulse-hyd` | Owner | Rehana Fatima | `pulse-owner-1` | `password` |
+| | | Trainer | Sandeep Kaushik | `pulse-trainer-1` | `password` |
+| | | Trainer | Farhan Ali | `pulse-trainer-2` | `password` |
+| | | Trainer | Kavya Sharma | `pulse-trainer-3` | `password` |
+| **Titan Fitness Club** | `titan-gym` | Owner | Alok Nath | `titan-owner-1` | `password` |
+| | | Trainer | Rohan Mehta | `titan-trainer-1` | `password` |
+| | | Trainer | Simran Kaur | `titan-trainer-2` | `password` |
+| | | Trainer | Aditya Verma | `titan-trainer-3` | `password` |
+| **Platform Admin** | — | Admin | FitSplit Admin | `admin` | `password` |
 
-### Member Logins
-Use the **Member** login tab (4-digit PIN):
+### Primary Test Member & Member Logins
+Use the **Member** login tab (4-digit PIN **`1234`**):
 
-| Username / Mobile / Email | PIN | Name |
-|---|---|---|
-| `mehulchirania` | `1234` | Mehul Chirania |
-| `9688227039` | `1234` | Mobile Account |
-| `mehul@example.com` | `1234` | Email Account |
-| `aarav` | `1234` | Aarav |
-| `meera` | `1234` | Meera |
-| `kabir` | `1234` | Kabir |
-| `nisha` | `1234` | Nisha |
+| Username | PIN | Name | Gym | Membership Status | Assigned Program |
+|---|---|---|---|---|---|
+| 👑 **`mehul`** | **`1234`** | **Mehul Chirania** | **`shg`** | **Active (1 Year)** | **Push-Pull-Legs ×2 (`split_01`)** |
+| `aarav` | `1234` | Aarav Sharma | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
+| `meera` | `1234` | Meera Iyer | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
+| `kabir` | `1234` | Kabir Khan | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
+| `nisha` | `1234` | Nisha Rao | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
+| `vikram.icf` | `1234` | Vikram Rao | `ironcore-blr` | Active (6 Months) | Push-Pull-Legs ×2 |
+| `rakesh.pfs` | `1234` | Rakesh Pillai | `pulse-hyd` | Active (6 Months) | Push-Pull-Legs ×2 |
+| `alisha.tfc` | `1234` | Alisha Fernandes | `titan-gym` | Active (6 Months) | Push-Pull-Legs ×2 |
 
 ---
 

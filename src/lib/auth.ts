@@ -205,10 +205,10 @@ const demoLogins: Record<string, DemoLogin> = {
     gymId: "shg",
     role: "member"
   },
-  mehulchirania: {
+  mehul: {
     uid: "member-mehul",
-    authEmail: "mehul@example.com",
-    phone: "+91 9688227039",
+    authEmail: "mehul@members.fitsplit.app",
+    phone: "+919688227039",
     fullName: "Mehul Chirania",
     gymId: "shg",
     role: "member"
@@ -941,7 +941,7 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
   }
 
   try {
-    const { auth } = getFirebaseAdminServices();
+    const { auth, db } = getFirebaseAdminServices();
     // checkRevoked: true — required so a suspended/deactivated account (which
     // calls auth.revokeRefreshTokens, see toggleMemberAccess / setGymStatus)
     // is rejected immediately instead of the fast path below trusting the
@@ -958,6 +958,29 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
         }
         return null;
       }
+
+      // mustChangePassword is the one claim that can legitimately be cleared
+      // MID-SESSION (changeStaffPassword) without revoking the cookie — revoking
+      // would log the user out right after they changed their password, which
+      // the /profile UI doesn't expect (it just stops showing the forceChange
+      // banner). A session cookie's claims are baked in at login and don't
+      // refresh on their own, so if the claim still says true, do a single
+      // cheap re-check against Firestore before enforcing the redirect. This
+      // only fires in the rare "just changed it this session" window — once a
+      // fresh login happens, the persisted claim (patched by changeStaffPassword)
+      // is already correct and this branch never runs.
+      let mustChangePassword = decodedSession.mustChangePassword === true;
+      if (mustChangePassword) {
+        try {
+          const profileDoc = await db.collection(collectionPaths.authProfiles).doc(decodedSession.uid).get();
+          if (profileDoc.exists) {
+            mustChangePassword = profileDoc.data()?.mustChangePassword === true;
+          }
+        } catch {
+          // Best-effort self-heal — fall back to the (possibly stale) claim on error.
+        }
+      }
+
       return {
         uid: decodedSession.uid,
         email: decodedSession.email,
@@ -967,7 +990,7 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
         staffType: decodedSession.staffType,
         gymId: decodedSession.gymId,
         memberId: decodedSession.memberId,
-        mustChangePassword: decodedSession.mustChangePassword,
+        mustChangePassword,
         termsAcceptedAt: decodedSession.termsAcceptedAt,
         avatarUrl: decodedSession.avatarUrl
       };

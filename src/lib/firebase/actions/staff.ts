@@ -198,7 +198,7 @@ export async function updateStaffProfile(
     if (!parsed.success) return parsed.state;
 
     const { userId, gymId, fullName, phone, staffType } = parsed.data;
-    const { db } = requireFirebaseServices();
+    const { auth, db } = requireFirebaseServices();
     const now = new Date().toISOString();
 
     const avatarInitials = fullName
@@ -214,6 +214,21 @@ export async function updateStaffProfile(
       db.collection(collectionPaths.authProfiles).doc(userId).set(updates, { merge: true }),
       scopedGymDoc(db, gymId, "staff", userId).set(updates, { merge: true }),
     ]);
+
+    // staffType gates requireOwner() (billing/reports/settings access), so a
+    // promotion/demotion is an authorization change, not just a display update.
+    // Keep the persistent claim in sync and revoke the live session so it takes
+    // effect immediately instead of waiting out the old session's claim (up to
+    // 14 days). Best-effort: the Firestore write above is the source of truth
+    // and has already succeeded, so a Firebase Auth hiccup here shouldn't fail
+    // the whole action — it just means the change applies on their next login
+    // instead of instantly.
+    try {
+      await patchUserClaims(auth, userId, { staffType });
+      await auth.revokeRefreshTokens(userId);
+    } catch (error) {
+      console.warn("Staff claims update skipped (staffType change may not take effect until next login)", error);
+    }
 
     return success(`${fullName} was updated.`, gymId, ["staff"]);
   } catch (error) {
@@ -440,6 +455,14 @@ export async function resetPassword(
       String(profile.email ?? "").trim() ||
       userId;
 
+    // Preserve the existing staffType/mustChangePassword claim values — this
+    // action resets a credential, it doesn't change role/permission or force a
+    // fresh must-change-password gate (that's a separate, pre-existing product
+    // decision; the Cloud Function equivalent resetStaffPassword does force it,
+    // but changing that behavior here is out of scope for this fix).
+    const staffType = profile.staffType ? String(profile.staffType) : undefined;
+    const mustChangePassword = profile.mustChangePassword === true;
+
     try {
       await upsertAuthUser(
         auth,
@@ -449,7 +472,9 @@ export async function resetPassword(
           uid: userId,
           role,
           gymId,
-          isActive: profile.isActive !== false
+          isActive: profile.isActive !== false,
+          staffType,
+          mustChangePassword
         },
         newPassword,
         true
@@ -468,7 +493,9 @@ export async function resetPassword(
           uid: userId,
           role,
           gymId,
-          isActive: profile.isActive !== false
+          isActive: profile.isActive !== false,
+          staffType,
+          mustChangePassword
         },
         newPassword,
         true
