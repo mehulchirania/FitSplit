@@ -334,7 +334,7 @@ html[data-theme="dark"] {
 
 /* ============================================================
    BACKGROUND IMAGE + GLASS LAYER SYSTEM
-   bg-image.png from lib/, served from public/
+   bg-image.png served from public/images/
    ============================================================ */
 
 /* Base body: bg image with a layered dark overlay for readability */
@@ -346,7 +346,7 @@ body {
     /* Dark readable overlay — 82% opacity ensures panels pop */
     linear-gradient(rgba(5, 5, 7, 0.82), rgba(5, 5, 7, 0.82)),
     /* The gym image itself, fixed so it doesn't scroll */
-    url('/bg-image.png');
+    url('/images/bg-image.png');
   background-attachment: fixed;
   background-color: #07080a;
   background-position: center;
@@ -360,7 +360,7 @@ html[data-theme="light"] body {
     radial-gradient(ellipse at 5% 0%, rgba(79, 70, 229, 0.06) 0%, transparent 50%),
     radial-gradient(ellipse at 95% 100%, rgba(99, 102, 241, 0.04) 0%, transparent 50%),
     linear-gradient(rgba(248, 249, 252, 0.88), rgba(248, 249, 252, 0.88)),
-    url('/bg-image.png');
+    url('/images/bg-image.png');
   background-attachment: fixed;
   background-color: #f8f9fa;
   background-position: center;

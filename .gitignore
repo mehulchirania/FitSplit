@@ -34,3 +34,9 @@ Thumbs.db
 
 # testing
 coverage/
+
+# typescript build cache
+*.tsbuildinfo
+
+# agent configs
+.claude/
