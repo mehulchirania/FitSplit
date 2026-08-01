@@ -27,6 +27,7 @@ import {
 } from "@fitsplit/core";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { CatalogVideoPreview } from "@/components/CatalogVideoPreview";
 
 interface WorkoutScreenProps {
   profile: AuthenticatedProfile;
@@ -433,6 +434,14 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
                   <Text style={styles.exerciseMeta}>
                     {catalog?.muscleGroup} · {ex.sets} sets x {ex.reps} reps
                   </Text>
+                  {catalog && (
+                    <CatalogVideoPreview
+                      exerciseName={catalog.name}
+                      muscleGroup={catalog.muscleGroup}
+                      videoUrl={catalog.videoUrl}
+                      gymVideoUrl={catalog.gymVideoUrl}
+                    />
+                  )}
                   {lastLift && (
                     <Text style={styles.lastLiftText}>
                       Last: {lastLift.weight}kg × {lastLift.reps}
@@ -550,6 +559,16 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>{infoModalExercise?.name}</Text>
             <Text style={styles.modalSub}>{infoModalExercise?.muscleGroup} · {infoModalExercise?.equipment}</Text>
+            {infoModalExercise && (
+              <View style={{ marginBottom: 12 }}>
+                <CatalogVideoPreview
+                  exerciseName={infoModalExercise.name}
+                  muscleGroup={infoModalExercise.muscleGroup}
+                  videoUrl={infoModalExercise.videoUrl}
+                  gymVideoUrl={infoModalExercise.gymVideoUrl}
+                />
+              </View>
+            )}
             <ScrollView style={styles.modalScroll}>
               <Text style={styles.modalBody}>
                 {infoModalExercise?.instructions || "No description provided."}
