@@ -42,18 +42,16 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 ---
 
-## 📚 Documentation
+## 📚 Core Documentation
 
-The **`docs/`** directory is the single source of truth for this codebase. Start at **[`docs/_INDEX.md`](docs/_INDEX.md)** for navigation and the maintenance protocol; load **[`docs/00_AI_CONTEXT.md`](docs/00_AI_CONTEXT.md)** for a fast, condensed context dump.
+The **`docs/`** directory is the single source of truth for FitSplit specifications:
 
-The docs follow a three-tier model:
-- **Tier 0** — `00_AI_CONTEXT.md`: always-loaded condensed overview.
-- **Tier 1** — `01_ARCHITECTURE.md` … `09_SCREEN_CATALOG.md`: verified facts (architecture, data model, actions, functions, roles, routes, screens).
-- **Tier 2** — `10_REFACTORING_ROADMAP.md`: prioritized, opinionated improvement plan. Also see `11_KNOWN_ISSUES_AND_GAPS.md`, `12_ARCHITECTURE_AUDIT_2026.md` (Firestore cost & B2B2C scaling audit), `12_UI_STYLE_GUIDE.md`, `14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md`, `17_ROOT_BACKFILL_RUNBOOK.md`, and `DISCREPANCIES.md`.
-
-This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
-
-**Native mobile (in progress):** a design plan for a React Native/Expo mobile app lives at [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md); go-live status is tracked in [`docs/21_MOBILE_GO_LIVE_CHECKLIST.md`](docs/21_MOBILE_GO_LIVE_CHECKLIST.md). `mobile/` (Expo SDK 57, `@fitsplit/mobile`, joined to the root npm workspace) has a working app with full 5-tab navigation (Overview, Workout, Logs, Progress, Macros) verified end-to-end against production — real demo login, real Firestore profile reads, no mock data. Most reads/writes go straight through the Firestore client SDK against existing security rules, not a new API; a handful of write flows that need more than a rules-compliant write got new callables in `functions/src/index.ts`. All five tabs now have loading/error/retry states (`mobile/components/ScreenError.tsx`), the Workout tab queues lift sets to AsyncStorage and auto-syncs via `syncOfflineLiftsMobile` when connectivity returns (`mobile/lib/offline-queue.ts`, `mobile/lib/network.ts`), a skipped day can be undone in place (`clearDayLogMobile`), and the app registers an Expo push token (`registerPushTokenMobile`) so `sendPushToMember` can reach mobile devices via Expo's push service alongside the web's existing FCM path. The web app is unaffected and keeps deploying as-is; the pre-initiative state is tagged `archive/nextjs-web-2026-07-20`.
+* 🏛️ **[`docs/01_ARCHITECTURE.md`](docs/01_ARCHITECTURE.md)**: System Architecture, Tech Stack, & Authorization Matrix
+* 🗄️ **[`docs/02_DATA_MODEL_AND_ERD.md`](docs/02_DATA_MODEL_AND_ERD.md)**: Multi-Tenant Firestore Schema, Collections & ERD
+* 🏋️ **[`docs/03_BUSINESS_RULES_AND_PRODUCT.md`](docs/03_BUSINESS_RULES_AND_PRODUCT.md)**: Product Philosophy, Workout Companion, & B2B/B2C Systems
+* 🧪 **[`docs/04_TESTING_AND_LOGINS.md`](docs/04_TESTING_AND_LOGINS.md)**: Test Logins Table (Owners, Trainers, Members) & Runbook
+* 📑 **[`docs/_INDEX.md`](docs/_INDEX.md)**: Complete Specifications Index
+This README and [`docs/_INDEX.md`](docs/_INDEX.md) remain the canonical documentation references for FitSplit technical specifications.
 
 ---
 
