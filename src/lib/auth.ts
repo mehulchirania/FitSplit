@@ -942,7 +942,11 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
 
   try {
     const { auth } = getFirebaseAdminServices();
-    const decodedSession = await auth.verifySessionCookie(session);
+    // checkRevoked: true — required so a suspended/deactivated account (which
+    // calls auth.revokeRefreshTokens, see toggleMemberAccess / setGymStatus)
+    // is rejected immediately instead of the fast path below trusting the
+    // isActive claim baked into this cookie at login time for up to 14 days.
+    const decodedSession = await auth.verifySessionCookie(session, true);
 
     // SSR Profile Optimization: Check if custom claims have the profile data
     if (decodedSession.role && decodedSession.isActive !== undefined) {

@@ -25,7 +25,8 @@ import {
   mirrorGymScopedRecord,
   assertMemberBelongsToCallerGym,
   assertCanManageGym,
-  parsePngDataUrl
+  parsePngDataUrl,
+  patchUserClaims
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -73,6 +74,15 @@ export async function changeStaffPassword(
         { mustChangePassword: false, updatedAt: new Date().toISOString() },
         { merge: true }
       );
+      // Keep the persistent claim in sync for the user's NEXT login. Note this
+      // does NOT fix the CURRENT session cookie — that's already baked with
+      // mustChangePassword: true from login time and can't be rewritten without
+      // forcing a re-login (which would be a jarring UX right after a password
+      // change). requireRole's forceChange gate in src/lib/auth.ts self-heals for
+      // the live session instead: it re-checks Firestore only in the rare case
+      // where the claim still says true, so this request's redirect loop clears
+      // immediately without logging the user out.
+      await patchUserClaims(auth, currentUser.uid, { mustChangePassword: false });
     } catch (e) {
       console.warn("Could not clear mustChangePassword flag:", e);
     }
@@ -110,7 +120,10 @@ export async function createOwnerProfile(
       uid: ownerId,
       role: authRole,
       gymId,
-      isActive: true
+      isActive: true,
+      staffType: normalizedStaffType,
+      // Force first-login password change — matches staffProfile.mustChangePassword below.
+      mustChangePassword: true
     });
 
     const staffProfile = {

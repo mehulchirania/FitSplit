@@ -1,9 +1,9 @@
 import type { ContactMessage, Notification } from "@/types/domain";
 
 import { notifications as mockNotifications } from "@/lib/mock-data";
-import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
+import { gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection } from "./shared";
+import { gymCollection, reportReadModelError } from "./shared";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -51,23 +51,17 @@ export async function getOwnerNotifications(gymId?: string): Promise<{
   try {
     const { db } = getFirebaseAdminServices();
     const targetGymId = gymId ?? PRIMARY_GYM_ID;
-    const scopedSnapshot = await gymCollection(db, targetGymId, "notifications")
+    // Root-collection fallback removed 2026-08-02: the R4/backfill migration
+    // (docs/17_ROOT_BACKFILL_RUNBOOK.md) confirmed notifications is fully
+    // mirrored to gyms/{gymId}/notifications in production, so the gym-scoped
+    // read alone is authoritative.
+    snapshot = await gymCollection(db, targetGymId, "notifications")
       .where("recipientRole", "==", "owner")
       .orderBy("createdAt", "desc")
       .limit(50)
       .get();
-    if (!scopedSnapshot.empty) {
-      snapshot = scopedSnapshot;
-    } else {
-      let query = db
-        .collection(collectionPaths.notifications)
-        .where("recipientRole", "==", "owner") as FirebaseFirestore.Query;
-      if (gymId) {
-        query = query.where("gymId", "==", gymId);
-      }
-      snapshot = await query.orderBy("createdAt", "desc").limit(50).get();
-    }
-  } catch {
+  } catch (error) {
+    reportReadModelError("getOwnerNotifications", error, { gymId });
     return {
       notifications: mockNotifications.filter(
         (notification) => notification.recipientRole === "owner"
@@ -117,7 +111,8 @@ export async function getAdminNotifications(): Promise<{
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     return { notifications, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getAdminNotifications", error);
     return { notifications: [], isPersisted: false };
   }
 }
@@ -140,7 +135,13 @@ export async function getMemberNotifications(memberId: string, gymId?: string): 
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = gymId
+    // Root-collection fallback removed 2026-08-02: the R4/backfill migration
+    // (docs/17_ROOT_BACKFILL_RUNBOOK.md) confirmed notifications is fully
+    // mirrored to gyms/{gymId}/notifications in production, so the gym-scoped
+    // (or cross-gym collectionGroup, when gymId is omitted) read alone is
+    // authoritative. Both current callers always pass gymId, but the
+    // collectionGroup branch is kept in case a future caller omits it.
+    const snapshot = gymId
       ? await gymCollection(db, gymId, "notifications")
           .where("recipientId", "==", memberId)
           .orderBy("createdAt", "desc")
@@ -152,21 +153,14 @@ export async function getMemberNotifications(memberId: string, gymId?: string): 
           .orderBy("createdAt", "desc")
           .limit(50)
           .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.notifications)
-          .where("recipientId", "==", memberId)
-          .orderBy("createdAt", "desc")
-          .limit(50)
-          .get()
-      : scopedSnapshot;
 
     const notifications: Notification[] = snapshot.docs
       .map(mapNotificationDoc)
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
     return { notifications, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMemberNotifications", error, { memberId, gymId });
     return { notifications: fallback, isPersisted: false };
   }
 }
@@ -183,21 +177,18 @@ export async function getUnreadContactMessageCount(): Promise<number> {
   try {
     const { db } = getFirebaseAdminServices();
     // Use count() aggregation — reads zero documents, just returns a number.
+    // Root-collection fallback removed 2026-08-02: the R4/backfill migration
+    // (docs/17_ROOT_BACKFILL_RUNBOOK.md) confirmed contactMessages is fully
+    // mirrored to gyms/{gymId}/contactMessages in production, so the
+    // cross-gym collectionGroup count alone is authoritative.
     const scopedCount = await db
       .collectionGroup(gymScopedCollectionPaths.contactMessages)
       .where("status", "==", "unread")
       .count()
       .get();
-    if (scopedCount.data().count > 0) {
-      return scopedCount.data().count;
-    }
-    const rootCount = await db
-      .collection(collectionPaths.contactMessages)
-      .where("status", "==", "unread")
-      .count()
-      .get();
-    return rootCount.data().count;
-  } catch {
+    return scopedCount.data().count;
+  } catch (error) {
+    reportReadModelError("getUnreadContactMessageCount", error);
     return 0;
   }
 }
@@ -212,18 +203,15 @@ export async function getContactMessages(): Promise<{
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
+    // Root-collection fallback removed 2026-08-02: the R4/backfill migration
+    // (docs/17_ROOT_BACKFILL_RUNBOOK.md) confirmed contactMessages is fully
+    // mirrored to gyms/{gymId}/contactMessages in production, so the
+    // cross-gym collectionGroup read alone is authoritative.
+    const snapshot = await db
       .collectionGroup(gymScopedCollectionPaths.contactMessages)
       .orderBy("createdAt", "desc")
       .limit(100)
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.contactMessages)
-          .orderBy("createdAt", "desc")
-          .limit(100)
-          .get()
-      : scopedSnapshot;
 
     const messages: ContactMessage[] = snapshot.docs.map(doc => {
       const data = doc.data();
@@ -240,7 +228,8 @@ export async function getContactMessages(): Promise<{
     });
 
     return { messages, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getContactMessages", error);
     return { messages: [], isPersisted: false };
   }
 }

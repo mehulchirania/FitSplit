@@ -1,8 +1,8 @@
 import type { ActivityEvent } from "@/types/domain";
 
-import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
+import { PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection } from "./shared";
+import { gymCollection, reportReadModelError } from "./shared";
 
 export async function getActivityEvents(audience: "owner" | "member", memberId?: string, gymId?: string): Promise<{
   events: ActivityEvent[];
@@ -56,16 +56,13 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
   try {
     const { db } = getFirebaseAdminServices();
     const targetGymId = gymId ?? PRIMARY_GYM_ID;
-    const scopedSnapshot = await gymCollection(db, targetGymId, "activityEvents")
+    // Root-collection fallback removed 2026-08-02: the R4/backfill migration
+    // (docs/17_ROOT_BACKFILL_RUNBOOK.md) confirmed activityEvents is fully
+    // mirrored to gyms/{gymId}/activityEvents in production, so the gym-scoped
+    // read alone is authoritative.
+    const snapshot = await gymCollection(db, targetGymId, "activityEvents")
       .where("audience", "==", audience)
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.activityEvents)
-          .where("gymId", "==", targetGymId)
-          .where("audience", "==", audience)
-          .get()
-      : scopedSnapshot;
     const events = snapshot.docs
       .map((doc) => {
         const data = doc.data();
@@ -83,7 +80,8 @@ export async function getActivityEvents(audience: "owner" | "member", memberId?:
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 
     return { events, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getActivityEvents", error, { gymId, memberId });
     return { events: fallback, isPersisted: false };
   }
 }

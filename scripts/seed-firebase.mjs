@@ -156,6 +156,8 @@ async function getOrCreateExercise(muscleGroup, exercise) {
     instructions: `${exercise.mechanic} ${muscleGroup.toLowerCase()} movement. Add final coaching notes and demo video later.`,
     videoSource: exercise.video_url ? "youtube" : "none",
     videoUrl: exercise.video_url ?? "",
+    gymVideoSource: exercise.gym_video_url ? "youtube" : "none",
+    gymVideoUrl: exercise.gym_video_url ?? "",
     ownerOnly: true,
     isActive: true,
     createdBy: ownerId,

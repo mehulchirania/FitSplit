@@ -1,6 +1,8 @@
 # FitSplit
 
-FitSplit is a Firebase-backed gym operations and personal training platform. It serves multi-gym workspaces with robust tenant isolation, offline-resilient workout logging, personal training management, and deep operational insights — deployed as a PWA on Firebase App Hosting.
+FitSplit is a Firebase-backed gym operations and personal training platform. It serves multi-gym workspaces with robust tenant isolation, offline-resilient workout logging, personal training management, and deep operational insights — deployed as a PWA on Firebase App Hosting, with a React Native/Expo mobile client for the member experience.
+
+**Status: NOT LIVE.** This is a pre-launch build with no real customers. Everything in Firebase today — all 4 gyms, all 80 member profiles, all staff accounts — is test/demo data seeded for development. `fitsplit.in` is deployed but not launched; "deployed" here never means "in front of real users."
 
 ---
 
@@ -25,8 +27,12 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 | Validation | Zod |
 | Testing | Vitest |
 | Deployment | Firebase App Hosting (0–10 instances, 512 MB, 80 concurrency) |
+| Mobile | Expo SDK 57, React Native 0.86, React 19 — `mobile/` (`@fitsplit/mobile`), npm workspace alongside the web app |
+| Mobile offline | AsyncStorage-backed write queue for lift logging (`mobile/lib/offline-queue.ts`) |
+| Mobile push | Expo push service (`expo-notifications`), separate channel from the web's FCM |
+| Shared code | `packages/core` (`@fitsplit/core`) — domain types, `workout-utils`, `split-library`, validation helpers, used by both web and mobile |
 
-**Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders.
+**Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders. The mobile app talks to the same Firestore project directly via the client SDK for reads (enforced by `firestore.rules`) and through dedicated Cloud Function callables (`functions/src/index.ts`) for writes that need more than a rules-compliant write — see `docs/20_EXPO_MIGRATION_PLAN.md` and `docs/21_MOBILE_GO_LIVE_CHECKLIST.md`.
 
 **Firestore cost posture:** Gym-scoped collections are the canonical tenant data path. The 2026-06-28 cost pass removed the highest-volume progress/offline root writes and replaced admin gym/member-count scans with denormalized gym counters. Remaining cost work is tracked in `docs/12_ARCHITECTURE_AUDIT_2026.md`.
 
@@ -47,7 +53,7 @@ The docs follow a three-tier model:
 
 This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
 
-**Native mobile (in progress):** a design plan for a React Native/Expo mobile app lives at [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md). `mobile/` (Expo SDK 57, `@fitsplit/mobile`, joined to the root npm workspace) has a working app with full 5-tab navigation (Overview, Workout, Logs, Progress, Macros) verified end-to-end against production — real demo login, real Firestore profile reads, no mock data. Most reads/writes go straight through the Firestore client SDK against existing security rules, not a new API; a handful of write flows that need more than a rules-compliant write got new callables in `functions/src/index.ts`. The web app is unaffected and keeps deploying as-is; the pre-initiative state is tagged `archive/nextjs-web-2026-07-20`.
+**Native mobile (in progress):** a design plan for a React Native/Expo mobile app lives at [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md); go-live status is tracked in [`docs/21_MOBILE_GO_LIVE_CHECKLIST.md`](docs/21_MOBILE_GO_LIVE_CHECKLIST.md). `mobile/` (Expo SDK 57, `@fitsplit/mobile`, joined to the root npm workspace) has a working app with full 5-tab navigation (Overview, Workout, Logs, Progress, Macros) verified end-to-end against production — real demo login, real Firestore profile reads, no mock data. Most reads/writes go straight through the Firestore client SDK against existing security rules, not a new API; a handful of write flows that need more than a rules-compliant write got new callables in `functions/src/index.ts`. All five tabs now have loading/error/retry states (`mobile/components/ScreenError.tsx`), the Workout tab queues lift sets to AsyncStorage and auto-syncs via `syncOfflineLiftsMobile` when connectivity returns (`mobile/lib/offline-queue.ts`, `mobile/lib/network.ts`), a skipped day can be undone in place (`clearDayLogMobile`), and the app registers an Expo push token (`registerPushTokenMobile`) so `sendPushToMember` can reach mobile devices via Expo's push service alongside the web's existing FCM path. The web app is unaffected and keeps deploying as-is; the pre-initiative state is tagged `archive/nextjs-web-2026-07-20`.
 
 ---
 

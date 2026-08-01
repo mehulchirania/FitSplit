@@ -3,7 +3,7 @@ import type { AttendanceRecord, WorkoutSession } from "@/types/domain";
 import { attendanceRecords as mockAttendanceRecords } from "@/lib/mock-data";
 import { gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection } from "./shared";
+import { gymCollection, reportReadModelError } from "./shared";
 
 export async function getActiveWorkoutSessions(gymId?: string): Promise<{
   sessions: WorkoutSession[];
@@ -33,7 +33,8 @@ export async function getActiveWorkoutSessions(gymId?: string): Promise<{
     });
 
     return { sessions, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getActiveWorkoutSessions", error, { gymId: targetGymId });
     return { sessions: [], isPersisted: false };
   }
 }
@@ -82,8 +83,9 @@ export async function getRecentSessionCounts(
         countMap.set(dateKey, (countMap.get(dateKey) ?? 0) + 1);
       }
     }
-  } catch {
+  } catch (error) {
     // Fail soft — return zero-filled array so the chart renders without breaking the page.
+    reportReadModelError("getRecentSessionCounts", error, { gymId: targetGymId });
   }
 
   return labels.map((date) => ({ date, sessions: countMap.get(date) ?? 0 }));
@@ -130,7 +132,8 @@ export async function getAttendanceRecords(memberId: string, gymId?: string): Pr
     });
 
     return { records, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getAttendanceRecords", error, { memberId, gymId });
     return {
       records: mockAttendanceRecords.filter(r => r.memberId === memberId),
       isPersisted: false

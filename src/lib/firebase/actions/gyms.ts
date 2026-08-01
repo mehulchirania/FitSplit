@@ -20,7 +20,8 @@ import {
   archiveAndDeleteGymSubcollections,
   writeAuthProfileIndex,
   mirrorProfileToGym,
-  upsertAuthUser
+  upsertAuthUser,
+  patchUserClaims
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -219,7 +220,8 @@ export async function ensurePrimaryWorkspace() {
     uid: PRIMARY_OWNER_ID,
     role: "owner",
     gymId: PRIMARY_GYM_ID,
-    isActive: true
+    isActive: true,
+    staffType: "owner"
   }, "password", true);
 
   await Promise.all([
@@ -240,7 +242,8 @@ export async function ensurePrimaryWorkspace() {
         uid: trainer.id,
         role: "owner",
         gymId: PRIMARY_GYM_ID,
-        isActive: true
+        isActive: true,
+        staffType: "trainer"
       }, "password", true)
     )
   ]);
@@ -522,6 +525,16 @@ export async function setGymStatus(
       profileSnapshot.docs.map(async (profileDoc) => {
         try {
           await auth.updateUser(profileDoc.id, { disabled: !isActive });
+          // Keep the persistent isActive claim in sync — see the matching
+          // comment in toggleMemberAccess (members.ts).
+          await patchUserClaims(auth, profileDoc.id, { isActive });
+          // See the matching comment in toggleMemberAccess (members.ts) — disabling
+          // the account doesn't invalidate an already-issued session cookie on its
+          // own; revoking is what makes a gym-wide deactivation take effect for
+          // staff/members who are already signed in.
+          if (!isActive) {
+            await auth.revokeRefreshTokens(profileDoc.id);
+          }
         } catch (error: unknown) {
           if ((error as { code?: string })?.code !== "auth/user-not-found") {
             throw error;

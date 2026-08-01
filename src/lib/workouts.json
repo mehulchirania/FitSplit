@@ -109,7 +109,7 @@
         "muscle_target_description": "An advanced unilateral press loading one side of the chest, triceps and front delt while the core resists rotation.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/bh9PsSfGZ2o",
-        "gym_video_url": ""
+        "gym_video_url": "https://www.youtube.com/shorts/J-vItVuxDl0"
       }
     ],
     "Back": [
@@ -210,7 +210,7 @@
         "muscle_target_description": "Builds the lats and mid-back through a strong horizontal pull with a fixed bar path and supported lower back.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/Sr2q7i-i8X0",
-        "gym_video_url": ""
+        "gym_video_url": "https://www.youtube.com/shorts/75-PAqMAGsA"
       },
       {
         "id": "bk_10",
@@ -300,7 +300,7 @@
         "muscle_target_description": "A single-leg squat that heavily loads the quads and glutes, demanding balance and hip stability.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/tdOk9XkzGVc",
-        "gym_video_url": ""
+        "gym_video_url": "https://www.youtube.com/shorts/7pQTJUpyoJE"
       },
       {
         "id": "lg_08",
@@ -669,7 +669,7 @@
         "muscle_target_description": "A hybrid press/extension that overloads the triceps heavily, with the chest and delts assisting.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/H0dyiN40aDo",
-        "gym_video_url": ""
+        "gym_video_url": "https://www.youtube.com/shorts/ZVCr4crm2w0"
       },
       {
         "id": "tr_09",
@@ -715,7 +715,7 @@
         "muscle_target_description": "Strengthens the spinal erectors (lower back), glutes and hamstrings through hip and trunk extension.",
         "mechanic": "Compound",
         "video_url": "https://www.youtube.com/shorts/nGkITCtyMRc",
-        "gym_video_url": ""
+        "gym_video_url": "https://www.youtube.com/shorts/14VcTQz6h-8"
       }
     ],
     "Forearms": [
@@ -1294,11 +1294,11 @@
       "description": "Owner generated split pulling from the exercise catalog.",
       "is_custom": true,
       "schedule": [
-      {
-        "day": 1,
-        "title": "Custom Day 1",
-        "workouts": []
-      }
+        {
+          "day": 1,
+          "title": "Custom Day 1",
+          "workouts": []
+        }
       ]
     }
   ]

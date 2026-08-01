@@ -12,8 +12,8 @@ Five findings block cost-effective B2B2C scale. In order of severity:
 
 1. ~~**progress.ts still dual-writes**~~ — **fixed 2026-06-28 for hot paths.** Lift logs, body metrics, macro logs, activity logs, workout sessions, and attendance records now write gym-scoped only.
 2. ~~**`getGymWorkspaces` is a 3-way full-collection scan**~~ — **fixed 2026-06-28.** It now reads only `gyms` and uses denormalized gym counters.
-3. **Read-model fallbacks double every read** — all progress, notification, and member read-models try gym-scoped first, then fall back to root. Empty gym-scoped collections pay for 2 reads per query.
-4. **`getMemberNotifications` / `getBodyMetricLogsForMember` use unscoped collectionGroup queries** — they filter by `recipientId`/`memberId` across all gyms. Cost scales linearly with gym count even though each member belongs to exactly one gym.
+3. **Read-model fallbacks double every read** — all progress, notification, and member read-models try gym-scoped first, then fall back to root. Empty gym-scoped collections pay for 2 reads per query. **Update 2026-08-01:** the fallback branches are now unreachable in practice — see Section C.
+4. ~~**`getMemberNotifications` / `getBodyMetricLogsForMember` use unscoped collectionGroup queries**~~ — **fixed, verified 2026-08-01.** See Section D.
 5. ~~**`syncOfflineLifts` writes root-only**~~ — **fixed 2026-06-28.** Offline sync now writes deterministic gym-scoped lift docs in a single batch.
 
 ---
@@ -95,21 +95,19 @@ For a gym that has all data in gym-scoped collections (after R4 completes), this
 
 **Action:** Once R4 is complete for all collections, add a Firestore comment or migration marker confirming no root data exists, then remove the fallback branches collection by collection. No risk in doing this per-collection after confirming read-model data is 100% gym-scoped.
 
+**Status 2026-08-01:** Verified every real call site of `getBodyMetricLogsForMember`, `getDayLogsForMember`, `getLiftLogsForMember`, and `getMemberNotifications` now passes `gymId` (grepped all callers across `src/app` and `actions/`) — the `collectionGroup` fallback branches in these four functions are dead code in the current call graph, not just theoretically avoidable. **Not yet deleted**, because that requires confirming legacy root data was actually backfilled in production (`docs/17_ROOT_BACKFILL_RUNBOOK.md` `--apply` run) — this repo has the script and runbook but no record of it having been executed against `fitsplit-29215`. Deleting the fallback before confirming that would silently drop any member whose only history is still root-only. Treat P3.4 as blocked on a manual runbook confirmation, not an engineering task.
+
 ---
 
 ## Section D — Unscoped CollectionGroup Queries (Scale With Gym Count)
 
 **Files:** `read-models/notifications.ts`, `read-models/progress.ts`
 
-Three patterns that scan across ALL gyms:
+**Status 2026-08-01:** Fixed for member-scoped queries. `getMemberNotifications`, `getBodyMetricLogsForMember`, `getDayLogsForMember`, and `getLiftLogsForMember` all accept an optional `gymId` and use `gymCollection(db, gymId, ...)` when it's provided, falling back to `collectionGroup` only if it isn't. Verified all production call sites pass `gymId` (`src/app/member/page.tsx`, `src/app/profile/page.tsx`, `src/app/owner/members/[memberId]/page.tsx`, `src/app/member/(pages)/programs/[id]/day/[dayId]/page.tsx`, `src/lib/firebase/actions/privacy.ts`, `src/app/layout.tsx`) — the collectionGroup path never actually runs for these four functions today.
 
-**`getMemberNotifications(memberId)`** — `db.collectionGroup("notifications").where("recipientId","==",memberId)`. At 100 gyms × 500 notifications/gym = 50,000 notification documents scanned to find 50 for one member.
+`getAdminNotifications()` still uses `collectionGroup` unconditionally — **this is now intentional, not a gap.** It was switched to collectionGroup on 2026-07-05 specifically so a platform admin sees notifications across every gym (multi-gym oversight is a real admin use case), and it doubles as the read path for legacy root `notifications` docs (same collection ID under collectionGroup). Scoping it to `PRIMARY_GYM_ID` as originally recommended here would be a regression for any admin overseeing more than one gym.
 
-**`getAdminNotifications()`** — `db.collectionGroup("notifications").where("recipientRole","==","admin")`. Scans all gyms' notification subcollections. Should be scoped to `PRIMARY_GYM_ID` with a direct gym-scoped query since admin only has one gym context.
-
-**`getBodyMetricLogsForMember(memberId)`** — `db.collectionGroup("bodyMetricLogs").where("memberId","==",memberId)`. Since a member belongs to one gym, this should be `gymCollection(db, member.gymId, "bodyMetricLogs").where("memberId","==",memberId)`. Same for `getDayLogsForMember`, `getLiftLogsForMember`, etc.
-
-**Fix:** Member ID is always available alongside gym ID at the call site (member profile contains `defaultGymId`). Pass gymId explicitly to all progress read-model functions and switch from collectionGroup to `gymCollection(db, gymId, collection)`. Requires a composite index on `(memberId, loggedAt)` per collection — these likely already exist.
+~~**Fix:** Member ID is always available alongside gym ID at the call site...~~ Done — see above.
 
 ---
 
@@ -146,6 +144,8 @@ await mirrorGymScopedRecord(db, gymId, "notifications", n2Id, n2Record);
 Each `mirrorGymScopedRecord` call does 2 writes (root + gym-scoped during transition, will be 1 write after R4 completes). For a PT session booking that generates 3 notifications (owner, member, trainer), this is 6 writes in 3 sequential await chains — each one is a round-trip to Firestore.
 
 **Fix:** Introduce a `batchMirrorGymScopedRecords(db, gymId, collection, records[])` helper in `actions/shared.ts` that uses a single Firestore `batch()` for all notification writes. Reduces N notifications from N round-trips to 1 batch commit.
+
+**Status 2026-08-01:** Done. `batchMirrorGymScopedRecords` exists in `actions/shared.ts` and is used in `programs.ts` (assignment writes `programAssignments` + `notifications` + `activityEvents` in one batch). Audited every remaining `mirrorGymScopedRecord(..., "notifications", ...)` call site (`pt.ts` ×3, `exercises.ts`, `contact.ts`) — each writes exactly one notification per action, so there's nothing left to batch. The specific example this section was written against — PT session booking firing 3 sequential notification writes — no longer exists: `bookPTSession` in `pt.ts` doesn't write a notification at all anymore; it was moved to the `onPTPlanCreated` Cloud Function trigger (deterministic ID + existence check) during an earlier CF-mirror cleanup pass.
 
 **B2B2C consideration:** When a gym does a broadcast (e.g. holiday closure notice), the current model requires writing 1 notification document per member. At 500 members, that's 500 writes per broadcast. At scale, this should move to a fan-out-on-read pattern: store 1 broadcast document on the gym, members query for unread broadcasts at login.
 
@@ -284,17 +284,33 @@ Add `mirrorGymScopedRecord` or use deterministic IDs. Correctness fix, not just 
 
 ### Sprint 2 — Medium impact, medium effort (3–5 days)
 
-**P2.1 — Scope progress read-models to gymId**  
-Pass `gymId` from member profile to all progress read functions; switch from `collectionGroup` to `gymCollection`. Add composite indexes. Reduces read cost proportional to gym count.
+**P2.1 — Scope progress read-models to gymId** — Done, verified 2026-08-01  
+Pass `gymId` from member profile to all progress read functions; switch from `collectionGroup` to `gymCollection`. See Section D.
 
-**P2.2 — Batch notification writes**  
-Add `batchMirrorGymScopedRecords` helper. Update all multi-notification paths in `programs.ts`, `pt.ts`. Reduces write latency.
+**P2.2 — Batch notification writes** — Done, verified 2026-08-01  
+Add `batchMirrorGymScopedRecords` helper. See Section F.
 
 **P2.3 — Batch `clearUserNotifications`** — Done 2026-06-29  
 Resolve scoped + legacy notification docs, authorize by recipient/gym, and commit all `readAt` updates in a single Firestore batch.
 
 **P2.4 — Auth profile caching in session cookie**  
 Embed `isActive`, `gymId`, `memberId` in session cookie claims. `requireRole()` reads cookie claims instead of Firestore on 90% of requests.
+
+**Status 2026-08-01 — investigated and empirically verified against production. Still NOT done, but the prerequisite is now in place.**
+
+`src/lib/auth.ts` `_getCurrentUserImpl()` contains a fast-path branch (`if (decodedSession.role && decodedSession.isActive !== undefined) { ...return early without a Firestore read... }`) that reads `staffType`, `mustChangePassword`, `termsAcceptedAt`, `avatarUrl`, `fullName`, `phone` off the session-cookie claims. **That branch is dead — verified, not assumed.** A real production sign-in (demo member → `createSessionCookie` → `verifySessionCookie`) returns `role: "member"` and `gymId: "shg"` but `isActive: undefined`.
+
+Why: `role`/`gymId`/`memberId` are *persistent* custom claims written by `auth.setCustomUserClaims()` (`functions/src/index.ts`, `actions/shared.ts`). Every other field the fast path wants is only produced by the `beforeSignInHandler` blocking function (`functions/src/index.ts`, the "SSR Profile Optimization" block), and those claims are **not reaching session cookies**. So `decodedSession.isActive` is always `undefined`, the branch never runs, and every SSR request still pays the Firestore read this section set out to eliminate.
+
+**Important corollary — there is no suspension bug today.** Because the fast path is dead, every request falls through to `getProfileById()` and re-checks `profile.isActive` live, so suspending an account takes effect on the next request. An earlier draft of this note claimed suspension could lag by up to 14 days; that was wrong and is retracted. The stale-claims risk is real *only* for whoever eventually enables the fast path.
+
+**Done 2026-08-01 (the prerequisite):** session revocation is now wired, so the fast path can be enabled later without introducing that lag.
+- `toggleMemberAccess` (`actions/members.ts`) and `setGymStatus` (`actions/gyms.ts`) call `auth.revokeRefreshTokens(uid)` when `isActive` flips to false, alongside the existing `updateUser({ disabled })`.
+- `_getCurrentUserImpl` now calls `verifySessionCookie(session, true)` (`checkRevoked`).
+- Verified end-to-end against production `fitsplit-29215`: a cookie that verifies fine before `revokeRefreshTokens` is rejected with `auth/session-cookie-revoked` after it, while `checkRevoked: false` still accepts the same cookie — i.e. the flag is what makes revocation effective.
+- Note this adds one Firebase Auth network call per request and does **not** yet remove the Firestore read (the fast path is still dead). It is cost-neutral-at-best today; the payoff only lands with the remaining work below. Auth `getUser` calls are unbilled, unlike Firestore reads, so completing the fast path converts a *paid* read into a *free* call — that's the actual saving.
+
+**Remaining to finish P2.4:** add `isActive`, `staffType`, and `mustChangePassword` to the *persistent* `setCustomUserClaims()` payloads (not the blocking function) so the fast path activates with the fields `requireOwner()` and the forced-password-change redirect depend on, and re-issue claims wherever those three change — `changeStaffPassword` (`staff.ts`) clears `mustChangePassword`, staff edits change `staffType`, and reactivation flips `isActive` back. Enabling the fast path *without* setting `staffType` would silently return `undefined` for it on every session, which is an authorization regression, not a display bug. Do this as a reviewed change, not a drive-by.
 
 ### Sprint 3 — B2B2C foundations (1–2 weeks)
 
@@ -343,3 +359,4 @@ After applying P1.1 + P1.2 + P2.4: estimated reduction to **~$25/mo** at the sam
 ---
 
 *Generated 2026-06-28. Sprint 1 easy wins implemented 2026-06-28; keep this audit current as the remaining backlog is completed.*
+*Re-verified 2026-08-01: P2.1, P2.2 confirmed done (were implemented in later sessions without this doc being updated). P2.4 confirmed NOT done despite the fast-path code existing — see its status note. P3.4 blocked on manual backfill confirmation, not an engineering gap.*

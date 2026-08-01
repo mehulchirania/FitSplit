@@ -10,6 +10,7 @@ import {
   Modal
 } from "react-native";
 import { theme } from "@/lib/theme";
+import ScreenError from "@/components/ScreenError";
 import type { AuthenticatedProfile } from "@/lib/auth";
 import { getMealLogs } from "@/lib/data";
 import type { MealLog } from "@fitsplit/core";
@@ -27,6 +28,7 @@ const PRESETS = [
 
 export default function MacrosScreen({ profile }: MacrosScreenProps) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [mealLogs, setMealLogs] = useState<MealLog[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [isLogging, setIsLogging] = useState(false);
@@ -52,11 +54,13 @@ export default function MacrosScreen({ profile }: MacrosScreenProps) {
 
   async function loadData() {
     setLoading(true);
+    setError(null);
     try {
       const logs = await getMealLogs(gymId, memberId, todayStr);
       setMealLogs(logs);
     } catch (err) {
       console.error(err);
+      setError(err instanceof Error ? err.message : "Could not load your macros.");
     } finally {
       setLoading(false);
     }
@@ -113,6 +117,10 @@ export default function MacrosScreen({ profile }: MacrosScreenProps) {
         <ActivityIndicator size="large" color={theme.brand} />
       </View>
     );
+  }
+
+  if (error) {
+    return <ScreenError message={error} onRetry={loadData} />;
   }
 
   return (

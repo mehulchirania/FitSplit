@@ -1,3 +1,5 @@
+import * as Sentry from "@sentry/nextjs";
+
 import type {
   GymWorkspace,
   GymNotice,
@@ -164,4 +166,31 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
 export function gymTag(gymId?: string, collection?: string) {
   const base = gymId ? `gym:${gymId}` : "gym:default";
   return collection ? `${base}:${collection}` : base;
+}
+
+/**
+ * Reports a caught read-model query failure to Sentry and the server console.
+ *
+ * Read-models intentionally fail soft (catch → return an empty/default result)
+ * so pages keep rendering on a bad query instead of crashing. That resilience
+ * previously made hard failures (e.g. `FAILED_PRECONDITION: requires an index`)
+ * indistinguishable from "no data" — nothing ever alerted. Call this from every
+ * catch block that swallows a Firestore error so the failure is still visible,
+ * without changing what the function returns to its caller.
+ */
+export function reportReadModelError(
+  readModel: string,
+  error: unknown,
+  context?: { gymId?: string; memberId?: string; [key: string]: string | undefined }
+) {
+  console.error(`[read-model:${readModel}] query failed`, error);
+
+  const tags: Record<string, string> = { readModel };
+  if (context) {
+    for (const [key, value] of Object.entries(context)) {
+      if (value) tags[key] = value;
+    }
+  }
+
+  Sentry.captureException(error instanceof Error ? error : new Error(String(error)), { tags });
 }

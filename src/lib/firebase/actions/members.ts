@@ -30,7 +30,8 @@ import {
   assertCanManageMember,
   assertMemberBelongsToCallerGym,
   assertCanManageGym,
-  parsePngDataUrl
+  parsePngDataUrl,
+  patchUserClaims
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -674,6 +675,18 @@ export async function toggleMemberAccess(
 
     try {
       await auth.updateUser(memberId, { disabled: !isActive });
+      // Keep the persistent isActive custom claim in sync so the SSR fast path
+      // (_getCurrentUserImpl in src/lib/auth.ts) sees the right value on this
+      // member's NEXT login — including reactivation, where the claim must flip
+      // back to true or they'd be stuck being routed to /suspended forever.
+      await patchUserClaims(auth, memberId, { isActive });
+      // Disabling the account alone doesn't invalidate an already-issued session
+      // cookie — verifySessionCookie only re-checks disabled/revoked status when
+      // called with checkRevoked (see requireRole in src/lib/auth.ts). Revoking
+      // here is what actually kicks out a live session immediately on suspend.
+      if (!isActive) {
+        await auth.revokeRefreshTokens(memberId);
+      }
     } catch (error) {
       console.warn("Member auth access update skipped", error);
     }
@@ -721,7 +734,15 @@ export async function bulkToggleMemberAccess(
         await assertMemberBelongsToCallerGym(user, memberId);
         await db.collection(collectionPaths.authProfiles).doc(memberId).set({ isActive, updatedAt: now }, { merge: true });
         await mirrorProfileToGym(db, memberId, { id: memberId, role: "member", defaultGymId: user.gymId ?? PRIMARY_GYM_ID, isActive, updatedAt: now });
-        try { await auth.updateUser(memberId, { disabled: !isActive }); } catch { /* soft fail */ }
+        try {
+          await auth.updateUser(memberId, { disabled: !isActive });
+          // See the matching comment in toggleMemberAccess above — keep the
+          // isActive claim in sync (both directions) and revoke on deactivate.
+          await patchUserClaims(auth, memberId, { isActive });
+          if (!isActive) {
+            await auth.revokeRefreshTokens(memberId);
+          }
+        } catch { /* soft fail */ }
       })
     );
 

@@ -43,5 +43,5 @@
 - **Unused Code & Legacy CSS:** Removed `workoutSplitTemplates` and legacy CSS.
 - **`syncOfflineLifts` Missing Gym-Scoped Mirror:** Now writes deterministic gym-scoped lift docs in one batch.
 - **Notification Writes Are Sequential:** Introduced `batchMirrorGymScopedRecords` to batch-write multi-document flows.
-- **Auth Profile Firestore Read on SSR:** Profile data is now embedded into the Firebase Session Cookie claims.
+- ~~**Auth Profile Firestore Read on SSR:** Profile data is now embedded into the Firebase Session Cookie claims.~~ **Retracted 2026-08-01 — this was never actually working.** Verified against production: a real session cookie carries only `role`/`gymId`/`memberId` (the persistent `setCustomUserClaims` values); `isActive` and friends come from the `beforeSignInHandler` blocking function and do **not** reach session cookies, so the fast-path branch in `_getCurrentUserImpl` never fires and every SSR request still pays the Firestore read. Session revocation was wired 2026-08-01 as the prerequisite; see `docs/12_ARCHITECTURE_AUDIT_2026.md` §P2.4 for what remains.
 - **No B2B2C Gym Subscription Schema:** Added `subscription` to `GymWorkspace`.

@@ -10,7 +10,7 @@ import {
 import { getExerciseThumbnail, isGenericExerciseThumbnail } from "@/lib/exercise-thumbnails";
 import { collectionPaths, gymScopedCollectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection, gymTag } from "./shared";
+import { gymCollection, gymTag, reportReadModelError } from "./shared";
 
 async function getExerciseCatalogUncached(gymId?: string): Promise<{
   exercises: Exercise[];
@@ -41,7 +41,8 @@ async function getExerciseCatalogUncached(gymId?: string): Promise<{
           .where("isActive", "==", true)
           .get()
       : scopedSnapshot;
-  } catch {
+  } catch (error) {
+    reportReadModelError("getExerciseCatalog", error, { gymId: targetGymId });
     return {
       exercises: mockExercises,
       catalog: mockExerciseCatalogByMuscle,
@@ -139,16 +140,14 @@ export const getPendingExerciseRequests = cache(async function getPendingExercis
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = await db
+    // Root-collection fallback removed 2026-08-02: the R4/backfill migration
+    // (docs/17_ROOT_BACKFILL_RUNBOOK.md) confirmed exerciseRequests is fully
+    // mirrored to gyms/{gymId}/exerciseRequests in production, so the
+    // cross-gym collectionGroup read alone is authoritative.
+    const snapshot = await db
       .collectionGroup(gymScopedCollectionPaths.exerciseRequests)
       .where("status", "==", "pending")
       .get();
-    const snapshot = scopedSnapshot.empty
-      ? await db
-          .collection(collectionPaths.exerciseRequests)
-          .where("status", "==", "pending")
-          .get()
-      : scopedSnapshot;
 
     const requests: ExerciseRequest[] = snapshot.docs
       .map((doc) => {
@@ -170,7 +169,8 @@ export const getPendingExerciseRequests = cache(async function getPendingExercis
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
     return { requests, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getPendingExerciseRequests", error);
     return { requests: [], isPersisted: false };
   }
 });

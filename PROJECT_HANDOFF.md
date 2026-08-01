@@ -4,6 +4,56 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Session revocation wired + P2.4 diagnosis corrected by empirical test (2026-08-01)
+
+**Changed:** `toggleMemberAccess` (`actions/members.ts`) and `setGymStatus` (`actions/gyms.ts`) now call `auth.revokeRefreshTokens(uid)` when an account is deactivated; `_getCurrentUserImpl` (`src/lib/auth.ts`) now calls `verifySessionCookie(session, true)` so revocation is actually enforced.
+
+**Verified against production `fitsplit-29215`** with a throwaway script (signed in as the demo member, minted a real session cookie, revoked, re-verified): the cookie passes `verifySessionCookie(cookie, true)` before revocation and is rejected with `auth/session-cookie-revoked` after, while `checkRevoked: false` still accepts it — confirming the flag is what makes revocation effective. Script was deleted after the run; it revoked the demo member's tokens (harmless — that account just signs in again).
+
+**Correction to the previous entry — I got this wrong twice before landing on the right answer, and the record should reflect that.** The same verification printed `isActive: undefined` on a real session cookie. So:
+- The `beforeSignInHandler` blocking function's "SSR Profile Optimization" claims (`isActive`, `staffType`, `mustChangePassword`, `fullName`, `phone`, …) are **not reaching session cookies**. Only the persistent `setCustomUserClaims` values (`role`, `gymId`, `memberId`) are present.
+- Therefore the fast-path branch in `_getCurrentUserImpl` is **dead code** — every SSR request still pays the Firestore profile read. That matches my first analysis.
+- Mid-session I found `beforeSignInHandler`, assumed it worked, and wrote that suspension could therefore lag up to 14 days on a stale cookie. **That was wrong and is retracted.** Because the fast path never fires, every request re-reads the profile and checks `isActive` live, so suspension has always taken effect on the next request. There was no live security hole.
+
+**Net effect of this change:** it adds one (unbilled) Firebase Auth call per request and removes nothing yet, because the fast path is still dead — so it's cost-neutral today. Its value is that it makes revocation real, which is the prerequisite for safely enabling the fast path. Completing that (moving `isActive`/`staffType`/`mustChangePassword` into persistent claims + re-issuing them wherever they change) is written up in `docs/12_ARCHITECTURE_AUDIT_2026.md` §P2.4 and is deliberately left as a reviewed change, not a drive-by.
+
+**Verified clean:** `npx tsc --noEmit`, `npm run lint` (0 errors, 17 warnings — unchanged baseline).
+
+---
+
+## Architecture audit re-verification: most of Sprint 2 was already done (2026-08-01)
+
+Picked up `docs/12_ARCHITECTURE_AUDIT_2026.md`'s Sprint 2 backlog (progress read-model scoping, notification batching, auth-profile read cost, legacy fallback removal) expecting to implement it. Investigation found the doc itself was stale — later sessions (2026-07-02, 2026-07-05, 2026-07-08) had already resolved most of it without the audit doc being updated to say so:
+
+- **P2.1 (scope progress reads to gymId) — already done.** `getBodyMetricLogsForMember`/`getDayLogsForMember`/`getLiftLogsForMember`/`getMemberNotifications` already accept an optional `gymId` and use a scoped query when it's passed. Grepped every call site across `src/app` and `actions/` — all of them already pass `gymId`, so the `collectionGroup` fallback branches are dead code today, just not yet deleted.
+- **P2.2 (batch notification writes) — already done.** `batchMirrorGymScopedRecords` exists and is used in `programs.ts`. The audit's own example (PT booking firing 3 notifications) no longer applies — `bookPTSession` doesn't write a notification inline anymore; it moved to the `onPTPlanCreated` Cloud Function trigger in an earlier cleanup pass. The other `pt.ts` notification sites (complete/cancel/reschedule) each write exactly one notification — nothing to batch.
+- **P2.4 (auth profile caching in session cookie) — genuinely NOT done, and more subtle than the audit implied.** `_getCurrentUserImpl()` in `src/lib/auth.ts` already has a fast-path branch that skips the Firestore read when `decodedSession.isActive !== undefined` — but `isActive` is never set as a custom claim anywhere (`setCustomUserClaims` in `functions/src/index.ts` and `actions/shared.ts` only sets `{ gymId, role, memberId }`), so that condition is always false and **every request still pays the Firestore read this was supposed to eliminate.** Worse: the fast path also reads `staffType` off the claims — the field `requireOwner()` uses to gate owner-only money/settings pages from trainers — and that's not set as a claim either. Naively adding just `isActive` to unblock the fast path would make `staffType` (and `mustChangePassword`) silently resolve to `undefined` on every session, which is an authorization regression, not a display bug. Fixing this properly also needs the suspend/reactivate code paths (`members.ts`, `staff.ts`, `gyms.ts`, `billing.ts`, `member-billing.ts`) to re-call `setCustomUserClaims` when `isActive` changes, since custom claims don't refresh until the next token mint. **Not implemented — flagged in the audit doc for a scoped follow-up**, per the standing rule that auth-authorization changes need a reviewed plan before code, not a drive-by fix discovered mid-cleanup.
+- **P3.4 (remove read-model fallbacks) — not attempted.** Safe to do per-collection only after confirming `docs/17_ROOT_BACKFILL_RUNBOOK.md`'s `--apply` step actually ran against production `fitsplit-29215`; found no record that it has. This needs a human/production-data confirmation, not an engineering decision from here.
+
+**No code changed this pass** — updated `docs/12_ARCHITECTURE_AUDIT_2026.md` in place (Sections C, D, F, the Sprint 2 checklist, and the footer) so it reflects actual current state instead of a snapshot from before the fixes landed. Also declined to touch P2.4/P3.4 rather than "finish" a half-wired auth mechanism under a generic "cost cleanup" mandate.
+
+---
+
+## Mobile: offline lift sync, undo day-skip, push notifications, error-state polish (2026-08-01)
+
+Built the four remaining "Claude can do these" items from `docs/21_MOBILE_GO_LIVE_CHECKLIST.md`'s engineering-remaining list, all local (not pushed this pass).
+
+**Offline lift sync** — new `mobile/lib/offline-queue.ts` (AsyncStorage-backed JSON queue, not `expo-sqlite`: no new native module needed, and the app can't run a native build locally) and `mobile/lib/network.ts` (`expo-network` wrapper). `WorkoutScreen.submitSet` now queues a set locally when offline or when the online write throws, with a visible pending/syncing banner; the queue auto-flushes through `syncOfflineLiftsMobile` on mount and whenever `expo-network`'s connectivity listener reports back online. Mirrors the web's Dexie-queue pattern (`src/lib/offline-db.ts`) without introducing a second offline-storage tech.
+
+**Undo a day-skip** — `clearDayLog` wrapper added to `mutations.ts`. `WorkoutScreen` now looks up the selected day's `dayLogs` entry (by `dayId` + `weekStart`) and swaps the Skip/Finish footer for a single "Undo Skip" action when that day is already skipped, confirmed via the browser `confirm()` global (matching the existing `alert()` convention already used elsewhere in this screen — `Alert.alert` from `react-native` is a documented no-op under `react-native-web`, which would have made the button silently do nothing in the only environment this app gets tested in). **Verified live end-to-end against production**: skipped a day, confirmed the button appeared, accepted the confirm (stubbed `window.confirm` since headless Chrome auto-declines native dialogs), watched `clearDayLogMobile` delete the doc and the footer revert.
+
+**Push notifications** — mobile has no path to reuse the web's raw-FCM flow (`sendPushToMember`'s existing `messaging.send()`) because that needs `@react-native-firebase`, a native module requiring a dev build this environment can't produce. Routed through Expo's own push service instead: `mobile/lib/notifications.ts` requests permission, sets the Android channel, and calls `getExpoPushTokenAsync` (guarded to skip entirely on `Platform.OS === "web"`); a new `registerPushTokenMobile` callable in `functions/src/index.ts` stores the token on `authProfiles/{uid}.expoPushToken`; `sendPushToMember` now sends to both channels (`Promise.allSettled`, one failing doesn't block the other) — existing FCM token for web, Expo push API for mobile. Registration fires non-blockingly after login in `App.tsx`. **The token-registration write path is verified (no console errors post-login); actual push delivery is not** — that needs a real device, the same gate as the still-untested iOS build.
+
+**Loading/empty/error polish** — new shared `mobile/components/ScreenError.tsx` (message + retry button). Logs, Progress, and Macros previously swallowed load failures into `console.error` only, which rendered identically to a genuine empty state — now they carry a proper `error` state with retry. Overview already had an error state but no retry action; added one. Lifted each screen's `load`/`loadData` out of its `useEffect` body so the retry button can call the same function.
+
+**Verified:** `npm run mobile:typecheck`, root `tsc --noEmit`, `npm --prefix functions run build` all clean. `npm run lint`: 0 errors, 17 warnings — same count and category (`react-hooks/set-state-in-effect` / `purity`, already accepted architecture per the 2026-07-21 entries) as before this session; also fixed 5 pre-existing unused-import/no-explicit-any warnings surfaced by the same run (`getGymDetails` ×2, `serverTimestamp`, `Pressable`, `LiftLog` type, `any` in `App.tsx`) while the gate was open. Live-verified via `expo start --web` + Browser pane against production `fitsplit-29215`, signed in as the demo member: all five tabs render, online lift logging still works, the undo-skip round trip works, no console errors anywhere in the session (including after the non-blocking push-registration call on web, which correctly no-ops).
+
+Added `expo-network` and `expo-notifications` as dependencies (via `npx expo install`, so versions are SDK-57-matched rather than guessed) and `"plugins": ["expo-notifications"]` to `mobile/app.json`.
+
+**Not pushed.** Everything above is local working-tree only, per the standing worktree/branch rule — no new branch, same as always, just not yet committed.
+
+---
+
 ## Commit, sync, and build-check pass (2026-08-01)
 
 Landed everything that had accumulated locally since the 2026-07-21 go-live pass: the `mobile/` Expo app (previously untracked), `packages/core/src/exercise-catalog.ts`, the 5 mobile Cloud Function callables in `functions/src/index.ts`, and the doc updates recorded above and in `README.md`/`docs/20_EXPO_MIGRATION_PLAN.md`/`docs/_INDEX.md`.

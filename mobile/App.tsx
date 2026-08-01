@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, View } from "react-native";
 import { StatusBar } from "expo-status-bar";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { getCurrentProfile, type AuthenticatedProfile } from "@/lib/auth";
+import { registerForPushNotificationsAsync } from "@/lib/notifications";
 import { theme } from "@/lib/theme";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoginScreen from "@/screens/LoginScreen";
@@ -15,7 +16,7 @@ import ProgressScreen from "@/screens/ProgressScreen";
 import MacrosScreen from "@/screens/MacrosScreen";
 
 export default function App() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<AuthenticatedProfile | null>(null);
   const [checkingSession, setCheckingSession] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(false);
@@ -29,6 +30,8 @@ export default function App() {
         try {
           const prof = await getCurrentProfile();
           setProfile(prof);
+          // Non-blocking: push registration must never delay getting into the app.
+          void registerForPushNotificationsAsync();
         } catch (err) {
           console.error("Failed to load profile:", err);
         } finally {

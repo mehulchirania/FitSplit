@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { theme } from "@/lib/theme";
+import ScreenError from "@/components/ScreenError";
 import type { AuthenticatedProfile } from "@/lib/auth";
 import { getLiftLogs } from "@/lib/data";
 import { getTodayFocus } from "@/lib/programs";
 import { logBodyWeight } from "@/lib/mutations";
-import type { LiftLog, Exercise } from "@fitsplit/core";
+import type { Exercise } from "@fitsplit/core";
 
 interface ProgressScreenProps {
   profile: AuthenticatedProfile;
@@ -21,6 +22,7 @@ type PRItem = {
 
 export default function ProgressScreen({ profile }: ProgressScreenProps) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState({
     benchE1RM: 0,
     weeklyVolume: 0,
@@ -52,13 +54,14 @@ export default function ProgressScreen({ profile }: ProgressScreenProps) {
     }
   }
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const gymId = profile.defaultGymId;
-        const memberId = profile.uid;
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const gymId = profile.defaultGymId;
+      const memberId = profile.uid;
 
-        const [liftLogs, focus] = await Promise.all([
+      const [liftLogs, focus] = await Promise.all([
           getLiftLogs(gymId, memberId, 500),
           getTodayFocus(gymId, memberId).catch(() => null)
         ]);
@@ -134,20 +137,22 @@ export default function ProgressScreen({ profile }: ProgressScreenProps) {
           }
         });
 
-        setStats({
-          benchE1RM,
-          weeklyVolume,
-          weeklySets,
-          monthlyPRsCount
-        });
-        setPrList(prsList);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+      setStats({
+        benchE1RM,
+        weeklyVolume,
+        weeklySets,
+        monthlyPRsCount
+      });
+      setPrList(prsList);
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Could not load your progress.");
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     load();
   }, [profile]);
 
@@ -157,6 +162,10 @@ export default function ProgressScreen({ profile }: ProgressScreenProps) {
         <ActivityIndicator size="large" color={theme.brand} />
       </View>
     );
+  }
+
+  if (error) {
+    return <ScreenError message={error} onRetry={load} />;
   }
 
   return (

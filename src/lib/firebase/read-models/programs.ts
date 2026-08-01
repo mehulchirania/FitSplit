@@ -9,7 +9,7 @@ import {
 import { applyCurrentWeeklyVariation } from "@/lib/split-library";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection, gymTag } from "./shared";
+import { gymCollection, gymTag, reportReadModelError } from "./shared";
 
 async function getWorkoutProgramsUncached(gymId?: string): Promise<{
   programs: WorkoutProgram[];
@@ -41,7 +41,8 @@ async function getWorkoutProgramsUncached(gymId?: string): Promise<{
           .where("isActive", "==", true)
           .get()
       : scopedSnapshot;
-  } catch {
+  } catch (error) {
+    reportReadModelError("getWorkoutPrograms", error, { gymId: targetGymId });
     return { programs: predefinedPrograms, isPersisted: false };
   }
 
@@ -199,7 +200,8 @@ async function getProgramAssignmentForMemberUncached(memberId: string, gymId?: s
       },
       isPersisted: true
     };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getProgramAssignmentForMember", error, { memberId, gymId });
     return {
       assignment:
         mockAssignments.find(
@@ -255,7 +257,8 @@ async function getActiveProgramAssignmentsUncached(gymId?: string): Promise<{
     });
 
     return { assignments, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getActiveProgramAssignments", error, { gymId: targetGymId });
     return { assignments: fallback, isPersisted: false };
   }
 }

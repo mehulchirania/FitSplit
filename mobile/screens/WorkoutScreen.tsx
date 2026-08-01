@@ -13,8 +13,10 @@ import {
 import { theme } from "@/lib/theme";
 import type { AuthenticatedProfile } from "@/lib/auth";
 import { getTodayFocus, type TodayFocus } from "@/lib/programs";
-import { getLiftLogs, getDayLogs, getGymDetails } from "@/lib/data";
-import { logLiftSet } from "@/lib/mutations";
+import { getLiftLogs, getDayLogs } from "@/lib/data";
+import { logLiftSet, syncOfflineLifts, clearDayLog } from "@/lib/mutations";
+import { enqueueLiftLog, getQueuedLiftLogs, removeQueuedLiftLogs } from "@/lib/offline-queue";
+import { isOnline, addConnectivityListener } from "@/lib/network";
 import type { LiftLog, DayLog, Exercise, WorkoutExercise } from "@fitsplit/core";
 import {
   getWeekStart,
@@ -23,7 +25,7 @@ import {
   getLastLiftForExercise,
   hasLoggedWeight
 } from "@fitsplit/core";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 interface WorkoutScreenProps {
@@ -76,6 +78,11 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
   const [skipModalOpen, setSkipModalOpen] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
+  const [isUndoingSkip, setIsUndoingSkip] = useState(false);
+
+  // Offline lift queue (mirrors the web's Dexie queue — see mobile/lib/offline-queue.ts)
+  const [queuedCount, setQueuedCount] = useState(0);
+  const [isSyncingQueue, setIsSyncingQueue] = useState(false);
 
   const gymId = profile.defaultGymId;
   const memberId = profile.uid;
@@ -118,6 +125,37 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
     loadData();
   }, [profile]);
 
+  const flushQueue = React.useCallback(async () => {
+    const queue = await getQueuedLiftLogs();
+    if (queue.length === 0) {
+      setQueuedCount(0);
+      return;
+    }
+    if (!(await isOnline())) {
+      setQueuedCount(queue.length);
+      return;
+    }
+    setIsSyncingQueue(true);
+    try {
+      await syncOfflineLifts(queue);
+      await removeQueuedLiftLogs(queue.map((entry) => entry.offlineId));
+      setQueuedCount(0);
+    } catch (err) {
+      console.error("[FitSplit] offline lift sync failed:", err);
+      setQueuedCount(queue.length);
+    } finally {
+      setIsSyncingQueue(false);
+    }
+  }, []);
+
+  // Flush on mount and whenever connectivity comes back.
+  useEffect(() => {
+    flushQueue();
+    return addConnectivityListener((online) => {
+      if (online) flushQueue();
+    });
+  }, [flushQueue]);
+
   // Timers ticking
   useEffect(() => {
     const t = setInterval(() => {
@@ -140,6 +178,9 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
   }, [selectedDayIndex, focus]);
 
   const activeDay = focus?.program.days[selectedDayIndex] ?? null;
+  const selectedDayLog = activeDay
+    ? dayLogs.find((dl) => dl.dayId === activeDay.id && dl.weekStart === weekStart)
+    : undefined;
 
   function activeExerciseIdFor(exIdx: number): string {
     return activeDay ? (exerciseSwaps[exIdx] ?? activeDay.exercises[exIdx]?.exerciseId ?? "") : "";
@@ -172,34 +213,54 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
 
     const activeExerciseId = activeExerciseIdFor(exIdx);
     const weight = Number(row.weight || 0);
+    const reps = row.reps || "8";
 
-    try {
-      await logLiftSet({
-        memberId,
-        exerciseId: activeExerciseId,
-        reps: row.reps || "8",
-        weightKg: weight,
-        sets: 1,
-        sessionId
-      });
-
-      // Update rows to done
+    const markDone = () => {
       setRows((r) => ({
         ...r,
         [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, pending: false, done: true } : s))
       }));
-
-      // Trigger Rest timer
       const rest = ex.restSeconds ?? 90;
       setRestTotal(rest);
       setRestRemaining(rest);
+    };
+
+    const queueOffline = async () => {
+      await enqueueLiftLog({
+        gymId,
+        memberId,
+        exerciseId: activeExerciseId,
+        weight,
+        sets: 1,
+        reps,
+        sessionId,
+        loggedAt: new Date().toISOString()
+      });
+      setQueuedCount((c) => c + 1);
+      markDone();
+    };
+
+    if (!(await isOnline())) {
+      await queueOffline();
+      return;
+    }
+
+    try {
+      await logLiftSet({ memberId, exerciseId: activeExerciseId, reps, weightKg: weight, sets: 1, sessionId });
+      markDone();
     } catch (err) {
+      // The OS reported connectivity but the write still failed (flaky signal,
+      // server hiccup) — queue rather than silently dropping the set.
       console.error(err);
-      // Reset pending state
-      setRows((r) => ({
-        ...r,
-        [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, pending: false } : s))
-      }));
+      try {
+        await queueOffline();
+      } catch (queueErr) {
+        console.error(queueErr);
+        setRows((r) => ({
+          ...r,
+          [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, pending: false } : s))
+        }));
+      }
     }
   }
 
@@ -225,6 +286,21 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
       console.error(err);
     } finally {
       setIsFinishing(false);
+    }
+  }
+
+  async function undoSkip() {
+    if (!activeDay || isUndoingSkip) return;
+    if (!confirm("Undo the skip for this day? You'll be able to log it again.")) return;
+    setIsUndoingSkip(true);
+    try {
+      await clearDayLog({ dayId: activeDay.id, weekStart });
+      loadData();
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Could not undo the skip.");
+    } finally {
+      setIsUndoingSkip(false);
     }
   }
 
@@ -279,6 +355,17 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
 
   return (
     <View style={styles.root}>
+      {/* Offline sync status — always visible while sets are pending upload */}
+      {queuedCount > 0 && (
+        <View style={styles.syncBanner}>
+          <Text style={styles.syncBannerText}>
+            {isSyncingQueue
+              ? `Syncing ${queuedCount} offline set${queuedCount === 1 ? "" : "s"}…`
+              : `${queuedCount} set${queuedCount === 1 ? "" : "s"} saved offline — will sync when connected.`}
+          </Text>
+        </View>
+      )}
+
       {/* Top bar with timer & view toggle */}
       <View style={styles.topHeader}>
         <View style={styles.timerRow}>
@@ -425,20 +512,36 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
 
       {/* Sticky Footer */}
       <View style={styles.footer}>
-        <Pressable style={styles.skipBtn} onPress={() => setSkipModalOpen(true)}>
-          <Text style={styles.skipBtnText}>Skip Today</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.finishBtn, isFinishing && styles.finishBtnDisabled]}
-          onPress={finishWorkout}
-          disabled={isFinishing}
-        >
-          {isFinishing ? (
-            <ActivityIndicator color={theme.primaryForeground} />
-          ) : (
-            <Text style={styles.finishBtnText}>Finish Workout</Text>
-          )}
-        </Pressable>
+        {selectedDayLog?.status === "skipped" ? (
+          <Pressable
+            style={[styles.finishBtn, isUndoingSkip && styles.finishBtnDisabled]}
+            onPress={undoSkip}
+            disabled={isUndoingSkip}
+          >
+            {isUndoingSkip ? (
+              <ActivityIndicator color={theme.primaryForeground} />
+            ) : (
+              <Text style={styles.finishBtnText}>Undo Skip</Text>
+            )}
+          </Pressable>
+        ) : (
+          <>
+            <Pressable style={styles.skipBtn} onPress={() => setSkipModalOpen(true)}>
+              <Text style={styles.skipBtnText}>Skip Today</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.finishBtn, isFinishing && styles.finishBtnDisabled]}
+              onPress={finishWorkout}
+              disabled={isFinishing}
+            >
+              {isFinishing ? (
+                <ActivityIndicator color={theme.primaryForeground} />
+              ) : (
+                <Text style={styles.finishBtnText}>Finish Workout</Text>
+              )}
+            </Pressable>
+          </>
+        )}
       </View>
 
       {/* Info Modal */}
@@ -491,6 +594,14 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: theme.bg },
   center: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: theme.bg },
   error: { color: theme.danger, fontSize: 16 },
+  syncBanner: {
+    backgroundColor: theme.accentSoft,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.border,
+    paddingVertical: 8,
+    paddingHorizontal: 16
+  },
+  syncBannerText: { color: theme.warning, fontSize: 12, fontWeight: "600", textAlign: "center" },
   topHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

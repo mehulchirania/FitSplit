@@ -627,8 +627,10 @@ for (const [muscleGroup, catalogExercises] of Object.entries(
       muscleGroup,
       equipment: exercise.mechanic,
       instructions: `${exercise.mechanic} ${muscleGroup.toLowerCase()} movement. Add the final coaching notes and demo video from the owner catalog.`,
-      videoSource: "none",
-      videoUrl: "",
+      videoSource: exercise.video_url ? "youtube" : "none",
+      videoUrl: exercise.video_url ?? "",
+      gymVideoSource: exercise.gym_video_url ? "youtube" : "none",
+      gymVideoUrl: exercise.gym_video_url ?? "",
       thumbnailUrl:
         muscleThumbnails[muscleGroup] ??
         "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=900&q=80",

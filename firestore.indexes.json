@@ -4,262 +4,630 @@
       "collectionGroup": "profiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "defaultGymId", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "ASCENDING" }
+        {
+          "fieldPath": "defaultGymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "memberships",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "endDate", "order": "ASCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "endDate",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "exerciseCatalog",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "ASCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptSessions",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "scheduledAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scheduledAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptSessions",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "trainerId", "order": "ASCENDING" },
-        { "fieldPath": "scheduledAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "trainerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scheduledAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptSessions",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "scheduledAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scheduledAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptLiftLogs",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "ptSessionId", "order": "ASCENDING" },
-        { "fieldPath": "loggedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "ptSessionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptSessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "notified24h", "order": "ASCENDING" },
-        { "fieldPath": "scheduledAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "notified24h",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scheduledAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptSessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "notified1h", "order": "ASCENDING" },
-        { "fieldPath": "scheduledAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "notified1h",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "scheduledAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "ptSessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "startedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startedAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "workoutSessions",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "startedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "startedAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "recipientRole", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "recipientRole",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "recipientRole", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "recipientRole",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "notifications",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "recipientRole", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "recipientRole",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "liftLogs",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "loggedAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "paymentRequests",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "requestedAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "requestedAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "paymentRequests",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "requestedAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "requestedAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "paymentRequests",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "packageId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "packageId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "paymentRequests",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "status", "order": "ASCENDING" },
-        { "fieldPath": "resolvedAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "resolvedAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "memberships",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "DESCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "members",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "assignedTrainerId", "order": "ASCENDING" },
-        { "fieldPath": "isPT", "order": "ASCENDING" }
+        {
+          "fieldPath": "assignedTrainerId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isPT",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "memberships",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "createdAt", "order": "ASCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "programAssignments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "programAssignments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "programAssignments",
       "queryScope": "COLLECTION_GROUP",
       "fields": [
-        { "fieldPath": "memberId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "programAssignments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "status", "order": "ASCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "activityEvents",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "audience", "order": "ASCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "audience",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "workoutPrograms",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "gymId", "order": "ASCENDING" },
-        { "fieldPath": "isActive", "order": "ASCENDING" }
+        {
+          "fieldPath": "gymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "authProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "defaultGymId", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" }
+        {
+          "fieldPath": "defaultGymId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "authProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "phone", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" }
+        {
+          "fieldPath": "phone",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "authProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "email", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" }
+        {
+          "fieldPath": "email",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        }
       ]
     },
     {
       "collectionGroup": "authProfiles",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "username", "order": "ASCENDING" },
-        { "fieldPath": "role", "order": "ASCENDING" }
+        {
+          "fieldPath": "username",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "role",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "liftLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "bodyMetricLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dayLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "macroLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "mealLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "date",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "activityLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "recipientId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "attendanceRecords",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "checkInAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "bodyMetricLogs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "dayLogs",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "memberId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "loggedAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "notifications",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "recipientId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
       ]
     }
   ],

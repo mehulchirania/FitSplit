@@ -57,6 +57,63 @@ export async function logMeal(payload: LogMealPayload) {
   return data;
 }
 
+export type SyncOfflineLiftLog = {
+  gymId: string;
+  memberId: string;
+  exerciseId: string;
+  weight: number;
+  sets: number;
+  reps: string;
+  sessionId: string;
+  loggedAt: string;
+};
+
+type SyncOfflineLiftsResult = { status: "success"; message: string };
+
+const syncOfflineLiftsCallable = httpsCallable<{ logs: SyncOfflineLiftLog[] }, SyncOfflineLiftsResult>(
+  functions,
+  "syncOfflineLiftsMobile"
+);
+
+/** syncOfflineLiftsMobile — batch-writes queued offline lift sets once connectivity returns. */
+export async function syncOfflineLifts(logs: SyncOfflineLiftLog[]) {
+  const { data } = await syncOfflineLiftsCallable({ logs });
+  return data;
+}
+
+export type ClearDayLogPayload = {
+  dayId: string;
+  weekStart: string;
+  memberId?: string;
+};
+
+type ClearDayLogResult = { status: "success"; message: string };
+
+const clearDayLogCallable = httpsCallable<ClearDayLogPayload, ClearDayLogResult>(functions, "clearDayLogMobile");
+
+/** clearDayLogMobile — undoes a skipped (or completed) day so it can be re-logged. */
+export async function clearDayLog(payload: ClearDayLogPayload) {
+  const { data } = await clearDayLogCallable(payload);
+  return data;
+}
+
+export type RegisterPushTokenPayload = {
+  expoPushToken: string;
+};
+
+type RegisterPushTokenResult = { status: "success"; message: string };
+
+const registerPushTokenCallable = httpsCallable<RegisterPushTokenPayload, RegisterPushTokenResult>(
+  functions,
+  "registerPushTokenMobile"
+);
+
+/** registerPushTokenMobile — stores the device's Expo push token on the signed-in user's profile. */
+export async function registerPushToken(expoPushToken: string) {
+  const { data } = await registerPushTokenCallable({ expoPushToken });
+  return data;
+}
+
 export type LogBodyWeightPayload = {
   weightKg: number;
   bodyFatPct?: number;

@@ -8,7 +8,8 @@ import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import {
   gymCollection,
   mapProfileToMember,
-  mapWorkspace
+  mapWorkspace,
+  reportReadModelError
 } from "./shared";
 import { getActiveProgramAssignments } from "./programs";
 import { getMembers } from "./members";
@@ -39,7 +40,8 @@ export async function getGymWorkspaces(): Promise<{
     }
 
     return { gyms, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getGymWorkspaces", error);
     return { gyms: mockGyms, isPersisted: false };
   }
 }
@@ -67,7 +69,8 @@ export async function getGymDetail(gymId: string): Promise<{
     }
 
     return { gym: mapWorkspace(doc.id, doc.data() ?? {}), isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getGymDetail", error, { gymId });
     return { gym: null, isPersisted: false };
   }
 }
@@ -137,7 +140,8 @@ export async function getOwnersForGym(gymId: string): Promise<{
     const owners: Member[] = snapshot.docs.map(doc => mapProfileToMember(doc.id, doc.data()));
 
     return { owners, isPersisted: true };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getOwnersForGym", error, { gymId });
     return { owners: [], isPersisted: false };
   }
 }
@@ -186,8 +190,8 @@ export const getGymFloorLoadMap = cache(async (gymId: string): Promise<{
           secondary: String(data.secondarySlot || "D")
         };
       });
-    } catch (e) {
-      console.error("Failed to query profiles for floor load mapping", e);
+    } catch (error) {
+      reportReadModelError("getGymFloorLoadMap", error, { gymId });
     }
   }
 

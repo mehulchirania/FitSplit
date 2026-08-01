@@ -2,8 +2,13 @@
 
 ## Project identity
 
-Gym management platform. Pilot gym: **Sri Shakthi Hanuman Gym** (`shg`).  
-Firebase project: `fitsplit-29215`. Live: https://fitsplit.in (custom domain; the default `*.hosted.app` domain was disabled 2026-05-19 and 404s by design — not an outage)  
+Gym management platform. **NOT LIVE — pre-launch. There are no real customers and no real member data.** Everything in Firebase today is test/demo data.
+
+Primary **test** gym: **Sri Shakthi Hanuman Gym** (`shg`). Three further gyms exist purely to exercise multi-tenant functionality — `titan-gym`, `ironcore-blr`, `pulse-hyd` — 4 total, each seeded with 20 member profiles (80 total, verified 2026-08-01). None represent real gyms.
+
+Two consequences worth holding onto: `collectionGroup` queries scan 4 gyms' data, not one, so don't reason about read cost as if this were single-tenant; and because nothing is live, data changes are low-risk — but the flip side is that **no production behaviour has ever been validated against real usage.**
+
+Firebase project: `fitsplit-29215`. Deployed at https://fitsplit.in (custom domain; the default `*.hosted.app` domain was disabled 2026-05-19 and 404s by design — not an outage). Deployed ≠ launched.  
 Developer: Mehul Chirania (`mehulchirania@gmail.com`), Bengaluru. Also a demo member: uid `member-mehul`, username `mehulchirania`, PIN `1234`.
 
 ## Stack

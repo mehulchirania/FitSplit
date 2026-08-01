@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { StyleSheet, Text, View, ScrollView, ActivityIndicator, Pressable } from "react-native";
+import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from "react-native";
 import { theme } from "@/lib/theme";
+import ScreenError from "@/components/ScreenError";
 import type { AuthenticatedProfile } from "@/lib/auth";
 import { getTodayFocus, type TodayFocus } from "@/lib/programs";
 import {
@@ -36,11 +37,9 @@ type ScreenState =
 export default function OverviewScreen({ profile }: OverviewScreenProps) {
   const [state, setState] = useState<ScreenState>({ status: "loading" });
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      try {
+  async function load(cancelledRef?: { current: boolean }) {
+    setState({ status: "loading" });
+    try {
         const gymId = profile.defaultGymId;
         const memberId = profile.uid;
 
@@ -132,33 +131,35 @@ export default function OverviewScreen({ profile }: OverviewScreenProps) {
           }
         }
 
-        if (!cancelled) {
-          setState({
-            status: "success",
-            gym,
-            member,
-            focus,
-            liftLogs,
-            dayLogs,
-            adherence,
-            streak,
-            sessionsThisWeek,
-            recentPR
-          });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setState({
-            status: "error",
-            message: err instanceof Error ? err.message : "An unexpected error occurred"
-          });
-        }
+      if (!cancelledRef?.current) {
+        setState({
+          status: "success",
+          gym,
+          member,
+          focus,
+          liftLogs,
+          dayLogs,
+          adherence,
+          streak,
+          sessionsThisWeek,
+          recentPR
+        });
+      }
+    } catch (err) {
+      if (!cancelledRef?.current) {
+        setState({
+          status: "error",
+          message: err instanceof Error ? err.message : "An unexpected error occurred"
+        });
       }
     }
+  }
 
-    load();
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    load(cancelledRef);
     return () => {
-      cancelled = true;
+      cancelledRef.current = true;
     };
   }, [profile]);
 
@@ -171,11 +172,7 @@ export default function OverviewScreen({ profile }: OverviewScreenProps) {
   }
 
   if (state.status === "error") {
-    return (
-      <View style={styles.center}>
-        <Text style={styles.error}>{state.message}</Text>
-      </View>
-    );
+    return <ScreenError message={state.message} onRetry={() => load()} />;
   }
 
   const { gym, focus, adherence, streak, sessionsThisWeek, recentPR } = state;

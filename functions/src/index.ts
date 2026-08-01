@@ -270,16 +270,41 @@ async function mirrorGymRecord(gymId: string, collection: string, docId: string,
 async function sendPushToMember(memberId: string, title: string, body: string, url = "/member") {
   try {
     const profile = await db.collection("authProfiles").doc(memberId).get();
-    const token = String(profile.get("fcmToken") ?? "");
-    if (!token) return;
+    const fcmToken = String(profile.get("fcmToken") ?? "");
+    const expoPushToken = String(profile.get("expoPushToken") ?? "");
 
-    await messaging.send({
-      token,
-      notification: { title, body },
-      webpush: {
-        fcmOptions: { link: url }
+    const sends: Promise<unknown>[] = [];
+
+    if (fcmToken) {
+      sends.push(
+        messaging.send({
+          token: fcmToken,
+          notification: { title, body },
+          webpush: { fcmOptions: { link: url } }
+        })
+      );
+    }
+
+    // Mobile (Expo) has no native Firebase messaging module — routed through
+    // Expo's own push service instead, keyed off the token registered by
+    // registerPushTokenMobile. See docs/21_MOBILE_GO_LIVE_CHECKLIST.md.
+    if (expoPushToken) {
+      sends.push(
+        fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ to: expoPushToken, title, body, data: { url } })
+        })
+      );
+    }
+
+    if (sends.length === 0) return;
+    const results = await Promise.allSettled(sends);
+    for (const result of results) {
+      if (result.status === "rejected") {
+        console.warn("[sendPushToMember] one channel failed", memberId, result.reason);
       }
-    });
+    }
   } catch (error) {
     console.warn("[sendPushToMember] skipped or failed", memberId, error);
   }
@@ -2199,6 +2224,18 @@ export const clearDayLogMobile = onCall({ region }, async (request) => {
   ]);
 
   return { status: "success", message: "Day log cleared." };
+});
+
+export const registerPushTokenMobile = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const expoPushToken = asString(request.data?.expoPushToken, "Push token");
+
+  await db.collection("authProfiles").doc(user.uid).set(
+    { expoPushToken, expoPushTokenUpdatedAt: new Date().toISOString() },
+    { merge: true }
+  );
+
+  return { status: "success", message: "Push token registered." };
 });
 
 export const logMealMobile = onCall({ region }, async (request) => {

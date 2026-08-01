@@ -9,7 +9,8 @@ import {
   gymCollection,
   mapProfileToMember,
   getMemberProfileDocument,
-  gymTag
+  gymTag,
+  reportReadModelError
 } from "./shared";
 import { PRIMARY_GYM_ID } from "../collections";
 
@@ -36,7 +37,8 @@ async function getMembersUncached(gymId?: string): Promise<{
           .where("role", "==", "member")
           .get()
       : scopedSnapshot;
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMembers", error, { gymId: targetGymId });
     return { members: mockMembers, isPersisted: false };
   }
 
@@ -80,7 +82,8 @@ async function resolveMemberUsername(
       String(authData.email ?? "").trim() ||
       undefined
     );
-  } catch {
+  } catch (error) {
+    reportReadModelError("resolveMemberUsername", error, { memberId });
     return undefined;
   }
 }
@@ -135,7 +138,8 @@ async function getMemberDetailUncached(memberId: string): Promise<{
   try {
     db = getFirebaseAdminServices().db;
     profileDoc = await getMemberProfileDocument(db, memberId);
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMemberDetail", error, { memberId });
     return {
       member: null,
       isPersisted: false
@@ -221,7 +225,8 @@ async function getProfileMetricsUncached(memberId: string): Promise<{
       },
       isPersisted: true
     };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getProfileMetrics", error, { memberId });
     return { profile: fallback, isPersisted: false };
   }
 }
@@ -254,7 +259,8 @@ async function getMemberWithProfileUncached(memberId: string): Promise<{
   try {
     const { db } = getFirebaseAdminServices();
     doc = await getMemberProfileDocument(db, memberId);
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMemberWithProfile", error, { memberId });
     return { member: null, profile: fallbackProfile, isPersisted: false };
   }
 

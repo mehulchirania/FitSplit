@@ -123,7 +123,18 @@ export function memberAuthEmail(memberId: string) {
 
 export async function upsertAuthUser(
   auth: ReturnType<typeof getFirebaseAdminServices>["auth"],
-  user: { email: string; fullName: string; uid: string; role: Role; gymId: string; isActive: boolean },
+  user: {
+    email: string;
+    fullName: string;
+    uid: string;
+    role: Role;
+    gymId: string;
+    isActive: boolean;
+    /** Gym-staff sub-role (owner/trainer/staff). Omitted for members/admin. */
+    staffType?: string;
+    /** Forces the staff first-login password-change gate. Defaults to false. */
+    mustChangePassword?: boolean;
+  },
   defaultPassword = "password",
   forceResetPassword = false
 ) {
@@ -166,8 +177,51 @@ export async function upsertAuthUser(
   await auth.setCustomUserClaims(user.uid, {
     gymId: user.gymId,
     role: user.role,
+    // SSR Profile Optimization (see _getCurrentUserImpl in src/lib/auth.ts): these
+    // three fields let the fast path skip the authProfiles Firestore read on every
+    // request. They must stay in sync with Firestore — any action that flips one
+    // of them on an EXISTING user should call patchUserClaims() below rather than
+    // relying on this function running again.
+    isActive: user.isActive,
+    mustChangePassword: user.mustChangePassword === true,
+    ...(user.staffType ? { staffType: user.staffType } : {}),
     ...(user.role === "member" ? { memberId: user.uid } : {})
   });
+}
+
+/**
+ * Patches a single field into a user's EXISTING persistent custom claims
+ * without clobbering the rest (auth.setCustomUserClaims() REPLACES the whole
+ * claims object, so a naive call would wipe role/gymId/memberId/staffType).
+ *
+ * Use this from actions that flip isActive / staffType / mustChangePassword on
+ * an already-provisioned Firebase Auth user (toggleMemberAccess, setGymStatus,
+ * updateStaffProfile, changeStaffPassword) instead of re-deriving the full
+ * upsertAuthUser payload. Session cookies bake claims in at creation time, so
+ * this only affects the user's NEXT login (or is paired with
+ * auth.revokeRefreshTokens() by the caller when the change must take effect on
+ * an already-live session immediately — e.g. isActive/staffType, which gate
+ * authorization). Best-effort: silently no-ops if the uid has no Firebase Auth
+ * user (legacy/demo profiles without a matching Auth account).
+ */
+export async function patchUserClaims(
+  auth: ReturnType<typeof getFirebaseAdminServices>["auth"],
+  uid: string,
+  patch: Record<string, unknown>
+): Promise<void> {
+  try {
+    const userRecord = await auth.getUser(uid);
+    const existingClaims = (userRecord.customClaims ?? {}) as Record<string, unknown>;
+    await auth.setCustomUserClaims(uid, { ...existingClaims, ...patch });
+  } catch (error: unknown) {
+    const errorCode =
+      error && typeof error === "object" && "code" in error
+        ? String((error as { code?: unknown }).code ?? "")
+        : "";
+    if (errorCode !== "auth/user-not-found") {
+      throw error;
+    }
+  }
 }
 
 export function getActionFormData(

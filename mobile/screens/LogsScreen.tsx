@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, View, ScrollView, ActivityIndicator } from "react-native";
 import { theme } from "@/lib/theme";
+import ScreenError from "@/components/ScreenError";
 import type { AuthenticatedProfile } from "@/lib/auth";
-import { getLiftLogs, getDayLogs, getGymDetails } from "@/lib/data";
+import { getLiftLogs, getDayLogs } from "@/lib/data";
 import { getTodayFocus } from "@/lib/programs";
 import type { LiftLog, DayLog, Exercise } from "@fitsplit/core";
 
@@ -19,19 +20,21 @@ type LogGroup = {
 
 export default function LogsScreen({ profile }: LogsScreenProps) {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [groups, setGroups] = useState<LogGroup[]>([]);
 
-  useEffect(() => {
-    async function load() {
-      try {
-        const gymId = profile.defaultGymId;
-        const memberId = profile.uid;
+  async function load() {
+    setLoading(true);
+    setError(null);
+    try {
+      const gymId = profile.defaultGymId;
+      const memberId = profile.uid;
 
-        const [liftLogs, dayLogs, focus] = await Promise.all([
-          getLiftLogs(gymId, memberId, 200),
-          getDayLogs(gymId, memberId, 100),
-          getTodayFocus(gymId, memberId).catch(() => null)
-        ]);
+      const [liftLogs, dayLogs, focus] = await Promise.all([
+        getLiftLogs(gymId, memberId, 200),
+        getDayLogs(gymId, memberId, 100),
+        getTodayFocus(gymId, memberId).catch(() => null)
+      ]);
 
         const exerciseMap = focus?.exercisesById || new Map<string, Exercise>();
 
@@ -92,13 +95,15 @@ export default function LogsScreen({ profile }: LogsScreenProps) {
           .sort((a, b) => b.dateStr.localeCompare(a.dateStr));
 
         setGroups(sortedGroups);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
+    } catch (err) {
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Could not load your logs.");
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     load();
   }, [profile]);
 
@@ -108,6 +113,10 @@ export default function LogsScreen({ profile }: LogsScreenProps) {
         <ActivityIndicator size="large" color={theme.brand} />
       </View>
     );
+  }
+
+  if (error) {
+    return <ScreenError message={error} onRetry={load} />;
   }
 
   return (

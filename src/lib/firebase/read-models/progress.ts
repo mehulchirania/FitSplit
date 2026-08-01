@@ -2,7 +2,7 @@ import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MealLog, Ma
 
 import { gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection } from "./shared";
+import { gymCollection, reportReadModelError } from "./shared";
 
 export async function getBodyMetricLogsForMember(memberId: string, gymId?: string, limit = 365): Promise<{
   logs: BodyMetricLog[];
@@ -37,7 +37,7 @@ export async function getBodyMetricLogsForMember(memberId: string, gymId?: strin
       .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
     return { logs, isPersisted: true };
   } catch (error) {
-    console.warn("getBodyMetricLogsForMember failed:", error);
+    reportReadModelError("getBodyMetricLogsForMember", error, { memberId, gymId });
     return { logs: [], isPersisted: false };
   }
 }
@@ -90,7 +90,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
       .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
     return { dayLogs, isPersisted: true };
   } catch (error) {
-    console.warn("getDayLogsForMember failed:", error);
+    reportReadModelError("getDayLogsForMember", error, { memberId, gymId });
     return { dayLogs: [], isPersisted: false };
   }
 }
@@ -116,7 +116,8 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string, lim
           .limit(limit)
           .get();
     snapshot = scopedSnapshot;
-  } catch {
+  } catch (error) {
+    reportReadModelError("getLiftLogsForMember", error, { memberId, gymId });
     return { liftLogs: [], isPersisted: false };
   }
 
@@ -181,7 +182,8 @@ export async function getMacroLogForMember(
         water: Number(data.water ?? 0)
       }
     };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMacroLogForMember", error, { memberId, gymId });
     return { macroLog: null };
   }
 }
@@ -219,7 +221,8 @@ export async function getMacroLogsForMember(
       };
     });
     return { macroLogs };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMacroLogsForMember", error, { memberId, gymId });
     return { macroLogs: [] };
   }
 }
@@ -256,7 +259,8 @@ export async function getMealLogsForMember(
       };
     });
     return { mealLogs };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getMealLogsForMember", error, { memberId, gymId, date });
     return { mealLogs: [] };
   }
 }
@@ -295,7 +299,8 @@ export async function getActivityLogsForMember(
       };
     });
     return { activityLogs };
-  } catch {
+  } catch (error) {
+    reportReadModelError("getActivityLogsForMember", error, { memberId, gymId });
     return { activityLogs: [] };
   }
 }
