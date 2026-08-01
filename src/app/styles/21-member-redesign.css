@@ -3565,3 +3565,31 @@ a.mcr-tabbar__item:hover {
   font-size: 11px;
   border-radius: 6px;
 }
+
+.m3d-wk__swap-dropdown-wrap {
+  display: inline-flex;
+  align-items: center;
+}
+.m3d-wk__swap-select {
+  background: var(--bg-subtle, #1a1a1c);
+  color: var(--text-soft, #e0e0e0);
+  border: 1px solid var(--border, rgba(255,255,255,0.12));
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  max-width: 170px;
+  text-overflow: ellipsis;
+  transition: border-color 120ms, background 120ms;
+}
+.m3d-wk__swap-select:hover, .m3d-wk__swap-select:focus {
+  border-color: var(--brand, #C8F135);
+  color: var(--text, #ffffff);
+}
+.m3d-wk__swap-select option {
+  background: #18181b;
+  color: #f4f4f5;
+  padding: 6px;
+}

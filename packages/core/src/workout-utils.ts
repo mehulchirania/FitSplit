@@ -158,19 +158,45 @@ function normalizeMuscleToken(value?: string | null) {
   return (value ?? "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-/** Same-muscle-group alternatives for a swap-exercise affordance. */
-export function getAlternateExercises(original: Exercise | undefined, exercises: Exercise[]) {
+/** Same-muscle-group alternatives for a swap-exercise affordance, excluding skipped exercises. */
+export function getAlternateExercises(
+  original: Exercise | undefined,
+  exercises: Exercise[],
+  skippedExerciseIds: Set<string> | string[] = new Set()
+) {
   if (!original) return [];
+  const skippedSet = new Set(skippedExerciseIds);
   const originalGroup = normalizeMuscleToken(original.muscleGroup);
   return exercises
-    .filter((candidate) => candidate.id !== original.id && normalizeMuscleToken(candidate.muscleGroup) === originalGroup)
+    .filter(
+      (candidate) =>
+        candidate.id !== original.id &&
+        !skippedSet.has(candidate.id) &&
+        normalizeMuscleToken(candidate.muscleGroup) === originalGroup
+    )
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
+/** Get top recommended alternative exercise for a given exercise */
+export function getRecommendedAlternative(
+  original: Exercise | undefined,
+  exercises: Exercise[],
+  skippedExerciseIds: Set<string> | string[] = new Set()
+): Exercise | null {
+  const alternatives = getAlternateExercises(original, exercises, skippedExerciseIds);
+  return alternatives[0] ?? null;
+}
+
 /** Cycles through same-muscle alternatives (including back to the original) each time it's called. */
-export function getNextExerciseSwap(original: Exercise | undefined, currentExerciseId: string, exercises: Exercise[]) {
+export function getNextExerciseSwap(
+  original: Exercise | undefined,
+  currentExerciseId: string,
+  exercises: Exercise[],
+  skippedExerciseIds: Set<string> | string[] = new Set()
+) {
   if (!original) return null;
-  const cycle = [original, ...getAlternateExercises(original, exercises)];
+  const alternatives = getAlternateExercises(original, exercises, skippedExerciseIds);
+  const cycle = [original, ...alternatives];
   if (cycle.length < 2) return null;
   const currentIndex = cycle.findIndex((candidate) => candidate.id === currentExerciseId);
   return cycle[(currentIndex + 1) % cycle.length] ?? null;

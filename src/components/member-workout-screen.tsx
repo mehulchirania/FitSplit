@@ -10,7 +10,7 @@ import { initialFormActionState } from "@/types/action-state";
 import type { Exercise, LiftLog, DayLog, WorkoutProgram, WorkoutDay } from "@/types/domain";
 import {
   getWeekStart, SKIP_REASONS,
-  getNextExerciseSwap, getLastLiftForExercise, hasLoggedWeight,
+  getAlternateExercises, getRecommendedAlternative, getNextExerciseSwap, getLastLiftForExercise, hasLoggedWeight,
 } from "@/lib/workout-utils";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 
@@ -106,6 +106,16 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
   const currentDayLog = dayLogs.find((l) => l.dayId === day?.id && l.weekStart === weekStart);
   const totalSets = Object.values(rows).reduce((n, r) => n + r.length, 0);
   const doneSets = Object.values(rows).reduce((n, r) => n + r.filter((s) => s.done).length, 0);
+
+  const skippedExerciseIds = useMemo(() => {
+    const ids = new Set<string>();
+    for (const log of dayLogs) {
+      if (log.status === "skipped" && Array.isArray(log.makeupExerciseIds)) {
+        log.makeupExerciseIds.forEach((id: string) => ids.add(id.trim()));
+      }
+    }
+    return ids;
+  }, [dayLogs]);
 
   function activeExerciseIdFor(exIdx: number): string {
     return exerciseSwaps[exIdx] ?? day.exercises[exIdx]?.exerciseId ?? "";
@@ -268,7 +278,8 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
             const activeId = activeExerciseIdFor(exIdx);
             const dictEx = exercises.find((e) => e.id === activeId);
             const originalEx = exercises.find((e) => e.id === ex.exerciseId);
-            const nextSwap = getNextExerciseSwap(originalEx, activeId, exercises);
+            const alternatives = originalEx ? getAlternateExercises(originalEx, exercises, skippedExerciseIds) : [];
+            const recommendedAlt = alternatives[0] ?? null;
             const isSwapped = Boolean(exerciseSwaps[exIdx]) && dictEx?.id !== originalEx?.id;
             const exRows = rows[exIdx] ?? [];
             const complete = exRows.length > 0 && exRows.every((s) => s.done);
@@ -302,18 +313,29 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
                         />
                       </div>
                     )}
-                    {nextSwap && (
-                      <button
-                        type="button"
-                        className="m3d-wk__swap-btn"
-                        title={`Swap with ${nextSwap.name}`}
-                        onClick={() => {
-                          if (nextSwap.id === originalEx?.id) clearSwap(exIdx);
-                          else setExerciseSwaps((c) => ({ ...c, [exIdx]: nextSwap.id }));
-                        }}
-                      >
-                        Swap
-                      </button>
+                    {originalEx && alternatives.length > 0 && (
+                      <div className="m3d-wk__swap-dropdown-wrap" onClick={(e) => e.stopPropagation()}>
+                        <select
+                          className="m3d-wk__swap-select"
+                          value={activeId}
+                          title={isSwapped ? `Swapped from ${originalEx.name}` : `Recommended: ${recommendedAlt?.name}`}
+                          onChange={(e) => {
+                            const selectedId = e.target.value;
+                            if (selectedId === originalEx.id) {
+                              clearSwap(exIdx);
+                            } else {
+                              setExerciseSwaps((c) => ({ ...c, [exIdx]: selectedId }));
+                            }
+                          }}
+                        >
+                          <option value={originalEx.id}>{originalEx.name} (Original)</option>
+                          {alternatives.map((alt, altIdx) => (
+                            <option key={alt.id} value={alt.id}>
+                              {altIdx === 0 ? "⭐ Recommended: " : ""}{alt.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
                     )}
                     <button type="button" className="m3d-wk__details-btn" onClick={() => setDrawerIndex(exIdx)}>Details →</button>
 
