@@ -17,7 +17,7 @@ import type { MemberProfile, Member } from "@/types/domain";
 import React, { useState, useEffect, useTransition, useRef } from "react";
 import Link from "next/link";
 import { logoutUser } from "@/lib/auth";
-import { getAlternateExercises, getNextExerciseSwap, getExerciseSwapKey, getLastLiftForExercise, hasLoggedWeight } from "@/lib/workout-utils";
+import { getNextExerciseSwap, getExerciseSwapKey, getLastLiftForExercise, hasLoggedWeight } from "@/lib/workout-utils";
 
 /* ── Inline SVG icon helpers ──────────────────────── */
 // Omit conflicting SVG attrs (d is string in SVG spec but we pass ReactNode; strokeWidth handled via sw)

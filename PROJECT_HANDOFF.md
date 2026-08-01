@@ -4,6 +4,201 @@ Verified analysis against the live codebase (May 2026). Items are ordered by exe
 
 ---
 
+## Commit, sync, and build-check pass (2026-08-01)
+
+Landed everything that had accumulated locally since the 2026-07-21 go-live pass: the `mobile/` Expo app (previously untracked), `packages/core/src/exercise-catalog.ts`, the 5 mobile Cloud Function callables in `functions/src/index.ts`, and the doc updates recorded above and in `README.md`/`docs/20_EXPO_MIGRATION_PLAN.md`/`docs/_INDEX.md`.
+
+**Found and fixed a real break before committing:** `node_modules/@fitsplit/core` and `@fitsplit/mobile` were symlinked to `C:\Users\mehul\Documents\Codex\2026-05-03\FitSplit\...` — a different, nonexistent clone path — not this repo. Root `tsc --noEmit` and `npm run mobile:typecheck` both failed with `Cannot find module '@fitsplit/core'` as a result. A plain `npm install` regenerated the npm-workspaces symlinks to point at this repo's own `packages/core` and `mobile`, and both typechecks went clean immediately after. This was a local environment artifact (likely from an earlier session running `npm install` inside a different worktree/clone of the same repo), not a code defect — nothing to fix in source.
+
+**Build check, full gate, all green:** root `tsc --noEmit`, `npm run mobile:typecheck`, `npm --prefix functions run build`, `npm run build` (Next.js, all 47 routes), `npm test` (110/110 vitest), `npm run lint` (0 errors). Also removed two pre-existing unused imports surfaced by lint (`getAlternateExercises` in `member-coach-shell.tsx`, `Link` in `member-overview-screen.tsx`) per the standing "resolve unused imports/vars" rule — unrelated to this session's feature work, just cleanup while the gate was open. Remaining 17 lint warnings are the already-documented `react-hooks/set-state-in-effect` and `purity` pattern in `member-workout-screen.tsx` (accepted architecture, see the 2026-07-21 entries) plus its mirror image in the new `mobile/screens/WorkoutScreen.tsx` — same pattern, ported, not new debt.
+
+**Merged all 7 open Dependabot PRs** (all pre-vetted, CI-green dependency bumps, no code changes on this repo's side): `next` 16.2.9→16.2.10, `@sentry/nextjs` 10.62.0→10.64.0, `@radix-ui/react-dialog` 1.1.17→1.1.19, `@opentelemetry/core` 2.8.0→2.9.0, `knip` 6.23.0→6.25.0, and two `websocket-driver` 0.7.4→0.7.5 bumps (root + `functions/`).
+
+**Pushed to `main`.** Per the standing note in `docs/21_MOBILE_GO_LIVE_CHECKLIST.md`, this triggers the live Firebase App Hosting rollout of fitsplit.in — the web app was verified unaffected by the mobile/core additions (clean build, all tests green), same as previously verified locally, now re-confirmed against the actual push.
+
+---
+
+## Expo/React Native migration — go-live readiness pass (2026-07-21)
+
+Took the member app to production-ready. Full honest checklist in [`docs/21_MOBILE_GO_LIVE_CHECKLIST.md`](docs/21_MOBILE_GO_LIVE_CHECKLIST.md).
+
+**Done this pass:**
+- **Production `app.json`** — name **FitSplit**, slug `fitsplit`, bundle id **`in.fitsplit`** (iOS + Android, reverse-DNS of fitsplit.in), version 1.0.0, `userInterfaceStyle: dark`, and `extra.eas.projectId` set to the EAS project the user created (`4d07e898-6168-4867-923c-ee4a0aa0994c`). Verified the app still bundles and the browser tab title is now "FitSplit".
+- **`eas.json`** — development / preview (internal Android APK) / production build profiles + submit placeholder. The `preview` profile gives the user a sideloadable APK for local Android testing with no Mac/store needed. **Not run** — `eas build`/`eas submit` are human-gated.
+- **Body-weight logging wired** — added `logBodyWeight` to `lib/mutations.ts` and a bodyweight-entry card to the Progress screen (`logBodyWeightMobile`). Verified live: "Logged 72.5 kg." So 3 of 5 deployed callables are now client-wired and proven (lift, meal, bodyweight).
+
+**Verified:** root `tsc --noEmit` (web + core) exit 0; `mobile` typecheck clean; app renders + all three write flows work live against production; no console errors. (Used typecheck rather than `npm run build` for the web to avoid the `.next` dev-server collision.)
+
+**Explicit boundary — what "go live" still needs, and why Claude didn't do it:** store submission, Apple/Google account + listing setup, branded icon/splash assets, and a real iOS-device test are human/hardware-gated (and store submission is prohibited for the agent). Remaining *engineering* Claude could still do: offline lift-sync (`syncOfflineLiftsMobile`, needs a local queue — the one sizable gap), undo-day-skip (`clearDayLogMobile`), and push notifications (`expo-notifications`). None block a functional v1.
+
+**Still nothing pushed/committed to remote.** The 5 Cloud Functions remain deployed (earlier approval); all app/refactor code is local. Pushing `main` would trigger the live fitsplit.in web rollout — verified unaffected, but treat as a prod web deploy.
+
+---
+
+## Expo/React Native migration — write-callable consolidation (2026-07-21)
+
+Consolidated all mobile write-through-Cloud-Function calls into a single `mobile/lib/mutations.ts` so screens never call `httpsCallable` directly — one clean pattern. Previously `logLiftSet` lived in `lib/lift-logs.ts` and the meal callable was inlined in `MacrosScreen`.
+
+- New `lib/mutations.ts` — typed wrappers `logLiftSet` (→ `logLiftSetMobile`) and `logMeal` (→ `logMealMobile`), both with payload/result types. Deleted `lib/lift-logs.ts` (folded in).
+- `WorkoutScreen` import updated to `@/lib/mutations`.
+- `MacrosScreen` now imports `logMeal` from `@/lib/mutations` and dropped its inline `httpsCallable`/`functions` imports.
+
+**Meal write flow verified live** (demo member, production): tapping the "Whey Protein Shake" quick-add logged the meal and the day's totals moved 0 → "140 kcal / 25g protein / 3g carb / 1g fat" — confirming both the `mealLogs` write and the `macroLogs` `FieldValue.increment` side-effect. So 2 of the 5 deployed callables (`logLiftSetMobile`, `logMealMobile`) are now wired and proven from the client; the other 3 (`logBodyWeightMobile`, `clearDayLogMobile`, `syncOfflineLiftsMobile`) are deployed and ready but not yet called by any screen — add wrappers to `mutations.ts` when a screen needs them (kept out for now to avoid dead code).
+
+`npm run mobile:typecheck` clean. Not pushed.
+
+---
+
+## Expo/React Native migration — exercise-name resolution fix (2026-07-21)
+
+**Problem:** several exercises in the mobile app rendered as the literal "Exercise" (Progress PR list, Workout today's-focus, Logs). Root cause: `mobile/lib/programs.ts` `getExerciseCatalog` only read `gyms/{gymId}/exerciseCatalog`, but the **predefined** exercises referenced by split-library programs and most lift logs are code-generated from `workouts.json` and are NOT stored in Firestore. The web read-model (`src/lib/firebase/read-models/exercises.ts`) handles this by **merging the default catalog with the gym-scoped catalog**; the mobile app wasn't.
+
+**Fix:**
+- New `packages/core/src/exercise-catalog.ts` exports `defaultExerciseCatalog: Exercise[]` (66 entries, flattened from `workouts.json` and mapped to the `Exercise` domain type) plus a `defaultExerciseNameById` lookup. Re-exported from the core barrel. This is the shared, canonical source both clients can now use.
+- `mobile/lib/programs.ts` `getExerciseCatalog` now seeds the map with `defaultExerciseCatalog` first, then overlays gym-scoped Firestore entries (gym-custom wins on id collision) — mirroring the web merge exactly.
+
+**Verified live** (signed in as demo member, production data): Workout today's-focus exercise that showed "Exercise" now resolves to "Barbell Curl / Biceps"; Progress PR list resolved "Barbell Curl" (was "Exercise"). Typecheck clean, no console errors.
+
+**Known remaining (not a code bug):** 3 entries in this demo member's Progress PR list still show "Exercise" — their `exerciseId`s exist in **no** catalog (default or gym). These are orphaned references in the demo seed data (ids that were removed/renamed after the logs were seeded). The **web app shows the same "Exercise" fallback** for these ids (`getExerciseName` uses `?? "Exercise"`), so mobile now matches web behaviour exactly — the fix is complete on the code side; the remaining gap is a demo-data cleanup task if desired.
+
+The web app does not import `defaultExerciseCatalog` (it uses its own read-model path), so this change is additive to core and leaves the web untouched.
+
+---
+
+## Expo/React Native migration — filepath convention + type-safety cleanup (2026-07-21)
+
+Two consistency refactors across `mobile/`, both verified (`npm run mobile:typecheck` clean, app re-bundled and rendered live against production with no console errors):
+
+**1. One clean filepath style — `@/` path alias.** Every intra-app import in `mobile/` was on brittle relative paths (`../lib/theme`, `./screens/X`). Standardized on the same `@/` alias convention the web app uses (`@/*`, documented in CLAUDE.md). Added `"paths": { "@/*": ["./*"] }` to `mobile/tsconfig.json` (no `baseUrl` — deprecated in TS 6; paths resolve relative to the tsconfig dir). Rewrote all imports to `@/lib/…`, `@/screens/…`, `@/components/…` — zero relative imports remain. **Verified Metro resolves the alias at bundle time too**, not just TS: the web bundle built and the app rendered with real data, no "unable to resolve" errors. Expo's Metro reads tsconfig paths natively; no babel-plugin-module-resolver needed.
+
+Also renamed `lib/liftLogs.ts` → `lib/lift-logs.ts` so all non-component `lib/` modules are lowercase/kebab-case (matching the web `src/lib/` convention: `workout-utils.ts`, `split-library.ts`, etc.). Component/screen `.tsx` files stay PascalCase (RN convention, already consistent).
+
+**2. Removed all `as any` from `mobile/lib/data.ts`** (5 casts → 0). They existed because the Firestore mappings didn't actually satisfy the `@fitsplit/core` domain types the screens consume:
+- `getLiftLogs` was missing `LiftLog.sessionId` (required) — now mapped from `data.sessionId`.
+- `getDayLogs` cast `status`/`skipReason` through `String` — now narrowed to `DayLog["status"]` and `SkipReason`.
+- `getMealLogs` already matched `MealLog` — cast was gratuitous, removed.
+- `getMacroLogs` was **dead code** (never called by any screen) *and* its shape didn't match core `MacroLog` (it invented a `kcal` field the type doesn't have) — deleted entirely, along with now-unused `MacroLog`/`WorkoutProgram`/`Exercise`/`orderBy` imports.
+
+The data layer now returns genuinely type-checked core domain objects. No screen changed — they already annotated against the core types, so tightening the producers was transparent to consumers.
+
+---
+
+## Expo/React Native migration — actual mobile app state reconciled + design system applied (2026-07-21)
+
+**Important correction to the phase 4/5 entries below.** Those entries describe a minimal `HomeScreen.tsx` I built (plain white "Today's focus" list). That approach has been **superseded**: the `mobile/` app now has a full **five-tab member workspace** — `OverviewScreen`, `WorkoutScreen`, `LogsScreen`, `ProgressScreen`, `MacrosScreen` + `BottomNav`, backed by `mobile/lib/data.ts` (Firestore reads for lifts/days/macros/meals/gym/member) — mirroring the web member redesign. This was built partly in parallel (co-dev workflow); when I picked back up, `App.tsx` already routed to these five tabs and no longer imported `HomeScreen`. I reconciled rather than reverted.
+
+**What the app actually is now (verified live via `expo start --web` + Browser pane, signed in as demo member `mehulchirania`/`1234` against production `fitsplit-29215`):**
+- **Overview** — adherence/streak/this-week/best-PR stat cards, weekly activity strip, today's assigned workout.
+- **Workout** — full per-set logger (Timeline/Ledger toggle, day selector, elapsed timer, exercise swap, per-set Log buttons) writing via the deployed `logLiftSetMobile` callable. Faithful port of `member-workout-screen.tsx`.
+- **Logs** — real date-grouped history (confirmed a set logged earlier persisted and appears here).
+- **Progress** — Bench e1RM, weekly volume, weekly sets, 30-day PR count, full PR list.
+- **Macros** — calorie ring, protein/carb/fat targets, quick-add presets, meal log, custom-meal entry.
+
+All five tabs render with **real Firestore data** and the **FitSplit design system** applied: `mobile/lib/theme.ts` holds the dark-mode tokens from `docs/12_UI_STYLE_GUIDE.md` (bg `#111`, brand lime `#C8F135`, `primaryForeground` `#0A0A0A` — never white-on-lime). Confirmed at runtime: root background computes to `rgb(17,17,17)` and lime brand `rgb(200,241,53)` is present on 8 elements.
+
+**Cleanup done this session:**
+- Deleted the orphaned `mobile/screens/HomeScreen.tsx` (dead code — nothing imported it after `App.tsx` moved to the tab router). Its data helpers `lib/liftLogs.ts` and `lib/programs.ts` are still used by the tab screens, so they stay.
+- Themed `LoginScreen.tsx` and `components/ErrorBoundary.tsx` to the design tokens (were still on the generic white/green placeholder palette).
+- Fixed a display bug in `ProgressScreen.tsx`: Weekly Volume rendered `0kkg` (a `k`-suffixed value concatenated with `kg`). Now shows `360 kg` / `1.2k kg` correctly.
+- Added `components/ErrorBoundary.tsx` earlier so a render error in one screen degrades to an inline message instead of blanking the whole app.
+
+`npm run mobile:typecheck` clean throughout. **Not deployed, not pushed** (the 5 Cloud Functions were deployed earlier per explicit approval; the app code itself is local-only).
+
+**Note on the "web landing page is broken" report:** investigated — the web landing page is **not** broken by the `packages/core` refactor (that change only moved TS files behind re-export shims, touching no CSS or landing components). Verified on a fresh dev server: the full landing page renders (hero, lime brand, all sections) with zero console errors, matching the reference screenshot. The transient blank the user saw was almost certainly the documented `.next` build/dev collision (running `npm run build` while a dev server is up corrupts its `.next`). Mitigation: don't run the web build while a web dev server is running.
+
+---
+
+## Expo/React Native migration — Complete UI porting (2026-07-20)
+
+Fully ported the member workspace UI to the Expo app with premium dark mode styling and tab navigation:
+- Decoupled `App.tsx` navigation state and built `BottomNav.tsx` styled with brand lime (`#C8F135`).
+- Created and styled `OverviewScreen.tsx`, `WorkoutScreen.tsx`, `LogsScreen.tsx`, `ProgressScreen.tsx`, and `MacrosScreen.tsx`.
+- Replaced composite query ordering in `data.ts` with in-memory sorting on the client, resolving Firestore missing index errors and avoiding production migration constraints.
+- Verified all 5 screens load and render successfully on localhost:8081 with real data.
+
+---
+
+## Expo/React Native migration — phase 5, first real read-only data screen (2026-07-20)
+
+Added `mobile/lib/programs.ts` — fetches the signed-in member's active program assignment directly via the Firestore client SDK (`gyms/{gymId}/programAssignments`, `memberId`+`status==active`, mirroring `getProgramAssignmentForMember`'s query shape from `src/lib/firebase/read-models/programs.ts`), resolves the assigned program (checking `@fitsplit/core`'s `splitLibraryPrograms` first for predefined splits — generated client-side, never stored in Firestore — falling back to a gym-scoped `workoutPrograms` doc for custom programs), applies `applyCurrentWeeklyVariation` for the current week's rotation, and picks today's day via `getDefaultDayIndex`. Exercise names resolve against a gym-scoped `exerciseCatalog` fetch. No new backend — everything here is a direct, rules-enforced Firestore read, confirming the phase 2a audit's finding that mobile reads don't need an API layer.
+
+`mobile/screens/HomeScreen.tsx` now renders this alongside the profile header: today's day title, the program name, and the full exercise list with sets/reps.
+
+**Verified live, not just claimed:** `expo start --web` + Browser pane, signed in as the demo member (`mehulchirania` / PIN `1234`) against real production `fitsplit-29215`, and the screen rendered the member's actual assigned program — "Chest Back 1" / "Arnold Split" — with 7 real exercises and their real sets×reps (e.g. "Barbell Bench Press 4 × 6-8"), pulled live from Firestore, no mock data anywhere in the path. Signed out cleanly afterward.
+
+**Verified clean:** `npm run mobile:typecheck` (0 errors). Root `eslint .` doesn't lint `mobile/` at all (0 mentions in its output) — that's an intentional scope boundary, not a gap: Next's ESLint config (`@next/next/*` rules etc.) doesn't apply to React Native code, and `mobile/` would need its own lint setup (e.g. `eslint-config-expo`) if that's wanted later — not done as part of this phase.
+
+**Not deployed, not pushed.**
+
+---
+
+## Expo/React Native migration — phase 4, Expo scaffold + real end-to-end auth (2026-07-20)
+
+**This is the milestone the phased rollout called "does the whole stack work" — and it's genuinely proven, not just claimed.** Scaffolded `mobile/` via `create-expo-app` (Expo SDK 57, React Native 0.86, React 19.2.3), joined it to the root npm workspace alongside `packages/*` (`root package.json` `"workspaces"` now `["packages/*", "mobile"]`), renamed its package to `@fitsplit/mobile`, and added it to root `tsconfig.json`'s `exclude` (same treatment as `functions/` — it's its own TS project extending `expo/tsconfig.base`, would otherwise get pulled into the Next.js DOM-flavored root compile).
+
+**Firebase data-access layer** (`mobile/lib/firebase.ts`): plain `firebase` JS SDK per the SDK-reversal decision above, same `fitsplit-29215` project config as the web app (public client values, committed to `mobile/.env` as `EXPO_PUBLIC_FIREBASE_*` — Expo's equivalent of Next's `NEXT_PUBLIC_*`, same non-secret values already in `apphosting.yaml`). Auth persists across app restarts via `@react-native-async-storage/async-storage` (`initializeAuth` + `getReactNativePersistence`), Firestore via `persistentLocalCache`.
+
+**One real, documented packaging gap found and worked around, not silently patched over:** `getReactNativePersistence` genuinely IS exported at runtime for React Native (Metro resolves `@firebase/auth`'s package.json `"react-native"` condition correctly), but neither `firebase/auth` nor `@firebase/auth`'s own `"exports"` map nests a `"types"` key under that condition — the top-level `"types"` key wins regardless of platform, so `tsc` can never see this one symbol through any import path, in this firebase version (checked `node_modules/@firebase/auth/package.json` directly before reaching for a suppression). Fixed with a single `// @ts-expect-error` on that one import, comment explains why. Everything else typechecks clean with no suppressions.
+
+**Metro monorepo config** (`mobile/metro.config.js`): `watchFolders`, `nodeModulesPaths`, `disableHierarchicalLookup`, `unstable_enableSymlinks` per Expo's official monorepo guide — needed so Metro can see `@fitsplit/core` through its npm-workspaces symlink. **Actually verified, not assumed**: temporarily imported `dayNames` from `@fitsplit/core` into `App.tsx`, confirmed it bundled and logged correctly in the browser console, then reverted the smoke-test import since nothing in the app needs it yet. This closes the "don't assume this just works on the mobile side" flag from the phase-1 doc.
+
+**Auth screen wired end-to-end and tested live against production `fitsplit-29215`** (not mocked): `mobile/lib/auth.ts` calls the existing `lookupLoginEmail` callable (one of the 28 pre-existing Cloud Functions, unmodified) to resolve a typed username/PIN to a Firebase Auth email, then signs in directly with `signInWithEmailAndPassword` — no session cookie, the Firebase SDK owns token storage/refresh. `mobile/screens/HomeScreen.tsx` reads the signed-in user's own `authProfiles/{uid}` doc **directly via the Firestore client SDK**, no backend endpoint needed, since `firestore.rules`' `isMemberSelf(userId)` already permits it (confirmed in the phase 2a audit). Verified via `expo start --web` + the Browser pane (no phone available, per the hardware-constraint discussion — this is genuinely equivalent proof for a JS-SDK app, since React Native Web runs the same code through the same Metro bundle): signed in as the demo member `mehulchirania` / PIN `1234`, the app rendered "Hey, Mehul Chirania — Member · Shg" pulled live from Firestore, then signed out cleanly back to the login screen.
+
+**Verified clean:** root `tsc --noEmit`, `mobile`'s own `tsc --noEmit` (`npm run mobile:typecheck`), `npm run build` (Next.js, unaffected), `npm --prefix functions run build`, `vitest run` (110/110), `eslint .` (0 errors, still only the 6 pre-existing warnings in `member-workout-screen.tsx` — one new warning from an unnecessary `eslint-disable` comment was introduced and fixed before this was called done).
+
+**Not deployed, not pushed.** Everything above is local working-tree only.
+
+---
+
+## Expo/React Native migration — phase 3, the 5 mobile-write callables (2026-07-20)
+
+Added `logLiftSetMobile`, `syncOfflineLiftsMobile`, `logBodyWeightMobile`, `clearDayLogMobile`, `logMealMobile` to `functions/src/index.ts` (region `asia-south1`, matching all 28 existing callables' conventions exactly — `getCallableUser(request)` for bearer-token auth via custom claims, `HttpsError` for validation failures, `gymDoc()` for gym-scoped paths). Each mirrors the exact write shape of its audited Server Action counterpart in `src/lib/firebase/actions/progress.ts` (§3 of `docs/20_EXPO_MIGRATION_PLAN.md`):
+
+- `logLiftSetMobile` — writes `liftLogs` + upserts `workoutSessions`/`attendanceRecords` via the same `upsertImplicitWorkoutAttendance` logic, ported.
+- `syncOfflineLiftsMobile` — batch version, same per-day session-summary aggregation logic.
+- `logBodyWeightMobile` — writes `bodyMetricLogs` + best-effort mirrors weight onto the member's profile doc.
+- `clearDayLogMobile` — deletes both the legacy root `dayLogs` doc and the gym-scoped copy.
+- `logMealMobile` — writes `mealLogs` + increments the day's `macroLogs` totals via `FieldValue.increment`.
+
+New shared helper: `assertCanWriteForMember(user, memberId)` — member can only act on self; staff must belong to the same gym as the target member (via the existing `assertMemberBelongsToGym`); admin unrestricted. Mirrors `assertCanManageMember`/`assertMemberBelongsToCallerGym` from the web Server Actions, adapted to the callable's `CallableUser` shape.
+
+**Deliberately not added:** callables for `saveMacroLog` or `logDayStatus` — per the phase 2a audit, both are safe as direct client-SDK writes from the mobile app (single-collection, no side effects), so no backend code is needed for those at all; the mobile app just writes to Firestore directly through the existing rules.
+
+**Verification status — read carefully before assuming these are production-proven:** `npm --prefix functions run build` (`tsc`) compiles clean, and every field/side-effect was checked line-by-line against the already-audited `progress.ts` source. **Not yet exercised against a running emulator or real Firestore** — `firebase.json`'s emulator config has no `auth` emulator, and this codebase's existing 28 callables have no unit-test harness either (Cloud Functions `onCall` handlers aren't extracted as pure testable functions here, a limitation already noted for billing logic in an earlier session). Real functional verification will happen the same way those 28 do: exercised live once the mobile app is calling them (Phase 4), where success/failure is directly observable in Firestore. Don't treat "compiles clean" as "verified correct" beyond that.
+
+**Not deployed.** These functions exist only in the local working tree — `firebase deploy --only functions` hasn't been run, matching the standing instruction not to push/deploy anything until the full refactor is done and tested locally.
+
+---
+
+## Expo/React Native migration — SDK decision reversed after real hardware constraints surfaced (2026-07-20)
+
+The earlier decision to use `@react-native-firebase` (native modules, for mobile performance) is reversed to the plain **`firebase` web JS SDK**, at least for now. Reason: the user has no personal iPhone, no personal Mac, and a work MacBook Pro M4 with no permission to install dev tools (Xcode isn't installed and IT won't allow it). Native Firebase modules require a custom EAS-built dev client — Expo Go can't run them — and for iOS that dev client still needs a physical iPhone to install onto via TestFlight/ad-hoc, which doesn't exist here. The JS SDK runs inside plain Expo Go with zero build step, so Android development/testing is fully unblocked today (local, on the developer's own device) and iOS just needs *some* physical iOS device to visually verify on via Expo Go later — no build, no Mac, no Apple Developer account interaction required for ordinary day-to-day work.
+
+**Mitigation so every Firebase call lives behind one data-access module in the Expo app from the start** (not deferred as cleanup) — this is what makes swapping to `@react-native-firebase` later, once real device/Mac access exists, a contained change instead of a rewrite touching every screen. `docs/20_EXPO_MIGRATION_PLAN.md` §0 and §4 updated accordingly; §6 step 4 (Expo scaffold) updated to reflect Expo Go as the primary dev loop instead of an EAS dev client.
+
+**Also flagged and stopped:** the user pasted an Expo dashboard screenshot with `npx eas-cli@latest init --id <appId>` and `npx eas-cli@latest build --platform all --auto-submit` and asked about running them. Neither should run yet — `eas-cli init` needs an actual local Expo project (not scaffolded yet, still in progress per the phase list below), and `--auto-submit` ships whatever gets built straight to App Store/Play Store review automatically, which would submit an empty placeholder app right now. Both deferred to the correct point in the phased rollout.
+
+---
+
+## Expo/React Native migration — phase 2a, backend API-surface audit (2026-07-20)
+
+Decisions locked in before this phase: native `@react-native-firebase` (not the web JS SDK) for mobile performance, at the cost of needing an EAS-built dev client instead of plain Expo Go; Windows dev machine means Android is fully local but iOS builds/testing go through EAS Build's cloud service (no local Xcode).
+
+**Before writing any new backend code, audited whether the "port every Server Action to a callable Cloud Function" premise in `docs/20_EXPO_MIGRATION_PLAN.md` §3 was actually necessary.** It wasn't — it was written without checking `firestore.rules` against this exact question. Reading all 497 lines of `firestore.rules` found it already grants signed-in members direct read **and create** access to their own `liftLogs`, `macroLogs`, `mealLogs`, `dayLogs`, `bodyMetricLogs`, `activityLogs`, `workoutSessions`, and `attendanceRecords`, gated by `memberOwned(data)` matching `data.memberId` against the ID token's custom-claim `memberId`. That rules engine already has a passing 34-test emulator suite behind it. This means the mobile app can hit Firestore directly via the client SDK for most reads and several writes, respecting the same rules the web Server Actions currently enforce via Admin SDK — a smaller, faster, and lower-maintenance architecture than a REST/RPC proxy in front of everything.
+
+Dispatched a focused audit (Explore agent) against every member-logging Server Action in `src/lib/firebase/actions/progress.ts` and the PT lifecycle in `pt.ts`, asking specifically: does a raw rules-compliant client write achieve the same outcome, or is there hidden server-side logic (extra collection writes, aggregation, side effects) a raw write would silently skip? Full table is in `docs/20_EXPO_MIGRATION_PLAN.md` §3. Headline results:
+- **Safe as direct client-SDK writes:** `saveMacroLog` (single deterministic-ID write, no side effects) and `logDayStatus` (single-collection, but the mobile client must replicate its format validation since rules don't enforce it).
+- **Must stay behind a new callable:** `logLiftSet`/`syncOfflineLifts` (silently maintain `workoutSessions`/`attendanceRecords` bookkeeping nothing else creates), `logBodyWeight` (mirrors weight onto the profile doc for dashboard reads), `clearDayLog` (must also purge a legacy root-collection copy), `logMeal` (keeps `macroLogs` totals in sync via `FieldValue.increment` that a plain write would skip).
+- **Out of scope for the member-first mobile rollout:** all of `pt.ts`'s session lifecycle actions — staff-only under both the Server Actions and the rules (not `memberOwned`), drive notifications/FCM pushes with no trigger to replace them.
+- **Confirmed dead code, not a hidden requirement:** geofence "validation" doesn't exist anywhere in the codebase — `progress.ts` only ever hardcodes `distanceMeters: null, geofenceStatus: "location_not_provided"`. PR (personal record) detection is pure client-side UI, never persisted or triggered server-side.
+- **Bonus find:** `functions/src/index.ts` already has 28 `onCall` Cloud Functions covering every admin/owner-privileged mutation (member/staff/gym CRUD, PT plans, packages, payments, billing, trainer management, dashboard stats) — all directly reusable by the RN app once it has a native Firebase Functions client, zero rebuild needed. One of them, `lookupLoginEmail` (`functions/src/index.ts:1204`), already does most of what the planned identifier-resolution auth callable needed to do (username/phone → auth email, member and staff modes) — missing only the demo-login shortcuts and lockout bookkeeping from `auth.ts`, which are a dev-testing convenience, not a production requirement.
+
+**Net effect:** the actual new backend work is 5 callable Cloud Functions, not an 18-file/6,036-line rewrite. `docs/20_EXPO_MIGRATION_PLAN.md` §1, §3, §4, and §6 (phased rollout) were all revised to reflect this — the rollout is renumbered and step 2 is now "done" (this audit) rather than "build the API layer."
+
+**Next:** build the 5 new callables (`logLiftSet`, `syncOfflineLifts`, `logBodyWeight`, `clearDayLog`, `logMeal` mobile equivalents) in `functions/src/`, verified against the Firestore emulator, before touching any mobile UI.
+
+---
+
 ## Expo/React Native migration — phase 1, `packages/core` extraction (2026-07-20)
 
 First implementation step of the migration plan below: extracted the framework-agnostic code identified in `docs/20_EXPO_MIGRATION_PLAN.md` §1 into a new npm workspace package, `packages/core` (`@fitsplit/core`), so a future Expo app can depend on it without pulling in anything Next.js-specific.

@@ -35,7 +35,9 @@
       "Bash(node -e \"let d='';process.stdin.on\\('data',c=>d+=c\\).on\\('end',\\(\\)=>{try{const j=JSON.parse\\(d\\);console.log\\(JSON.stringify\\(j.metadata.vulnerabilities\\)\\)}catch\\(e\\){console.log\\('parse-failed'\\)}}\\)\")",
       "Bash(cd \"C:/Users/mehul/Documents/Codex/2026-05-03/FitSplit\")",
       "Bash(rm -f firestore-debug.log storage-debug.log firebase-debug.log ui-debug.log)",
-      "Bash(npx next *)"
+      "Bash(npx next *)",
+      "Bash(git checkout *)",
+      "Bash(git fetch *)"
     ]
   }
 }

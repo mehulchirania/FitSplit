@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "mobile"
   ],
   "scripts": {
     "dev": "next dev --turbopack",
@@ -13,6 +14,8 @@
     "deploy:firebase": "npm run build && firebase deploy",
     "functions:build": "npm --prefix functions run build",
     "functions:deploy": "npm --prefix functions run build && firebase deploy --only functions",
+    "mobile:typecheck": "npm --prefix mobile run typecheck",
+    "mobile:web": "npm --prefix mobile run web",
     "seed:billing": "node scripts/seed-billing.mjs",
     "seed:auth": "node scripts/seed-firebase-auth.mjs",
     "seed:firebase": "node scripts/seed-firebase.mjs",

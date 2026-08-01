@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { Exercise, LiftLog, DayLog, WorkoutProgram, GymNotice } from "@/types/domain";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
 

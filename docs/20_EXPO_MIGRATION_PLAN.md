@@ -1,7 +1,11 @@
 # 20 — Expo / React Native Migration Plan
 
-Status: design plan, no implementation started. Written 2026-07-20.
+Status: implementation in progress. Written 2026-07-20, revised same day after the API-surface audit in §3 and again after the SDK reversal below.
 Archive point: git tag `archive/nextjs-web-2026-07-20` on `main` (d7f6842) — permanent reference to the Next.js web app as it stood before this initiative. No files were moved or copied; the tag is a pointer, not a backup folder.
+
+**SDK decision — revised 2026-07-20, same day:** started with `@react-native-firebase` (native modules) for performance, then reversed to the plain **`firebase` web JS SDK** once the real hardware situation came up: no personal iPhone, no personal Mac, and a work MacBook Pro M4 with no dev-tool install permission (Xcode not installed, not allowed). Native Firebase modules can't run inside Expo Go — they need an EAS-built custom dev client, which for iOS means installing onto a physical iPhone via TestFlight/ad-hoc, and there isn't one available. The JS SDK runs inside plain Expo Go with zero build step, so development and testing (at least on Android, which is fully local) aren't blocked on any of that. **Revisit `@react-native-firebase` once real iOS device or Mac access exists** — it's a contained swap later precisely because every Firebase call is going to live behind one data-access module, not scattered through screens (see §4).
+
+Practical consequence: Android is the primary day-to-day test target (fully local, Expo Go on the developer's own device). iOS still needs *some* physical iOS device to visually verify on via Expo Go — that doesn't go away with the JS SDK — but it no longer needs a build, a Mac, or an Apple Developer account for ordinary development; only final production builds for App Store submission will need those, much later.
 
 ## 0. Decision so far
 
@@ -16,8 +20,8 @@ Archive point: git tag `archive/nextjs-web-2026-07-20` on `main` (d7f6842) — p
 | `src/types/domain.ts` | 743 | Ports as-is into a shared package |
 | `src/lib/workout-utils.ts` + `split-library.ts` | 560 | Pure logic, ports as-is |
 | `src/lib/firebase/actions/validation.ts` (Zod schemas) | — | Ports as-is |
-| `src/lib/firebase/actions/*` (18 files, Server Actions) | 6,036 | Rebuilt as callable HTTP endpoints — Next.js Server Actions have no RN transport |
-| `src/lib/firebase/read-models/*` (12 files) | 2,374 | Rebuilt behind the same new API; Next's `unstable_cache`/`revalidateTag` has no RN equivalent, replaced by React Query on the client |
+| `src/lib/firebase/actions/*` (18 files, Server Actions) | 6,036 | **Revised in §3** — most member-facing writes are safe as direct rules-enforced Firestore client-SDK writes; only 5 (`logLiftSet`, `syncOfflineLifts`, `logBodyWeight`, `clearDayLog`, `logMeal`) need new callables; 28 admin/owner mutations already exist as callables in `functions/src/index.ts` |
+| `src/lib/firebase/read-models/*` (12 files) | 2,374 | **Revised in §4** — reads for member-owned/gym-visible data go straight through the Firestore client SDK against existing rules, no new API; Next's `unstable_cache`/`revalidateTag` has no RN equivalent and isn't needed for this path |
 | `src/lib/auth.ts` | 1,129 | Partially reusable — see §2 |
 | `src/lib/offline-db.ts` (Dexie/IndexedDB) | 43 | Rebuilt on `expo-sqlite`, same sync contract |
 | All 35 route pages, Radix UI, Framer Motion, 29 CSS files | — | Not portable; native screens built from scratch in RN primitives |
@@ -47,22 +51,36 @@ This was the open question. The answer is better than expected: **the identity b
 
 Net effect: of the 1,129 lines in `auth.ts`, the demo-login table, identifier normalization, lockout, and profile-resolution logic (roughly 400–450 lines) relocate almost unchanged into a shared Cloud Function. The cookie-minting and Next-`cookies()`-reading code (roughly 300 lines) is replaced by standard Firebase client SDK behavior on the RN side, which is less code, not more, because the SDK does the work `auth.ts` currently does by hand.
 
-## 3. New backend API surface
+## 3. New backend API surface — revised after auditing `firestore.rules`
 
-Every Server Action becomes a callable Cloud Function (or a REST/tRPC layer on top of them — decide when this phase starts). The action's existing internal shape barely changes:
-1. `requireRole`/`requireAuth` — reimplemented once as "decode + verify the bearer ID token, check claims," used by both the new API and optionally kept for web if web is ever moved off Server Actions too (out of scope here).
-2. `parseActionData` + Zod — reused as-is, the schemas don't care about transport.
-3. `requireFirebase()` / Admin SDK writes — unchanged.
-4. `success()`/`failure()` envelope — unchanged shape, just returned as JSON instead of a Server Action result.
-5. Cache invalidation (`revalidateGymTags()`) — has no meaning for a mobile client; replaced by React Query cache invalidation driven by the same tag names, client-side.
+The original version of this section assumed every Server Action needed to become a callable Cloud Function — a full REST/RPC layer standing in front of Firestore. That assumption was wrong, caught by actually reading `firestore.rules` (497 lines, already has a passing 34-test emulator suite) before building anything: **it already grants signed-in members direct read AND create access to their own data**, gated by `memberOwned(data)` matching `data.memberId` against the custom-claim `memberId` on the ID token. Members can already read/write `liftLogs`, `macroLogs`, `mealLogs`, `dayLogs`, `bodyMetricLogs`, `activityLogs`, `workoutSessions`, and `attendanceRecords` directly, both gym-scoped and root-mirrored. This means the Firestore **client SDK** (`@react-native-firebase/firestore`) can talk straight to Firestore from the RN app for a lot of what's needed, respecting the exact same rules the web app's Server Actions currently enforce via Admin SDK — no new API layer required for that traffic at all. This is also a genuine performance win over routing everything through a REST proxy.
 
-This is the largest genuinely new chunk of work in the whole initiative — it's backend work, not UI work, and it's a prerequisite before any native screen can read or write real data.
+It isn't true for everything, though. A dedicated audit (2026-07-20) checked every member-logging Server Action against "does a raw rules-compliant client write achieve the same outcome, or is there hidden server-side logic a raw write would silently skip?" Findings, each cited to `src/lib/firebase/actions/progress.ts` unless noted:
+
+| Action | Verdict | Why |
+|---|---|---|
+| `saveMacroLog` (505-545) | **Safe as a direct client write** | Single deterministic-ID (`${memberId}_${date}`) upsert to `macroLogs`, no other collection touched, no side effect. |
+| `logDayStatus` (395-456) | **Safe as a direct client write, with care** | Single-collection write (`dayLogs`), but currently does app-level format validation (`weekStart` regex, required `programId`) that rules don't enforce — the mobile client needs to replicate that validation itself, since Firestore rules can't. |
+| `logLiftSet` (121-172) | **Needs to stay a callable** | Also upserts `workoutSessions` and `attendanceRecords` via `upsertImplicitWorkoutAttendance` (69-119) — a raw write to `liftLogs` alone silently skips attendance/session bookkeeping nothing else creates. |
+| `syncOfflineLifts` (174-275) | **Needs to stay a callable** | Batch-aggregates offline logs into one attendance/session summary per member per day before a single atomic `db.batch()` write across three collections — real aggregation logic, not just a write. |
+| `logBodyWeight` (282-338) | **Needs to stay a callable** | Writes `bodyMetricLogs` and best-effort mirrors the new weight onto the member's profile doc so dashboard reads stay current; a raw single write leaves the profile stale. |
+| `clearDayLog` (467-492) | **Needs to stay a callable** | Deletes from both the legacy root `dayLogs` collection and the gym-scoped copy; a raw client delete only reaches the gym-scoped doc. |
+| `logMeal` (564-619) | **Needs to stay a callable** | Writes `mealLogs` and separately increments the day's `macroLogs` totals via `FieldValue.increment` — a raw `mealLogs`-only write silently stops the macro dashboard from reflecting logged meals. |
+| PT session lifecycle (`src/lib/firebase/actions/pt.ts`: `startPTSession`, `completePTSession`, `cancelPTSession`, `reschedulePTSession`, `logPTLiftSet`) | **Not part of the member-write model at all** | Staff-only under both the Server Actions and `firestore.rules` (`isStaffForGym`/`isAdmin`, not `memberOwned`). Drives `notifications` + FCM pushes with no trigger to replace that. Out of scope until trainer/owner mobile access is prioritized. |
+
+Also confirmed while auditing: geofence "validation" referenced in old docs doesn't exist anywhere in the codebase — `progress.ts` only ever hardcodes `distanceMeters: null, geofenceStatus: "location_not_provided"`, there's no haversine/radius check in `src/` or `functions/src/` to replicate. And PR (personal record) detection is pure client-side UI (computed from already-fetched `liftLogs` in `member-progress-screen.tsx` and similar), never persisted or triggered server-side — trivial to reimplement in RN, not a backend dependency.
+
+**Separately, and good news on its own:** `functions/src/index.ts` (1,959 lines) already has 28 `onCall` Cloud Functions covering every admin/owner-privileged mutation (member/staff/gym CRUD, PT plan assignment, packages, payments, billing activation, trainer management, dashboard stats) — none of that needs to be rebuilt; the RN app calls these directly once it has a native Firebase Functions client. One of them, `lookupLoginEmail` (`functions/src/index.ts:1204`), is very close to the identifier-resolution callable §2 called for — it resolves username/phone → auth email for both member and staff modes already. It's missing the demo-login shortcuts and lockout bookkeeping `auth.ts` has, but demo accounts are a dev/testing convenience, not a production requirement for the mobile app.
+
+**Net result — the actual new backend work is small:** five new callable Cloud Functions (`logLiftSet`, `syncOfflineLifts`, `logBodyWeight`, `clearDayLog`, `logMeal` — mobile equivalents of the audited Server Actions above, sharing their exact write shape), reusing the 28 that already exist, reusing `lookupLoginEmail` as-is for auth. Not a from-scratch REST/RPC layer over 6,036 lines of Server Actions.
 
 ## 4. Data & offline strategy
 
-- Firestore stays the database. The Firestore JS SDK has first-class React Native support with its own offline persistence (`initializeFirestore` with `persistentLocalCache`), which can replace Dexie's role rather than reimplementing IndexedDB-style caching by hand.
-- Deterministic doc IDs (`macroLogs`, `dayLogs`, implicit lift sessions) are storage-format decisions, not client decisions — reused unchanged.
-- Optimistic-update UX for lift logging/attendance (a standing product requirement per CLAUDE.md) is rebuilt using React Query's optimistic mutation pattern against the new API, mirroring today's client-side optimistic pattern conceptually but implemented fresh.
+- Firestore stays the database, and per §3, most reads go **directly through the Firestore client SDK** (`firebase/firestore`, the JS SDK per the §0 reversal), rules-enforced exactly like the collection audit describes — no REST proxy in between for member-owned/gym-visible reads (assigned programs, exercise catalog, lift/macro/meal/day/body-metric logs, notifications, PT sessions the member can see).
+- The JS SDK's `initializeFirestore` with `persistentLocalCache` (React Native-compatible since Firestore JS SDK v9.19+, backed by AsyncStorage/SQLite under the hood) replaces Dexie's role rather than reimplementing IndexedDB-style caching by hand. **Revisit for `@react-native-firebase/firestore`'s native persistence** if/when the SDK swap in §0 happens — better background-sync behavior, same rules-enforced model.
+- All Firebase access (auth, Firestore, functions) should live behind one data-access module in the Expo app from day one — not because it's needed yet, but because it's what makes the eventual `firebase` → `@react-native-firebase` swap in §0 a contained change instead of a rewrite touching every screen.
+- Deterministic doc IDs (`macroLogs`, `dayLogs`, implicit lift sessions) are storage-format decisions, not client decisions — reused unchanged, and the mobile client needs to replicate the `${memberId}_${date}`-style ID convention itself for the writes it's allowed to make directly (per §3's `saveMacroLog`/`logDayStatus` rows).
+- Optimistic-update UX for lift logging/attendance (a standing product requirement per CLAUDE.md) mostly falls out of Firestore's own local-write-then-sync model for direct writes; for the 5 write paths that go through a callable Cloud Function instead (§3), the mobile client still needs to apply an optimistic local update and reconcile on the callable's response, mirroring what `member-workout-screen.tsx`'s Dexie-queue pattern does today on web.
 
 ## 5. Repo shape
 
@@ -81,15 +99,16 @@ npm workspaces (`"workspaces": ["packages/*"]` in the root `package.json`) ties 
 
 One JSON data file, `workouts.json` (the exercise catalog `split-library.ts` reads), is intentionally duplicated rather than shared — it's also imported directly by three web-only files (`actions/exercises.ts`, `actions/programs.ts`, `mock-data.ts`) that have no reason to ever be part of `packages/core`. Keeping one copy in `src/lib/` for those and one in `packages/core/src/` for `split-library.ts` avoided reaching `packages/core` back into `src/`, which would have undermined the point of the extraction. If this file needs to change, both copies need the edit until/unless it's worth a shared data-only subpackage.
 
-## 6. Phased rollout
+## 6. Phased rollout (revised 2026-07-20 after the §3 audit)
 
 1. **Extract `packages/core`** — types, Zod schemas, `workout-utils`, `split-library`. Zero risk: pure code motion, web app re-imports from the new path, no behavior change. Verifiable with `tsc --noEmit` + existing test suite. **Done 2026-07-20** — see the dated entry in `PROJECT_HANDOFF.md` for exact shape (npm workspaces, shim files at the old `src/` import paths so none of the ~140 existing importers changed).
-2. **Build the API layer** — wrap existing Server Action logic as callable/HTTP endpoints with bearer-token auth. Ships independently of any mobile UI; can be verified with curl/Postman against a real gym before a single native screen exists.
-3. **Extract the shared identifier-resolution callable** from `auth.ts`, prove it against the current web login flow first (lowest-risk place to catch regressions), then reuse it from the RN app.
-4. **Scaffold the Expo app**, wire native Firebase Auth sign-in end to end against one gated screen (e.g. member dashboard, read-only) before building anything else.
-5. **Read-only screens first** (dashboard, progress, logs) — proves the API + auth + data layer without touching the offline/optimistic-write complexity.
-6. **Write-heavy flows** (lift logging, attendance, PT) — last, because they carry the offline-sync and optimistic-update risk that read-only screens don't.
-7. **Push notifications** (`expo-notifications`) — after core flows are stable, since it's additive and doesn't block anything else.
+2. **Audit the real backend API surface against `firestore.rules`** — **Done 2026-07-20.** Found the API layer originally planned in §3 was oversized: 28 admin/owner callables already exist, `lookupLoginEmail` already covers most of auth's identifier resolution, and most member-write Server Actions are safe as direct rules-enforced client-SDK writes. Only 5 new callables are actually needed.
+3. **Build the 5 new callables** (`logLiftSetMobile`, `syncOfflineLiftsMobile`, `logBodyWeightMobile`, `clearDayLogMobile`, `logMealMobile`) in `functions/src/`. **Done 2026-07-20** — see the dated entry in `PROJECT_HANDOFF.md`. `tsc` compiles clean; not yet exercised against a running emulator (no `auth` emulator configured) or deployed — real functional verification happens once the mobile app is calling them in Phase 4. Demo-login support in `lookupLoginEmail` deferred — not a production requirement.
+4. **Scaffold the Expo app** with the `firebase` JS SDK (per the §0 SDK reversal), behind one data-access module. Wire Firebase Auth sign-in end to end (via `lookupLoginEmail` + client-side sign-in) against one gated screen showing the signed-in user's real profile — first "does the whole stack work" milestone. **Done 2026-07-20** — see the dated entry in `PROJECT_HANDOFF.md`. Verified via `expo start --web` + Browser pane (no phone available in this environment) against real production `fitsplit-29215`, signed in as the demo member and rendered the real profile doc read directly through the Firestore client SDK. Metro's monorepo `@fitsplit/core` resolution actually verified (temporary smoke-test import), not just assumed.
+5. **Read-only screens** (dashboard, progress, logs) — direct Firestore client-SDK reads against existing rules, no new backend needed per §3/§4. **Started 2026-07-20** — first screen done (`mobile/lib/programs.ts` + `HomeScreen.tsx`): today's assigned program + focused day + exercises, verified live against production. Progress/logs screens not yet built.
+6. **Write-heavy flows** (lift logging, attendance, meals, body weight) — mix of direct client-SDK writes (`saveMacroLog`/`logDayStatus`-equivalent) and the 5 new callables from step 3.
+7. **Push notifications** (`expo-notifications` or `@react-native-firebase/messaging`) — after core flows are stable, since it's additive and doesn't block anything else.
+8. **Trainer/owner mobile access, PT flows** — deferred; `pt.ts`'s staff-only actions (§3) aren't part of the member-first rollout and can be scoped later.
 
 ## 7. Open decisions for later
 

@@ -118,7 +118,8 @@ flowchart TD
 | [17_ROOT_BACKFILL_RUNBOOK.md](17_ROOT_BACKFILL_RUNBOOK.md) | 2 | Operational runbook for `scripts/backfill-root-to-gym.mjs` — copies legacy root-collection data into `gyms/{gymId}/...` ahead of root-collection archival. |
 | [18_DEMO_USERS.md](18_DEMO_USERS.md) | 2 | Every demo login on live Firestore (3 gyms × 20 members + staff), PINs/passwords, membership states, and the E2E scenario each account covers. Seeded by `npm run seed:demo-gyms`. |
 | [19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md](19_OWNER_DETAIL_REPORTS_REDESIGN_PLAN.md) | 2 | Implementation-ready redesign plan for `/owner/members/[memberId]` (missing `mpd-`/`tpp-` stylesheet) and `/owner/reports` (`rpt-` class system, actionable KPIs). |
-| [20_EXPO_MIGRATION_PLAN.md](20_EXPO_MIGRATION_PLAN.md) | 2 | Design plan for a React Native/Expo mobile app: reuse inventory, auth-reuse strategy (Firebase Auth + custom claims port directly, session cookies don't), new API surface needed, phased rollout. No implementation started. |
+| [20_EXPO_MIGRATION_PLAN.md](20_EXPO_MIGRATION_PLAN.md) | 2 | Design plan for a React Native/Expo mobile app: reuse inventory, auth-reuse strategy (Firebase Auth + custom claims port directly, session cookies don't), new API surface needed, phased rollout. Member app is now built (`mobile/`). |
+| [21_MOBILE_GO_LIVE_CHECKLIST.md](21_MOBILE_GO_LIVE_CHECKLIST.md) | 2 | Honest go-live checklist for the Expo member app: what's engineering-complete vs. the human-gated steps (accounts, branded assets, iOS device test, EAS build/submit, offline-sync + push still to build). |
 | [DISCREPANCIES.md](DISCREPANCIES.md) | Meta | README/code conflicts + dead/orphaned references. |
 
 ---

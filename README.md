@@ -47,7 +47,7 @@ The docs follow a three-tier model:
 
 This README and `PROJECT_HANDOFF.md` remain the friendly entry point and the dated change log respectively; for any deep technical question, defer to `docs/`.
 
-**Native mobile (in progress — phase 1 of the plan done):** a design plan for a React Native/Expo mobile app lives at [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md). Phase 1 (extracting `packages/core`, see above) is done; the Expo app itself hasn't been scaffolded yet. The web app is unaffected and keeps deploying as-is; the pre-initiative state is tagged `archive/nextjs-web-2026-07-20`.
+**Native mobile (in progress):** a design plan for a React Native/Expo mobile app lives at [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md). `mobile/` (Expo SDK 57, `@fitsplit/mobile`, joined to the root npm workspace) has a working app with full 5-tab navigation (Overview, Workout, Logs, Progress, Macros) verified end-to-end against production — real demo login, real Firestore profile reads, no mock data. Most reads/writes go straight through the Firestore client SDK against existing security rules, not a new API; a handful of write flows that need more than a rules-compliant write got new callables in `functions/src/index.ts`. The web app is unaffected and keeps deploying as-is; the pre-initiative state is tagged `archive/nextjs-web-2026-07-20`.
 
 ---
 

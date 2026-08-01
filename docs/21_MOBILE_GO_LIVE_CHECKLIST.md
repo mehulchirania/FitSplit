@@ -1,0 +1,58 @@
+# 21 — Mobile (Expo) Go-Live Checklist
+
+`Created 2026-07-21.` Scope: **member app v1** (owners/trainers continue on the web workspace). Companion to `docs/20_EXPO_MIGRATION_PLAN.md`.
+
+This is the honest state of what it takes to ship the `mobile/` app to the App Store and Play Store. Items are grouped by who can do them. **Claude cannot perform the store-submission, account, or device-testing steps** — those need your developer accounts, physical devices / a Mac, and acceptance of store terms. Everything in "Engineering — done" was built and verified in this repo.
+
+## Engineering — done and verified (local, against production `fitsplit-29215`)
+
+- [x] Expo app scaffolded (SDK 57, RN 0.86, React 19), joined to the npm workspace as `@fitsplit/mobile`.
+- [x] Firebase (JS SDK) data layer — same project as web; auth persists via AsyncStorage.
+- [x] Auth: username/PIN → `lookupLoginEmail` callable → `signInWithEmailAndPassword`. Verified live.
+- [x] Five-tab member workspace (Overview, Workout, Logs, Progress, Macros) + bottom nav, all rendering real Firestore data.
+- [x] FitSplit design system applied (dark `#111` + lime `#C8F135`, `mobile/lib/theme.ts` from doc 12).
+- [x] Write flows wired via `mobile/lib/mutations.ts` and verified live: **lift set** (`logLiftSetMobile`), **meal** (`logMealMobile`, with macro increment), **bodyweight** (`logBodyWeightMobile`).
+- [x] Exercise-name resolution merges the code-bundled default catalog with the gym catalog (matches web).
+- [x] Error boundary so a screen error can't blank the whole app.
+- [x] One clean import style (`@/` alias), kebab-case lib files, zero `as any` in the data layer.
+- [x] Production `app.json`: name **FitSplit**, slug `fitsplit`, bundle id **`in.fitsplit`** (iOS + Android), version 1.0.0, dark UI, EAS `projectId` `4d07e898-6168-4867-923c-ee4a0aa0994c`.
+- [x] `eas.json` with development / preview (internal APK) / production build profiles.
+
+## Engineering — remaining (Claude can do these; not built yet)
+
+- [ ] **Offline lift sync** — `syncOfflineLiftsMobile` is deployed but unwired. Needs a local write queue (the RN equivalent of the web's Dexie/`offline-db.ts`, e.g. `expo-sqlite` or AsyncStorage) + connectivity detection. This is the one genuinely sizable remaining feature; the app currently requires connectivity to log.
+- [ ] **Undo a day-skip** — `clearDayLogMobile` is deployed but unwired (no "undo skip" UI yet).
+- [ ] **Push notifications** — the web uses FCM; mobile has none. Needs `expo-notifications` + a token-registration flow + APNs/FCM credentials. Not required for a functional v1, but expected before marketing launch.
+- [ ] **Loading/empty/error polish** pass across all five tabs before public release.
+- [ ] Optional: owner/trainer mobile experience (explicitly out of scope for v1 — they use the web workspace).
+
+## Assets — you (or a designer) must provide
+
+- [ ] **Branded app icon** — `mobile/assets/icon.png` and the Android adaptive-icon foreground are still the Expo placeholder. Needs the real FitSplit mark (1024×1024, no transparency for iOS).
+- [ ] **Splash screen** — `expo-splash-screen` is not installed; the app shows the default splash. Add the plugin + a branded splash on a `#111111` background.
+- [ ] Store screenshots (per device size), app description, keywords, privacy-policy URL (you already host `/privacy` at fitsplit.in), support URL.
+
+## Accounts & credentials — you only (Claude must not do these)
+
+- [ ] **Expo/EAS account** — log in on your machine: `npx eas login`. The `app.json` already points at your EAS project id.
+- [ ] **Apple Developer Program** membership (you have the account `mehulchirania@hotmail.com`; confirm the paid membership is active — required to ship to the App Store).
+- [ ] **Google Play Console** developer account (one-time fee) — not yet confirmed you have this.
+- [ ] App Store Connect app record + Play Console app record (create under bundle id `in.fitsplit`).
+
+## Build & submit — you run these (Claude will not; `--auto-submit` is irreversible)
+
+- [ ] Link the project once: `cd mobile && npx eas init` (uses the existing project id).
+- [ ] **Android test build (no Mac needed):** `eas build --profile preview --platform android` → install the APK on your phone → run through all five tabs and the three write flows.
+- [ ] **iOS:** no local simulator is possible on your Windows machine. Either use a borrowed iPhone with an `eas build --profile development --platform ios` dev client, or a Mac with Xcode. iOS remains **untested by us** until then — do not submit to the App Store before testing on a real iOS device.
+- [ ] Production builds: `eas build --profile production --platform all`.
+- [ ] Submit: `eas submit --platform android` / `eas submit --platform ios` — **run intentionally, per store, after review of the build.** Do not use `--auto-submit` from a fresh build.
+
+## Repo / deploy gates (currently all local — nothing pushed)
+
+- [ ] The 5 Cloud Functions **are already deployed** to `fitsplit-29215` (done earlier with your approval) — that's why the write flows work live.
+- [ ] The `mobile/` app, the `packages/core` additions, and all the mobile refactors are **committed locally at most / mostly uncommitted** and **not pushed**. Decide when to commit + push to `main`. Note: pushing to `main` triggers the live **web** App Hosting rollout of fitsplit.in — the web app was verified unaffected by these changes, but treat the push as a production web deploy regardless.
+- [ ] The web app itself needs **no** changes to go live — it already is (fitsplit.in).
+
+## Honest bottom line
+
+The member app is **functionally complete for a v1 and proven working against production data** — a real person can sign in, see their program, log workouts/meals/bodyweight, and view history, all in the FitSplit look. What stands between here and "in the stores" is **not** more core engineering; it's branded icon/splash assets, the account + store-listing setup, a real iOS-device test, and the human-run build/submit steps above — plus offline-sync and push if you want them before a marketing push.

@@ -1957,3 +1957,289 @@ export const beforeSignInHandler = beforeUserSignedIn(
     return;
   }
 );
+
+// ─── Mobile member-write callables ─────────────────────────────────────────
+// Added for the Expo/React Native app (docs/20_EXPO_MIGRATION_PLAN.md §3).
+// Most member-owned reads/writes go straight through the Firestore client SDK
+// from the mobile app, enforced by firestore.rules — no callable needed. These
+// five are the exception: each does more than a single rules-compliant write
+// (extra collection writes, aggregation, or an increment side effect a raw
+// client write would silently skip), mirroring the exact write shape of the
+// audited Server Actions in src/lib/firebase/actions/progress.ts.
+
+async function assertCanWriteForMember(user: CallableUser, memberId: string) {
+  if (user.role === "member") {
+    if (user.memberId !== memberId) {
+      throw new HttpsError("permission-denied", "You can only log data for your own account.");
+    }
+    return;
+  }
+  if (user.role === "admin") return;
+  if (!user.gymId) {
+    throw new HttpsError("permission-denied", "Your account is not assigned to a gym.");
+  }
+  await assertMemberBelongsToGym(memberId, user.gymId);
+}
+
+function dailyWorkoutSessionId(memberId: string, isoDate: string) {
+  return `${memberId}_${isoDate.slice(0, 10)}`.replace(/[/#?[\]]/g, "_");
+}
+
+async function upsertImplicitWorkoutAttendance(gymId: string, memberId: string, now: string) {
+  const sessionId = dailyWorkoutSessionId(memberId, now);
+  const sessionRef = gymDoc(gymId, "workoutSessions", sessionId);
+  const attendanceRef = gymDoc(gymId, "attendanceRecords", sessionId);
+  const [sessionDoc, attendanceDoc] = await Promise.all([sessionRef.get(), attendanceRef.get()]);
+  const existingSession = sessionDoc.data() ?? {};
+  const existingAttendance = attendanceDoc.data() ?? {};
+  const startedAt = String(existingSession.startedAt ?? existingAttendance.checkInAt ?? now);
+  const checkInAt = String(existingAttendance.checkInAt ?? startedAt);
+
+  await Promise.all([
+    sessionRef.set(
+      {
+        id: sessionId,
+        gymId,
+        memberId,
+        startedAt,
+        endedAt: now,
+        status: "completed",
+        updatedAt: now,
+        attendanceSource: "lift_log"
+      },
+      { merge: true }
+    ),
+    attendanceRef.set(
+      {
+        id: sessionId,
+        memberId,
+        gymId,
+        sessionId,
+        checkInAt,
+        checkOutAt: now,
+        latitude: null,
+        longitude: null,
+        distanceMeters: null,
+        geofenceStatus: "location_not_provided",
+        createdAt: String(existingAttendance.createdAt ?? checkInAt),
+        updatedAt: now,
+        source: "lift_log"
+      },
+      { merge: true }
+    )
+  ]);
+}
+
+export const logLiftSetMobile = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const memberId = asString(request.data?.memberId, "Member");
+  const exerciseId = asString(request.data?.exerciseId, "Exercise");
+  const reps = asString(request.data?.reps, "Reps");
+  const weight = Number(request.data?.weightKg ?? 0);
+  const sets = Math.max(1, Number(request.data?.sets ?? 1));
+  const sessionId = optionalString(request.data?.sessionId) || randomUUID();
+
+  await assertCanWriteForMember(user, memberId);
+
+  const gymId = user.role === "admin"
+    ? (optionalString(request.data?.targetGymId) || user.gymId || primaryGymId)
+    : (user.gymId || primaryGymId);
+
+  const liftLogId = randomUUID();
+  const now = new Date().toISOString();
+  const liftLogRecord = {
+    id: liftLogId, gymId, memberId, exerciseId, weight, sets, reps, sessionId,
+    loggedAt: now, createdAt: now, updatedAt: now
+  };
+
+  await Promise.all([
+    gymDoc(gymId, "liftLogs", liftLogId).set(liftLogRecord, { merge: true }),
+    upsertImplicitWorkoutAttendance(gymId, memberId, now)
+  ]);
+
+  return { status: "success", message: "Lift entry was logged.", data: { liftLogId, gymId, sessionId } };
+});
+
+export const syncOfflineLiftsMobile = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const logs = Array.isArray(request.data?.logs) ? request.data.logs : [];
+  if (logs.length === 0) {
+    throw new HttpsError("invalid-argument", "No offline lifts to sync.");
+  }
+  if (user.role === "member") {
+    for (const log of logs) {
+      await assertCanWriteForMember(user, String(log?.memberId ?? ""));
+    }
+  }
+
+  const batch = db.batch();
+  const now = new Date().toISOString();
+  const sessionSummaries = new Map<string, {
+    gymId: string; memberId: string; sessionId: string; startedAt: string; endedAt: string;
+  }>();
+
+  logs.forEach((log: Record<string, unknown>, index: number) => {
+    const gymId = String(log.gymId ?? user.gymId ?? primaryGymId);
+    const source = String(
+      log.id ?? log.offlineId ??
+      `${log.sessionId ?? "offline"}_${log.memberId ?? "member"}_${log.exerciseId ?? "exercise"}_${log.loggedAt ?? now}_${index}`
+    );
+    const liftLogId = source.replace(/[/#?[\]]/g, "_");
+    const sessionId = String(log.sessionId || liftLogId);
+    const loggedAt = String(log.loggedAt || now);
+    const memberId = String(log.memberId ?? "");
+
+    batch.set(
+      gymDoc(gymId, "liftLogs", liftLogId),
+      {
+        id: liftLogId, gymId, memberId, exerciseId: log.exerciseId,
+        weight: Number(log.weight), sets: Number(log.sets), reps: log.reps,
+        sessionId, loggedAt, createdAt: now, updatedAt: now
+      },
+      { merge: true }
+    );
+
+    const dailySessionId = dailyWorkoutSessionId(memberId, loggedAt);
+    const sessionKey = `${gymId}:${dailySessionId}`;
+    const existingSummary = sessionSummaries.get(sessionKey);
+    sessionSummaries.set(sessionKey, {
+      gymId, memberId, sessionId: dailySessionId,
+      startedAt: existingSummary && existingSummary.startedAt < loggedAt ? existingSummary.startedAt : loggedAt,
+      endedAt: existingSummary && existingSummary.endedAt > loggedAt ? existingSummary.endedAt : loggedAt
+    });
+  });
+
+  for (const summary of sessionSummaries.values()) {
+    batch.set(
+      gymDoc(summary.gymId, "workoutSessions", summary.sessionId),
+      {
+        id: summary.sessionId, gymId: summary.gymId, memberId: summary.memberId,
+        startedAt: summary.startedAt, endedAt: summary.endedAt, status: "completed",
+        updatedAt: now, attendanceSource: "offline_lift_sync"
+      },
+      { merge: true }
+    );
+    batch.set(
+      gymDoc(summary.gymId, "attendanceRecords", summary.sessionId),
+      {
+        id: summary.sessionId, memberId: summary.memberId, gymId: summary.gymId,
+        sessionId: summary.sessionId, checkInAt: summary.startedAt, checkOutAt: summary.endedAt,
+        latitude: null, longitude: null, distanceMeters: null,
+        geofenceStatus: "location_not_provided", updatedAt: now, source: "offline_lift_sync"
+      },
+      { merge: true }
+    );
+  }
+
+  await batch.commit();
+
+  return { status: "success", message: `${logs.length} offline lift(s) synced.` };
+});
+
+export const logBodyWeightMobile = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const weightKg = Number(request.data?.weightKg);
+  if (!Number.isFinite(weightKg) || weightKg < 10 || weightKg > 500) {
+    throw new HttpsError("invalid-argument", "Weight must be between 10 kg and 500 kg.");
+  }
+  const bodyFatPctRaw = request.data?.bodyFatPct;
+  const bodyFatPct = bodyFatPctRaw === undefined || bodyFatPctRaw === null || bodyFatPctRaw === ""
+    ? undefined
+    : Number(bodyFatPctRaw);
+  if (bodyFatPct !== undefined && (!Number.isFinite(bodyFatPct) || bodyFatPct < 1 || bodyFatPct > 70)) {
+    throw new HttpsError("invalid-argument", "Body fat % must be between 1 and 70.");
+  }
+  const notes = optionalString(request.data?.notes);
+  const memberId = optionalString(request.data?.memberId) || user.memberId || user.uid;
+
+  await assertCanWriteForMember(user, memberId);
+
+  const gymId = user.gymId || primaryGymId;
+  const now = new Date().toISOString();
+  const id = randomUUID();
+
+  await gymDoc(gymId, "bodyMetricLogs", id).set(
+    {
+      id, memberId, gymId, weightKg,
+      ...(bodyFatPct !== undefined ? { bodyFatPct } : {}),
+      ...(notes ? { notes } : {}),
+      loggedAt: now, createdAt: now
+    },
+    { merge: true }
+  );
+
+  // Best-effort mirror onto the profile doc so dashboards see the current
+  // weight without a join — chart still works from bodyMetricLogs if this fails.
+  try {
+    await gymDoc(gymId, "members", memberId).set(
+      { id: memberId, weightKg, updatedAt: now },
+      { merge: true }
+    );
+  } catch (err) {
+    console.error("[logBodyWeightMobile] profile mirror failed (non-fatal):", err);
+  }
+
+  return { status: "success", message: `Weight ${weightKg} kg logged.`, data: { gymId } };
+});
+
+export const clearDayLogMobile = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const dayId = asString(request.data?.dayId, "Day");
+  const weekStart = asString(request.data?.weekStart, "Week start");
+  const memberId = optionalString(request.data?.memberId) || user.memberId || user.uid;
+
+  await assertCanWriteForMember(user, memberId);
+
+  const gymId = user.gymId || primaryGymId;
+  const docId = `${memberId}_${dayId}_${weekStart}`;
+
+  await Promise.all([
+    db.collection("dayLogs").doc(docId).delete(),
+    gymDoc(gymId, "dayLogs", docId).delete()
+  ]);
+
+  return { status: "success", message: "Day log cleared." };
+});
+
+export const logMealMobile = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const memberId = asString(request.data?.memberId, "Member");
+  const date = asString(request.data?.date, "Date");
+  const name = asString(request.data?.name, "Meal name");
+  const items = optionalString(request.data?.items);
+  const kcal = Number(request.data?.kcal ?? 0);
+  const protein = Number(request.data?.protein ?? 0);
+  const carbs = Number(request.data?.carbs ?? 0);
+  const fat = Number(request.data?.fat ?? 0);
+  for (const [label, value] of [["Calories", kcal], ["Protein", protein], ["Carbs", carbs], ["Fat", fat]] as const) {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new HttpsError("invalid-argument", `${label} must be a non-negative number.`);
+    }
+  }
+
+  await assertCanWriteForMember(user, memberId);
+
+  const gymId = user.gymId || primaryGymId;
+  const now = new Date().toISOString();
+  const mealId = randomUUID();
+
+  await gymDoc(gymId, "mealLogs", mealId).set(
+    { id: mealId, memberId, gymId, date, name, items, kcal, protein, carbs, fat, loggedAt: now },
+    { merge: true }
+  );
+
+  const macroDocId = `${memberId}_${date}`;
+  await gymDoc(gymId, "macroLogs", macroDocId).set(
+    {
+      id: macroDocId, memberId, gymId, date,
+      protein: FieldValue.increment(protein),
+      carbs: FieldValue.increment(carbs),
+      fat: FieldValue.increment(fat),
+      water: FieldValue.increment(0),
+      updatedAt: now
+    },
+    { merge: true }
+  );
+
+  return { status: "success", message: "Meal logged.", data: { gymId, mealId } };
+});
