@@ -47,11 +47,11 @@ This is the honest state of what it takes to ship the `mobile/` app to the App S
 - [ ] Production builds: `eas build --profile production --platform all`.
 - [ ] Submit: `eas submit --platform android` / `eas submit --platform ios` — **run intentionally, per store, after review of the build.** Do not use `--auto-submit` from a fresh build.
 
-## Repo / deploy gates (currently all local — nothing pushed)
+## Repo / deploy gates
 
-- [ ] The 5 Cloud Functions **are already deployed** to `fitsplit-29215` (done earlier with your approval) — that's why the write flows work live.
-- [ ] The `mobile/` app, the `packages/core` additions, and all the mobile refactors are **committed locally at most / mostly uncommitted** and **not pushed**. Decide when to commit + push to `main`. Note: pushing to `main` triggers the live **web** App Hosting rollout of fitsplit.in — the web app was verified unaffected by these changes, but treat the push as a production web deploy regardless.
-- [ ] The web app itself needs **no** changes to go live — it already is (fitsplit.in).
+- [x] The 5 Cloud Functions **are already deployed** to `fitsplit-29215` (done earlier with your approval) — that's why the write flows work live.
+- [x] The `mobile/` app, the `packages/core` additions, and all the mobile refactors were **committed and pushed to `main`** on 2026-08-01 (see the dated `PROJECT_HANDOFF.md` entry) — the mobile source itself doesn't require a web deploy to "go live" for development purposes, but the push did trigger fitsplit.in's App Hosting rollout as a side effect, verified unaffected.
+- [x] The web app itself needs **no** changes to go live — it already is (fitsplit.in).
 
 ## Honest bottom line
 
