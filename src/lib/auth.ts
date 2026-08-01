@@ -391,32 +391,72 @@ async function resolveProfileForIdentifier(identifier: string) {
 
   const { db } = getFirebaseAdminServices();
   const keys = normalizedLookupKeys(identifier);
-  const demoLogin = keys.map((key) => demoLogins[key]).find(Boolean);
 
-  if (demoLogin) {
-    return getProfileById(demoLogin.uid);
+  // 1. Check usernames lookup collection
+  for (const key of keys) {
+    try {
+      const usernameDoc = await db.collection(collectionPaths.usernames).doc(key.toLowerCase()).get();
+      if (usernameDoc.exists) {
+        const uid = usernameDoc.data()?.uid;
+        if (uid) {
+          const profile = await getProfileById(uid);
+          if (profile) return profile;
+        }
+      }
+    } catch {
+      // ignore
+    }
   }
 
-  if (keys.length > 0) {
-    const promises = [];
-    const isPhone = /^\+?[\d\s-]+$/.test(identifier.trim());
-    const fieldsToQuery = isPhone ? ["phone"] as const : ["username"] as const;
-
-    for (const field of fieldsToQuery) {
-      const uniqueKeys = Array.from(new Set(keys)).slice(0, 30);
-      
-      promises.push(
-        db.collection(collectionPaths.authProfiles).where(field, "in", uniqueKeys).limit(1).get().then(snap => ({ snap, isLegacy: false })),
-        db.collection(collectionPaths.profiles).where(field, "in", uniqueKeys).limit(1).get().then(snap => ({ snap, isLegacy: true }))
-      );
-    }
-    
-    const results = await Promise.all(promises);
-    for (const { snap } of results) {
-      if (!snap.empty) {
-        return toProfile(snap.docs[0].id, snap.docs[0].data());
+  // 2. Check phones lookup collection
+  for (const key of keys) {
+    const cleanDigits = key.replace(/\D/g, "");
+    if (cleanDigits.length >= 10) {
+      try {
+        const phoneDoc = await db.collection(collectionPaths.phones).doc(cleanDigits).get();
+        if (phoneDoc.exists) {
+          const uid = phoneDoc.data()?.uid;
+          if (uid) {
+            const profile = await getProfileById(uid);
+            if (profile) return profile;
+          }
+        }
+      } catch {
+        // ignore
       }
     }
+  }
+
+  // 3. Fallback to demoLogins static map if available
+  const demoLogin = keys.map((key) => demoLogins[key]).find(Boolean);
+  if (demoLogin) {
+    const profile = await getProfileById(demoLogin.uid);
+    if (profile) return profile;
+  }
+
+  // 4. Query authProfiles by username, email, authEmail, or phone
+  if (keys.length > 0) {
+    const uniqueKeys = Array.from(new Set(keys)).slice(0, 30);
+    const promises = [
+      db.collection(collectionPaths.authProfiles).where("username", "in", uniqueKeys).limit(1).get(),
+      db.collection(collectionPaths.authProfiles).where("email", "in", uniqueKeys).limit(1).get(),
+      db.collection(collectionPaths.authProfiles).where("authEmail", "in", uniqueKeys).limit(1).get(),
+      db.collection(collectionPaths.authProfiles).where("phone", "in", uniqueKeys).limit(1).get()
+    ];
+    
+    const results = await Promise.allSettled(promises);
+    for (const res of results) {
+      if (res.status === "fulfilled" && !res.value.empty) {
+        const doc = res.value.docs[0];
+        return toProfile(doc.id, doc.data());
+      }
+    }
+  }
+
+  // 5. Direct ID lookup
+  for (const key of keys) {
+    const profile = await getProfileById(key);
+    if (profile) return profile;
   }
 
   return null;

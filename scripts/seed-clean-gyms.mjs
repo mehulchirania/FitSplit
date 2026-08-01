@@ -262,9 +262,18 @@ async function run() {
       db.collection("authProfiles").doc(o.id).set({
         uid: o.id,
         email: o.email,
+        uid: o.id,
+        authUid: o.id,
+        fullName: o.name,
+        username: o.username,
+        email: o.email,
+        authEmail: o.email,
         role: "owner",
+        staffType: "owner",
         gymId,
-        mustChangePassword: false
+        defaultGymId: gymId,
+        mustChangePassword: false,
+        isActive: true
       }, { merge: true }),
       db.collection("usernames").doc(o.username.toLowerCase()).set({
         uid: o.id,
@@ -296,10 +305,17 @@ async function run() {
       await Promise.all([
         db.collection("authProfiles").doc(t.id).set({
           uid: t.id,
+          authUid: t.id,
+          fullName: t.name,
+          username: t.username,
           email: t.email,
+          authEmail: t.email,
           role: "owner",
+          staffType: "trainer",
           gymId,
-          mustChangePassword: false
+          defaultGymId: gymId,
+          mustChangePassword: false,
+          isActive: true
         }, { merge: true }),
         db.collection("usernames").doc(t.username.toLowerCase()).set({
           uid: t.id,
@@ -341,10 +357,17 @@ async function run() {
       await Promise.all([
         db.collection("authProfiles").doc(m.id).set({
           uid: m.id,
+          authUid: m.id,
+          fullName: m.name,
+          username: m.username,
           email: m.email,
+          authEmail: m.email,
+          phone: m.phone,
           role: "member",
           gymId,
-          mustChangePassword: false
+          defaultGymId: gymId,
+          mustChangePassword: false,
+          isActive: true
         }, { merge: true }),
         db.collection("usernames").doc(m.username.toLowerCase()).set({
           uid: m.id,
