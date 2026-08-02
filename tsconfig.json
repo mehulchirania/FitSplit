@@ -38,6 +38,8 @@
   "exclude": [
     "node_modules",
     "functions",
-    "mobile"
+    "mobile",
+    "e2e",
+    "playwright.config.ts"
   ]
 }

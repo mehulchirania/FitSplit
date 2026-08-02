@@ -7,15 +7,17 @@
     "functions/src/index.ts"
   ],
   "project": ["src/**/*.{ts,tsx}", "functions/src/**/*.ts"],
-  "ignore": ["src/lib/mock-data.ts", "archive/**", "public/**"],
+  "ignore": ["src/lib/mock-data.ts", "archive/**", "public/**", "e2e/**", "playwright.config.ts"],
   "ignoreDependencies": [
     "@opentelemetry/*",
     "firebase-functions",
     "@firebase/rules-unit-testing",
     "postcss",
-    "eas-cli"
+    "eas-cli",
+    "@playwright/test"
   ],
   "ignoreBinaries": ["firebase"],
+  "playwright": false,
   "next": true,
   "vitest": true
 }
