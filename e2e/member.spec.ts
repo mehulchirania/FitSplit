@@ -27,34 +27,38 @@ test.describe("member core loop", () => {
     await clickTab(page, "Workout");
     await expect(page).toHaveURL(/\/member/);
 
-    // Focus an exercise (its set-input rows only render for the active node —
-    // src/components/member-workout-screen.tsx renders one .m3d-wk__sets table
-    // per exercise, but only the clicked one is populated/interactive).
-    // "Dumbbell Lateral Raise" is never touched by any other test in this
-    // suite, so its sets are reliably unlogged across repeated runs (unlike
-    // "Overhead Press", whose set 1 gets permanently logged the first time
-    // this test passes, making its kg input read-only on every subsequent run).
-    await page.getByRole("button", { name: /Dumbbell Lateral Raise/ }).first().click();
-
-    const activeRow = page.locator(".m3d-wk__node--active").locator("xpath=ancestor::div[contains(@class,'m3d-wk__row')][1]");
-    const setRows = activeRow.locator(".m3d-wk__set-row");
-    // Find the first not-yet-logged set (kg input still enabled) so repeated
-    // runs against the same seeded account progress 1→2→3 instead of always
-    // hitting an already-logged, read-only set 1.
-    const rowCount = await setRows.count();
-    let targetRow = setRows.first();
-    for (let i = 0; i < rowCount; i++) {
-      const candidate = setRows.nth(i);
-      if (await candidate.locator('input[type="number"]').first().isEditable()) {
-        targetRow = candidate;
-        break;
+    // No exercise is expanded by default (opt-in logging — see the fix in
+    // src/components/member-workout-screen.tsx: focusIndex starts at null,
+    // not 0). Click exercises in turn until one opens with an editable set —
+    // a fully "DONE" exercise never expands at all (isActive is gated by
+    // !complete), and repeated runs against the same live seeded account
+    // permanently exhaust whichever exercise this test used previously, so
+    // hardcoding one name is not durable across reruns.
+    const exerciseButtons = page.locator(".m3d-wk__row-head");
+    const exerciseCount = await exerciseButtons.count();
+    let kgInput = null;
+    let checkButton = null;
+    for (let i = 0; i < exerciseCount; i++) {
+      await exerciseButtons.nth(i).click();
+      const setsTable = page.locator(".m3d-wk__sets");
+      if (!(await setsTable.isVisible({ timeout: 2_000 }).catch(() => false))) continue; // fully DONE — never expands
+      const setRows = setsTable.locator(".m3d-wk__set-row");
+      const rowCount = await setRows.count();
+      for (let j = 0; j < rowCount; j++) {
+        const candidate = setRows.nth(j);
+        if (await candidate.locator('input[type="number"]').first().isEditable()) {
+          kgInput = candidate.locator('input[type="number"]').first();
+          checkButton = candidate.locator(".m3d-wk__check");
+          break;
+        }
       }
-      if (i === rowCount - 1) {
-        test.skip(true, "All 3 sets for this exercise are already logged from prior runs — nothing left to exercise this test against.");
-      }
+      if (kgInput) break;
+      await exerciseButtons.nth(i).click(); // collapse before trying the next one
     }
-    const kgInput = targetRow.locator('input[type="number"]').first();
-    const checkButton = targetRow.locator(".m3d-wk__check");
+    if (!kgInput || !checkButton) {
+      test.skip(true, "Every exercise for this day is fully logged from prior runs — nothing left to exercise this test against.");
+      return;
+    }
 
     const setsProgress = page.getByText(/of \d+ sets/);
     const beforeText = await setsProgress.textContent();

@@ -62,7 +62,10 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
   const sessionId = useMemo(() => `session-${memberId}-${todayKey()}`, [memberId]);
 
   const [variant, setVariant] = useState<"timeline" | "ledger">("timeline");
-  const [focusIndex, setFocusIndex] = useState(0);
+  // No exercise is expanded by default — landing on this screen (or logging
+  // in) must never drop the member straight into an open set-logging table.
+  // Logging is opt-in: tap an exercise to expand it, tap again to close.
+  const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [drawerIndex, setDrawerIndex] = useState<number | null>(null);
   const [exerciseSwaps, setExerciseSwaps] = useState<Record<number, string>>({});
   const [rows, setRows] = useState<RowsState>(() => buildInitialRows(day, liftLogs));
@@ -77,7 +80,7 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
   useEffect(() => {
     setRows(buildInitialRows(day, liftLogs));
     setExerciseSwaps({});
-    setFocusIndex(0);
+    setFocusIndex(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDayIndex]);
 
@@ -94,9 +97,10 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
     offlineDB.liftLogs.count().then(setOfflineLogsCount).catch(() => {});
   }, []);
 
-  // Auto-advance focus once the active exercise's sets are all done.
+  // Auto-advance focus once the active exercise's sets are all done — only
+  // once the member has actually opted into logging (focusIndex !== null).
   useEffect(() => {
-    if (rows[focusIndex]?.length && rows[focusIndex].every((s) => s.done)) {
+    if (focusIndex !== null && rows[focusIndex]?.length && rows[focusIndex].every((s) => s.done)) {
       const next = day.exercises.findIndex((_, i) => !(rows[i]?.length && rows[i].every((s) => s.done)));
       if (next !== -1 && next !== focusIndex) setFocusIndex(next);
     }
@@ -293,7 +297,7 @@ export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs,
                     {complete ? "✓" : String(exIdx + 1).padStart(2, "0")}
                   </div>
                   <div className="m3d-wk__row-body">
-                    <button type="button" className="m3d-wk__row-head" onClick={() => setFocusIndex(exIdx)}>
+                    <button type="button" className="m3d-wk__row-head" onClick={() => setFocusIndex(isActive ? null : exIdx)}>
                       <span className={`m3d-wk__name${isActive ? " m3d-wk__name--active" : ""}`}>{dictEx?.name ?? "Exercise"}</span>
                       <span className="m3d-wk__meta">{ex.sets ?? exRows.length} × {ex.reps ?? "—"}</span>
                     </button>
