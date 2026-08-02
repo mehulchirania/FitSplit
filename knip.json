@@ -1,0 +1,21 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/app/**/{page,layout,template,loading,error,not-found,route,default}.tsx",
+    "src/app/**/{page,layout,template,loading,error,not-found,route,default}.ts",
+    "scripts/**/*.{js,mjs}",
+    "functions/src/index.ts"
+  ],
+  "project": ["src/**/*.{ts,tsx}", "functions/src/**/*.ts"],
+  "ignore": ["src/lib/mock-data.ts", "archive/**", "public/**"],
+  "ignoreDependencies": [
+    "@opentelemetry/*",
+    "firebase-functions",
+    "@firebase/rules-unit-testing",
+    "postcss",
+    "eas-cli"
+  ],
+  "ignoreBinaries": ["firebase"],
+  "next": true,
+  "vitest": true
+}

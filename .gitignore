@@ -4,6 +4,11 @@ out
 dist
 functions/lib
 
+# Playwright e2e
+test-results/
+playwright-report/
+blob-report/
+
 # env
 .env
 .env.local
