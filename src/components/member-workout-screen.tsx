@@ -145,23 +145,40 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
   // Logging is opt-in: tap an exercise to expand it, tap again to close.
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const [drawerIndex, setDrawerIndex] = useState<number | null>(null);
-  const [exerciseSwaps, setExerciseSwaps] = useState<Record<number, string>>(() => loadPersistedSwaps(memberId, day?.id));
+  // Deterministic {} on both server and first client render — the day-change
+  // effect below (which also fires once on mount) is what actually hydrates
+  // this from localStorage, client-only, after hydration completes. Reading
+  // localStorage directly in this initializer used to make the client's
+  // first render disagree with the server's (which can never see a swap),
+  // showing the swapped exercise's name where the server rendered the
+  // original — the same class of hydration mismatch as the elapsed timer.
+  const [exerciseSwaps, setExerciseSwaps] = useState<Record<number, string>>({});
   const [rows, setRows] = useState<RowsState>(() => buildInitialRows(day, liftLogs, sessionId));
 
   // Elapsed only starts counting once the member has actually logged a set —
   // it must not tick just because the screen is mounted. The start time is
   // persisted per session so a refresh (or backgrounding the tab) doesn't
   // reset it.
-  const [sessionStartMs, setSessionStartMs] = useState<number | null>(() => {
-    if (typeof window === "undefined") return null;
-    const raw = window.localStorage.getItem(sessionStartStorageKey(sessionId));
-    const parsed = raw ? Number(raw) : NaN;
-    return Number.isFinite(parsed) ? parsed : null;
-  });
+  //
+  // Initial state must be `null` unconditionally, on both server and client —
+  // reading localStorage inside the useState initializer (this used to check
+  // `typeof window === "undefined"` and read it immediately when truthy) makes
+  // the client's very first render disagree with the server-rendered "0:00",
+  // which is a hydration mismatch (React error #418) on every load where a
+  // session was already in progress. Read localStorage in an effect instead —
+  // effects only run after hydration completes, so first paint is always
+  // identical server and client, and this "catches up" a tick later.
+  const [sessionStartMs, setSessionStartMs] = useState<number | null>(null);
   const sessionStartRef = useRef<number | null>(sessionStartMs);
   useEffect(() => {
     sessionStartRef.current = sessionStartMs;
   }, [sessionStartMs]);
+
+  useEffect(() => {
+    const raw = window.localStorage.getItem(sessionStartStorageKey(sessionId));
+    const parsed = raw ? Number(raw) : NaN;
+    if (Number.isFinite(parsed)) setSessionStartMs(parsed);
+  }, [sessionId]);
 
   // WorkoutScreen is mounted twice at all times — once inside the
   // desktop-only shell block, once inside the mobile-only one — with CSS
@@ -183,7 +200,10 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const [elapsed, setElapsed] = useState(() => (sessionStartMs != null ? Math.floor((Date.now() - sessionStartMs) / 1000) : 0));
+  // sessionStartMs is always null on first render (see above) so this is
+  // always 0 at mount; the ticking interval effect catches it up to the real
+  // elapsed time within a second of sessionStartMs being read from storage.
+  const [elapsed, setElapsed] = useState(0);
   const [restRemaining, setRestRemaining] = useState(0);
   const [restTotal, setRestTotal] = useState(90);
   const [offlineLogsCount, setOfflineLogsCount] = useState(0);
