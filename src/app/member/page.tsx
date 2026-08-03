@@ -1,7 +1,7 @@
 import { MemberCoachShell } from "@/components/member-coach-shell";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import { getWeekStart, getTrainedDateKeys } from "@/lib/workout-utils";
+import { getWeekStart, getTrainedDateKeys, nowInIST } from "@/lib/workout-utils";
 import {
   getActiveWorkoutSessions,
   getDayLogsForMember,
@@ -57,7 +57,13 @@ export default async function MemberDashboard() {
 
   const program = assignment ? programs.find((p) => p.id === assignment.programId) ?? null : null;
   const firstName = member.fullName.split(" ")[0];
-  const now = new Date();
+  // getWeekStart and everything derived from `now` below use the runtime's
+  // *local* timezone for extraction (getDay/getDate/getFullYear) — correct
+  // on a member's own IST browser, but on this server (which runs UTC) a
+  // bare `new Date()` would compute week boundaries, streaks, and adherence
+  // against UTC's calendar, silently wrong for part of every day. See
+  // nowInIST's own doc comment.
+  const now = nowInIST();
   const nowMs = now.getTime();
 
   const currentWeek = assignment

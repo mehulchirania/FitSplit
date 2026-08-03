@@ -15,6 +15,7 @@ function fmt(iso?: string) {
       day: "numeric",
       month: "short",
       year: "numeric",
+      timeZone: "Asia/Kolkata",
     }).format(new Date(iso));
   } catch {
     return iso;
@@ -27,6 +28,7 @@ function fmtShort(iso?: string) {
     return new Intl.DateTimeFormat("en-IN", {
       day: "numeric",
       month: "short",
+      timeZone: "Asia/Kolkata",
     }).format(new Date(iso));
   } catch {
     return iso;

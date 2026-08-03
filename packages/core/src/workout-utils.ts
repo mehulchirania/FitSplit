@@ -11,6 +11,23 @@ export interface TodaysSession {
   isCompletedThisWeek: boolean;
 }
 
+/**
+ * "Now", anchored to India Standard Time regardless of the runtime's own
+ * default timezone. Use this — not a bare `new Date()` — anywhere week/day
+ * boundary logic needs "today" for this app's actual audience: on a server
+ * running in UTC (as this one does) and a client browser running in IST, a
+ * bare `new Date()` fed into getWeekStart/toLocalDateKey's local-timezone
+ * extraction disagrees between the two for roughly 5.5 hours of every day —
+ * either a hydration mismatch (if it reaches rendered output) or silently
+ * wrong week/streak/adherence math (if it doesn't). Anchored at noon so the
+ * result survives being re-interpreted as local time by any downstream
+ * getDate()/getDay() call without shifting calendar day in either direction.
+ */
+export function nowInIST(): Date {
+  const isoDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
+  return new Date(`${isoDate}T12:00:00`);
+}
+
 /** Local (not UTC) YYYY-MM-DD key for a Date — avoids the UTC-rollback issue described on getWeekStart. */
 function toLocalDateKey(date: Date): string {
   const yyyy = date.getFullYear();
@@ -145,7 +162,7 @@ export const SKIP_REASONS: { value: SkipReason; label: string }[] = [
  * calendar day in timezones east of UTC (e.g. IST UTC+5:30).  Building the
  * string from local year/month/date avoids this.
  */
-export function getWeekStart(date: Date = new Date()): string {
+export function getWeekStart(date: Date = nowInIST()): string {
   const d = new Date(date);
   const day = (d.getDay() + 6) % 7; // shift so Monday = 0
   d.setDate(d.getDate() - day);

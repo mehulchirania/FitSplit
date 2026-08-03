@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { Dumbbell } from "@/components/icons";
+import { nowInIST } from "@/lib/workout-utils";
 import type {
   ActivityLog,
   DayLog,
@@ -59,11 +60,11 @@ function dateKeyFromIso(iso?: string) {
 }
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  return nowInIST().toISOString().slice(0, 10);
 }
 
 function yesterdayKey() {
-  const d = new Date();
+  const d = nowInIST();
   d.setDate(d.getDate() - 1);
   return d.toISOString().slice(0, 10);
 }
@@ -75,7 +76,8 @@ function formatGroupLabelSafe(key: string) {
     const full = new Intl.DateTimeFormat("en-IN", {
       weekday: "long",
       month: "long",
-      day: "numeric"
+      day: "numeric",
+      timeZone: "Asia/Kolkata"
     })
       .format(new Date(`${key}T12:00:00`))
       .toUpperCase();
@@ -92,7 +94,8 @@ function formatTime(iso: string) {
     return new Intl.DateTimeFormat("en-IN", {
       weekday: "short",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
+      timeZone: "Asia/Kolkata"
     }).format(new Date(iso));
   } catch {
     return "";

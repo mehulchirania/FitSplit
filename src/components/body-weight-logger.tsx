@@ -102,7 +102,7 @@ export function BodyWeightLogger({
         <h2>Body weight</h2>
         {latest && (
           <span className="status-pill status-neutral">
-            Last logged {new Date(latest.loggedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+            Last logged {new Date(latest.loggedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })}
           </span>
         )}
       </div>

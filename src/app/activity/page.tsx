@@ -85,7 +85,7 @@ export default async function ActivityPage() {
                       <span className="status-pill status-neutral">{event.audience}</span>
                     </div>
                     <p>{event.detail}</p>
-                    <span>{new Date(event.createdAt).toLocaleString("en-IN")}</span>
+                    <span>{new Date(event.createdAt).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })}</span>
                   </div>
                 </article>
               );

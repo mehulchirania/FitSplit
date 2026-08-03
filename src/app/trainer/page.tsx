@@ -21,7 +21,8 @@ function formatDate(iso: string) {
   try {
     return new Intl.DateTimeFormat("en-IN", {
       day: "numeric", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit"
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "Asia/Kolkata"
     }).format(new Date(iso));
   } catch { return iso; }
 }

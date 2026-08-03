@@ -497,7 +497,7 @@ export async function reschedulePTSession(
       recipientRole: "member",
       type: "pt_session_rescheduled",
       title: "PT Session Rescheduled",
-      body: `Your PT session has been rescheduled to ${new Date(scheduledAt).toLocaleString()}.`,
+      body: `Your PT session has been rescheduled to ${new Date(scheduledAt).toLocaleString("en-IN", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })}.`,
       actionHref: "/member/pt-history",
       ptSessionId,
       memberId: session.memberId,

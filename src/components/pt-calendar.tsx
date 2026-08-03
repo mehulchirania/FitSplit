@@ -7,16 +7,27 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { reschedulePTSession } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
+import { nowInIST } from "@/lib/workout-utils";
 import type { PTSession } from "@/types/domain";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
+// isoDate reads back via toISOString() (always UTC). For that to reliably
+// round-trip to the SAME calendar-day string a session was actually
+// scheduled for, every Date this is called on must be constructed as a UTC
+// anchor too (see startD/endD/firstDay below) — mixing UTC extraction with
+// local-time-forcing construction (a bare `new Date(str)` on a full
+// datetime, or the multi-arg `new Date(y, m, d)` constructor, both of which
+// are local-time) silently shifts which calendar cell a session lands under
+// whenever the runtime's timezone isn't UTC, and disagrees between the
+// server's render and the client's for the same reason as a hydration
+// mismatch.
 function isoDate(d: Date) {
   return d.toISOString().slice(0, 10);
 }
 
 function shortMonth(d: Date) {
-  return d.toLocaleDateString("en-IN", { month: "long", year: "numeric" });
+  return d.toLocaleDateString("en-IN", { month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 function statusColor(status: PTSession["status"]) {
@@ -31,7 +42,7 @@ function statusColor(status: PTSession["status"]) {
 
 export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
   const router = useRouter();
-  const today = new Date();
+  const today = nowInIST();
   const [viewYear, setViewYear] = useState(today.getFullYear());
   const [viewMonth, setViewMonth] = useState(today.getMonth());
   const [isPending, startTransition] = useTransition();
@@ -43,8 +54,13 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
     const end   = s.planEndDate ?? start;
     if (!start) continue;
 
-    const startD = new Date(start + "T00:00:00");
-    const endD   = new Date(end   + "T00:00:00");
+    // Anchor at noon, not midnight — a literal "T00:00:00" forces local-time
+    // parsing, which round-trips to a different calendar day via isoDate()'s
+    // toISOString() (UTC) whenever the runtime isn't UTC. Noon is far enough
+    // from any midnight boundary that it survives being reinterpreted in
+    // either direction without shifting day, on any runtime.
+    const startD = new Date(start + "T12:00:00");
+    const endD   = new Date(end   + "T12:00:00");
     const cursor = new Date(startD);
     while (cursor <= endD) {
       const key = isoDate(cursor);
@@ -54,10 +70,13 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
     }
   }
 
-  // Month grid: weeks × 7 days.
-  const firstDay = new Date(viewYear, viewMonth, 1);
-  const startOffset = firstDay.getDay(); // 0=Sun
-  const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+  // Month grid: weeks × 7 days. The multi-arg Date constructor is always
+  // local-time, so anchor explicitly at UTC (Date.UTC + getUTC*) — otherwise
+  // this computation depends on the runtime's own timezone, which differs
+  // between the server render and a non-UTC browser.
+  const firstDay = new Date(Date.UTC(viewYear, viewMonth, 1));
+  const startOffset = firstDay.getUTCDay(); // 0=Sun
+  const daysInMonth = new Date(Date.UTC(viewYear, viewMonth + 1, 0)).getUTCDate();
 
   // Cells: leading nulls then day numbers.
   const cells: (number | null)[] = [
@@ -113,7 +132,7 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
           ‹
         </button>
         <strong style={{ flex: 1, textAlign: "center", fontSize: "1rem" }}>
-          {shortMonth(new Date(viewYear, viewMonth, 1))}
+          {shortMonth(new Date(Date.UTC(viewYear, viewMonth, 1)))}
         </strong>
         <button
           type="button"

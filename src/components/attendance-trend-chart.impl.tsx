@@ -12,13 +12,19 @@ import {
 import { Activity } from "@/components/icons";
 import type { DailySessionCount } from "@/lib/firebase/read-models";
 
+// iso is a bare "YYYY-MM-DD" date-only string. Parsing it bare (no time
+// component) anchors it at a deterministic UTC instant, identical on server
+// and client; explicit timeZone then formats that instant back to the
+// correct IST calendar day. Appending a literal "T00:00:00" (as this used
+// to) forces *local-time* parsing instead, which resolves to a genuinely
+// different underlying instant on a UTC server than an IST browser.
 function shortLabel(iso: string) {
-  const d = new Date(iso + "T00:00:00");
-  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short" });
+  const d = new Date(iso);
+  return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", timeZone: "Asia/Kolkata" });
 }
 
 function dayOfWeek(iso: string) {
-  return new Date(iso + "T00:00:00").toLocaleDateString("en-IN", { weekday: "short" });
+  return new Date(iso).toLocaleDateString("en-IN", { weekday: "short", timeZone: "Asia/Kolkata" });
 }
 
 type CustomTooltipProps = {

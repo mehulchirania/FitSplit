@@ -29,7 +29,8 @@ function formatDateTime(iso: string) {
   try {
     return new Intl.DateTimeFormat("en-IN", {
       day: "numeric", month: "short", year: "numeric",
-      hour: "2-digit", minute: "2-digit"
+      hour: "2-digit", minute: "2-digit",
+      timeZone: "Asia/Kolkata"
     }).format(new Date(iso));
   } catch { return iso; }
 }
@@ -52,7 +53,7 @@ function formatPlanDuration(session: PTSession) {
 
 function formatTime(iso: string) {
   try {
-    return new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+    return new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(iso));
   } catch { return ""; }
 }
 
@@ -133,7 +134,7 @@ async function PTSessionHistoryCard({ session, gymId }: { session: PTSession; gy
 
   function formatTime(iso: string) {
     try {
-      return new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit" }).format(new Date(iso));
+      return new Intl.DateTimeFormat("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(iso));
     } catch { return ""; }
   }
 

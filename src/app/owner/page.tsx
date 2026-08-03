@@ -23,15 +23,15 @@ function daysFromNow(endDate?: string): number | null {
 
 function todayLabel(): string {
   const now = new Date();
-  const dow   = now.toLocaleDateString("en-US", { weekday: "long" });
-  const date  = now.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  const dow   = now.toLocaleDateString("en-US", { weekday: "long", timeZone: "Asia/Kolkata" });
+  const date  = now.toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
   return `${dow} · ${date}`;
 }
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
   if (isNaN(d.getTime())) return "—";
-  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false });
+  return d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: false, timeZone: "Asia/Kolkata" });
 }
 
 export default async function OwnerDashboard() {

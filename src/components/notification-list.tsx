@@ -101,7 +101,7 @@ function relativeTime(isoString: string): string {
     if (hours < 24) return `${hours}h ago`;
     const days = Math.floor(hours / 24);
     if (days < 7) return `${days}d ago`;
-    return new Date(isoString).toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+    return new Date(isoString).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" });
   } catch {
     return "";
   }

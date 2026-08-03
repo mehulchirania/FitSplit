@@ -2,7 +2,7 @@
 
 import type { Exercise, LiftLog, DayLog, WorkoutProgram, GymNotice } from "@/types/domain";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
-import { getWeekStart, getTrainedDateKeys, resolveTodaysSession, estimateSessionMinutes } from "@/lib/workout-utils";
+import { getWeekStart, getTrainedDateKeys, resolveTodaysSession, estimateSessionMinutes, nowInIST } from "@/lib/workout-utils";
 
 interface OverviewScreenProps {
   firstName: string;
@@ -77,7 +77,7 @@ export function OverviewScreen({
   weeklyStreak, daysTrainedThisWeek, weeklyTarget, coachNote, coachNoteFrom, gymNotices,
   goWorkout, goLogs,
 }: OverviewScreenProps) {
-  const today = new Date();
+  const today = nowInIST();
   const weekStartIso = getWeekStart(today);
   const session = resolveTodaysSession(program, dayLogs, liftLogs, weekStartIso);
   const day = program?.days?.[session.dayIndex] ?? null;

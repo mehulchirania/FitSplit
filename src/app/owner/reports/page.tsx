@@ -91,7 +91,7 @@ export default async function OwnerReportsPage() {
   // slots is SlotLoad[] — each item has slotId ("A"|"B"|"C"|"D") and memberCount
   const totalSlotted = slots.reduce((n, s) => n + s.memberCount, 0);
 
-  const asOfDate = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  const asOfDate = now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", timeZone: "Asia/Kolkata" });
 
   const pageHeader = (
     <header className="rpt-header">

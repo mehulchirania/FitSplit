@@ -48,14 +48,16 @@ export function ProgressiveOverloadChart({
 
     const sortedData = Array.from(maxWeightPerDay.entries())
       .map(([date, maxWeight]) => {
-        const [year, month, day] = date.split("-");
-        const formattedDate = new Date(
-          parseInt(year),
-          parseInt(month) - 1,
-          parseInt(day)
-        ).toLocaleDateString(undefined, {
+        // date is a bare "YYYY-MM-DD" string. The multi-arg Date constructor
+        // (new Date(year, month, day)) always builds a *local-time* instant,
+        // which can land a workout on the wrong calendar day for a viewer in
+        // a different timezone than the one the date was logged in. Parsing
+        // the string bare anchors it at a deterministic UTC instant, and the
+        // explicit timeZone below formats it back to the correct IST day.
+        const formattedDate = new Date(date).toLocaleDateString("en-IN", {
           month: "short",
           day: "numeric",
+          timeZone: "Asia/Kolkata",
         });
         return { date: formattedDate, rawDate: date, weight: maxWeight };
       })

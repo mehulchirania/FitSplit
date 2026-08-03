@@ -41,10 +41,10 @@ export function PaymentRequestCard({ req, gymId, showActions = true }: PaymentRe
   }
 
   const requestedDate = req.requestedAt
-    ? new Date(req.requestedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })
+    ? new Date(req.requestedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" })
     : "";
   const resolvedDate = req.resolvedAt
-    ? new Date(req.resolvedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+    ? new Date(req.resolvedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })
     : null;
 
   return (

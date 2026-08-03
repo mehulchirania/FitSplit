@@ -282,7 +282,7 @@ function ProfileTab({ member, profile, memberId }: {
           <Section title="ACCOUNT">
             <Row label="Full name" sub={member.fullName} />
             <Row label="Phone / Username" sub={member.phone || "Not set"} />
-            <Row label="Gym member since" sub={member.joinedAt ? new Date(member.joinedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"} last />
+            <Row label="Gym member since" sub={member.joinedAt ? new Date(member.joinedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }) : "—"} last />
           </Section>
         </>
       )}

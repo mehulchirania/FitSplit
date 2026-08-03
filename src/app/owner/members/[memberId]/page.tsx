@@ -34,7 +34,8 @@ function formatShortDate(value?: string) {
     return new Intl.DateTimeFormat("en-IN", {
       day: "2-digit",
       month: "short",
-      year: "numeric"
+      year: "numeric",
+      timeZone: "Asia/Kolkata"
     }).format(new Date(value));
   } catch {
     return value;
@@ -247,7 +248,8 @@ export default async function MemberDetailPage({
                   day: "numeric",
                   month: "short",
                   hour: "2-digit",
-                  minute: "2-digit"
+                  minute: "2-digit",
+                  timeZone: "Asia/Kolkata"
                 })}
                 {profile.coachNoteUpdatedByName ? ` by ${profile.coachNoteUpdatedByName}` : ""}
               </p>

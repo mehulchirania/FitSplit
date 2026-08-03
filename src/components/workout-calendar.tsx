@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { nowInIST } from "@/lib/workout-utils";
 import type { ActivityLog, DayLog, LiftLog, MacroLog, MacroNutritionTarget } from "@/types/domain";
 
 type Props = {
@@ -153,7 +154,7 @@ export function WorkoutCalendar({
   macroLogs = [],
   macroTarget
 }: Props) {
-  const now = new Date();
+  const now = nowInIST();
   const [viewYear, setViewYear] = useState(now.getFullYear());
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [selectedDay, setSelectedDay] = useState<DayDetail | null>(null);
@@ -294,7 +295,8 @@ export function WorkoutCalendar({
             {new Date(`${selectedDay.date}T12:00:00`).toLocaleDateString("en-IN", {
               weekday: "long",
               day: "numeric",
-              month: "long"
+              month: "long",
+              timeZone: "Asia/Kolkata"
             })}
           </p>
           <div className="cal-detail-badges">

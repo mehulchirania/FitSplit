@@ -138,7 +138,7 @@ function avatarColor(id: string): string {
 
 function formatDate(iso: string): string {
   try {
-    return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "2-digit" }).format(new Date(iso));
+    return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(iso));
   } catch { return iso; }
 }
 

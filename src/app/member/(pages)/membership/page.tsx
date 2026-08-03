@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 
 function formatDate(iso: string) {
   try {
-    return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(new Date(iso));
+    return new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(iso));
   } catch { return iso; }
 }
 

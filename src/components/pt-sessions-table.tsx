@@ -47,10 +47,14 @@ const STATUS_COLOR: Record<PTSession["status"], string> = {
 function fmtDate(iso?: string) {
   if (!iso) return { day: "—", wd: "" };
   try {
-    const d = new Date(iso.includes("T") ? iso : iso + "T00:00:00");
+    // Noon anchor for date-only input: a literal "T00:00:00" forces local-
+    // time parsing, which resolves to a different underlying instant on a
+    // UTC server than an IST browser, and both DateTimeFormat calls below
+    // need an explicit timeZone for the same reason toLocaleDateString does.
+    const d = new Date(iso.includes("T") ? iso : iso + "T12:00:00");
     return {
-      day: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric" }).format(d),
-      wd: new Intl.DateTimeFormat("en-IN", { weekday: "long" }).format(d),
+      day: new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(d),
+      wd: new Intl.DateTimeFormat("en-IN", { weekday: "long", timeZone: "Asia/Kolkata" }).format(d),
     };
   } catch { return { day: iso.slice(0, 10), wd: "" }; }
 }
