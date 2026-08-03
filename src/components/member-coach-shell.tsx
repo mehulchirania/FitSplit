@@ -616,7 +616,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                   <div className="m3d-pagehead">
                     <div>
                       <span className="m3d-pagehead__eyebrow">
-                        {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short" })}
+                        {new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "short", timeZone: "Asia/Kolkata" })}
                       </span>
                       <h1 className="m3d-pagehead__title">Workout</h1>
                     </div>

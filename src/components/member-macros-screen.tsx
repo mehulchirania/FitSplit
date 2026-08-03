@@ -132,10 +132,19 @@ export function MacrosScreen({
   const carbsGoal = macroTarget?.carbs ?? DEFAULT_TARGET.carbs;
   const fatGoal = macroTarget?.fat ?? DEFAULT_TARGET.fat;
 
-  const todayLabel = new Date(`${todayDate}T00:00:00`).toLocaleDateString("en-IN", {
+  // todayDate is a plain "YYYY-MM-DD" (already computed server-side in IST).
+  // Parsing it bare (no time component) anchors it at a deterministic UTC
+  // instant that's identical on server and client; explicit timeZone below
+  // then formats that instant back as the correct IST calendar day. Adding
+  // a literal "T00:00:00" here (as this used to) forces *local time*
+  // parsing instead, which resolves to a different underlying instant on a
+  // UTC server than on an IST browser — the same class of hydration
+  // mismatch as the un-timezoned toLocaleDateString calls elsewhere.
+  const todayLabel = new Date(todayDate).toLocaleDateString("en-IN", {
     weekday: "long",
     month: "long",
     day: "numeric",
+    timeZone: "Asia/Kolkata",
   });
 
   async function submitMeal(payload: MealPayload, options: { silent?: boolean } = {}) {
@@ -342,7 +351,7 @@ export function MacrosScreen({
               {sortedMeals.map((meal) => (
                 <div key={meal.id} className="m3d-mc-meal-row">
                   <span className="m3d-mc-meal-time">
-                    {new Date(meal.loggedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                    {new Date(meal.loggedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" })}
                   </span>
                   <div className="m3d-mc-meal-body">
                     <span className="m3d-mc-meal-name">{meal.name}</span>

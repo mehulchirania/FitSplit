@@ -40,7 +40,7 @@ function initialsFor(name: string | null) {
 
 function formatBubbleTime(iso: string) {
   try {
-    return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
   } catch {
     return "";
   }
@@ -60,7 +60,8 @@ function dayLabel(iso: string) {
     return date.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
-      year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined
+      year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+      timeZone: "Asia/Kolkata"
     });
   } catch {
     return "";
@@ -87,11 +88,11 @@ export function MemberCoachView({
   const initials = initialsFor(coachNoteFrom);
 
   const noteTime = coachNoteUpdatedAt
-    ? new Date(coachNoteUpdatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })
+    ? new Date(coachNoteUpdatedAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" })
     : null;
 
   const noteDate = coachNoteUpdatedAt
-    ? new Date(coachNoteUpdatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+    ? new Date(coachNoteUpdatedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })
     : null;
 
   // Mark the thread read the moment the member opens this tab. Best-effort —

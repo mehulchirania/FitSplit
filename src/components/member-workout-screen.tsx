@@ -715,7 +715,7 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
               ) : (
                 drawerHistory.map((h) => (
                   <div key={h.id} className="m3d-wk-drawer__history-row">
-                    <span>{new Date(h.loggedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</span>
+                    <span>{new Date(h.loggedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })}</span>
                     <span>{hasLoggedWeight(h) ? `${h.weight} kg × ${h.reps}` : `${h.reps} reps`}</span>
                     {h.weight === drawerPR && drawerPR > 0 && <span className="m3d-wk-drawer__pr">PR</span>}
                   </div>

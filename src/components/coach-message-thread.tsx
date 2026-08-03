@@ -39,7 +39,7 @@ function nextLocalMessageId() {
 
 function formatBubbleTime(iso: string) {
   try {
-    return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+    return new Date(iso).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, timeZone: "Asia/Kolkata" });
   } catch {
     return "";
   }
@@ -58,7 +58,8 @@ function dayLabel(iso: string) {
     return date.toLocaleDateString("en-IN", {
       day: "numeric",
       month: "short",
-      year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined
+      year: date.getFullYear() !== today.getFullYear() ? "numeric" : undefined,
+      timeZone: "Asia/Kolkata"
     });
   } catch {
     return "";

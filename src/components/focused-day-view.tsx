@@ -343,7 +343,7 @@ export function FocusedDayView({
         </Link>
         {assignment && (
           <span className="fdv-assigned-note">
-            Assigned {assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : ""}
+            Assigned {assignment.assignedAt ? new Date(assignment.assignedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }) : ""}
           </span>
         )}
       </div>

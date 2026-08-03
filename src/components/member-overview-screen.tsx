@@ -118,7 +118,7 @@ export function OverviewScreen({
         id: l.id,
         title: ex?.name ?? "Lift logged",
         meta: l.weight > 0 ? `${l.weight} kg × ${l.reps}` : `${l.reps} reps`,
-        time: new Date(l.loggedAt).toLocaleString("en-IN", { weekday: "short", hour: "2-digit", minute: "2-digit" }),
+        time: new Date(l.loggedAt).toLocaleString("en-IN", { weekday: "short", hour: "2-digit", minute: "2-digit", timeZone: "Asia/Kolkata" }),
       };
     });
 
@@ -158,7 +158,7 @@ export function OverviewScreen({
 
       <div className="m3d-ov__today">
         <span className="m3d-ov__section-label">
-          TODAY · {today.toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric" }).toUpperCase()}
+          TODAY · {today.toLocaleDateString("en-IN", { weekday: "long", month: "long", day: "numeric", timeZone: "Asia/Kolkata" }).toUpperCase()}
         </span>
         <div className="m3d-ov__today-row">
           <button type="button" className="m3d-ov__today-btn" onClick={goWorkout}>

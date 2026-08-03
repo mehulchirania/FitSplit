@@ -176,7 +176,7 @@ export function ProgressScreen({
               <span className="m3d-pg__pr-name">{pr.name}</span>
               <span className="m3d-pg__pr-value">{pr.weight} kg × {pr.reps}</span>
               <span className="m3d-pg__pr-date">
-                {new Date(pr.date).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
+                {new Date(pr.date).toLocaleDateString("en-IN", { day: "numeric", month: "short", timeZone: "Asia/Kolkata" })}
               </span>
             </div>
           ))
