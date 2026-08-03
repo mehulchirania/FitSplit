@@ -184,7 +184,7 @@ export function ProgressScreen({
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-        <MemberProgressPanel exercises={exercises} initialLiftLogs={liftLogs} memberId={memberId} program={program} />
+        <MemberProgressPanel exercises={exercises} initialLiftLogs={liftLogs} dayLogs={dayLogs} memberId={memberId} program={program} />
         <WorkoutCalendar
           liftLogs={liftLogs}
           dayLogs={dayLogs}

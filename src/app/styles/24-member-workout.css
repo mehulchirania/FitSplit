@@ -1,4 +1,6 @@
-/* Member Workout screen — desktop-only, "m3d-wk-" prefix. Drawer uses "m3d-wk-drawer-". */
+/* Member Workout screen — the single set-by-set logger, rendered on every
+   viewport ("m3d-wk-" prefix). Drawer uses "m3d-wk-drawer-". On mobile this
+   is embedded inside the Train tab via ".mcr-train-logger" below. */
 
 .m3d-wk { display: flex; flex-direction: column; padding-bottom: 24px; }
 
@@ -8,24 +10,9 @@
   justify-content: space-between;
   gap: 20px;
 }
-.m3d-wk__variant-toggle {
-  display: flex;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  overflow: hidden;
-}
-.m3d-wk__variant-toggle button {
-  border: none;
-  background: transparent;
-  color: var(--text-soft);
-  padding: 7px 14px;
-  font: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.m3d-wk__variant-toggle button + button { border-left: 1px solid var(--border-strong); }
-.m3d-wk__variant--on { background: var(--brand-soft); color: var(--brand) !important; }
+
+/* Embedding wrapper used by the mobile Train tab (member-coach-shell.tsx) */
+.mcr-train-logger { display: flex; flex-direction: column; }
 
 .m3d-wk__daypicker {
   display: flex;
@@ -107,21 +94,6 @@
 .m3d-wk__rest-bar div { height: 100%; background: var(--brand); transition: width 1s linear; }
 .m3d-wk__rest button { background: none; border: none; color: var(--text-soft); font: inherit; font-size: 11.5px; font-weight: 600; cursor: pointer; padding: 0; }
 
-/* ── Ledger variant ───────────────────────────────────────────── */
-.m3d-wk__ledger { margin-top: 24px; display: flex; flex-direction: column; }
-.m3d-wk__ledger-row { display: flex; align-items: center; gap: 16px; padding: 14px; margin: 0 -14px; border-bottom: 1px solid var(--border); border-radius: 10px; }
-.m3d-wk__ledger-num { width: 24px; font-family: var(--font-mono, monospace); font-size: 12px; color: var(--text-faint); }
-.m3d-wk__ledger-name { background: none; border: none; padding: 0; font: inherit; cursor: pointer; text-align: left; width: 200px; flex-shrink: 0; }
-.m3d-wk__ledger-name div { font-family: var(--font-dm-sans), "DM Sans", sans-serif; font-size: 14.5px; font-weight: 600; color: var(--text); }
-.m3d-wk__ledger-name small { font-size: 11.5px; color: var(--text-faint); font-family: var(--font-mono, monospace); }
-.m3d-wk__ledger-chips { display: flex; gap: 7px; flex: 1; flex-wrap: wrap; }
-.m3d-wk__ledger-chip {
-  border-radius: 7px; padding: 7px 11px; font-family: var(--font-mono, monospace); font-size: 12px; cursor: pointer;
-  background: var(--bg-elevated); color: var(--text-soft); border: 1px solid var(--border); transition: all 140ms;
-}
-.m3d-wk__ledger-chip--on { background: var(--brand-soft); color: var(--brand); border-color: transparent; }
-.m3d-wk__ledger-chip:disabled:not(.m3d-wk__ledger-chip--on) { opacity: 0.5; cursor: not-allowed; }
-
 /* ── Sticky footer ────────────────────────────────────────────── */
 .m3d-wk__footer {
   position: sticky; bottom: 0; margin: 28px -56px -24px; padding: 14px 56px 18px;
@@ -134,7 +106,15 @@
 .m3d-wk__footer-progress span { font-size: 12px; color: var(--text-soft); margin-bottom: 6px; display: block; }
 .m3d-wk__footer-bar { height: 3px; background: var(--border); border-radius: 2px; overflow: hidden; }
 .m3d-wk__footer-bar div { height: 100%; background: var(--brand); transition: width 300ms; }
-.m3d-wk__offline-pill { font-size: 11px; font-weight: 600; color: var(--warning); background: var(--warning-soft); padding: 4px 9px; border-radius: 999px; }
+.m3d-wk__offline-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 11px; font-weight: 600; color: var(--warning); background: var(--warning-soft); padding: 4px 6px 4px 9px; border-radius: 999px;
+}
+.m3d-wk__offline-retry {
+  border: none; background: var(--warning); color: var(--primary-foreground); font: inherit; font-size: 10.5px; font-weight: 700;
+  padding: 4px 9px; border-radius: 999px; cursor: pointer; min-height: 22px; white-space: nowrap;
+}
+.m3d-wk__offline-retry:disabled { opacity: 0.6; cursor: default; }
 .m3d-wk__footer-actions { display: flex; align-items: center; gap: 12px; margin-left: auto; position: relative; }
 .m3d-wk__skip-wrap { position: relative; }
 .m3d-wk__skip-pop {
@@ -152,6 +132,44 @@
 
 @media (max-width: 900px) {
   .m3d-wk__footer { margin: 20px -16px -16px; padding: 12px 16px 16px; }
+}
+
+/* ── Small-viewport / touch responsiveness (down to ~360px) ─────────
+   Applies to both the desktop workout screen at a narrow window and the
+   mobile Train-tab embedding. Inputs get real touch targets (>=44px) and
+   font-size 16px to stop iOS Safari auto-zooming on focus. */
+@media (max-width: 480px) {
+  .m3d-wk__row { gap: 12px; padding-bottom: 16px; }
+  .m3d-wk__node { width: 28px; height: 28px; font-size: 11px; }
+  .m3d-wk__row-body { gap: 8px 10px; }
+  .m3d-wk__name--active { font-size: 16px; }
+  .m3d-wk__details-btn { margin-left: 0; }
+
+  .m3d-wk__set-head,
+  .m3d-wk__set-row {
+    grid-template-columns: 22px minmax(0, 1fr) minmax(0, 1fr) minmax(0, 0.8fr) 44px;
+    gap: 6px;
+  }
+  .m3d-wk__set-row { padding: 6px 0; }
+  .m3d-wk__set-row input {
+    min-height: 44px;
+    font-size: 16px;
+    padding: 8px 4px;
+  }
+  .m3d-wk__check {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+  }
+  .m3d-wk__rest { max-width: none; flex-wrap: wrap; }
+
+  .m3d-wk__daypicker { margin-top: 12px; }
+  .m3d-daychip { min-height: 36px; display: inline-flex; align-items: center; }
+
+  .m3d-wk__footer { gap: 12px; }
+  .m3d-wk__footer-actions { width: 100%; justify-content: space-between; margin-left: 0; }
+  .m3d-wk__finish { min-height: 44px; flex: 1; }
+  .m3d-wk__skip-wrap .m3d-btn-sm { min-height: 44px; }
 }
 
 /* ── Exercise detail drawer (Radix Dialog) ───────────────────────── */

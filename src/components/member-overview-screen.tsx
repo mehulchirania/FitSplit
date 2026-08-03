@@ -2,6 +2,7 @@
 
 import type { Exercise, LiftLog, DayLog, WorkoutProgram, GymNotice } from "@/types/domain";
 import { GymNoticeBoard } from "@/components/gym-notice-board";
+import { getWeekStart, getTrainedDateKeys, resolveTodaysSession, estimateSessionMinutes } from "@/lib/workout-utils";
 
 interface OverviewScreenProps {
   firstName: string;
@@ -30,25 +31,23 @@ function startOfWeek(d: Date) {
   return s;
 }
 
+/** Local (not UTC) YYYY-MM-DD key — matches getTrainedDateKeys/getWeekStart so date
+ *  comparisons across this file stay consistent regardless of server timezone. */
 function dateKey(d: Date) {
-  return d.toISOString().slice(0, 10);
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 }
 
 /** % of the trailing 4 weeks' target training days that were actually trained. */
 function computeAdherencePct(liftLogs: LiftLog[], dayLogs: DayLog[], weeklyTarget: number) {
   const since = new Date();
   since.setDate(since.getDate() - 28);
-  const trainedDays = new Set<string>();
-  for (const log of liftLogs) {
-    if (!log.loggedAt) continue;
-    const d = new Date(log.loggedAt);
-    if (d >= since) trainedDays.add(dateKey(d));
-  }
-  for (const log of dayLogs) {
-    if (log.status !== "completed" || !log.loggedAt) continue;
-    const d = new Date(log.loggedAt);
-    if (d >= since) trainedDays.add(dateKey(d));
-  }
+  const sinceKey = dateKey(since);
+  const trainedDays = new Set(
+    Array.from(getTrainedDateKeys(liftLogs, dayLogs)).filter((key) => key >= sinceKey)
+  );
   const target = Math.max(1, weeklyTarget * 4);
   return Math.min(100, Math.round((trainedDays.size / target) * 100));
 }
@@ -65,7 +64,7 @@ function getRecentPR(liftLogs: LiftLog[], exercises: Exercise[]) {
     .filter((l) => l.loggedAt)
     .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
   for (const log of sorted) {
-    if (log.weight > 0 && log.weight === maxByExercise.get(log.exerciseId)) {
+    if (typeof log.weight === "number" && log.weight > 0 && log.weight === maxByExercise.get(log.exerciseId)) {
       const ex = exercises.find((e) => e.id === log.exerciseId);
       return { name: ex?.name ?? "Lift", weight: log.weight, reps: log.reps };
     }
@@ -79,10 +78,12 @@ export function OverviewScreen({
   goWorkout, goLogs,
 }: OverviewScreenProps) {
   const today = new Date();
-  const day = program?.days?.[0] ?? null;
+  const weekStartIso = getWeekStart(today);
+  const session = resolveTodaysSession(program, dayLogs, liftLogs, weekStartIso);
+  const day = program?.days?.[session.dayIndex] ?? null;
   const liftsCount = day?.exercises?.length ?? 0;
   const totalSets = (day?.exercises ?? []).reduce((s, e) => s + (e.sets ?? 0), 0);
-  const estMin = liftsCount * 8;
+  const estMin = estimateSessionMinutes(day?.exercises ?? []);
   const exerciseNames = (day?.exercises ?? [])
     .map((e) => exercises.find((x) => x.id === e.exerciseId)?.name)
     .filter(Boolean)
@@ -92,9 +93,7 @@ export function OverviewScreen({
   const recentPR = getRecentPR(liftLogs, exercises);
 
   const weekStart = startOfWeek(today);
-  const trainedDates = new Set(
-    liftLogs.filter((l) => l.loggedAt).map((l) => dateKey(new Date(l.loggedAt)))
-  );
+  const trainedDates = getTrainedDateKeys(liftLogs, dayLogs);
   const weekDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(weekStart);
     d.setDate(d.getDate() + i);
@@ -163,7 +162,9 @@ export function OverviewScreen({
         </span>
         <div className="m3d-ov__today-row">
           <button type="button" className="m3d-ov__today-btn" onClick={goWorkout}>
-            {day ? (
+            {session.reason === "rest_day" ? (
+              <div className="m3d-ov__today-title">All sessions done for this week 🎉</div>
+            ) : day ? (
               <>
                 <div className="m3d-ov__today-title">{day.title} <span className="m3d-ov__today-day">· Day {day.dayNumber}</span></div>
                 {exerciseNames && <div className="m3d-ov__today-ex">{exerciseNames}</div>}
@@ -174,7 +175,7 @@ export function OverviewScreen({
             )}
           </button>
           <button type="button" className="m3d-ov__cta" onClick={goWorkout}>
-            {day ? "Continue workout →" : "View workout →"}
+            {session.isCompletedThisWeek ? "Completed ✓" : day ? "Continue workout →" : "View workout →"}
           </button>
         </div>
 

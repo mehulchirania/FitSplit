@@ -26,6 +26,12 @@ export const collectionPaths = {
   macroLogs: "macroLogs",
   mealLogs: "mealLogs",
   activityLogs: "activityLogs",
+  // Member <-> coach chat thread. One doc per message, keyed by memberId.
+  coachMessages: "coachMessages",
+  // A member's exercise substitutions for one program day. One doc per
+  // memberId+dayId, so trainers can see what a member actually trains
+  // instead of only the prescribed plan.
+  exerciseSwaps: "exerciseSwaps",
   // Sparse index for atomic username uniqueness. Doc ID = normalized username.
   usernames: "usernames",
   // Sparse index for atomic phone uniqueness within a gym. Doc ID = gymId:normalizedPhone.
@@ -55,6 +61,12 @@ export const gymScopedCollectionPaths = {
   macroLogs: "macroLogs",
   mealLogs: "mealLogs",
   activityLogs: "activityLogs",
+  // Member <-> coach chat thread. One doc per message, keyed by memberId.
+  coachMessages: "coachMessages",
+  // A member's exercise substitutions for one program day. One doc per
+  // memberId+dayId, so trainers can see what a member actually trains
+  // instead of only the prescribed plan.
+  exerciseSwaps: "exerciseSwaps",
   // Membership package definitions set by the gym owner.
   packages: "packages",
   // Per-member membership records (one per active/past period).

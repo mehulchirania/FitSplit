@@ -10,7 +10,15 @@ import { initialFormActionState } from "@/types/action-state";
 import type { FormActionState } from "@/types/action-state";
 import type { WorkoutDay, Exercise, LiftLog, ProgramAssignment, DayLog } from "@/types/domain";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
+import { estimateSessionMinutes } from "@/lib/workout-utils";
 
+function PlayIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+      <path d="M8 5l12 7-12 7z" />
+    </svg>
+  );
+}
 function ChevDown() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -57,6 +65,9 @@ export function FocusedDayView({
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const [dayLogStatus, setDayLogStatus] = useState<FormActionState | null>(null);
   const [isDayLogPending, setIsDayLogPending] = useState(false);
+  // Day status / skip reason is a secondary action — collapsed by default so
+  // it is never the first thing a member sees after tapping "Start workout".
+  const [dayLogOpen, setDayLogOpen] = useState(false);
   const makeupExerciseIds = day.exercises.slice(0, 3).map((exercise) => exercise.exerciseId).join(",");
   const dayLogLabel = currentDayLog?.status === "completed"
     ? "Done"
@@ -133,7 +144,7 @@ export function FocusedDayView({
           <span>total sets</span>
         </div>
         <div className="fdv-stat">
-          <strong>~{day.exercises.length * 8}</strong>
+          <strong>~{estimateSessionMinutes(day.exercises)}</strong>
           <span>min</span>
         </div>
         {day.focus && (
@@ -143,75 +154,18 @@ export function FocusedDayView({
         )}
       </div>
 
+      {/* Primary action — logging sets happens on the Train tab, where the
+          actual set-by-set logger lives. This page is a preview/reference. */}
+      <Link href="/member" className="fdv-log-cta">
+        <PlayIcon />
+        Log this workout
+      </Link>
+
       {/* Warm-up hint */}
       <div className="fdv-warmup">
         <span className="fdv-warmup__icon">🔥</span>
         <span>Warm up for 5–10 min before starting — dynamic stretches, light cardio, or joint mobility.</span>
       </div>
-
-      <form className="fdv-day-log" onSubmit={handleDayLogSubmit}>
-        <input name="memberId" type="hidden" value={memberId} />
-        <input name="programId" type="hidden" value={programId} />
-        <input name="dayId" type="hidden" value={day.id} />
-        <input name="weekStart" type="hidden" value={weekStart} />
-        <input name="makeupExerciseIds" type="hidden" value={makeupExerciseIds} />
-        <div className="fdv-day-log__head">
-          <div>
-            <span className="fdv-day-log__eyebrow">This week</span>
-            <strong>Day status</strong>
-          </div>
-          {currentDayLog ? (
-            <span className={`fdv-day-log__chip fdv-day-log__chip--${currentDayLog.status}`}>
-              {dayLogLabel}
-            </span>
-          ) : (
-            <span className="fdv-day-log__chip">No note</span>
-          )}
-        </div>
-        <div className="fdv-day-log__fields">
-          <label>
-            Skip reason
-            <select name="skipReason" defaultValue={currentDayLog?.skipReason ?? "no_time"}>
-              <option value="no_time">No time</option>
-              <option value="rest">Rest day</option>
-              <option value="equipment">Equipment unavailable</option>
-              <option value="sick">Sick or injured</option>
-              <option value="other">Other</option>
-            </select>
-          </label>
-          <label>
-            Note
-            <textarea
-              name="note"
-              defaultValue={currentDayLog?.note ?? ""}
-              maxLength={400}
-              placeholder="Optional context for your coach"
-              rows={2}
-            />
-          </label>
-        </div>
-        {dayLogStatus ? (
-          <p className={`form-message form-message-${dayLogStatus.status}`}>
-            {dayLogStatus.message}
-          </p>
-        ) : null}
-        <div className="fdv-day-log__actions">
-          <button className="button button-primary" name="status" type="submit" value="completed" disabled={isDayLogPending}>
-            {isDayLogPending ? "Saving..." : "Mark done"}
-          </button>
-          <button className="button button-secondary" name="status" type="submit" value="modified" disabled={isDayLogPending}>
-            {isDayLogPending ? "Saving..." : "Save note"}
-          </button>
-          <button className="button button-secondary" name="status" type="submit" value="skipped" disabled={isDayLogPending}>
-            Mark skipped
-          </button>
-          {currentDayLog ? (
-            <button className="button button-ghost" type="button" onClick={handleClearDayLog} disabled={isDayLogPending}>
-              Clear
-            </button>
-          ) : null}
-        </div>
-      </form>
 
       {/* Exercise list */}
       <div className="fdv-list">
@@ -304,6 +258,82 @@ export function FocusedDayView({
       <div className="fdv-warmup fdv-cooldown">
         <span className="fdv-warmup__icon">🧊</span>
         <span>Cool down with static stretches — hold each for 20–30 seconds to aid recovery.</span>
+      </div>
+
+      {/* Day status / skip reason — secondary, collapsed by default */}
+      <div className="fdv-daystatus">
+        <button
+          type="button"
+          className="fdv-daystatus__toggle"
+          onClick={() => setDayLogOpen((v) => !v)}
+          aria-expanded={dayLogOpen}
+        >
+          <span>
+            <span className="fdv-day-log__eyebrow">This week</span>
+            <strong>Day status</strong>
+          </span>
+          {currentDayLog ? (
+            <span className={`fdv-day-log__chip fdv-day-log__chip--${currentDayLog.status}`}>
+              {dayLogLabel}
+            </span>
+          ) : (
+            <span className="fdv-day-log__chip">No note</span>
+          )}
+          <span className="fdv-row__chev">{dayLogOpen ? <ChevUp /> : <ChevDown />}</span>
+        </button>
+
+        {dayLogOpen && (
+          <form className="fdv-day-log" onSubmit={handleDayLogSubmit}>
+            <input name="memberId" type="hidden" value={memberId} />
+            <input name="programId" type="hidden" value={programId} />
+            <input name="dayId" type="hidden" value={day.id} />
+            <input name="weekStart" type="hidden" value={weekStart} />
+            <input name="makeupExerciseIds" type="hidden" value={makeupExerciseIds} />
+            <div className="fdv-day-log__fields">
+              <label>
+                Skip reason
+                <select name="skipReason" defaultValue={currentDayLog?.skipReason ?? "no_time"}>
+                  <option value="no_time">No time</option>
+                  <option value="rest">Rest day</option>
+                  <option value="equipment">Equipment unavailable</option>
+                  <option value="sick">Sick or injured</option>
+                  <option value="other">Other</option>
+                </select>
+              </label>
+              <label>
+                Note
+                <textarea
+                  name="note"
+                  defaultValue={currentDayLog?.note ?? ""}
+                  maxLength={400}
+                  placeholder="Optional context for your coach"
+                  rows={2}
+                />
+              </label>
+            </div>
+            {dayLogStatus ? (
+              <p className={`form-message form-message-${dayLogStatus.status}`}>
+                {dayLogStatus.message}
+              </p>
+            ) : null}
+            <div className="fdv-day-log__actions">
+              <button className="button button-primary" name="status" type="submit" value="completed" disabled={isDayLogPending}>
+                {isDayLogPending ? "Saving..." : "Mark done"}
+              </button>
+              <button className="button button-secondary" name="status" type="submit" value="modified" disabled={isDayLogPending}>
+                {isDayLogPending ? "Saving..." : "Save note"}
+              </button>
+              <button className="button button-secondary" name="status" type="submit" value="skipped" disabled={isDayLogPending}>
+                Mark skipped
+              </button>
+              {currentDayLog ? (
+                <button className="button button-ghost" type="button" onClick={handleClearDayLog} disabled={isDayLogPending}>
+                  Clear
+                </button>
+              ) : null}
+            </div>
+          </form>
+        )}
       </div>
 
       {/* Bottom nav */}

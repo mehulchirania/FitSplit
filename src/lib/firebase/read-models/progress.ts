@@ -95,6 +95,40 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
   }
 }
 
+/**
+ * Normalizes a raw LiftLog doc into one-or-more single-set LiftLog entries.
+ *
+ * Contract: every LiftLog written after the per-set normalization has
+ * `sets === 1` — one record per set (see logLiftSet in
+ * src/lib/firebase/actions/progress.ts). Some records predate that contract
+ * and still store an aggregate `sets: N` with either a single `reps` value
+ * (applied uniformly) or a comma-separated per-set string like "8,8,7".
+ * Expand those into N synthetic single-set rows here so every consumer
+ * downstream (ProgressChart, lift history table, PR/volume calculations) can
+ * assume `sets === 1` and never has to special-case legacy data. We never
+ * rewrite the underlying Firestore doc — this expansion happens only at read
+ * time.
+ */
+function expandLegacyLiftLog(log: LiftLog): LiftLog[] {
+  const rawSets = Math.round(log.sets);
+  if (!Number.isFinite(rawSets) || rawSets <= 1) {
+    return [{ ...log, sets: 1 }];
+  }
+
+  const repsParts = log.reps
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return Array.from({ length: rawSets }, (_, index) => ({
+    ...log,
+    id: `${log.id}#set${index + 1}`,
+    sets: 1,
+    reps: repsParts[index] ?? repsParts[repsParts.length - 1] ?? log.reps,
+    setIndex: log.setIndex ?? index + 1
+  }));
+}
+
 export async function getLiftLogsForMember(memberId: string, gymId?: string, limit = 500): Promise<{
   liftLogs: LiftLog[];
   isPersisted: boolean;
@@ -136,9 +170,11 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string, lim
         sets: Number(data.sets ?? 1),
         reps: String(data.reps ?? ""),
         sessionId: String(data.sessionId ?? ""),
-        loggedAt: String(data.loggedAt ?? data.createdAt ?? new Date().toISOString())
+        loggedAt: String(data.loggedAt ?? data.createdAt ?? new Date().toISOString()),
+        setIndex: data.setIndex != null ? Number(data.setIndex) : undefined
       };
     })
+    .flatMap(expandLegacyLiftLog)
     .sort((left, right) => right.loggedAt.localeCompare(left.loggedAt));
 
   return { liftLogs, isPersisted: true };
@@ -262,6 +298,115 @@ export async function getMealLogsForMember(
   } catch (error) {
     reportReadModelError("getMealLogsForMember", error, { memberId, gymId, date });
     return { mealLogs: [] };
+  }
+}
+
+/** Fetch the meals logged on the calendar day immediately before `todayDate` — powers "Repeat yesterday". */
+export async function getYesterdaysMealsForMember(
+  memberId: string,
+  gymId: string,
+  todayDate: string
+): Promise<{ mealLogs: MealLog[] }> {
+  const yesterday = new Date(`${todayDate}T00:00:00`);
+  if (Number.isNaN(yesterday.getTime())) return { mealLogs: [] };
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayDate = yesterday.toISOString().slice(0, 10);
+  return getMealLogsForMember(memberId, gymId, yesterdayDate);
+}
+
+/** One grouped suggestion for the nutrition Quick Add "Recent" row. */
+export type MealSuggestion = {
+  name: string;
+  items?: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  /** How many times this meal (grouped by trimmed, case-insensitive name) was logged in the lookback window. */
+  frequency: number;
+  lastLoggedAt: string;
+};
+
+/**
+ * Groups a member's meals from the last `lookbackDays` days by name and
+ * returns the most-frequently-logged ones, most frequent first (ties broken
+ * by recency). Powers the personalized "Recent" quick-add row, which ranks
+ * ahead of the generic static presets — by day three of real usage, what a
+ * member actually eats is a far better default than six hardcoded items.
+ *
+ * Reuses the existing (memberId ASC, date ASC, loggedAt ASC) composite index
+ * on mealLogs — see firestore.indexes.json — so no new index is required.
+ */
+export async function getRecentMealsForMember(
+  memberId: string,
+  gymId: string,
+  options: { lookbackDays?: number; limit?: number } = {}
+): Promise<{ recentMeals: MealSuggestion[] }> {
+  const { lookbackDays = 30, limit = 6 } = options;
+  if (!hasFirebaseAdminConfig()) return { recentMeals: [] };
+  try {
+    const { db } = getFirebaseAdminServices();
+    const since = new Date();
+    since.setDate(since.getDate() - lookbackDays);
+    const sinceDate = since.toISOString().slice(0, 10);
+
+    // orderBy must list `loggedAt` explicitly (not rely on Firestore's
+    // implicit __name__ tiebreaker) to match the existing composite index
+    // (memberId ASC, date ASC, loggedAt ASC) exactly — a query that instead
+    // falls back to ordering ties by document ID needs a *different*
+    // composite index Firestore doesn't have, which fails outright in
+    // production with FAILED_PRECONDITION rather than degrading. This also
+    // fixes same-day meals sorting by random doc ID instead of chronologically.
+    const snapshot = await db
+      .collection(`gyms/${gymId}/mealLogs`)
+      .where("memberId", "==", memberId)
+      .where("date", ">=", sinceDate)
+      .orderBy("date", "asc")
+      .orderBy("loggedAt", "asc")
+      .limit(500)
+      .get();
+
+    const byName = new Map<string, MealSuggestion>();
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const rawName = String(data.name ?? "").trim();
+      if (!rawName) continue;
+      const key = rawName.toLowerCase();
+      const loggedAt = String(data.loggedAt ?? new Date().toISOString());
+      const existing = byName.get(key);
+      if (existing) {
+        existing.frequency += 1;
+        if (loggedAt > existing.lastLoggedAt) {
+          existing.lastLoggedAt = loggedAt;
+          existing.name = rawName;
+          existing.items = data.items ? String(data.items) : existing.items;
+          existing.kcal = Number(data.kcal ?? existing.kcal);
+          existing.protein = Number(data.protein ?? existing.protein);
+          existing.carbs = Number(data.carbs ?? existing.carbs);
+          existing.fat = Number(data.fat ?? existing.fat);
+        }
+      } else {
+        byName.set(key, {
+          name: rawName,
+          items: data.items ? String(data.items) : undefined,
+          kcal: Number(data.kcal ?? 0),
+          protein: Number(data.protein ?? 0),
+          carbs: Number(data.carbs ?? 0),
+          fat: Number(data.fat ?? 0),
+          frequency: 1,
+          lastLoggedAt: loggedAt
+        });
+      }
+    }
+
+    const recentMeals = Array.from(byName.values())
+      .sort((a, b) => b.frequency - a.frequency || b.lastLoggedAt.localeCompare(a.lastLoggedAt))
+      .slice(0, limit);
+
+    return { recentMeals };
+  } catch (error) {
+    reportReadModelError("getRecentMealsForMember", error, { memberId, gymId });
+    return { recentMeals: [] };
   }
 }
 

@@ -2,6 +2,133 @@ import type { Exercise, LiftLog, SkipReason, WorkoutExercise } from "./domain";
 
 export const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
+export interface TodaysSession {
+  /** Index into program.days for the session the member should see now. */
+  dayIndex: number;
+  /** Why this day was chosen — for UI copy and debugging. */
+  reason: "in_progress" | "next_up" | "rest_day" | "no_program";
+  /** True when this day already has a completed dayLog for the current week. */
+  isCompletedThisWeek: boolean;
+}
+
+/** Local (not UTC) YYYY-MM-DD key for a Date — avoids the UTC-rollback issue described on getWeekStart. */
+function toLocalDateKey(date: Date): string {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, "0");
+  const dd = String(date.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+/** True when `loggedAt` falls within the 7-day window starting at `weekStartIso` (inclusive-exclusive). */
+function isWithinWeek(loggedAt: string | undefined, weekStartIso: string): boolean {
+  if (!loggedAt) return false;
+  const start = new Date(`${weekStartIso}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return false;
+  const end = new Date(start);
+  end.setDate(end.getDate() + 7);
+  const logged = new Date(loggedAt);
+  if (Number.isNaN(logged.getTime())) return false;
+  return logged >= start && logged < end;
+}
+
+/**
+ * Single source of truth for "what workout day should the member see right now".
+ *
+ * Priority order:
+ *   1. No program / no days             -> reason "no_program"
+ *   2. Every day already completed      -> reason "rest_day" (last day, isCompletedThisWeek)
+ *   3. First day without a completed dayLog this week, and there's lift activity
+ *      logged within the current week   -> reason "in_progress"
+ *   4. Otherwise, that same first incomplete day -> reason "next_up"
+ *
+ * Pure and deterministic: everything is derived from the passed-in `weekStartIso`,
+ * never from `new Date()`.
+ */
+export function resolveTodaysSession(
+  program: { days?: { id: string; dayNumber?: number }[] } | null,
+  dayLogs: { dayId: string; status: string; weekStart: string; loggedAt?: string }[],
+  liftLogs: { exerciseId: string; loggedAt?: string }[],
+  weekStartIso: string
+): TodaysSession {
+  const days = program?.days ?? [];
+
+  if (days.length === 0) {
+    return { dayIndex: 0, reason: "no_program", isCompletedThisWeek: false };
+  }
+
+  const completedDayIds = new Set(
+    dayLogs
+      .filter((log) => log.status === "completed" && log.weekStart === weekStartIso)
+      .map((log) => log.dayId)
+  );
+
+  const nextUpIndex = days.findIndex((day) => !completedDayIds.has(day.id));
+
+  if (nextUpIndex === -1) {
+    return {
+      dayIndex: days.length - 1,
+      reason: "rest_day",
+      isCompletedThisWeek: true
+    };
+  }
+
+  const hasActivityThisWeek = liftLogs.some((log) => isWithinWeek(log.loggedAt, weekStartIso));
+
+  return {
+    dayIndex: nextUpIndex,
+    reason: hasActivityThisWeek ? "in_progress" : "next_up",
+    isCompletedThisWeek: false
+  };
+}
+
+/**
+ * Set of local YYYY-MM-DD date keys the member trained on: any day with at least
+ * one lift log, or a dayLog explicitly marked "completed". Shared by every screen
+ * that needs to know "which days count as trained" so the definition can't drift.
+ */
+export function getTrainedDateKeys(
+  liftLogs: { loggedAt?: string }[],
+  dayLogs: { status: string; loggedAt?: string }[]
+): Set<string> {
+  const keys = new Set<string>();
+
+  for (const log of liftLogs) {
+    if (!log.loggedAt) continue;
+    const d = new Date(log.loggedAt);
+    if (Number.isNaN(d.getTime())) continue;
+    keys.add(toLocalDateKey(d));
+  }
+
+  for (const log of dayLogs) {
+    if (log.status !== "completed" || !log.loggedAt) continue;
+    const d = new Date(log.loggedAt);
+    if (Number.isNaN(d.getTime())) continue;
+    keys.add(toLocalDateKey(d));
+  }
+
+  return keys;
+}
+
+/**
+ * Estimated session length in minutes: per set, rest time (defaulting to 90s)
+ * plus ~45s of working time, summed across exercises and rounded to the
+ * nearest 5 minutes. Exercises missing a `sets` count default to 3.
+ */
+export function estimateSessionMinutes(dayExercises: WorkoutExercise[]): number {
+  const WORK_SECONDS_PER_SET = 45;
+  const DEFAULT_REST_SECONDS = 90;
+  const DEFAULT_SETS = 3;
+
+  const totalSeconds = dayExercises.reduce((sum, exercise) => {
+    const sets = exercise.sets ?? DEFAULT_SETS;
+    const restSeconds = exercise.restSeconds ?? DEFAULT_REST_SECONDS;
+    return sum + sets * (restSeconds + WORK_SECONDS_PER_SET);
+  }, 0);
+
+  const totalMinutes = totalSeconds / 60;
+  return Math.max(0, Math.round(totalMinutes / 5) * 5);
+}
+
 export const SKIP_REASONS: { value: SkipReason; label: string }[] = [
   { value: "rest",      label: "Rest day" },
   { value: "no_time",   label: "No time" },
@@ -29,6 +156,11 @@ export function getWeekStart(date: Date = new Date()): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/**
+ * @deprecated Weekday-index guess that ignores program progress (e.g. always
+ * lands on Day 4 for a 4-day program on a Saturday). Use `resolveTodaysSession`
+ * instead, which accounts for completed dayLogs and in-progress sessions.
+ */
 export function getDefaultDayIndex(dayCount: number) {
   const mondayFirstIndex = (new Date().getDay() + 6) % 7;
   return Math.min(Math.max(mondayFirstIndex, 0), Math.max(dayCount - 1, 0));

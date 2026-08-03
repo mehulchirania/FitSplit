@@ -27,6 +27,14 @@ test.describe("member core loop", () => {
     await clickTab(page, "Workout");
     await expect(page).toHaveURL(/\/member/);
 
+    // WorkoutScreen is mounted twice at all times (once desktop, once
+    // mobile — see the comment in member-workout-screen.tsx), CSS-gated
+    // rather than JS-gated, so both copies' markup exist in the DOM
+    // simultaneously and any unscoped text/role locator across the whole
+    // page is ambiguous. This test runs at desktop viewport (default e2e
+    // project), so scope every query to the surface CSS actually shows.
+    const desktop = page.locator(".mcr-desktop-only");
+
     // No exercise is expanded by default (opt-in logging — see the fix in
     // src/components/member-workout-screen.tsx: focusIndex starts at null,
     // not 0). Click exercises in turn until one opens with an editable set —
@@ -34,13 +42,13 @@ test.describe("member core loop", () => {
     // !complete), and repeated runs against the same live seeded account
     // permanently exhaust whichever exercise this test used previously, so
     // hardcoding one name is not durable across reruns.
-    const exerciseButtons = page.locator(".m3d-wk__row-head");
+    const exerciseButtons = desktop.locator(".m3d-wk__row-head");
     const exerciseCount = await exerciseButtons.count();
     let kgInput = null;
     let checkButton = null;
     for (let i = 0; i < exerciseCount; i++) {
       await exerciseButtons.nth(i).click();
-      const setsTable = page.locator(".m3d-wk__sets");
+      const setsTable = desktop.locator(".m3d-wk__sets");
       if (!(await setsTable.isVisible({ timeout: 2_000 }).catch(() => false))) continue; // fully DONE — never expands
       const setRows = setsTable.locator(".m3d-wk__set-row");
       const rowCount = await setRows.count();
@@ -60,7 +68,7 @@ test.describe("member core loop", () => {
       return;
     }
 
-    const setsProgress = page.getByText(/of \d+ sets/);
+    const setsProgress = desktop.getByText(/of \d+ sets/);
     const beforeText = await setsProgress.textContent();
     const beforeCount = Number(beforeText?.match(/^(\d+)/)?.[1] ?? 0);
 
@@ -74,22 +82,29 @@ test.describe("member core loop", () => {
     // lands back on Overview — re-open Workout to see the persisted count.
     await page.reload();
     await clickTab(page, "Workout");
-    await expect(page.getByText(/of \d+ sets/)).toHaveText(new RegExp(`^${beforeCount + 1} of`), { timeout: 10_000 });
+    await expect(page.locator(".mcr-desktop-only").getByText(/of \d+ sets/)).toHaveText(new RegExp(`^${beforeCount + 1} of`), { timeout: 10_000 });
   });
 
   test("can log a meal via quick add and see it reflected in today's totals", async ({ page }) => {
     await clickTab(page, "Macros");
     await expect(page).toHaveURL(/\/member/);
 
-    const preset = page.getByRole("button", { name: /Whey shake/ });
+    // Scoped to the Quick Add row specifically: a per-meal "Remove {name}"
+    // delete button (src/components/member-macros-screen.tsx) also matches
+    // a bare /Whey shake/ text search once this preset has been logged
+    // before (repeated runs against the shared seeded account, or the
+    // "Recent" quick-add pills once they're populated) — an unscoped
+    // locator becomes ambiguous, not the app being broken.
+    const quickAdd = page.locator(".m3d-mc-quickadd");
+    const preset = quickAdd.getByRole("button", { name: /Whey shake/ });
     await preset.click();
-    await expect(page.getByText(/Whey shake/).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".m3d-mc-meallog").getByText(/Whey shake/).first()).toBeVisible({ timeout: 10_000 });
 
     // Confirm it's a real write, not optimistic-only UI: reload and re-check.
     // (active tab is client state, not a URL route — reload lands on Overview.)
     await page.reload();
     await clickTab(page, "Macros");
-    await expect(page.getByText(/Whey shake/).first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator(".m3d-mc-meallog").getByText(/Whey shake/).first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("progress tab shows PR history", async ({ page }) => {

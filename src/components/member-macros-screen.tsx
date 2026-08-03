@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import * as Dialog from "@radix-ui/react-dialog";
 import { toast } from "sonner";
-import { logMeal } from "@/lib/firebase/actions";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { logMeal, deleteMealLog, getMealQuickAddSuggestions, getBodyWeightHistory } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
-import type { MacroLog, MealLog, Member, MemberProfile } from "@/types/domain";
+import type { BodyMetricLog, MacroLog, MealLog, Member, MemberProfile } from "@/types/domain";
+import type { MealSuggestion } from "@/lib/firebase/read-models/progress";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
 import { EditableMetrics } from "@/components/editable-metrics";
@@ -32,6 +34,15 @@ type QuickAddPreset = {
   fat: number;
 };
 
+type MealPayload = {
+  name: string;
+  items?: string;
+  kcal: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
 const QUICK_ADD_PRESETS: QuickAddPreset[] = [
   { name: "Whey shake", items: "1 scoop whey + water", kcal: 130, protein: 25, carbs: 3, fat: 2 },
   { name: "3 eggs", items: "boiled", kcal: 210, protein: 18, carbs: 1, fat: 15 },
@@ -46,6 +57,21 @@ const DEFAULT_TARGET = { calories: 2000, protein: 140, carbs: 240, fat: 70 };
 function pct(value: number, goal: number) {
   if (!goal) return 0;
   return Math.min(100, Math.round((value / goal) * 100));
+}
+
+/** kcal is always derived from macros (4/4/9 kcal per gram) — never typed in directly. */
+function deriveKcal(protein: number, carbs: number, fat: number) {
+  return Math.round(protein * 4 + carbs * 4 + fat * 9);
+}
+
+function buildWeightTrend(logs: BodyMetricLog[]) {
+  return [...logs]
+    .sort((a, b) => a.loggedAt.localeCompare(b.loggedAt))
+    .slice(-30)
+    .map((log) => ({
+      date: log.loggedAt.slice(5, 10),
+      weight: log.weightKg,
+    }));
 }
 
 export function MacrosScreen({
@@ -63,10 +89,43 @@ export function MacrosScreen({
   const [pendingPreset, setPendingPreset] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [form, setForm] = useState({ name: "", items: "", kcal: "", protein: "", carbs: "", fat: "" });
+  const [form, setForm] = useState({ name: "", items: "", protein: "", carbs: "", fat: "" });
+  const [deletingMealId, setDeletingMealId] = useState<string | null>(null);
+  const [repeatingYesterday, setRepeatingYesterday] = useState(false);
+  const [quickSuggestions, setQuickSuggestions] = useState<{
+    yesterdayMeals: MealLog[];
+    recentMeals: MealSuggestion[];
+  }>({ yesterdayMeals: [], recentMeals: [] });
+  const [weightHistory, setWeightHistory] = useState<BodyMetricLog[]>([]);
+
+  // Pulled directly by this client component (rather than threaded down as
+  // props from the server-rendered page) so Quick Add gets "repeat
+  // yesterday" / "recent meals" and the weight trend chart without needing
+  // the page component to fetch and pass extra data. Both are thin "use
+  // server" wrappers around read-models — see actions/progress.ts.
+  useEffect(() => {
+    let cancelled = false;
+    getMealQuickAddSuggestions(memberId, gymId, todayDate)
+      .then((data) => {
+        if (!cancelled) setQuickSuggestions(data);
+      })
+      .catch(() => {
+        // Non-fatal — quick add still works via the static presets below.
+      });
+    getBodyWeightHistory(memberId, gymId, 60)
+      .then((data) => {
+        if (!cancelled) setWeightHistory(data.logs);
+      })
+      .catch(() => {
+        // Non-fatal — the trend card just stays hidden.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [memberId, gymId, todayDate]);
 
   const actual = macroLog ?? { protein: 0, carbs: 0, fat: 0, water: 0 };
-  const totalKcal = Math.round(actual.protein * 4 + actual.carbs * 4 + actual.fat * 9);
+  const totalKcal = deriveKcal(actual.protein, actual.carbs, actual.fat);
   const kcalGoal = macroTarget?.calories ?? DEFAULT_TARGET.calories;
   const remaining = kcalGoal - totalKcal;
   const proteinGoal = macroTarget?.protein ?? DEFAULT_TARGET.protein;
@@ -79,19 +138,12 @@ export function MacrosScreen({
     day: "numeric",
   });
 
-  async function submitMeal(payload: {
-    name: string;
-    items: string;
-    kcal: number;
-    protein: number;
-    carbs: number;
-    fat: number;
-  }) {
+  async function submitMeal(payload: MealPayload, options: { silent?: boolean } = {}) {
     const formData = new FormData();
     formData.set("memberId", memberId);
     formData.set("date", todayDate);
     formData.set("name", payload.name);
-    formData.set("items", payload.items);
+    formData.set("items", payload.items ?? "");
     formData.set("kcal", String(payload.kcal));
     formData.set("protein", String(payload.protein));
     formData.set("carbs", String(payload.carbs));
@@ -100,23 +152,66 @@ export function MacrosScreen({
     try {
       const result = await logMeal(initialFormActionState, formData);
       if (result.status === "success") {
-        toast.success(`${payload.name} logged.`);
+        if (!options.silent) toast.success(`${payload.name} logged.`);
         router.refresh();
         return true;
       }
-      toast.error(result.message || "Could not log this meal.");
+      if (!options.silent) toast.error(result.message || "Could not log this meal.");
       return false;
     } catch {
-      toast.error("Could not log this meal. Check your connection and try again.");
+      if (!options.silent) toast.error("Could not log this meal. Check your connection and try again.");
       return false;
     }
   }
 
-  async function handleQuickAdd(preset: QuickAddPreset) {
+  async function handleQuickAdd(preset: MealPayload) {
     if (pendingPreset) return;
     setPendingPreset(preset.name);
     await submitMeal(preset);
     setPendingPreset(null);
+  }
+
+  async function handleRepeatYesterday() {
+    if (repeatingYesterday || quickSuggestions.yesterdayMeals.length === 0) return;
+    setRepeatingYesterday(true);
+    let succeeded = 0;
+    for (const meal of quickSuggestions.yesterdayMeals) {
+      // Sequential so we can report an accurate count and avoid hammering the
+      // macroLogs rollup doc with a burst of concurrent increments.
+      const ok = await submitMeal(
+        { name: meal.name, items: meal.items, kcal: meal.kcal, protein: meal.protein, carbs: meal.carbs, fat: meal.fat },
+        { silent: true }
+      );
+      if (ok) succeeded += 1;
+    }
+    setRepeatingYesterday(false);
+    if (succeeded > 0) {
+      toast.success(`Re-logged ${succeeded} meal${succeeded === 1 ? "" : "s"} from yesterday.`);
+    } else {
+      toast.error("Could not repeat yesterday's meals. Check your connection and try again.");
+    }
+  }
+
+  async function handleDeleteMeal(meal: MealLog) {
+    if (deletingMealId) return;
+    setDeletingMealId(meal.id);
+    const formData = new FormData();
+    formData.set("memberId", memberId);
+    formData.set("mealId", meal.id);
+    formData.set("date", todayDate);
+    try {
+      const result = await deleteMealLog(initialFormActionState, formData);
+      if (result.status === "success") {
+        toast.success(`${meal.name} removed.`);
+        router.refresh();
+      } else {
+        toast.error(result.message || "Could not remove this meal.");
+      }
+    } catch {
+      toast.error("Could not remove this meal. Check your connection and try again.");
+    } finally {
+      setDeletingMealId(null);
+    }
   }
 
   async function handleManualSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -125,23 +220,30 @@ export function MacrosScreen({
       toast.error("Enter a meal name.");
       return;
     }
+    const protein = Number(form.protein || 0);
+    const carbs = Number(form.carbs || 0);
+    const fat = Number(form.fat || 0);
     setIsSubmitting(true);
     const ok = await submitMeal({
       name: form.name.trim(),
       items: form.items.trim(),
-      kcal: Number(form.kcal || 0),
-      protein: Number(form.protein || 0),
-      carbs: Number(form.carbs || 0),
-      fat: Number(form.fat || 0),
+      kcal: deriveKcal(protein, carbs, fat),
+      protein,
+      carbs,
+      fat,
     });
     setIsSubmitting(false);
     if (ok) {
-      setForm({ name: "", items: "", kcal: "", protein: "", carbs: "", fat: "" });
+      setForm({ name: "", items: "", protein: "", carbs: "", fat: "" });
       setDialogOpen(false);
     }
   }
 
   const sortedMeals = [...mealLogs].sort((a, b) => new Date(a.loggedAt).getTime() - new Date(b.loggedAt).getTime());
+  const recentNames = new Set(quickSuggestions.recentMeals.map((m) => m.name.toLowerCase()));
+  const filteredPresets = QUICK_ADD_PRESETS.filter((preset) => !recentNames.has(preset.name.toLowerCase()));
+  const dialogKcal = deriveKcal(Number(form.protein || 0), Number(form.carbs || 0), Number(form.fat || 0));
+  const weightTrend = buildWeightTrend(weightHistory);
 
   return (
     <section className="m3d-mc">
@@ -194,7 +296,30 @@ export function MacrosScreen({
         <div>
           <div className="m3d-mc-section-label">QUICK ADD</div>
           <div className="m3d-mc-quickadd">
-            {QUICK_ADD_PRESETS.map((preset) => (
+            {quickSuggestions.yesterdayMeals.length > 0 && (
+              <button
+                type="button"
+                className="m3d-mc-pill m3d-mc-pill--repeat"
+                disabled={repeatingYesterday}
+                onClick={handleRepeatYesterday}
+              >
+                {repeatingYesterday
+                  ? "Re-logging…"
+                  : `↻ Repeat yesterday (${quickSuggestions.yesterdayMeals.length})`}
+              </button>
+            )}
+            {quickSuggestions.recentMeals.map((meal) => (
+              <button
+                key={`recent-${meal.name}`}
+                type="button"
+                className="m3d-mc-pill"
+                disabled={pendingPreset === meal.name}
+                onClick={() => handleQuickAdd(meal)}
+              >
+                {pendingPreset === meal.name ? "Logging…" : `${meal.name} · ${meal.kcal} kcal`}
+              </button>
+            ))}
+            {filteredPresets.map((preset) => (
               <button
                 key={preset.name}
                 type="button"
@@ -225,11 +350,52 @@ export function MacrosScreen({
                   </div>
                   <span className="m3d-mc-meal-kcal">{meal.kcal} kcal</span>
                   <span className="m3d-mc-meal-protein">{meal.protein}g P</span>
+                  <button
+                    type="button"
+                    className="m3d-mc-meal-delete"
+                    aria-label={`Remove ${meal.name}`}
+                    disabled={deletingMealId === meal.id}
+                    onClick={() => handleDeleteMeal(meal)}
+                  >
+                    {deletingMealId === meal.id ? "…" : "×"}
+                  </button>
                 </div>
               ))}
             </div>
           )}
         </div>
+
+        {weightTrend.length > 1 && (
+          <div>
+            <div className="m3d-mc-section-label">WEIGHT TREND</div>
+            <div className="m3d-mc-weighttrend">
+              <ResponsiveContainer width="100%" height={120}>
+                <AreaChart data={weightTrend} margin={{ top: 6, right: 8, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="m3dWeightTrendFill" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--brand)" stopOpacity={0.35} />
+                      <stop offset="100%" stopColor="var(--brand)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-faint)" }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    domain={["dataMin - 1", "dataMax + 1"]}
+                    tick={{ fontSize: 10, fill: "var(--text-faint)" }}
+                    axisLine={false}
+                    tickLine={false}
+                    width={34}
+                  />
+                  <Tooltip
+                    contentStyle={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, fontSize: "0.78rem" }}
+                    labelStyle={{ color: "var(--text)", fontWeight: 700 }}
+                    formatter={(value) => [`${value} kg`, "Weight"]}
+                  />
+                  <Area type="monotone" dataKey="weight" stroke="var(--brand)" strokeWidth={2} fill="url(#m3dWeightTrendFill)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
         <ProfileMetricsWidget profile={profile} />
@@ -272,8 +438,8 @@ export function MacrosScreen({
               </label>
               <div className="m3d-mc-dialog__grid">
                 <label className="m3d-mc-dialog__field">
-                  <span>Calories</span>
-                  <input type="number" min="0" step="1" value={form.kcal} onChange={(e) => setForm((f) => ({ ...f, kcal: e.target.value }))} />
+                  <span>Calories (auto)</span>
+                  <div className="m3d-mc-dialog__computed">{dialogKcal} kcal</div>
                 </label>
                 <label className="m3d-mc-dialog__field">
                   <span>Protein (g)</span>

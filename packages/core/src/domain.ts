@@ -465,10 +465,23 @@ export type LiftLog = {
   memberId: string;
   exerciseId: string;
   weight: number;
+  /**
+   * Number of sets this record represents. The contract going forward is that
+   * every LiftLog is exactly one set (sets === 1) — see logLiftSet in
+   * src/lib/firebase/actions/progress.ts. Values > 1 only occur on legacy
+   * records written before this contract; read models expand those into
+   * synthetic single-set rows so consumers never have to branch on it.
+   */
   sets: number;
   reps: string;
   sessionId: string;
   loggedAt: string;
+  /**
+   * 1-based position of this set within the exercise submission it came from
+   * (e.g. 2nd set of 3). Optional — only populated on records written after
+   * the per-set normalization; absent on legacy aggregate records.
+   */
+  setIndex?: number;
   /** "member" = self-logged (default); "trainer" = logged during a PT session */
   source?: "member" | "trainer";
   /** Present when source is "trainer" — links back to the PT session */

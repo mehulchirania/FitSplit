@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useRef, useState, useMemo, useTransition } from "react";
 import { toast } from "sonner";
-import { saveMacroLog } from "@/lib/firebase/actions";
+import { saveWaterLog } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
 import type { MacroLog, MacroNutritionTarget } from "@/types/domain";
 import {
@@ -18,6 +18,19 @@ type ActualMacros = {
   water: number;
 };
 
+/**
+ * Daily macro summary + history. Protein/carbs/fat are READ-ONLY here — they
+ * are derived entirely from mealLogs (see logMeal/deleteMealLog in
+ * actions/progress.ts) and shown exactly as passed in via `initialActual`,
+ * which always reflects the current server rollup. This panel used to also
+ * let you nudge protein/carbs/fat with +/- steppers that wrote an absolute
+ * total via saveMacroLog — that write path is gone. Two writers racing to
+ * "own" the same macroLogs doc (one additive from meals, one absolute from
+ * stale local panel state) is exactly what silently wiped out logged meals
+ * before. Water is the one field this panel still edits directly, since it
+ * isn't part of a meal — see saveWaterLog, which is field-masked to only
+ * ever touch `water`.
+ */
 export function MacroProgressPanel({
   memberId,
   gymId,
@@ -33,77 +46,49 @@ export function MacroProgressPanel({
   initialActual?: ActualMacros;
   macroHistory?: MacroLog[];
 }) {
-  const [actual, setActual] = useState<ActualMacros>(
-    initialActual ?? { protein: 0, carbs: 0, fat: 0, water: 0 }
-  );
+  // Protein/carbs/fat come straight from the server-derived prop on every
+  // render — no local copy, so there's nothing to go stale.
+  const macros = initialActual ?? { protein: 0, carbs: 0, fat: 0, water: 0 };
+
+  // Water is the exception: the member taps +/- here directly, so we keep a
+  // small optimistic local value that re-syncs whenever the server value
+  // changes underneath it (meal writes never touch water, but another
+  // device/tab logging water would still need to flow back in). Adjusted
+  // during render (not in an effect) per React's guidance for "reset state
+  // when a prop changes" — avoids an extra render pass.
+  const [water, setWater] = useState(macros.water);
+  const [syncedServerWater, setSyncedServerWater] = useState(macros.water);
+  if (macros.water !== syncedServerWater) {
+    setSyncedServerWater(macros.water);
+    setWater(macros.water);
+  }
+
   const [_isSyncing, startSyncTransition] = useTransition();
   const syncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const targetToastFiredRef = useRef(false);
 
-  // Scoped localStorage key per member per calendar day
-  const dateKey = useMemo(() => {
-    const today = date ?? new Date().toDateString();
-    return `fitsplit-macros-${memberId}-${today}`;
-  }, [memberId, date]);
-
-  // Load from server data (initialActual) first, fall back to localStorage
-  useEffect(() => {
-    if (initialActual) {
-      return;
-    }
-    const stored = window.localStorage.getItem(dateKey);
-    if (stored) {
-      try {
-        window.setTimeout(() => setActual(JSON.parse(stored)), 0);
-      } catch {
-        // non-fatal
-      }
-    }
-  }, [dateKey]); // intentionally excludes initialActual — server value wins on first render
-
-  // Debounced Firestore sync
-  const syncToFirestore = useCallback((next: ActualMacros) => {
+  // Debounced Firestore sync — water only. saveWaterLog is field-masked so
+  // this can never touch protein/carbs/fat even if called with stale state.
+  const syncWaterToFirestore = useCallback((nextWater: number) => {
     if (!gymId || !date) return;
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(() => {
       const fd = new FormData();
       fd.set("memberId", memberId);
       fd.set("date", date);
-      fd.set("protein", String(next.protein));
-      fd.set("carbs", String(next.carbs));
-      fd.set("fat", String(next.fat));
-      fd.set("water", String(next.water));
+      fd.set("water", String(nextWater));
       startSyncTransition(async () => {
-        await saveMacroLog(initialFormActionState, fd);
+        await saveWaterLog(initialFormActionState, fd);
       });
-    }, 1500);
+    }, 800);
   }, [memberId, gymId, date]);
 
-  // Persist to localStorage + debounce Firestore sync
-  const updateActual = (key: keyof ActualMacros, amount: number) => {
-    setActual((prev) => {
-      const updated = {
-        ...prev,
-        [key]: Math.max(0, Number((prev[key] + amount).toFixed(1)))
-      };
-      if (typeof window !== "undefined") {
-        try { window.localStorage.setItem(dateKey, JSON.stringify(updated)); } catch { /* non-fatal */ }
-      }
-      syncToFirestore(updated);
-      return updated;
+  const updateWater = (amount: number) => {
+    setWater((prev) => {
+      const next = Math.max(0, Number((prev + amount).toFixed(2)));
+      syncWaterToFirestore(next);
+      return next;
     });
-  };
-
-  // Reset helper
-  const handleReset = () => {
-    if (typeof window === "undefined") return;
-    if (window.confirm("Reset today's logged nutrition?")) {
-      targetToastFiredRef.current = false;
-      const resetState = { protein: 0, carbs: 0, fat: 0, water: 0 };
-      setActual(resetState);
-      try { window.localStorage.setItem(dateKey, JSON.stringify(resetState)); } catch { /* non-fatal */ }
-      syncToFirestore(resetState);
-    }
   };
 
   // Default fallback macro guidelines
@@ -124,7 +109,7 @@ export function MacroProgressPanel({
   const targetNotes = target?.notes || (target ? "" : defaultTarget.notes);
 
   // Actual calories from macros
-  const actualCalories = Math.round(actual.protein * 4 + actual.carbs * 4 + actual.fat * 9);
+  const actualCalories = Math.round(macros.protein * 4 + macros.carbs * 4 + macros.fat * 9);
 
   const getPercent = (value: number, goal: number) => {
     if (!goal) return 0;
@@ -135,15 +120,15 @@ export function MacroProgressPanel({
   useEffect(() => {
     if (targetToastFiredRef.current) return;
     const allMet =
-      actual.protein >= proteinGoal &&
-      actual.carbs >= carbsGoal &&
-      actual.fat >= fatGoal &&
+      macros.protein >= proteinGoal &&
+      macros.carbs >= carbsGoal &&
+      macros.fat >= fatGoal &&
       actualCalories >= caloriesGoal;
-    if (allMet && (actual.protein > 0 || actual.carbs > 0 || actual.fat > 0)) {
+    if (allMet && (macros.protein > 0 || macros.carbs > 0 || macros.fat > 0)) {
       targetToastFiredRef.current = true;
       toast.success("Macro target hit today.");
     }
-  }, [actual, proteinGoal, carbsGoal, fatGoal, caloriesGoal, actualCalories]);
+  }, [macros, proteinGoal, carbsGoal, fatGoal, caloriesGoal, actualCalories]);
 
   // Build chart data from macroHistory (last 7 days, oldest first)
   const chartData = useMemo(() => {
@@ -180,13 +165,6 @@ export function MacroProgressPanel({
             {target ? "Trainer-prescribed targets" : "General guidelines"}
           </p>
         </div>
-        <button
-          onClick={handleReset}
-          style={{ background: "transparent", border: "none", color: "var(--text-faint)", fontSize: "0.72rem", cursor: "pointer", padding: "4px 8px", borderRadius: "6px" }}
-          type="button"
-        >
-          Reset
-        </button>
       </div>
 
       {/* Calorie ring + water */}
@@ -215,59 +193,56 @@ export function MacroProgressPanel({
         <div style={{ display: "grid", gap: "6px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={{ fontSize: "0.82rem", fontWeight: 600, color: "var(--text)" }}>Water</span>
-            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--brand)" }}>{actual.water} / {waterGoal} L</span>
+            <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--brand)" }}>{water} / {waterGoal} L</span>
           </div>
           <div style={{ height: "5px", background: "var(--bg-subtle)", borderRadius: "3px", overflow: "hidden", border: "1px solid var(--border)" }}>
-            <div style={{ height: "100%", width: `${getPercent(actual.water, waterGoal)}%`, background: "linear-gradient(90deg, #38bdf8, var(--brand))", borderRadius: "3px", transition: "width 200ms ease" }} />
+            <div style={{ height: "100%", width: `${getPercent(water, waterGoal)}%`, background: "linear-gradient(90deg, #38bdf8, var(--brand))", borderRadius: "3px", transition: "width 200ms ease" }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
             {([-0.5, -0.25, 0.25, 0.5] as const).map((amt) => (
               <button
                 key={amt}
-                onClick={() => updateActual("water", amt)}
+                onClick={() => updateWater(amt)}
                 className="button button-secondary"
                 style={{ padding: "3px 0", fontSize: "0.68rem", minHeight: "22px", borderRadius: "6px" }}
                 type="button"
               >
-                {amt > 0 ? "+" : ""}{amt > 0 ? amt * 1000 : amt * 1000}ml
+                {amt > 0 ? "+" : ""}{amt * 1000}ml
               </button>
             ))}
           </div>
         </div>
       </div>
 
-      {/* Protein / Carbs / Fat */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
-        {([
-          { key: "protein" as const, label: "Protein", color: "#f87171", goal: proteinGoal, unit: "g", increments: [10, 25] as [number, number] },
-          { key: "carbs" as const, label: "Carbs", color: "#fbbf24", goal: carbsGoal, unit: "g", increments: [20, 50] as [number, number] },
-          { key: "fat" as const, label: "Fat", color: "#34d399", goal: fatGoal, unit: "g", increments: [5, 10] as [number, number] }
-        ]).map((item) => {
-          const val = actual[item.key];
-          const percent = getPercent(val, item.goal);
-          return (
-            <div key={item.key} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "14px", padding: "14px 10px", display: "grid", gap: "10px", textAlign: "center" }}>
-              <div>
-                <span style={{ fontSize: "0.7rem", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700 }}>{item.label}</span>
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "2px", margin: "4px 0 2px" }}>
-                  <strong style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text)" }}>{val}</strong>
-                  <span style={{ fontSize: "0.64rem", color: "var(--text-soft)" }}>/{item.goal}{item.unit}</span>
+      {/* Protein / Carbs / Fat — read-only, derived from logged meals */}
+      <div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+          {([
+            { key: "protein" as const, label: "Protein", color: "#f87171", goal: proteinGoal, unit: "g" },
+            { key: "carbs" as const, label: "Carbs", color: "#fbbf24", goal: carbsGoal, unit: "g" },
+            { key: "fat" as const, label: "Fat", color: "#34d399", goal: fatGoal, unit: "g" }
+          ]).map((item) => {
+            const val = macros[item.key];
+            const percent = getPercent(val, item.goal);
+            return (
+              <div key={item.key} style={{ background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: "14px", padding: "14px 10px", display: "grid", gap: "8px", textAlign: "center" }}>
+                <div>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.04em", fontWeight: 700 }}>{item.label}</span>
+                  <div style={{ display: "flex", justifyContent: "center", alignItems: "baseline", gap: "2px", margin: "4px 0 2px" }}>
+                    <strong style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text)" }}>{val}</strong>
+                    <span style={{ fontSize: "0.64rem", color: "var(--text-soft)" }}>/{item.goal}{item.unit}</span>
+                  </div>
+                </div>
+                <div style={{ height: "5px", background: "var(--bg-elevated)", borderRadius: "3px", overflow: "hidden", border: "1px solid var(--border)" }}>
+                  <div style={{ height: "100%", width: `${percent}%`, background: `linear-gradient(90deg, ${item.color}, color-mix(in srgb, ${item.color} 70%, white))`, borderRadius: "3px", transition: "width 0.4s ease" }} />
                 </div>
               </div>
-              <div style={{ height: "5px", background: "var(--bg-elevated)", borderRadius: "3px", overflow: "hidden", border: "1px solid var(--border)" }}>
-                <div style={{ height: "100%", width: `${percent}%`, background: `linear-gradient(90deg, ${item.color}, color-mix(in srgb, ${item.color} 70%, white))`, borderRadius: "3px", transition: "width 0.4s ease" }} />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px" }}>
-                {item.increments.map((inc) => (
-                  <span key={inc} style={{ display: "contents" }}>
-                    <button onClick={() => updateActual(item.key, -inc)} className="button button-secondary" style={{ padding: "2px 0", fontSize: "0.64rem", minHeight: "20px", borderRadius: "4px" }} type="button">-{inc}{item.unit}</button>
-                    <button onClick={() => updateActual(item.key, inc)} className="button button-secondary" style={{ padding: "2px 0", fontSize: "0.64rem", minHeight: "20px", borderRadius: "4px" }} type="button">+{inc}{item.unit}</button>
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <p style={{ margin: "8px 0 0", fontSize: "0.72rem", color: "var(--text-faint)", lineHeight: 1.4 }}>
+          Derived from meals logged above. To correct a number here, edit or delete the meal in today&apos;s meal log instead.
+        </p>
       </div>
 
       {/* Macro history chart */}

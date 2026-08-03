@@ -1,8 +1,9 @@
-import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, where } from "firebase/firestore";
 import {
   applyCurrentWeeklyVariation,
   defaultExerciseCatalog,
-  getDefaultDayIndex,
+  getWeekStart,
+  resolveTodaysSession,
   splitLibraryPrograms,
   type Exercise,
   type ProgramAssignment,
@@ -49,6 +50,53 @@ async function resolveProgram(gymId: string, programId: string): Promise<Workout
   return snapshot.exists() ? (snapshot.data() as WorkoutProgram) : null;
 }
 
+/**
+ * Recent dayLogs/liftLogs for resolveTodaysSession, mirroring
+ * getActiveAssignment's query shape: memberId equality + loggedAt desc +
+ * limit, which reuses the existing (memberId ASC, loggedAt DESC) index
+ * already declared for both collections — a weekStart or loggedAt-range
+ * filter would need a new composite index Firestore doesn't have.
+ * A recent-N fetch is enough since the resolver only needs this week's
+ * entries and those are always the newest.
+ */
+async function getRecentDayLogs(gymId: string, memberId: string): Promise<Parameters<typeof resolveTodaysSession>[1]> {
+  const snapshot = await getDocs(
+    query(
+      collection(db, "gyms", gymId, "dayLogs"),
+      where("memberId", "==", memberId),
+      orderBy("loggedAt", "desc"),
+      limit(30)
+    )
+  );
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
+    return {
+      dayId: String(data.dayId ?? ""),
+      status: String(data.status ?? ""),
+      weekStart: String(data.weekStart ?? ""),
+      loggedAt: data.loggedAt ? String(data.loggedAt) : undefined
+    };
+  });
+}
+
+async function getRecentLiftLogs(gymId: string, memberId: string): Promise<Parameters<typeof resolveTodaysSession>[2]> {
+  const snapshot = await getDocs(
+    query(
+      collection(db, "gyms", gymId, "liftLogs"),
+      where("memberId", "==", memberId),
+      orderBy("loggedAt", "desc"),
+      limit(20)
+    )
+  );
+  return snapshot.docs.map((docSnap) => {
+    const data = docSnap.data();
+    return {
+      exerciseId: String(data.exerciseId ?? ""),
+      loggedAt: data.loggedAt ? String(data.loggedAt) : undefined
+    };
+  });
+}
+
 async function getExerciseCatalog(gymId: string): Promise<Map<string, Exercise>> {
   const map = new Map<string, Exercise>();
   // Seed with the code-bundled default catalog first so predefined exercises
@@ -71,8 +119,17 @@ export async function getTodayFocus(gymId: string, memberId: string): Promise<To
   if (!rawProgram) return null;
 
   const program = applyCurrentWeeklyVariation(rawProgram);
-  const day = program.days[getDefaultDayIndex(program.days.length)] ?? null;
-  const exercisesById = await getExerciseCatalog(gymId);
+  const [dayLogs, liftLogs, exercisesById] = await Promise.all([
+    getRecentDayLogs(gymId, memberId),
+    getRecentLiftLogs(gymId, memberId),
+    getExerciseCatalog(gymId)
+  ]);
+  // Agrees with the web app's Train tab and Overview card — see
+  // resolveTodaysSession in @fitsplit/core for the in-progress/next-up/
+  // rest-day resolution, replacing the old bare weekday-index guess that
+  // could point mobile and web members at different days.
+  const { dayIndex } = resolveTodaysSession(program, dayLogs, liftLogs, getWeekStart());
+  const day = program.days[dayIndex] ?? null;
 
   return { program, day, exercisesById };
 }

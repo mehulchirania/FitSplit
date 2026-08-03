@@ -192,6 +192,51 @@ service cloud.firestore {
           || isTrainerForGym(gymId);
       }
 
+      // Member <-> coach chat thread. One doc per message. Members read/write
+      // their own thread; any gym staff (owner/trainer/staff) can read and
+      // reply on behalf of the gym. Only `readAt` may ever be updated after
+      // create — the message body itself is immutable, and nobody may delete.
+      match /coachMessages/{messageId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || memberOwned(resource.data);
+        allow create: if request.resource.data.gymId == gymId
+          && request.resource.data.memberId != null
+          && (
+            (
+              isMemberSelf(request.resource.data.memberId)
+              && request.resource.data.senderRole == "member"
+              && request.resource.data.senderId == request.auth.uid
+            )
+            || (
+              isStaffForGym(gymId)
+              && request.resource.data.senderRole == "trainer"
+              && request.resource.data.senderId == request.auth.uid
+            )
+            || isAdmin()
+          );
+        allow update: if (isAdmin() || isStaffForGym(gymId) || memberOwned(resource.data))
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readAt"]);
+        allow delete: if false;
+      }
+
+      // A member's exercise substitutions for one program day (doc id =
+      // memberId_dayId, upserted via .set({merge:true})). Only the member
+      // themselves writes; any gym staff can read, so trainers see what a
+      // member actually trains instead of only the prescribed plan.
+      match /exerciseSwaps/{swapId} {
+        allow read: if isAdmin()
+          || isStaffForGym(gymId)
+          || memberOwned(resource.data);
+        allow create: if request.resource.data.gymId == gymId
+          && request.resource.data.memberId != null
+          && (isMemberSelf(request.resource.data.memberId) || isAdmin());
+        allow update: if request.resource.data.gymId == gymId
+          && request.resource.data.memberId == resource.data.memberId
+          && (isMemberSelf(resource.data.memberId) || isAdmin());
+        allow delete: if false;
+      }
+
       match /programAssignments/{assignmentId} {
         allow read: if adminOrOwnerOrMemberScoped(resource.data)
           || trainerCanReadMember(gymId);
@@ -380,6 +425,52 @@ service cloud.firestore {
       allow read: if adminOrOwnerOrMemberScoped(resource.data);
       allow create: if adminOrOwnerOrMemberScoped(request.resource.data);
       allow update, delete: if isAdmin() || ownerScoped(resource.data) || memberOwned(resource.data);
+    }
+
+    // Root mirror of coachMessages. The web app currently writes only the
+    // gym-scoped copy above; this mirrors that rule's shape for parity with
+    // every other dual-write collection and for any future mobile/Functions
+    // writer. Only `readAt` may be updated; nobody may delete.
+    match /coachMessages/{messageId} {
+      allow read: if isAdmin()
+        || (resource.data.gymId != null && isStaffForGym(resource.data.gymId))
+        || memberOwned(resource.data);
+      allow create: if request.resource.data.memberId != null
+        && (
+          (
+            isMemberSelf(request.resource.data.memberId)
+            && request.resource.data.senderRole == "member"
+            && request.resource.data.senderId == request.auth.uid
+          )
+          || (
+            request.resource.data.gymId != null
+            && isStaffForGym(request.resource.data.gymId)
+            && request.resource.data.senderRole == "trainer"
+            && request.resource.data.senderId == request.auth.uid
+          )
+          || isAdmin()
+        );
+      allow update: if (
+          isAdmin()
+          || (resource.data.gymId != null && isStaffForGym(resource.data.gymId))
+          || memberOwned(resource.data)
+        )
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["readAt"]);
+      allow delete: if false;
+    }
+
+    // Root mirror of exerciseSwaps. The web app currently writes only the
+    // gym-scoped copy above; this mirrors that rule's shape for parity, same
+    // as the coachMessages root mirror.
+    match /exerciseSwaps/{swapId} {
+      allow read: if isAdmin()
+        || (resource.data.gymId != null && isStaffForGym(resource.data.gymId))
+        || memberOwned(resource.data);
+      allow create: if request.resource.data.memberId != null
+        && (isMemberSelf(request.resource.data.memberId) || isAdmin());
+      allow update: if request.resource.data.memberId == resource.data.memberId
+        && (isMemberSelf(resource.data.memberId) || isAdmin());
+      allow delete: if false;
     }
 
     // Root mirror of per-member membership records. Owner and member-self read;

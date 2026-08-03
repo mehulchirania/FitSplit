@@ -1,6 +1,7 @@
 import { MemberCoachShell } from "@/components/member-coach-shell";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
+import { getWeekStart, getTrainedDateKeys } from "@/lib/workout-utils";
 import {
   getActiveWorkoutSessions,
   getDayLogsForMember,
@@ -63,50 +64,45 @@ export default async function MemberDashboard() {
     ? Math.ceil((nowMs - new Date(assignment.assignedAt ?? nowMs).getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1
     : null;
 
-  // Days trained this week (Mon-Sun)
-  const startOfWeek = new Date(now);
-  startOfWeek.setDate(now.getDate() - ((now.getDay() + 6) % 7));
-  startOfWeek.setHours(0, 0, 0, 0);
-  const daysTrainedThisWeek = new Set(
-    liftLogs
-      .filter((log) => log.loggedAt && new Date(log.loggedAt) >= startOfWeek)
-      .map((log) => new Date(log.loggedAt!).toDateString())
-  ).size;
+  // A day counts as trained if it has >=1 lift log OR a dayLog marked "completed" —
+  // the member's only completion action on mobile is "Mark done" (writes a dayLog),
+  // so lift logs alone would undercount.
+  const trainedDateKeys = getTrainedDateKeys(liftLogs, dayLogs);
 
-  // Weekly streak — consecutive ISO-weeks with ≥1 logged lift, walking backwards
+  // Days trained this week (Mon-Sun)
+  const weekStartIso = getWeekStart(now);
+  const weekEndDate = new Date(`${weekStartIso}T00:00:00`);
+  weekEndDate.setDate(weekEndDate.getDate() + 7);
+  const weekEndIso = getWeekStart(weekEndDate); // next Monday's date-key, exclusive upper bound
+  const daysTrainedThisWeek = Array.from(trainedDateKeys).filter(
+    (key) => key >= weekStartIso && key < weekEndIso
+  ).length;
+
+  // Weekly streak — consecutive ISO-weeks with >=1 trained day, walking backwards
   const weeklyStreak = (() => {
-    if (liftLogs.length === 0) return 0;
+    if (trainedDateKeys.size === 0) return 0;
     const trainedWeekKeys = new Set(
-      liftLogs
-        .filter((log) => log.loggedAt)
-        .map((log) => {
-          const d = new Date(log.loggedAt!);
-          const day = (d.getDay() + 6) % 7;
-          d.setDate(d.getDate() - day);
-          d.setHours(0, 0, 0, 0);
-          return d.toISOString().slice(0, 10);
-        })
+      Array.from(trainedDateKeys).map((key) => getWeekStart(new Date(`${key}T00:00:00`)))
     );
     let streak = 0;
-    const cursor = new Date(startOfWeek);
-    while (true) {
-      const key = cursor.toISOString().slice(0, 10);
-      if (trainedWeekKeys.has(key)) {
-        streak += 1;
-        cursor.setDate(cursor.getDate() - 7);
-      } else {
-        break;
-      }
+    let cursorIso = weekStartIso;
+    while (trainedWeekKeys.has(cursorIso)) {
+      streak += 1;
+      const cursorDate = new Date(`${cursorIso}T00:00:00`);
+      cursorDate.setDate(cursorDate.getDate() - 7);
+      cursorIso = getWeekStart(cursorDate);
     }
-    if (streak === 0 && daysTrainedThisWeek === 0) {
-      const lastWeekStart = new Date(startOfWeek);
-      lastWeekStart.setDate(lastWeekStart.getDate() - 7);
-      if (trainedWeekKeys.has(lastWeekStart.toISOString().slice(0, 10))) {
-        const c = new Date(lastWeekStart);
-        while (trainedWeekKeys.has(c.toISOString().slice(0, 10))) {
-          streak += 1;
-          c.setDate(c.getDate() - 7);
-        }
+    // Streak ended last week (current week not yet trained) — still show it as alive
+    // rather than resetting to 0 the moment the new week starts.
+    if (streak === 0) {
+      const lastWeekDate = new Date(`${weekStartIso}T00:00:00`);
+      lastWeekDate.setDate(lastWeekDate.getDate() - 7);
+      let cursorIso2 = getWeekStart(lastWeekDate);
+      while (trainedWeekKeys.has(cursorIso2)) {
+        streak += 1;
+        const cursorDate2 = new Date(`${cursorIso2}T00:00:00`);
+        cursorDate2.setDate(cursorDate2.getDate() - 7);
+        cursorIso2 = getWeekStart(cursorDate2);
       }
     }
     return streak;

@@ -203,6 +203,40 @@
   margin: 0;
 }
 
+.mpd-swap-notes__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.mpd-swap-notes__row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+}
+.mpd-swap-notes__day {
+  flex-shrink: 0;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.mpd-swap-notes__swap {
+  font-size: 13.5px;
+  color: var(--text);
+}
+.mpd-swap-notes__swap span[aria-hidden] {
+  color: var(--text-faint);
+  margin: 0 2px;
+}
+
 /* ── Member context panel ───────────────────────────────────────────────── */
 
 .mpd-context-panel .mpd-edit-trigger { flex-shrink: 0; }
@@ -820,3 +854,163 @@ a.rpt-kpi:hover {
 @media (max-width: 660px) {
   .rpt-root { padding: 16px 16px 80px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Coach message thread — trainer/owner side  (prefix: cmt-)
+   Drop-in panel for a member detail page. See src/components/coach-message-thread.tsx
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.cmt-root {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.cmt-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.cmt-head h2 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text);
+}
+.cmt-head-hint {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+}
+
+.cmt-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  max-height: 420px;
+  overflow-y: auto;
+}
+
+.cmt-empty {
+  padding: 20px 8px;
+  text-align: center;
+}
+.cmt-empty p {
+  margin: 0;
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.cmt-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.cmt-day-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 2px;
+}
+.cmt-day-separator span {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg-subtle);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+.cmt-bubble {
+  max-width: 78%;
+  padding: 10px 13px;
+  border-radius: 14px;
+  word-break: break-word;
+}
+.cmt-bubble--member {
+  align-self: flex-start;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 14px 14px 14px 4px;
+}
+.cmt-bubble--mine {
+  align-self: flex-end;
+  background: var(--brand);
+  border-radius: 14px 14px 4px 14px;
+}
+.cmt-bubble__text {
+  font-size: 0.8125rem;
+  line-height: 1.48;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+.cmt-bubble--mine .cmt-bubble__text {
+  color: var(--primary-foreground);
+}
+.cmt-bubble__time {
+  font-size: 10px;
+  color: var(--text-faint);
+  display: block;
+}
+.cmt-bubble--mine .cmt-bubble__time {
+  color: color-mix(in srgb, var(--primary-foreground) 65%, transparent);
+}
+.cmt-bubble--pending { opacity: 0.6; }
+.cmt-bubble--failed { background: var(--danger, #dc2626); }
+.cmt-bubble__failed-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.cmt-retry-btn {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--primary-foreground) 55%, transparent);
+  border-radius: 999px;
+  color: inherit;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+
+.cmt-composer {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+.cmt-input {
+  flex: 1;
+  resize: none;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: 0.8125rem;
+  color: var(--text);
+  outline: none;
+}
+.cmt-input:focus { border-color: var(--brand); }
+.cmt-send {
+  background: var(--brand);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  font: inherit;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.cmt-send:disabled { opacity: 0.4; cursor: default; }

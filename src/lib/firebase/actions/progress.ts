@@ -23,16 +23,32 @@ import {
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
+import {
+  getYesterdaysMealsForMember,
+  getRecentMealsForMember,
+  getBodyMetricLogsForMember
+} from "../read-models/progress";
 
 const LogLiftSetSchema = z.object({
   memberId: ZodHelpers.textRequired("Member"),
   exerciseId: ZodHelpers.textRequired("Exercise"),
-  reps: ZodHelpers.textRequired("Reps"),
+  // A LiftLog record is exactly one set — reps performed on that set, as a
+  // whole number. This used to be free text, which let prescription strings
+  // like "8-12" (meant as a target range, not an actual rep count) get stored
+  // as the logged value. Coerce to an integer and reject anything else with a
+  // message that explains why.
+  reps: z.coerce
+    .number({ error: "Reps must be a whole number, e.g. 10 (not a range like \"8-12\")." })
+    .int("Reps must be a whole number, e.g. 10.")
+    .min(1, "Reps must be at least 1.")
+    .max(200, "Reps must be 200 or fewer."),
   sets: z.coerce.number().min(1).optional(),
   weightKg: z.coerce.number().min(0).optional(),
   sessionId: z.string().optional(),
   targetGymId: z.string().optional(),
-  notes: z.string().max(300).optional()
+  notes: z.string().max(300).optional(),
+  /** 1-based position of this set within the exercise submission it came from. */
+  setIndex: z.coerce.number().int().min(1).max(50).optional()
 });
 
 const LogBodyWeightSchema = z.object({
@@ -129,9 +145,13 @@ export async function logLiftSet(
     const parsed = parseActionData(formData, LogLiftSetSchema);
     if (!parsed.success) return parsed.state;
 
-    const { memberId, exerciseId, reps } = parsed.data;
+    const { memberId, exerciseId, reps, setIndex } = parsed.data;
     const weight = parsed.data.weightKg ?? Number(formData.get("weight") ?? 0);
-    const sets = parsed.data.sets ?? 1;
+    // Every new LiftLog write is exactly one set. Callers that previously sent
+    // an aggregate `sets` (e.g. "3" for a 3x10) should submit one call per set
+    // instead — see WorkoutLiftLogForm/MemberProgressPanel, which now expand a
+    // single form submission into N single-set calls client-side.
+    const sets = 1;
     const sessionId = parsed.data.sessionId || randomUUID();
 
     assertCanManageMember(currentUser, memberId);
@@ -153,11 +173,12 @@ export async function logLiftSet(
       exerciseId,
       weight,
       sets,
-      reps,
+      reps: String(reps),
       sessionId,
       loggedAt: now,
       createdAt: now,
-      updatedAt: now
+      updatedAt: now,
+      ...(setIndex !== undefined ? { setIndex } : {})
     };
     await Promise.all([
       mirrorGymScopedRecord(db, gymId, "liftLogs", liftLogId, liftLogRecord),
@@ -196,13 +217,18 @@ export async function syncOfflineLifts(logs: any[]): Promise<FormActionState> {
       const liftLogId = stableOfflineLiftLogId(log, index, now);
       const sessionId = String(log.sessionId || liftLogId);
       const loggedAt = String(log.loggedAt || now);
+      // One LiftLog === one set, same contract logLiftSet enforces. Offline
+      // clients already queue single-set rows; forcing it here keeps a stale
+      // queue (written by an older build) from reintroducing aggregate rows.
+      const setIndex = Number(log.setIndex);
       const liftLogRecord = {
         id: liftLogId,
         gymId,
         memberId: log.memberId,
         exerciseId: log.exerciseId,
         weight: Number(log.weight),
-        sets: Number(log.sets),
+        sets: 1,
+        ...(Number.isFinite(setIndex) && setIndex > 0 ? { setIndex } : {}),
         reps: log.reps,
         sessionId,
         loggedAt,
@@ -492,31 +518,45 @@ export async function clearDayLog(
 }
 
 // ── Macro logging ─────────────────────────────────────────────────────────────
+// Contract: mealLogs are the ONLY source of truth for protein/carbs/fat. The
+// day's macroLogs doc is a derived rollup, mutated only by logMeal (+) and
+// deleteMealLog (-) below via FieldValue.increment. Water is the one genuine
+// exception — it isn't part of a meal, so saveWaterLog below is a narrow,
+// field-masked write that can only ever touch `water`. Nothing else may write
+// protein/carbs/fat directly; doing so (the old saveMacroLog absolute-write
+// behavior) let a stale client value silently clobber meals logged elsewhere
+// on the same screen.
 
-const SaveMacroLogSchema = z.object({
+const SaveWaterLogSchema = z.object({
   memberId: ZodHelpers.textRequired("Member"),
   date: ZodHelpers.textRequired("Date"),
-  protein: z.coerce.number().min(0).max(2000),
-  carbs: z.coerce.number().min(0).max(2000),
-  fat: z.coerce.number().min(0).max(2000),
   water: z.coerce.number().min(0).max(30)
 });
 
-export async function saveMacroLog(
+/**
+ * Sets the day's water total (litres). This is intentionally the ONLY macro
+ * field a member edits as an absolute value — protein/carbs/fat are derived
+ * exclusively from mealLogs (logMeal / deleteMealLog). The write below is
+ * field-masked to `water` only so this action can never regress into
+ * overwriting meal-derived totals.
+ *
+ * Renamed from `saveMacroLog` (which used to overwrite protein/carbs/fat too).
+ */
+export async function saveWaterLog(
   previousStateOrFormData: FormActionState | FormData,
   maybeFormData?: FormData
 ): Promise<FormActionState> {
   try {
     const currentUser = await requireAuth();
     const formData = getActionFormData(previousStateOrFormData, maybeFormData);
-    const parsed = parseActionData(formData, SaveMacroLogSchema);
+    const parsed = parseActionData(formData, SaveWaterLogSchema);
     if (!parsed.success) return parsed.state;
 
-    const { memberId, date, protein, carbs, fat, water } = parsed.data;
+    const { memberId, date, water } = parsed.data;
     assertCanManageMember(currentUser, memberId);
 
     if (!hasFirebaseAdminConfig()) {
-      return success("Macro log saved (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+      return success("Water logged (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
     }
 
     const db = requireFirebase();
@@ -524,31 +564,25 @@ export async function saveMacroLog(
     const now = new Date().toISOString();
     const docId = `${memberId}_${date}`;
 
-    const macroRecord = {
-      id: docId,
-      memberId,
-      gymId,
-      date,
-      protein,
-      carbs,
-      fat,
-      water,
-      updatedAt: now
-    };
+    // Field mask: only memberId/gymId/date/water/updatedAt are ever written
+    // here. merge:true means protein/carbs/fat (owned by meal logging) are
+    // left completely untouched, even if this doc doesn't exist yet.
+    const waterRecord = { id: docId, memberId, gymId, date, water, updatedAt: now };
 
-    await mirrorGymScopedRecord(db, gymId, "macroLogs", docId, macroRecord);
+    await mirrorGymScopedRecord(db, gymId, "macroLogs", docId, waterRecord);
 
-    return success("Macros saved.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    return success("Water logged.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
   } catch (error) {
-    return failure(error, "Could not save macro log.");
+    return failure(error, "Could not save water log.");
   }
 }
 
 // ── Meal logging ──────────────────────────────────────────────────────────────
 // A meal is its own record (for the "meal log" list / quick-add UX). Logging one
-// also increments the day's macroLogs totals via FieldValue.increment, so it stays
-// additive with the existing "type in today's totals" saveMacroLog flow above —
-// a manual edit resets the baseline, later meals keep incrementing from there.
+// increments the day's macroLogs protein/carbs/fat via FieldValue.increment;
+// deleting one (deleteMealLog, below) decrements it back out. Together these
+// are the only two writers of macroLogs protein/carbs/fat — see the block
+// comment above saveWaterLog for the full contract.
 
 const LogMealSchema = z.object({
   memberId: ZodHelpers.textRequired("Member"),
@@ -607,7 +641,6 @@ export async function logMeal(
       protein: FieldValue.increment(protein),
       carbs: FieldValue.increment(carbs),
       fat: FieldValue.increment(fat),
-      water: FieldValue.increment(0),
       updatedAt: now
     };
     await scopedGymDoc(db, gymId, "macroLogs", macroDocId).set({ ...macroIncrement, id: macroDocId }, { merge: true });
@@ -616,5 +649,105 @@ export async function logMeal(
   } catch (error) {
     return failure(error, "Could not log this meal.");
   }
+}
+
+const DeleteMealLogSchema = z.object({
+  memberId: ZodHelpers.textRequired("Member"),
+  mealId: ZodHelpers.textRequired("Meal"),
+  date: ZodHelpers.textRequired("Date")
+});
+
+/**
+ * Deletes a logged meal and rolls its protein/carbs/fat back out of the day's
+ * macroLogs rollup — the undo path for a mis-tapped Quick Add or a mistaken
+ * manual entry. Mirrors logMeal's increment(+x) with an increment(-x) here so
+ * the rollup never drifts from the actual sum of remaining meals.
+ */
+export async function deleteMealLog(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, DeleteMealLogSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { memberId, mealId, date } = parsed.data;
+    assertCanManageMember(currentUser, memberId);
+
+    if (!hasFirebaseAdminConfig()) {
+      return success("Meal removed (local mode).", undefined, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+    }
+
+    const db = requireFirebase();
+    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+    const mealRef = scopedGymDoc(db, gymId, "mealLogs", mealId);
+    const mealDoc = await mealRef.get();
+    if (!mealDoc.exists) {
+      return failure(new Error("Meal not found."), "That meal was already removed.");
+    }
+
+    const meal = mealDoc.data() ?? {};
+    if (String(meal.memberId ?? "") !== memberId) {
+      throw new Error("This meal does not belong to that member.");
+    }
+
+    const now = new Date().toISOString();
+    const macroDocId = `${memberId}_${date}`;
+
+    await Promise.all([
+      mealRef.delete(),
+      scopedGymDoc(db, gymId, "macroLogs", macroDocId).set(
+        {
+          id: macroDocId,
+          memberId,
+          gymId,
+          date,
+          protein: FieldValue.increment(-Number(meal.protein ?? 0)),
+          carbs: FieldValue.increment(-Number(meal.carbs ?? 0)),
+          fat: FieldValue.increment(-Number(meal.fat ?? 0)),
+          updatedAt: now
+        },
+        { merge: true }
+      )
+    ]);
+
+    return success("Meal removed.", gymId, ["day-logs", "lift-logs", "activity", "body-metrics"]);
+  } catch (error) {
+    return failure(error, "Could not remove this meal.");
+  }
+}
+
+// ── Nutrition quick-add suggestions ──────────────────────────────────────────
+// Thin "use server" wrappers around the read-models in read-models/progress.ts
+// so MacrosScreen (a client component) can pull this data directly on mount
+// without needing the page component that renders it to fetch and thread it
+// down as props. See read-models/progress.ts for the actual query logic.
+
+/**
+ * Powers the nutrition Quick Add flow: yesterday's logged meals (for "Repeat
+ * yesterday") and the member's most-frequently-logged recent meals (for a
+ * personalized "Recent" row), both ranked ahead of the generic static presets.
+ */
+export async function getMealQuickAddSuggestions(memberId: string, gymId: string, todayDate: string) {
+  const currentUser = await requireAuth();
+  assertCanManageMember(currentUser, memberId);
+  const [{ mealLogs: yesterdayMeals }, { recentMeals }] = await Promise.all([
+    getYesterdaysMealsForMember(memberId, gymId, todayDate),
+    getRecentMealsForMember(memberId, gymId)
+  ]);
+  return { yesterdayMeals, recentMeals };
+}
+
+/**
+ * Body-weight history for the weight trend sparkline on the Macros screen.
+ * Thin wrapper so the client component can fetch it directly (see comment
+ * above getMealQuickAddSuggestions).
+ */
+export async function getBodyWeightHistory(memberId: string, gymId: string, limit = 60) {
+  const currentUser = await requireAuth();
+  assertCanManageMember(currentUser, memberId);
+  return getBodyMetricLogsForMember(memberId, gymId, limit);
 }
 

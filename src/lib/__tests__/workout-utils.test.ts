@@ -7,6 +7,9 @@ import {
   findAlternative,
   getExerciseName,
   getDayMuscleTargets,
+  resolveTodaysSession,
+  getTrainedDateKeys,
+  estimateSessionMinutes,
   SKIP_REASONS,
   dayNames
 } from "@/lib/workout-utils";
@@ -328,5 +331,137 @@ describe("findAlternative", () => {
     const used = new Set<string>();
     const result = findAlternative(used, "shoulder", catalog, "Chest");
     expect(result).toBeDefined();
+  });
+});
+
+// ─── resolveTodaysSession ─────────────────────────────────────────────────────
+
+describe("resolveTodaysSession", () => {
+  const days = [
+    { id: "day-1", dayNumber: 1 },
+    { id: "day-2", dayNumber: 2 },
+  ];
+  const program = { days };
+  const weekStart = "2026-05-18"; // Monday (see getWeekStart tests above)
+
+  it("returns no_program when program is null", () => {
+    expect(resolveTodaysSession(null, [], [], weekStart)).toEqual({
+      dayIndex: 0,
+      reason: "no_program",
+      isCompletedThisWeek: false
+    });
+  });
+
+  it("returns no_program when program has no days", () => {
+    const result = resolveTodaysSession({ days: [] }, [], [], weekStart);
+    expect(result.reason).toBe("no_program");
+  });
+
+  it("returns no_program when program.days is undefined", () => {
+    const result = resolveTodaysSession({}, [], [], weekStart);
+    expect(result.reason).toBe("no_program");
+  });
+
+  it("returns next_up for the first day when nothing is completed and there's no recent activity", () => {
+    const result = resolveTodaysSession(program, [], [], weekStart);
+    expect(result).toEqual({ dayIndex: 0, reason: "next_up", isCompletedThisWeek: false });
+  });
+
+  it("returns next_up for the second day once the first day is completed this week", () => {
+    const dayLogs = [{ dayId: "day-1", status: "completed", weekStart }];
+    const result = resolveTodaysSession(program, dayLogs, [], weekStart);
+    expect(result).toEqual({ dayIndex: 1, reason: "next_up", isCompletedThisWeek: false });
+  });
+
+  it("ignores a completed dayLog from a different week", () => {
+    const dayLogs = [{ dayId: "day-1", status: "completed", weekStart: "2026-05-11" }];
+    const result = resolveTodaysSession(program, dayLogs, [], weekStart);
+    expect(result).toEqual({ dayIndex: 0, reason: "next_up", isCompletedThisWeek: false });
+  });
+
+  it("returns in_progress when lift logs exist this week but the day isn't completed yet", () => {
+    const liftLogs = [{ exerciseId: "ex1", loggedAt: "2026-05-19T10:00:00" }]; // Tuesday, same week
+    const result = resolveTodaysSession(program, [], liftLogs, weekStart);
+    expect(result).toEqual({ dayIndex: 0, reason: "in_progress", isCompletedThisWeek: false });
+  });
+
+  it("does not treat lift logs from a previous week as in_progress", () => {
+    const liftLogs = [{ exerciseId: "ex1", loggedAt: "2026-05-10T10:00:00" }]; // prior week
+    const result = resolveTodaysSession(program, [], liftLogs, weekStart);
+    expect(result.reason).toBe("next_up");
+  });
+
+  it("returns rest_day with the last day index when every day is completed this week", () => {
+    const dayLogs = [
+      { dayId: "day-1", status: "completed", weekStart },
+      { dayId: "day-2", status: "completed", weekStart },
+    ];
+    const result = resolveTodaysSession(program, dayLogs, [], weekStart);
+    expect(result).toEqual({ dayIndex: 1, reason: "rest_day", isCompletedThisWeek: true });
+  });
+});
+
+// ─── getTrainedDateKeys ────────────────────────────────────────────────────────
+
+describe("getTrainedDateKeys", () => {
+  it("includes a date from a lift log", () => {
+    const keys = getTrainedDateKeys([{ loggedAt: "2026-05-19T08:00:00" }], []);
+    expect(keys.has("2026-05-19")).toBe(true);
+  });
+
+  it("includes a date from a completed dayLog", () => {
+    const keys = getTrainedDateKeys([], [{ status: "completed", loggedAt: "2026-05-20T08:00:00" }]);
+    expect(keys.has("2026-05-20")).toBe(true);
+  });
+
+  it("excludes a dayLog that is not completed", () => {
+    const keys = getTrainedDateKeys([], [{ status: "skipped", loggedAt: "2026-05-20T08:00:00" }]);
+    expect(keys.has("2026-05-20")).toBe(false);
+  });
+
+  it("dedupes same-day entries from both sources", () => {
+    const keys = getTrainedDateKeys(
+      [{ loggedAt: "2026-05-19T08:00:00" }],
+      [{ status: "completed", loggedAt: "2026-05-19T20:00:00" }]
+    );
+    expect(keys.size).toBe(1);
+  });
+
+  it("ignores entries with no loggedAt", () => {
+    const keys = getTrainedDateKeys([{}], [{ status: "completed" }]);
+    expect(keys.size).toBe(0);
+  });
+
+  it("returns an empty set for empty inputs", () => {
+    expect(getTrainedDateKeys([], []).size).toBe(0);
+  });
+});
+
+// ─── estimateSessionMinutes ─────────────────────────────────────────────────
+
+describe("estimateSessionMinutes", () => {
+  it("computes minutes from sets and restSeconds, rounded to the nearest 5", () => {
+    // 4 sets * (105s rest + 45s work) = 600s = 10 min exactly
+    const result = estimateSessionMinutes([{ exerciseId: "e1", sets: 4, restSeconds: 105 }]);
+    expect(result).toBe(10);
+  });
+
+  it("defaults missing sets to 3 and missing restSeconds to 90", () => {
+    // 3 sets * (90s rest + 45s work) = 405s = 6.75 min -> rounds to 5
+    const result = estimateSessionMinutes([{ exerciseId: "e2" }]);
+    expect(result).toBe(5);
+  });
+
+  it("sums across multiple exercises", () => {
+    // e1: 3 * (60+45) = 315s ; e2: 4 * (90+45) = 540s ; total = 855s = 14.25 min -> rounds to 15
+    const result = estimateSessionMinutes([
+      { exerciseId: "e1", sets: 3, restSeconds: 60 },
+      { exerciseId: "e2", sets: 4, restSeconds: 90 },
+    ]);
+    expect(result).toBe(15);
+  });
+
+  it("returns 0 for an empty day", () => {
+    expect(estimateSessionMinutes([])).toBe(0);
   });
 });

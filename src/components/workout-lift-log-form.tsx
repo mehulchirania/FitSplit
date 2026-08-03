@@ -255,7 +255,7 @@ export function WorkoutLiftLogForm({
           }
           return (
             <p className="lift-log-last-hint">
-              Last time: <strong>{lastLog.weight}kg × {lastLog.sets} × {lastLog.reps}</strong>
+              Last time: <strong>{lastLog.weight}kg × {lastLog.reps}</strong>
               {isPR ? <span className="pr-chip" style={{ marginLeft: 8 }}>PR</span> : null}
             </p>
           );
@@ -289,7 +289,7 @@ export function WorkoutLiftLogForm({
           <div role="row">
             <span>Exercise</span>
             <span>Weight</span>
-            <span>Sets</span>
+            <span>Set</span>
             <span>Reps</span>
           </div>
           {liftLogs.length === 0 ? (
@@ -300,7 +300,7 @@ export function WorkoutLiftLogForm({
               <div key={log.id} role="row" data-new={logSuccess && index === 0 ? "true" : undefined}>
                 <span>{getExerciseName(log.exerciseId, exercises)}{isPR && <span className="pr-chip" title="Personal record">PR</span>}</span>
                 <span>{log.weight} kg</span>
-                <span>{log.sets}</span>
+                <span>{log.setIndex ?? 1}</span>
                 <span>{log.reps}</span>
               </div>
             );

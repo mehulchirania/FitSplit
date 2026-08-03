@@ -1627,191 +1627,6 @@
   margin-top: 2px;
 }
 
-.mcr-today__exercises {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-.mcr-ex {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px;
-  border-radius: 12px;
-  background: var(--bg-subtle);
-  cursor: pointer;
-  min-height: 44px;
-}
-.mcr-ex__num {
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: var(--bg-elevated);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-soft);
-  flex-shrink: 0;
-}
-.mcr-ex__body { flex: 1; min-width: 0; }
-.mcr-ex__name {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text);
-  letter-spacing: -0.01em;
-  display: block;
-}
-.mcr-ex__meta {
-  font-size: 11.5px;
-  color: var(--text-soft);
-  margin-top: 2px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  align-items: center;
-}
-.mcr-ex__sep { opacity: 0.4; }
-.mcr-ex__swap-note {
-  color: var(--brand);
-  font-size: 10.5px;
-  font-weight: 700;
-  line-height: 1.35;
-  margin-top: 4px;
-}
-/* One-tap revert to the original exercise — inline text button, 44px touch target */
-.mcr-ex__swap-note--btn {
-  display: inline-flex;
-  align-items: center;
-  background: transparent;
-  border: none;
-  padding: 0;
-  min-height: 44px;
-  margin-top: 0;
-  font: inherit;
-  font-size: 10.5px;
-  font-weight: 700;
-  cursor: pointer;
-  text-align: left;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  transition: color 120ms;
-}
-.mcr-ex__swap-note--btn:hover { color: var(--brand-strong); }
-.mcr-ex__swap-note--btn:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: 4px; }
-[data-theme="light"] .mcr-ex__swap-note--btn { color: var(--brand-strong); }
-.mcr-ex__actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
-  margin-top: 7px;
-}
-.mcr-ex__swap {
-  min-height: 26px;
-  border: 1px solid color-mix(in srgb, var(--brand) 28%, var(--border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--brand) 9%, transparent);
-  color: var(--brand);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font: inherit;
-  font-size: 10.5px;
-  font-weight: 800;
-  padding: 0 9px;
-  transition: background 120ms, border-color 120ms, color 120ms, transform 100ms;
-}
-.mcr-ex__swap:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--brand) 15%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
-}
-.mcr-ex__swap:disabled {
-  background: transparent;
-  border-color: var(--border);
-  color: var(--text-faint);
-  cursor: not-allowed;
-  opacity: 0.62;
-}
-.mcr-ex__video-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  color: var(--brand);
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 10.5px;
-}
-[data-theme="light"] .mcr-ex__video-link { color: var(--brand-strong); }
-
-.mcr-today__start {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  background: var(--brand);
-  color: var(--primary-foreground);
-  border: none;
-  border-radius: 14px;
-  font: inherit;
-  font-size: 15px;
-  font-weight: 700;
-  padding: 14px 18px;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background 120ms, transform 100ms;
-}
-.mcr-today__start:hover { background: var(--brand-strong); }
-.mcr-today__start:active { transform: scale(0.98); }
-.mcr-today__start--hero { margin-top: 12px; margin-bottom: 18px; }
-
-/* Demoted day picker — secondary affordance under the hero */
-.mcr-today__preview { margin-bottom: 16px; }
-.mcr-today__preview-label {
-  display: block;
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  font-weight: 700;
-  color: var(--text-faint);
-  margin-bottom: 8px;
-}
-
-/* Collapsible exercise-row detail (swap + video) */
-.mcr-ex-wrap { display: flex; flex-direction: column; gap: 8px; }
-.mcr-ex__open {
-  width: 32px;
-  height: 32px;
-  flex-shrink: 0;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--text-faint);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 120ms, transform 160ms;
-}
-.mcr-ex__open--on { background: var(--bg-elevated); color: var(--text-soft); transform: rotate(90deg); }
-.mcr-ex__detail {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 10px;
-  padding: 10px;
-  margin: -4px 0 0 38px;
-  border-radius: 12px;
-  background: var(--bg-muted);
-  border: 1px dashed var(--border);
-}
-.mcr-ex__detail-note {
-  font-size: 11px;
-  color: var(--text-soft);
-}
-
 /* ── Membership row ─────────────────────────────────────────────────────── */
 .mcr-membership {
   display: flex;
@@ -2708,6 +2523,93 @@ body:has(.m3d-root) .app-shell { height: 100dvh; overflow: hidden; display: flex
 }
 .mcv-send:disabled { opacity: 0.4; cursor: default; }
 
+/* Pinned coach's note — a standing note, not a chat message. Sits above the
+   thread so it never gets mistaken for a bubble in the conversation. */
+.mcv-pinned-note {
+  background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--brand) 25%, var(--border));
+  border-radius: 12px;
+  padding: 11px 13px;
+  margin-bottom: 4px;
+}
+.mcv-pinned-note__head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--brand);
+  margin-bottom: 6px;
+}
+.mcv-pinned-note__text {
+  font-size: 13.5px;
+  line-height: 1.48;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+.mcv-pinned-note__meta {
+  font-size: 10px;
+  color: var(--text-faint);
+}
+
+/* Day separators */
+.mcv-day-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mcv-day-separator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 6px 0 2px;
+}
+.mcv-day-separator span {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--text-faint);
+  background: var(--bg-subtle);
+  border-radius: 999px;
+  padding: 3px 10px;
+}
+
+/* Pending / failed send states */
+.mcv-bubble--pending {
+  opacity: 0.6;
+}
+.mcv-bubble--failed {
+  background: var(--danger, #dc2626);
+}
+.mcv-bubble__failed-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.mcv-retry-btn {
+  background: transparent;
+  border: 1px solid color-mix(in srgb, var(--primary-foreground) 55%, transparent);
+  border-radius: 999px;
+  color: inherit;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.mcv-dismiss-btn {
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.8;
+  padding: 0 2px;
+}
+.mcv-dismiss-btn:hover { opacity: 1; }
+
 /* ── Phase 5: Co-brand sidebar lockup ──────────────────────────────────── */
 .m3d-side__cobrand {
   display: flex;
@@ -3289,6 +3191,48 @@ a.mcr-tabbar__item:hover {
   background: color-mix(in srgb, var(--accent) 8%, var(--bg-subtle));
   border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
 }
+/* Primary CTA — jumps to the Train tab, where the real set-by-set logger lives */
+.fdv-log-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 48px;
+  background: var(--brand);
+  color: var(--primary-foreground);
+  border: none;
+  border-radius: 14px;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px 18px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 120ms, transform 100ms;
+}
+.fdv-log-cta:hover { background: var(--brand-strong); }
+.fdv-log-cta:active { transform: scale(0.98); }
+
+/* Demoted day status — collapsed behind a secondary toggle at the bottom of the page */
+.fdv-daystatus { margin-top: 4px; }
+.fdv-daystatus__toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+  min-height: 44px;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+.fdv-daystatus__toggle:hover { background: var(--bg-muted); }
+
 .fdv-day-log {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
@@ -3297,6 +3241,7 @@ a.mcr-tabbar__item:hover {
   flex-direction: column;
   gap: 12px;
   padding: 14px;
+  margin-top: 8px;
 }
 .fdv-day-log__head {
   align-items: center;

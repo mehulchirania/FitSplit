@@ -11,8 +11,12 @@ import { WeeklyProgramSchedule } from "@/components/weekly-program-schedule";
 import { requireRole } from "@/lib/auth";
 import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
 import { updateCoachNote } from "@/lib/firebase/actions";
+import { CoachMessageThread } from "@/components/coach-message-thread";
+import { ExerciseSwapNotes } from "@/components/exercise-swap-notes";
 import {
+  getCoachThreadForMember,
   getExerciseCatalog,
+  getExerciseSwapsForMember,
   getLiftLogsForMember,
   getMemberDetail,
   getProfileMetrics,
@@ -54,7 +58,9 @@ export default async function MemberDetailPage({
     { profile },
     { liftLogs },
     trainers,
-    ptSessions
+    ptSessions,
+    { messages: coachMessages },
+    { swapsByDay }
   ] = await Promise.all([
     getMemberDetail(memberId),
     getProgramAssignmentForMember(memberId, gymId),
@@ -63,7 +69,9 @@ export default async function MemberDetailPage({
     getProfileMetrics(memberId),
     getLiftLogsForMember(memberId, gymId),
     getTrainersForGym(gymId),
-    getPTSessionsForMember(gymId, memberId)
+    getPTSessionsForMember(gymId, memberId),
+    getCoachThreadForMember(memberId, gymId),
+    getExerciseSwapsForMember(memberId, gymId)
   ]);
 
   if (!member) notFound();
@@ -192,7 +200,11 @@ export default async function MemberDetailPage({
               </div>
               <WeeklyProgramSchedule exercises={exercises} program={program} />
             </div>
-          ) : (
+          ) : null}
+
+          {program && <ExerciseSwapNotes swapsByDay={swapsByDay} program={program} exercises={exercises} />}
+
+          {!program && (
             <div className="list-panel mpd-empty-schedule">
               <Dumbbell />
               <h2>Needs a Workout Plan</h2>
@@ -244,6 +256,14 @@ export default async function MemberDetailPage({
               Leave the field empty and save to clear the note.
             </p>
           </ConfirmActionForm>
+
+          {/* Two-way thread with this member. The coach note above is a single
+              pinned broadcast; this is the actual conversation. */}
+          <CoachMessageThread
+            memberId={member.id}
+            memberName={member.fullName}
+            initialMessages={coachMessages}
+          />
 
         </section>
 

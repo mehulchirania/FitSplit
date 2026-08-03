@@ -91,6 +91,30 @@ async function setup() {
     await db.doc(`activityLogs/act-01`).set({ gymId: GYM_A, memberId: MEMBER_A, type: "cardio", durationMin: 30 });
     await db.doc(`memberships/mem-01`).set({ gymId: GYM_A, memberId: MEMBER_A, status: "active", endDate: "2026-12-31" });
 
+    // Coach messages (member ↔ trainer thread), gym-scoped + root mirror.
+    const coachMsg = {
+      gymId: GYM_A,
+      memberId: MEMBER_A,
+      body: "How did the squat session feel?",
+      senderRole: "trainer",
+      senderId: TRAINER_A,
+      createdAt: new Date().toISOString()
+    };
+    await db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).set(coachMsg);
+    await db.doc(`coachMessages/msg-01`).set(coachMsg);
+
+    // Exercise swaps (member's substitutions for one program day).
+    const swapDoc = {
+      gymId: GYM_A,
+      memberId: MEMBER_A,
+      programId: "prog-01",
+      dayId: "day-01",
+      swaps: { "0": "exercise-alt-1" },
+      updatedAt: new Date().toISOString()
+    };
+    await db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).set(swapDoc);
+    await db.doc(`exerciseSwaps/${MEMBER_A}_day-01`).set(swapDoc);
+
     // authProfiles.
     await db.doc(`authProfiles/${OWNER_A}`).set({ role: "owner", defaultGymId: GYM_A, fullName: "Owner Alpha" });
     await db.doc(`authProfiles/${TRAINER_A}`).set({ role: "trainer", defaultGymId: GYM_A, fullName: "Trainer Alpha" });
@@ -308,6 +332,132 @@ async function runTests() {
   await it("Member CANNOT write root membership (privileged/Functions only)", async () => {
     const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
     await assertFails(db.doc(`memberships/mem-01`).update({ status: "cancelled" }));
+  });
+
+  console.log("\n── Coach messages (private member ↔ trainer thread) ──────");
+
+  await it("Member can read own coach thread", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).get());
+  });
+
+  await it("Member CANNOT read another member's coach thread", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_B, makeAuth(MEMBER_B, "member", GYM_A, MEMBER_B)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).get());
+    await assertFails(db.doc(`coachMessages/msg-01`).get());
+  });
+
+  await it("Trainer in the gym can read the thread", async () => {
+    const db = testEnv.authenticatedContext(TRAINER_A, makeAuth(TRAINER_A, "trainer", GYM_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).get());
+  });
+
+  await it("Owner of ANOTHER gym CANNOT read the thread (cross-tenant)", async () => {
+    const db = testEnv.authenticatedContext(OWNER_B, makeAuth(OWNER_B, "owner", GYM_B)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).get());
+    await assertFails(db.doc(`coachMessages/msg-01`).get());
+  });
+
+  await it("Member can send a message as themselves", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/coachMessages/msg-new`).set({
+      gymId: GYM_A, memberId: MEMBER_A, body: "Felt strong, thanks!",
+      senderRole: "member", senderId: MEMBER_A, createdAt: new Date().toISOString()
+    }));
+  });
+
+  await it("Member CANNOT forge a message as the trainer", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/coachMessages/msg-forge`).set({
+      gymId: GYM_A, memberId: MEMBER_A, body: "Skip leg day, coach says so",
+      senderRole: "trainer", senderId: TRAINER_A, createdAt: new Date().toISOString()
+    }));
+  });
+
+  await it("Member CANNOT write into another member's thread", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_B, makeAuth(MEMBER_B, "member", GYM_A, MEMBER_B)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/coachMessages/msg-x`).set({
+      gymId: GYM_A, memberId: MEMBER_A, body: "not mine",
+      senderRole: "member", senderId: MEMBER_B, createdAt: new Date().toISOString()
+    }));
+  });
+
+  await it("Member can mark read, but CANNOT edit message body", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).update({ readAt: new Date().toISOString() }));
+    await assertFails(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).update({ body: "rewritten history" }));
+  });
+
+  await it("Nobody can delete a coach message (audit trail)", async () => {
+    const memberDb = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertFails(memberDb.doc(`gyms/${GYM_A}/coachMessages/msg-01`).delete());
+    const trainerDb = testEnv.authenticatedContext(TRAINER_A, makeAuth(TRAINER_A, "trainer", GYM_A)).firestore();
+    await assertFails(trainerDb.doc(`gyms/${GYM_A}/coachMessages/msg-01`).delete());
+  });
+
+  await it("Unauthenticated user CANNOT read a coach thread", async () => {
+    const db = testEnv.unauthenticatedContext().firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/coachMessages/msg-01`).get());
+    await assertFails(db.doc(`coachMessages/msg-01`).get());
+  });
+
+  console.log("\n── Exercise swaps (member substitutions, trainer-visible) ─");
+
+  await it("Member can read own exercise swaps", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).get());
+  });
+
+  await it("Trainer in the gym can read a member's swaps", async () => {
+    const db = testEnv.authenticatedContext(TRAINER_A, makeAuth(TRAINER_A, "trainer", GYM_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).get());
+  });
+
+  await it("Member CANNOT read another member's swaps", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_B, makeAuth(MEMBER_B, "member", GYM_A, MEMBER_B)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).get());
+  });
+
+  await it("Owner of ANOTHER gym CANNOT read the swaps (cross-tenant)", async () => {
+    const db = testEnv.authenticatedContext(OWNER_B, makeAuth(OWNER_B, "owner", GYM_B)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).get());
+  });
+
+  await it("Member can save their own swap for a new day (create)", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-02`).set({
+      gymId: GYM_A, memberId: MEMBER_A, programId: "prog-01", dayId: "day-02",
+      swaps: { "1": "exercise-alt-2" }, updatedAt: new Date().toISOString()
+    }));
+  });
+
+  await it("Member can update their own swap doc", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertSucceeds(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).set({
+      gymId: GYM_A, memberId: MEMBER_A, programId: "prog-01", dayId: "day-01",
+      swaps: {}, updatedAt: new Date().toISOString()
+    }, { merge: true }));
+  });
+
+  await it("Trainer CANNOT write a member's swap doc", async () => {
+    const db = testEnv.authenticatedContext(TRAINER_A, makeAuth(TRAINER_A, "trainer", GYM_A)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).set({
+      gymId: GYM_A, memberId: MEMBER_A, programId: "prog-01", dayId: "day-01",
+      swaps: { "0": "trainer-forced-swap" }, updatedAt: new Date().toISOString()
+    }, { merge: true }));
+  });
+
+  await it("Member CANNOT write into another member's swap doc", async () => {
+    const db = testEnv.authenticatedContext(MEMBER_B, makeAuth(MEMBER_B, "member", GYM_A, MEMBER_B)).firestore();
+    await assertFails(db.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-03`).set({
+      gymId: GYM_A, memberId: MEMBER_A, programId: "prog-01", dayId: "day-03",
+      swaps: { "0": "not-mine" }, updatedAt: new Date().toISOString()
+    }));
+  });
+
+  await it("Nobody can delete an exercise swap doc", async () => {
+    const memberDb = testEnv.authenticatedContext(MEMBER_A, makeAuth(MEMBER_A, "member", GYM_A, MEMBER_A)).firestore();
+    await assertFails(memberDb.doc(`gyms/${GYM_A}/exerciseSwaps/${MEMBER_A}_day-01`).delete());
   });
 }
 

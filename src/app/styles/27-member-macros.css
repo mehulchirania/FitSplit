@@ -314,6 +314,64 @@
 .m3d-mc-dialog__submit:hover:not(:disabled) { filter: brightness(1.06); }
 .m3d-mc-dialog__submit:disabled { opacity: 0.6; cursor: default; }
 
+.m3d-mc-pill--repeat {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+  color: var(--brand);
+  font-weight: 700;
+}
+
+/* ── Meal log delete button ────────────────────────────────────────────── */
+.m3d-mc-meal-delete {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text-faint);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 120ms, color 120ms, border-color 120ms;
+}
+.m3d-mc-meal-delete:hover:not(:disabled) {
+  background: var(--danger-soft, #fee2e2);
+  border-color: var(--danger, #ef4444);
+  color: var(--danger, #ef4444);
+}
+.m3d-mc-meal-delete:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* ── Manual log dialog — computed (read-only) calorie display ───────────── */
+.m3d-mc-dialog__computed {
+  background: var(--bg-muted);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-xs);
+  padding: 9px 11px;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--text-soft);
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+/* ── Weight trend sparkline ───────────────────────────────────────────── */
+.m3d-mc-weighttrend {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 8px 4px;
+  box-shadow: var(--shadow-soft);
+}
+
 @media (max-width: 640px) {
   .m3d-mc-macros { grid-template-columns: 1fr; }
 }
