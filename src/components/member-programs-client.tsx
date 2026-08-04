@@ -19,7 +19,7 @@ const SPLIT_LABELS: Record<string, string> = {
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  beginner: "var(--success, #22c55e)",
+  beginner: "var(--success)",
   intermediate: "var(--warning)",
   advanced: "var(--danger)",
 };

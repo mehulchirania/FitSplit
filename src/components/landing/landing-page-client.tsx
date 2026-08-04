@@ -320,10 +320,6 @@ function Hero({ onComingSoon }: { onComingSoon: () => void }) {
   return (
     <section id="top" className="lp-container lp-hero">
       <div>
-        <span className="lp-chip lp-reveal" data-reveal>
-          <span className="lp-chip__dot" />
-          Now onboarding gyms across India
-        </span>
         <h1 className="lp-hero__title lp-reveal" data-reveal>
           Run the floor.
           <br />

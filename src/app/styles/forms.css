@@ -6,13 +6,13 @@
   border-radius: var(--radius-sm);
   color: var(--text-soft);
   display: grid;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   gap: 4px;
   line-height: 1.4;
-  padding: 11px 12px;
+  padding: var(--space-3) var(--space-3);
 }
 
 .form-note strong {
   color: var(--text);
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
 }

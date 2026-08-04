@@ -174,7 +174,7 @@ export default async function TrainerDashboardPage({
                     <StatusBadge status={session.status} />
                   </div>
                   {session.cancelReason && (
-                    <p className="trainer-session-notes" style={{ color: "var(--danger, #e05252)" }}>
+                    <p className="trainer-session-notes" style={{ color: "var(--danger)" }}>
                       Cancelled: {session.cancelReason}
                     </p>
                   )}

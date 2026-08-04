@@ -518,7 +518,7 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
                       style={{
                         fontSize: "0.71rem",
                         color: "var(--text-faint)",
-                        background: "rgba(255,255,255,0.06)",
+                        background: "var(--bg-muted)",
                         borderRadius: "10px",
                         padding: "1px 8px",
                       }}
@@ -597,7 +597,7 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
                   colSpan={7}
                   style={{
                     padding: "0",
-                    background: "rgba(255,255,255,0.03)",
+                    background: "var(--bg-subtle)",
                     borderTop: activeSource === "Custom" ? "none" : "2px solid var(--border)",
                     borderBottom: "1px solid var(--border)",
                     position: "sticky",
@@ -628,7 +628,7 @@ export function ExerciseCatalogView({ exercises, createAction }: Props) {
                       style={{
                         fontSize: "0.71rem",
                         color: "var(--text-faint)",
-                        background: "rgba(255,255,255,0.06)",
+                        background: "var(--bg-muted)",
                         borderRadius: "10px",
                         padding: "1px 8px",
                       }}

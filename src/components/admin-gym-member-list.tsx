@@ -72,7 +72,7 @@ function MemberPanel({ m }: { m: Member; gymId: string }) {
   }
 
   const msColor = m.membershipStatus === "expired" ? "var(--danger)"
-    : m.membershipStatus === "expiring_soon" ? "#D97706"
+    : m.membershipStatus === "expiring_soon" ? "var(--warning)"
     : "var(--brand)";
 
   // Tab button style
@@ -81,7 +81,7 @@ function MemberPanel({ m }: { m: Member; gymId: string }) {
     cursor: "pointer", fontFamily: "inherit", border: "none",
     background: tab === t ? "var(--bg-elevated)" : "transparent",
     color: tab === t ? "var(--text)" : "var(--text-faint)",
-    boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.12)" : "none",
+    boxShadow: tab === t ? "var(--shadow-soft)" : "none",
   });
 
   return (

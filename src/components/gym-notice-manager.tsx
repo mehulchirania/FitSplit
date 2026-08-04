@@ -7,9 +7,9 @@ import { initialFormActionState } from "@/types/action-state";
 
 const TYPE_OPTIONS = [
   { value: "tip",          label: "Training Tip",  color: "var(--brand)" },
-  { value: "rule",         label: "Gym Rule",      color: "#ef4444" },
-  { value: "reminder",     label: "Reminder",      color: "#f59e0b" },
-  { value: "announcement", label: "Notice",        color: "#60a5fa" },
+  { value: "rule",         label: "Gym Rule",      color: "var(--danger)" },
+  { value: "reminder",     label: "Reminder",      color: "var(--warning)" },
+  { value: "announcement", label: "Notice",        color: "var(--info)" },
 ];
 
 function NoticeRow({ notice }: { notice: GymNotice }) {

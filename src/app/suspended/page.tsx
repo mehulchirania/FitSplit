@@ -34,7 +34,7 @@ export default function SuspendedPage() {
           fontSize: "1.5rem",
           fontWeight: 700,
           marginBottom: "0.75rem",
-          color: "var(--color-text, #f0f0f0)"
+          color: "var(--text)"
         }}
       >
         Account Deactivated
@@ -42,7 +42,7 @@ export default function SuspendedPage() {
 
       <p
         style={{
-          color: "var(--color-text-secondary, #a0a0a0)",
+          color: "var(--text-soft)",
           maxWidth: "22rem",
           lineHeight: 1.6,
           marginBottom: "2rem"
@@ -57,8 +57,8 @@ export default function SuspendedPage() {
         style={{
           display: "inline-block",
           padding: "0.6rem 1.5rem",
-          background: "var(--color-accent, #6d28d9)",
-          color: "#fff",
+          background: "var(--primary)",
+          color: "var(--primary-foreground)",
           borderRadius: "0.5rem",
           fontWeight: 600,
           textDecoration: "none",

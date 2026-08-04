@@ -19,7 +19,7 @@ import {
 } from "@/lib/firebase/read-models/notifications";
 import { getActiveWorkoutSessions } from "@/lib/firebase/read-models/sessions";
 import type { Notification } from "@/types/domain";
-import { Inter, DM_Sans } from "next/font/google";
+import { Inter, Archivo } from "next/font/google";
 import "./globals.css";
 import "./styles/00-base-shell.css";
 import "./styles/02-shared-components.css";
@@ -52,7 +52,12 @@ import "./styles/26-member-progress-screen.css";
 import "./styles/27-member-macros.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
-const dmSans = DM_Sans({ subsets: ["latin"], variable: "--font-dm-sans", display: "swap" });
+const archivo = Archivo({
+  subsets: ["latin"],
+  variable: "--font-archivo",
+  display: "swap",
+  weight: ["500", "600", "700"]
+});
 
 export const metadata: Metadata = {
   title: "FitSplit",
@@ -127,7 +132,7 @@ export default async function RootLayout({
   }
 
   return (
-    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${dmSans.variable}`}>
+    <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${archivo.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <meta name="theme-color" content="#111111" />
@@ -143,10 +148,18 @@ export default async function RootLayout({
         <script
           nonce={nonce}
           dangerouslySetInnerHTML={{
+            /* Resolve the theme before first paint so there is no flash. Stored
+               choice wins; otherwise follow the OS. Runs synchronously in <head>. */
             __html: `
               try {
+                var stored = localStorage.getItem('fitsplit-theme');
+                var theme = stored === 'light' || stored === 'dark'
+                  ? stored
+                  : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+                document.documentElement.dataset.theme = theme;
+              } catch (_) {
                 document.documentElement.dataset.theme = 'dark';
-              } catch (_) {}
+              }
             `
           }}
         />

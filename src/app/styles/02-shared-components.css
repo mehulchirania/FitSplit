@@ -1,21 +1,25 @@
 /* Shared panels, status pills, forms, drawers, dialogs, schedules, responsive helpers.
    Split mechanically from app/globals.css; preserve import order in app/layout.tsx. */
 
+/* --error/--error-soft were never defined anywhere in the token file (only
+   --danger/--danger-soft exist) — this fallback wasn't dead code like the
+   others, it was the only thing actually rendering, in raw rgba, in both
+   themes. Pointed at the real tokens. */
 .status-inactive {
-  background: var(--error-soft, rgba(239,68,68,.12));
-  color: var(--error, #f87171);
+  background: var(--danger-soft);
+  color: var(--danger);
 }
 
 .status-pill {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   font-weight: 820;
   justify-content: center;
   letter-spacing: 0.01em;
   min-height: 26px;
-  padding: 4px 11px;
+  padding: var(--space-1) var(--space-3);
   transition: transform var(--fast), box-shadow var(--fast);
   white-space: nowrap;
 }
@@ -43,13 +47,13 @@
 .notification-list {
   display: grid;
   gap: 10px;
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .notification-row {
   box-shadow: none;
   grid-template-columns: auto 1fr;
-  padding: 13px;
+  padding: var(--space-3);
 }
 
 .notification-dot {
@@ -79,7 +83,7 @@
 }
 .exercise-instructions summary {
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-faint);
   user-select: none;
   list-style: none;
@@ -90,7 +94,7 @@
 .exercise-instructions summary::-webkit-details-marker { display: none; }
 .exercise-instructions summary::before {
   content: ">";
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   transition: transform 140ms;
 }
 .exercise-instructions[open] summary::before {
@@ -98,7 +102,7 @@
 }
 .exercise-instructions p {
   margin: 8px 0 4px;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   color: var(--text-soft);
   line-height: 1.5;
 }
@@ -109,12 +113,12 @@
   gap: 12px;
   grid-template-columns: 1fr 1fr;
   margin-top: 16px;
-  padding-top: 16px;
+  padding-top: var(--space-4);
 }
 
 .detail-window span {
   display: block;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 .detail-window strong {
@@ -128,7 +132,7 @@
 }
 
 .program-card-body {
-  padding: 16px;
+  padding: var(--space-4);
 }
 
 .program-card h2 {
@@ -159,7 +163,7 @@
   gap: 13px;
   grid-template-columns: 96px 1fr auto;
   overflow: hidden;
-  padding: 10px;
+  padding: var(--space-2);
 }
 
 .exercise-row-copy {
@@ -190,10 +194,10 @@
   border-radius: 999px;
   color: var(--text);
   display: inline-flex;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 820;
   gap: 6px;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
   text-align: center;
   white-space: nowrap;
 }
@@ -225,33 +229,63 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
 }
 
+/* icon-button is the circular counterpart of .button-primary. It used to
+   fill with a var(--brand)-based gradient darkened toward black — in light
+   mode --brand is deep olive, so this rendered as a near-black icon
+   (--primary-foreground) on a dark-olive circle: two dark colours, well
+   under the 3:1 UI-component contrast floor. Switched to the same
+   var(--primary)/var(--primary-foreground) lime fill as .button-primary,
+   which is exactly what this control already visually implied. */
 .icon-button {
   align-items: center;
-  background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 80%, #000));
+  background: var(--primary);
   border: 1px solid transparent;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-soft);
   color: var(--primary-foreground);
   display: inline-flex;
-  height: 40px;
+  height: var(--space-10);
   justify-content: center;
   transition: transform var(--spring), box-shadow var(--medium), background-color var(--medium);
-  width: 40px;
+  width: var(--space-10);
 }
 
 .neutral-icon-button {
   background: var(--bg-elevated);
   border-color: var(--border);
+  box-shadow: none;
   color: var(--text);
 }
 
-.icon-button:hover {
-  box-shadow: 0 10px 28px color-mix(in srgb, var(--brand) 36%, transparent);
+.icon-button:hover:not(:disabled) {
+  box-shadow: var(--shadow-glow);
   transform: translateY(-2px) scale(1.05);
 }
 
-.icon-button:active {
+.neutral-icon-button:hover:not(:disabled) {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow-soft);
+  transform: translateY(-2px);
+}
+
+.icon-button:active:not(:disabled) {
   transform: scale(0.95);
   transition-duration: 80ms;
+}
+
+.icon-button:focus-visible {
+  box-shadow: var(--shadow-soft), 0 0 0 3px color-mix(in srgb, var(--brand) 40%, transparent);
+  outline: none;
+}
+
+.neutral-icon-button:focus-visible {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 28%, transparent);
+  outline: none;
+}
+
+.icon-button:disabled {
+  box-shadow: none;
 }
 
 .icon-button svg {
@@ -272,7 +306,7 @@
 .topbar-gym-name {
   color: var(--text-soft);
   display: inline-block;
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   max-width: 200px;
   overflow: hidden;
@@ -289,12 +323,12 @@
   cursor: pointer;
   display: inline-flex;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 850;
   height: 42px;
   justify-content: center;
   min-width: 42px;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   transition: border-color var(--fast), background-color var(--fast), transform var(--fast);
 }
 
@@ -312,7 +346,7 @@
   display: grid;
   gap: 4px;
   min-width: 220px;
-  padding: 8px;
+  padding: var(--space-2);
   position: absolute;
   right: 0;
   top: calc(100% + 12px);
@@ -328,9 +362,9 @@
   color: var(--text);
   cursor: pointer;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 760;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   text-align: left;
   width: 100%;
 }
@@ -363,7 +397,7 @@
   height: auto;
   left: 0;
   max-width: min(360px, 92vw);
-  padding: 18px;
+  padding: var(--space-4);
   position: fixed;
   top: 0;
   width: 360px;
@@ -404,7 +438,7 @@
   display: flex;
   inset: 0;
   justify-content: center;
-  padding: 18px;
+  padding: var(--space-4);
   position: fixed;
   z-index: 1000;
 }
@@ -418,7 +452,7 @@
   display: grid;
   gap: 14px;
   max-width: 440px;
-  padding: 24px;
+  padding: var(--space-6);
   width: min(100%, 440px);
 }
 
@@ -438,7 +472,7 @@
   max-height: min(86vh, 860px);
   max-width: min(980px, 96vw);
   overflow: auto;
-  padding: 16px;
+  padding: var(--space-4);
   width: min(980px, 96vw);
 }
 
@@ -471,14 +505,14 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  padding: 10px;
+  padding: var(--space-2);
 }
 
 .selected-exercise-list span,
 .selected-exercise-list strong {
   border-radius: 999px;
-  font-size: 0.8rem;
-  padding: 6px 10px;
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
 }
 
 .selected-exercise-list span {
@@ -496,11 +530,18 @@
 label {
   color: var(--text-soft);
   display: grid;
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   font-weight: 760;
-  gap: 7px;
+  gap: var(--space-2);
 }
 
+/* Canonical input/select/textarea treatment — the single source of truth.
+   Used to be redeclared three more times (03-visual-refresh.css with a
+   translucent background that read poorly in light mode, and a type-scoped
+   duplicate in 16-ux-improvements.css with a different radius and height);
+   all three have been trimmed to nothing or deleted. Explicitly opaque
+   var(--bg-elevated) + var(--text) so light mode never inherits a dark
+   value. */
 input,
 select,
 textarea {
@@ -508,15 +549,16 @@ textarea {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text);
-  min-height: 40px;
-  padding: 10px 12px;
+  font-size: var(--text-md);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
   transition: border-color var(--fast), box-shadow var(--fast);
   width: 100%;
 }
 
-/* The bare `input` rule above (and its twin in 03-visual-refresh.css) must not
-   inflate binary controls: without this reset a radio renders 100% wide × 44px
-   tall and pushes its label out of the row (see docs/14, finding U1). */
+/* The bare `input` rule above must not inflate binary controls: without this
+   reset a radio renders 100% wide × 44px tall and pushes its label out of
+   the row (see docs/14, finding U1). */
 input[type="radio"],
 input[type="checkbox"] {
   width: auto;
@@ -526,11 +568,14 @@ input[type="checkbox"] {
   border: none;
 }
 
+/* One focus ring, using the --ring token (16-ux-improvements.css), for every
+   input everywhere — :focus rather than :focus-visible so it also covers
+   the common case of clicking directly into a field. */
 input:focus,
 select:focus,
 textarea:focus {
   border-color: var(--brand);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent);
+  box-shadow: var(--ring, 0 0 0 3px color-mix(in srgb, var(--brand) 18%, transparent));
   outline: none;
   transition: border-color var(--fast), box-shadow var(--medium);
 }
@@ -543,10 +588,10 @@ textarea {
 .form-message {
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   font-weight: 780;
   margin: 0;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .form-message-success {
@@ -570,7 +615,7 @@ textarea {
 
 .field-error-text {
   color: var(--danger);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   font-weight: 600;
 }
 
@@ -587,11 +632,11 @@ textarea {
   display: grid;
   gap: 12px;
   grid-template-columns: auto 1fr;
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .activity-item h2 {
-  font-size: 1rem;
+  font-size: var(--text-md);
   margin: 0 0 4px;
 }
 
@@ -602,7 +647,7 @@ textarea {
 .activity-item span:not(.activity-icon) {
   color: var(--text-soft);
   display: inline-block;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   margin-top: 8px;
 }
 
@@ -636,7 +681,7 @@ textarea {
   display: grid;
   gap: 12px;
   margin-bottom: 14px;
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .workout-session-panel {
@@ -657,10 +702,8 @@ textarea {
   margin: 0;
 }
 
-.button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
+/* .button:disabled consolidated into 00-base-shell.css (was duplicated
+   verbatim across this file and 16-ux-improvements.css). */
 
 .busyness-widget strong,
 .capacity-headcount strong {
@@ -678,9 +721,9 @@ textarea {
   background: var(--brand-soft);
   border-radius: 999px;
   color: var(--brand-strong);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 780;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
 }
 
 .timer-presets {
@@ -696,7 +739,7 @@ textarea {
   color: var(--text);
   cursor: pointer;
   font-weight: 800;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
 }
 
 .timer-presets button.is-selected {
@@ -724,13 +767,13 @@ textarea {
   display: grid;
   gap: 10px;
   grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(70px, 0.55fr));
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .lift-log-table div:first-child {
   background: var(--bg-muted);
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 850;
   text-transform: uppercase;
 }
@@ -779,14 +822,14 @@ textarea {
 .usage-bar span,
 .usage-bar small {
   color: var(--text-soft);
-  font-size: 0.76rem;
+  font-size: var(--text-xs);
   font-weight: 780;
 }
 
 .capacity-list {
   display: grid;
   gap: 8px;
-  padding: 0 14px 14px;
+  padding: 0 var(--space-3) var(--space-3);
 }
 
 .capacity-list div {
@@ -797,7 +840,7 @@ textarea {
   display: flex;
   gap: 10px;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .capacity-list p {
@@ -806,7 +849,7 @@ textarea {
 
 .capacity-list span {
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 .bmi-panel {
@@ -823,7 +866,7 @@ textarea {
 .weekly-schedule {
   display: grid;
   gap: 14px;
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .day-tabs {
@@ -841,7 +884,7 @@ textarea {
   display: grid;
   gap: 4px;
   min-height: 76px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-3);
   text-align: left;
   transition: border-color var(--medium), background-color var(--medium), transform var(--spring), box-shadow var(--medium);
 }
@@ -863,12 +906,12 @@ textarea {
 
 .day-tabs span {
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 820;
 }
 
 .day-tabs strong {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   line-height: 1.2;
 }
 
@@ -904,13 +947,13 @@ textarea {
   display: grid;
   gap: 8px;
   min-height: 124px;
-  padding: 14px;
+  padding: var(--space-3);
   text-align: left;
   transition: border-color var(--fast), background-color var(--fast), box-shadow var(--fast), transform var(--fast);
 }
 
 .assignment-option strong {
-  font-size: 1rem;
+  font-size: var(--text-md);
 }
 
 .assignment-option small {
@@ -932,11 +975,11 @@ textarea {
   border-radius: var(--radius-sm);
   display: grid;
   gap: 8px;
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .assignment-preview strong {
-  font-size: 1rem;
+  font-size: var(--text-md);
 }
 
 .assignment-preview small {
@@ -948,9 +991,9 @@ textarea {
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--text-soft);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   font-weight: 800;
-  padding: 8px 10px;
+  padding: var(--space-2) var(--space-2);
   text-decoration: none;
 }
 
@@ -970,17 +1013,38 @@ textarea {
   border-color: color-mix(in srgb, var(--danger) 28%, var(--border));
 }
 
+/* Darkened toward --primary-foreground (near-black in both themes) rather
+   than used raw. In dark mode --danger is a light coral (#F26359) — white
+   text on it was ~3.2:1, under the 4.5:1 body-text floor. The mix keeps
+   light mode's already-strong contrast and fixes dark mode without adding
+   a raw hex value. */
 .button-danger {
-  background: var(--danger);
-  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 82%, var(--primary-foreground));
+  border-color: color-mix(in srgb, var(--danger) 82%, var(--primary-foreground));
+  box-shadow: var(--shadow-soft);
   color: #fff;
+}
+
+.button-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 95%, var(--primary-foreground));
+  border-color: color-mix(in srgb, var(--danger) 95%, var(--primary-foreground));
+  box-shadow: var(--shadow);
+}
+
+.button-danger:active:not(:disabled) {
+  box-shadow: var(--shadow-soft);
+}
+
+.button-danger:focus-visible {
+  box-shadow: var(--shadow-soft), 0 0 0 3px color-mix(in srgb, var(--danger) 40%, transparent);
+  outline: none;
 }
 
 .app-footer {
   color: var(--text-soft);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 760;
-  padding: 28px 0 6px;
+  padding: var(--space-6) 0 var(--space-1);
   text-align: center;
 }
 
@@ -989,7 +1053,7 @@ textarea {
   display: flex;
   gap: 10px;
   justify-content: center;
-  padding-top: 22px;
+  padding-top: var(--space-5);
 }
 
 .social-links a {
@@ -999,7 +1063,7 @@ textarea {
   border-radius: 999px;
   color: var(--text);
   display: inline-flex;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 900;
   height: 38px;
   justify-content: center;
@@ -1019,7 +1083,7 @@ textarea {
   border-radius: var(--radius);
   display: grid;
   gap: 8px;
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .catalog-grid {
@@ -1029,7 +1093,7 @@ textarea {
 .catalog-list {
   display: grid;
   gap: 8px;
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .catalog-item {
@@ -1040,7 +1104,7 @@ textarea {
   display: flex;
   gap: 10px;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
   transition: border-color var(--fast), transform var(--fast), background-color var(--slow);
 }
 
@@ -1049,7 +1113,7 @@ textarea {
 }
 
 .catalog-item span {
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
 }
 
 @keyframes page-in {
@@ -1100,11 +1164,21 @@ textarea {
   }
 }
 
-@media (max-width: 940px) {
+/* Was max-width: 940px, remapped to canonical 1024px. This is the biggest
+   single remap in this pass — it governs .topbar (3-col to 2-col grid),
+   .topnav wrapping, .hero-band/.dashboard-header/.content-grid,
+   .workstream-grid, .program-grid/.catalog-grid/.compact-stats,
+   .form-grid/.add-exercise-grid, .workout-session-panel, and
+   .lift-log-form, all collapsing to a single column together. Below 1024px
+   (rather than the old 940px) the whole app now switches to its stacked
+   mobile-ish layout 84px earlier than before. Worth the first visual check —
+   this is the block most likely to show something unexpected between
+   940-1024px if anything does. */
+@media (max-width: 1024px) {
   .topbar {
     grid-template-columns: 1fr auto;
-    gap: 12px;
-    padding: 10px clamp(14px, 3vw, 32px);
+    gap: var(--space-3);
+    padding: var(--space-2) clamp(14px, 3vw, 32px);
   }
 
   .topnav {
@@ -1115,9 +1189,9 @@ textarea {
 
   .topnav a,
   .theme-toggle {
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     min-height: 34px;
-    padding: 7px 11px;
+    padding: var(--space-2) var(--space-3);
   }
 
   .hero-band,
@@ -1130,7 +1204,7 @@ textarea {
   .header-copy,
   .compact-header .header-copy {
     min-height: auto;
-    padding-bottom: 6px;
+    padding-bottom: var(--space-1);
   }
 
   .workstream-grid {
@@ -1172,7 +1246,7 @@ textarea {
   .lift-log-table div {
     grid-template-columns: 1fr;
     gap: 4px;
-    padding: 10px;
+    padding: var(--space-2);
   }
 
   .add-exercise-button {
@@ -1182,7 +1256,7 @@ textarea {
   .member-row {
     grid-template-columns: auto 1fr;
     gap: 10px;
-    padding: 12px 14px;
+    padding: var(--space-3) var(--space-3);
   }
 
   .member-row .member-access-inline,
@@ -1197,7 +1271,7 @@ textarea {
   .exercise-row {
     grid-template-columns: 80px 1fr;
     gap: 10px;
-    padding: 8px;
+    padding: var(--space-2);
   }
 
   .exercise-prescription {
@@ -1221,22 +1295,22 @@ textarea {
   .summary-panel,
   .member-focus,
   .form-panel {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .panel-title {
-    padding: 12px 14px;
+    padding: var(--space-3) var(--space-3);
     flex-wrap: wrap;
     gap: 8px;
   }
 
   .notification-list {
-    padding: 12px;
+    padding: var(--space-3);
     gap: 8px;
   }
 
   .weekly-schedule {
-    padding: 12px;
+    padding: var(--space-3);
     gap: 12px;
   }
 
@@ -1247,7 +1321,7 @@ textarea {
 
   .day-tabs button {
     min-height: 64px;
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
   }
 
   .timer-presets {
@@ -1263,31 +1337,29 @@ textarea {
     height: 150px;
   }
 
-  h1 {
-    font-size: clamp(1.8rem, 5vw, 3.5rem);
-    margin-bottom: 14px;
-  }
-
+  /* Bare h1 responsive override deleted — competing with the single scale in
+     00-base-shell.css. .dashboard-header h1 is the deliberate scoped
+     exception and keeps its own responsive step, tokenized. */
   .dashboard-header h1 {
-    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
   }
 
   .feature-card {
-    padding: 16px;
+    padding: var(--space-4);
   }
 
   .stat-card {
-    padding: 14px;
+    padding: var(--space-3);
   }
 
   .stat-card strong {
-    font-size: 1.4rem;
+    font-size: var(--text-xl);
   }
 
   .ai-band {
     grid-template-columns: 1fr;
     gap: 12px;
-    padding: 14px;
+    padding: var(--space-3);
   }
 
   .ai-band svg {
@@ -1295,7 +1367,7 @@ textarea {
   }
 
   .dialog-backdrop {
-    padding: 12px;
+    padding: var(--space-3);
     align-items: flex-end;
   }
 
@@ -1303,7 +1375,7 @@ textarea {
     max-width: 100%;
     width: 100%;
     border-radius: var(--radius) var(--radius) 0 0;
-    padding: 20px 18px calc(20px + env(safe-area-inset-bottom, 0px));
+    padding: var(--space-5) var(--space-4) calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
   }
 
   .program-dialog {
@@ -1311,22 +1383,32 @@ textarea {
     width: 100%;
     max-height: 88vh;
     border-radius: var(--radius) var(--radius) 0 0;
-    padding: 14px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+    padding: var(--space-3) var(--space-3) calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
   }
 
   .capacity-list {
-    padding: 0 12px 12px;
+    padding: 0 var(--space-3) var(--space-3);
   }
 }
 
-@media (max-width: 640px) {
+/* Was max-width: 640px, remapped to canonical 768px. Controls .home/.page
+   padding, .topbar padding-inline, .topnav going display:none entirely
+   (the desktop nav links disappear here), and metric-strip/exercise-row/
+   day-tabs/etc. mobile layouts. Verified against the mobile-bottom-nav
+   handoff: 06-programs-mobile-legacy-landing.css (not owned by this pass)
+   shows .mobile-bottom-nav at max-width: 760px. Previously .topnav hid at
+   640 while the bottom nav appeared at 760 — a 120px band (641-760px) where
+   BOTH navs were visible at once. Moving this to 768px shrinks that overlap
+   to an 8px band (761-768px) instead of widening any gap, so this is a
+   improvement on the existing (minor) redundant-nav overlap, not a new risk. */
+@media (max-width: 768px) {
   .home,
   .page {
-    padding: 20px 14px 48px;
+    padding: var(--space-5) var(--space-3) var(--space-12);
   }
 
   .topbar {
-    padding-inline: 12px;
+    padding-inline: var(--space-3);
   }
 
   .topnav {
@@ -1355,8 +1437,8 @@ textarea {
   .metric-strip span {
     border-bottom: 1px solid var(--border);
     border-right: 0;
-    padding: 12px;
-    font-size: 0.78rem;
+    padding: var(--space-3);
+    font-size: var(--text-xs);
   }
 
   .metric-strip span:nth-child(odd) {
@@ -1369,14 +1451,14 @@ textarea {
   }
 
   .metric-strip strong {
-    font-size: 1.35rem;
+    font-size: var(--text-xl);
   }
 
   .detail-window {
     grid-template-columns: 1fr;
     gap: 10px;
     margin-top: 12px;
-    padding-top: 12px;
+    padding-top: var(--space-3);
   }
 
   .quick-actions {
@@ -1387,14 +1469,22 @@ textarea {
     flex: 1;
     min-width: 0;
     justify-content: center;
-    font-size: 0.84rem;
-    padding: 10px 12px;
+    font-size: var(--text-sm);
+    padding: var(--space-2) var(--space-3);
   }
 
   .button {
-    font-size: 0.84rem;
-    min-height: 42px;
-    padding: 10px 14px;
+    font-size: var(--text-sm);
+    min-height: 44px;
+    padding: var(--space-2) var(--space-3);
+  }
+
+  /* 44px minimum touch target for icon buttons on mobile (WCAG 2.5.5 /
+     platform HIG floor) — desktop uses the tighter var(--space-10) (40px). */
+  .icon-button,
+  .neutral-icon-button {
+    height: 44px;
+    width: 44px;
   }
 
   .training-image {
@@ -1413,16 +1503,16 @@ textarea {
 
   .day-tabs button {
     min-height: 56px;
-    padding: 8px 10px;
+    padding: var(--space-2) var(--space-2);
     gap: 2px;
   }
 
   .day-tabs span {
-    font-size: 0.72rem;
+    font-size: var(--text-xs);
   }
 
   .day-tabs strong {
-    font-size: 0.82rem;
+    font-size: var(--text-sm);
     line-height: 1.15;
   }
 
@@ -1444,25 +1534,25 @@ textarea {
   }
 
   .exercise-row h3 {
-    font-size: 0.88rem;
+    font-size: var(--text-base);
   }
 
   .exercise-row p {
-    font-size: 0.8rem;
+    font-size: var(--text-sm);
   }
 
   .exercise-prescription {
-    font-size: 0.8rem;
-    padding: 6px 9px;
+    font-size: var(--text-sm);
+    padding: var(--space-1) var(--space-2);
   }
 
   .app-footer {
-    font-size: 0.82rem;
-    padding: 20px 14px 6px;
+    font-size: var(--text-sm);
+    padding: var(--space-5) var(--space-3) var(--space-1);
   }
 
   .social-links {
-    padding-top: 16px;
+    padding-top: var(--space-4);
     gap: 8px;
   }
 
@@ -1481,12 +1571,12 @@ textarea {
   }
 
   .activity-item {
-    padding: 12px;
+    padding: var(--space-3);
     gap: 10px;
   }
 
   .activity-item h2 {
-    font-size: 0.92rem;
+    font-size: var(--text-base);
   }
 
   .busyness-widget strong,
@@ -1495,17 +1585,17 @@ textarea {
   }
 
   .workspace-switcher {
-    padding: 10px;
+    padding: var(--space-2);
     gap: 6px;
   }
 
   .catalog-list {
-    padding: 10px;
+    padding: var(--space-2);
     gap: 6px;
   }
 
   .catalog-item {
-    padding: 10px;
+    padding: var(--space-2);
     flex-wrap: wrap;
   }
 
@@ -1513,32 +1603,28 @@ textarea {
   .ai-modification-panel,
   .workout-session-panel,
   .lift-log-panel {
-    padding: 12px;
+    padding: var(--space-3);
     gap: 10px;
   }
 }
 
-@media (max-width: 420px) {
-  h1 {
-    font-size: 1.6rem;
-    line-height: 1.05;
-  }
-
+/* Was max-width: 420px — not one of the four permitted breakpoints
+   (480/768/1024/1280); mapped to 480px, the nearest. */
+@media (max-width: 480px) {
+  /* Bare h1/h2 responsive overrides deleted — competing with the single
+     scale in 00-base-shell.css. .dashboard-header h1 keeps its scoped,
+     tokenized exception. */
   .dashboard-header h1 {
-    font-size: 1.5rem;
+    font-size: var(--text-2xl);
   }
 
   .eyebrow {
-    font-size: 0.68rem;
+    font-size: var(--text-2xs);
     margin-bottom: 8px;
   }
 
-  h2 {
-    font-size: 0.96rem;
-  }
-
   p {
-    font-size: 0.88rem;
+    font-size: var(--text-base);
     line-height: 1.55;
   }
 
@@ -1547,29 +1633,58 @@ textarea {
   }
 
   .member-row {
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
   }
 
   .panel-title {
-    padding: 10px 12px;
+    padding: var(--space-3);
   }
 
   .panel-title h2 {
-    font-size: 0.9rem;
+    font-size: var(--text-md);
   }
 
   .status-pill {
-    font-size: 0.68rem;
-    padding: 3px 8px;
+    font-size: var(--text-2xs);
+    padding: var(--space-1) var(--space-2);
     min-height: 22px;
   }
 
   .confirm-dialog {
-    padding: 18px 14px calc(18px + env(safe-area-inset-bottom, 0px));
-    gap: 12px;
+    padding: var(--space-4) var(--space-3) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+    gap: var(--space-3);
   }
 
   .confirm-dialog h2 {
-    font-size: 1rem;
+    font-size: var(--text-md);
   }
+}
+
+/* ============================================================================
+   Theme toggle (light / dark / system cycle) — topbar icon button.
+   Owned by src/components/theme-toggle.tsx. Sizing and color come from the
+   shared .icon-button / .neutral-icon-button classes defined earlier in this
+   file; these rules only add what those don't already provide.
+   ========================================================================= */
+
+.theme-toggle-button {
+  position: relative;
+}
+
+/* The WCAG 2.1 target-size floor is 44x44px. The shared icon-button classes
+   render at 40x40 so this control stays visually identical to its topbar
+   siblings (notification bell, profile trigger). Rather than grow the
+   visible button, expand the actual hit area with an invisible pseudo box —
+   derived from the spacing scale (half of --space-1 per side) rather than a
+   new hardcoded value. */
+.theme-toggle-button::after {
+  border-radius: inherit;
+  content: "";
+  inset: calc(var(--space-1) / -2);
+  position: absolute;
+}
+
+.theme-toggle-button:disabled {
+  cursor: default;
+  opacity: 0.6;
 }

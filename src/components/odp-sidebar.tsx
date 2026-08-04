@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { logoutUser } from "@/lib/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const IC = {
@@ -191,6 +192,10 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
       </nav>
 
       {/* ── Snowflake-style profile footer ── */}
+      {/* Owners never see the global AppTopbar (it returns null on /owner*),
+          so this is their only route to the theme control. */}
+      <ThemeToggle className="odp2-sidebar__theme" />
+
       <div className="odp2-sidebar__user-footer" ref={menuRef}>
         {/* Popup menu — renders above footer */}
         {menuOpen && (

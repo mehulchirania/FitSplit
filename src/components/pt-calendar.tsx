@@ -32,7 +32,7 @@ function shortMonth(d: Date) {
 
 function statusColor(status: PTSession["status"]) {
   switch (status) {
-    case "active":    return "var(--success, #22c55e)";
+    case "active":    return "var(--success)";
     case "scheduled": return "var(--brand)";
     case "completed": return "var(--text-soft)";
     case "cancelled": return "var(--danger)";
@@ -182,7 +182,7 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
                 key={`empty-${idx}`}
                 style={{
                   minHeight: "72px",
-                  background: "rgba(255,255,255,0.01)",
+                  background: "color-mix(in srgb, var(--text) 1.5%, transparent)",
                   borderRadius: "8px"
                 }}
               />
@@ -199,11 +199,11 @@ export function PTCalendar({ sessions }: { sessions: PTSession[] }) {
               style={{
                 minHeight: "72px",
                 background: isToday
-                  ? "rgba(200, 241, 53, 0.06)"
-                  : "rgba(255,255,255,0.02)",
+                  ? "var(--brand-soft)"
+                  : "color-mix(in srgb, var(--text) 2%, transparent)",
                 border: isToday
-                  ? "1px solid rgba(200, 241, 53, 0.3)"
-                  : "1px solid rgba(255,255,255,0.04)",
+                  ? "1px solid color-mix(in srgb, var(--brand) 30%, transparent)"
+                  : "1px solid var(--border)",
                 borderRadius: "8px",
                 padding: "6px 4px",
                 display: "flex",

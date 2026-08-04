@@ -117,14 +117,14 @@ export function EditableMetrics({ member }: { member: Member }) {
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(80px, 1fr))", gap: "12px", width: "100%" }}>
       {stats.map(({ label, value }) => (
         <div key={label} style={{
-          background: "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-          border: "1px solid rgba(255, 255, 255, 0.08)",
+          background: "linear-gradient(145deg, color-mix(in srgb, var(--text) 6%, transparent), color-mix(in srgb, var(--text) 2%, transparent))",
+          border: "1px solid var(--border)",
           borderRadius: "16px",
           padding: "16px",
           display: "flex",
           flexDirection: "column",
           gap: "8px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+          boxShadow: "var(--shadow-soft)",
         }}>
           <div style={{ fontSize: "0.75rem", color: "var(--text-faint)", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>{label}</div>
           <div style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text)", lineHeight: 1 }}>{value}</div>
@@ -134,7 +134,7 @@ export function EditableMetrics({ member }: { member: Member }) {
       {/* BMI tile */}
       <div style={{ position: "relative" }}>
         <div style={{
-          background: `linear-gradient(145deg, color-mix(in srgb, ${getBmiColor(bmiValue)} 15%, transparent), rgba(255,255,255,0.02))`,
+          background: `linear-gradient(145deg, color-mix(in srgb, ${getBmiColor(bmiValue)} 15%, transparent), color-mix(in srgb, var(--text) 2%, transparent))`,
           border: `1px solid color-mix(in srgb, ${getBmiColor(bmiValue)} 30%, transparent)`,
           borderRadius: "16px",
           padding: "16px",
@@ -155,8 +155,8 @@ export function EditableMetrics({ member }: { member: Member }) {
         {showBmiInfo && (
           <div style={{
             position: "absolute", bottom: "calc(100% + 12px)", right: 0,
-            background: "rgba(10, 10, 10, 0.9)", border: "1px solid rgba(255, 255, 255, 0.1)",
-            borderRadius: "16px", padding: "16px", boxShadow: "0 12px 40px rgba(0,0,0,0.5)",
+            background: "color-mix(in srgb, var(--bg-elevated) 92%, transparent)", border: "1px solid var(--border)",
+            borderRadius: "16px", padding: "16px", boxShadow: "var(--shadow)",
             zIndex: 100, width: "220px", fontSize: "0.85rem",
             backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)"
           }}>
@@ -189,7 +189,7 @@ export function EditableMetrics({ member }: { member: Member }) {
         aria-label="Edit body metrics"
         style={{
           background: "transparent",
-          border: "1px dashed rgba(255,255,255,0.2)",
+          border: "1px dashed var(--border-strong)",
           borderRadius: "16px",
           width: "100%",
           padding: "12px",
@@ -202,7 +202,7 @@ export function EditableMetrics({ member }: { member: Member }) {
           fontWeight: 600,
           transition: "all 0.2s ease"
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "var(--text)"; }}
+        onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-subtle)"; e.currentTarget.style.color = "var(--text)"; }}
         onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-soft)"; }}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: "6px" }}><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>

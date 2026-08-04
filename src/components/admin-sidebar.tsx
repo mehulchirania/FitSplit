@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useTransition, useRef, useEffect } from "react";
 import { logoutUser } from "@/lib/auth";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 // ── Icons ────────────────────────────────────────────────────────────────────
 const IC = {
@@ -135,7 +136,10 @@ export function AdminSidebar({ data }: { data: AdminSidebarData }) {
         </div>
       </nav>
 
-      {/* ── Snowflake-style profile footer ── */}
+      {/* Admins on /admin* also fall outside the global AppTopbar's render
+          conditions, so the theme control lives here too. */}
+      <ThemeToggle className="odp2-sidebar__theme" />
+
       <div className="odp2-sidebar__user-footer" ref={menuRef}>
         {menuOpen && (
           <>

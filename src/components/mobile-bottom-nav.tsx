@@ -3,9 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { Role } from "@/types/domain";
-import { Activity, Calendar, Clock, Dumbbell, Mail, Settings, UserRound, UsersRound } from "@/components/icons";
+import { Calendar, Dumbbell, Mail, Settings, UserRound, UsersRound } from "@/components/icons";
 
-function linksForRole(role: Role) {
+// Members are excluded by the guard in MobileBottomNav below (and by the
+// !role check for anonymous visitors), so this only ever runs for "admin",
+// "owner", or "trainer" — there is no member link array to keep in sync.
+function linksForRole(role: Exclude<Role, "member">) {
   if (role === "admin") {
     return [
       { href: "/admin", label: "Admin", icon: Settings },
@@ -26,19 +29,9 @@ function linksForRole(role: Role) {
     ];
   }
 
-  if (role === "trainer") {
-    return [
-      { href: "/trainer", label: "Schedule", icon: Calendar },
-      { href: "/trainer/members", label: "Members", icon: UsersRound },
-      { href: "/profile", label: "Profile", icon: UserRound }
-    ];
-  }
-
   return [
-    { href: "/member", label: "Workout", icon: Dumbbell },
-    { href: "/member#history", label: "History", icon: Clock },
-    { href: "/member/pt-history", label: "PT", icon: Calendar },
-    { href: "/activity", label: "Feed", icon: Activity },
+    { href: "/trainer", label: "Schedule", icon: Calendar },
+    { href: "/trainer/members", label: "Members", icon: UsersRound },
     { href: "/profile", label: "Profile", icon: UserRound }
   ];
 }
@@ -53,9 +46,15 @@ function isActiveLink(pathname: string, href: string) {
 
 export function MobileBottomNav({ role }: { role?: Role }) {
   const pathname = usePathname();
-  // Member and owner workspaces have their own full-screen layouts that handle
-  // navigation — suppress at component level to prevent flash before CSS :has() fires
-  if (!role || role === "member" || pathname.startsWith("/owner") || pathname.startsWith("/member")) {
+  // Members never see this bar (they have no link array for it — see
+  // linksForRole). Owner and member workspaces also suppress it on their own
+  // scoped routes (/owner/*, /member/*), which have full-screen in-shell
+  // layouts with built-in navigation; this floating bar still appears for an
+  // owner or trainer on a shared route outside those trees (e.g. /profile).
+  // Suppressing at the component level (rather than only via CSS) avoids a
+  // flash before any :has()-based hiding rule can apply.
+  const inScopedWorkspace = pathname.startsWith("/owner") || pathname.startsWith("/member");
+  if (!role || role === "member" || inScopedWorkspace) {
     return null;
   }
 

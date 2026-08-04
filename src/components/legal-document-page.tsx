@@ -153,8 +153,8 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
       <style>{`
         .legal-page {
           min-height: 100vh;
-          background: #080808;
-          color: #f5f5f5;
+          background: var(--bg);
+          color: var(--text);
           font-family: var(--font-inter), Inter, system-ui, sans-serif;
         }
         .legal-header {
@@ -164,11 +164,12 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
           display: flex;
           align-items: center;
           justify-content: space-between;
-          gap: 24px;
-          padding: 16px clamp(20px, 5vw, 56px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-          background: rgba(8, 8, 8, 0.9);
+          gap: var(--space-6);
+          padding: var(--space-4) clamp(var(--space-5), 5vw, var(--space-12));
+          border-bottom: 1px solid var(--border);
+          background: var(--surface-glass);
           backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
         }
         .legal-brand,
         .legal-nav,
@@ -178,10 +179,10 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
           align-items: center;
         }
         .legal-brand {
-          gap: 10px;
-          color: #f5f5f5;
+          gap: var(--space-2);
+          color: var(--text);
           font-weight: 800;
-          font-size: 18px;
+          font-size: var(--text-lg);
           text-decoration: none;
         }
         .legal-brand img {
@@ -189,12 +190,12 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
           height: auto;
         }
         .legal-nav {
-          gap: 16px;
+          gap: var(--space-4);
         }
         .legal-nav a,
         .legal-toc a,
         .legal-article a {
-          color: #c8f135;
+          color: var(--brand);
           text-decoration: none;
         }
         .legal-nav a:hover,
@@ -202,13 +203,18 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
         .legal-article a:hover {
           text-decoration: underline;
         }
+        .legal-page :focus-visible {
+          outline: 2px solid var(--brand);
+          outline-offset: 2px;
+          border-radius: var(--radius-xs);
+        }
         .legal-shell {
           display: grid;
           grid-template-columns: 240px minmax(0, 820px);
-          gap: 48px;
+          gap: var(--space-12);
           width: min(1180px, calc(100% - 40px));
           margin: 0 auto;
-          padding: 56px 0 88px;
+          padding: var(--space-16) 0 var(--space-24);
         }
         .legal-toc {
           position: sticky;
@@ -216,96 +222,96 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
           align-self: start;
           flex-direction: column;
           align-items: flex-start;
-          gap: 4px;
-          border: 1px solid rgba(255, 255, 255, 0.08);
-          border-radius: 8px;
-          background: rgba(255, 255, 255, 0.035);
-          padding: 16px;
+          gap: var(--space-1);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
+          background: var(--bg-subtle);
+          padding: var(--space-4);
         }
         .legal-toc p {
-          margin: 0 0 8px;
-          color: #8f8f8f;
-          font-size: 12px;
+          margin: 0 0 var(--space-2);
+          color: var(--text-faint);
+          font-size: var(--text-xs);
           font-weight: 800;
-          letter-spacing: 0.08em;
+          letter-spacing: var(--tracking-caps);
           text-transform: uppercase;
         }
         .legal-toc a {
           min-height: 34px;
-          color: #b9b9b9;
-          font-size: 13.5px;
+          color: var(--text-soft);
+          font-size: var(--text-sm);
           line-height: 1.35;
         }
         .legal-toc a[aria-current="page"] {
-          color: #c8f135;
+          color: var(--brand);
           font-weight: 700;
         }
         .legal-article {
           min-width: 0;
-          color: #d6d6d6;
-          font-size: 16px;
-          line-height: 1.72;
+          color: var(--text-soft);
+          font-size: var(--text-md);
+          line-height: var(--leading-relaxed);
         }
         .legal-article h1,
         .legal-article h2,
         .legal-article h3,
         .legal-article h4 {
-          color: #f5f5f5;
-          font-family: var(--font-dm-sans), "DM Sans", system-ui, sans-serif;
-          letter-spacing: 0;
-          line-height: 1.15;
+          color: var(--text);
+          font-family: var(--font-archivo), "Archivo", var(--font-inter), "Inter", system-ui, sans-serif;
+          letter-spacing: var(--tracking-normal);
+          line-height: var(--leading-tight);
         }
         .legal-article h1 {
-          margin: 0 0 14px;
-          font-size: clamp(34px, 5vw, 54px);
+          margin: 0 0 var(--space-4);
+          font-size: clamp(2.125rem, 5vw, 3.375rem);
         }
         .legal-article h2 {
-          margin: 42px 0 12px;
-          font-size: 24px;
+          margin: var(--space-10) 0 var(--space-3);
+          font-size: var(--text-2xl);
         }
         .legal-article h3 {
-          margin: 28px 0 10px;
-          font-size: 19px;
+          margin: var(--space-8) 0 var(--space-3);
+          font-size: var(--text-lg);
         }
         .legal-article h4 {
-          margin: 24px 0 8px;
-          font-size: 16px;
+          margin: var(--space-6) 0 var(--space-2);
+          font-size: var(--text-md);
         }
         .legal-article p {
-          margin: 0 0 18px;
+          margin: 0 0 var(--space-5);
         }
         .legal-article ul {
-          margin: 0 0 22px;
-          padding-left: 24px;
+          margin: 0 0 var(--space-6);
+          padding-left: var(--space-6);
         }
         .legal-article li {
-          margin: 7px 0;
+          margin: var(--space-2) 0;
         }
         .legal-article strong {
-          color: #f5f5f5;
+          color: var(--text);
         }
         .legal-article code {
-          border: 1px solid rgba(255, 255, 255, 0.12);
-          border-radius: 5px;
-          background: rgba(255, 255, 255, 0.06);
-          color: #f3f3f3;
+          border: 1px solid var(--border-strong);
+          border-radius: var(--radius-xs);
+          background: var(--bg-subtle);
+          color: var(--text);
           padding: 1px 6px;
           font-size: 0.9em;
         }
         .legal-article blockquote {
-          margin: 18px 0 24px;
-          border-left: 3px solid #c8f135;
-          background: rgba(200, 241, 53, 0.06);
-          padding: 14px 18px;
+          margin: var(--space-5) 0 var(--space-6);
+          border-left: 3px solid var(--brand);
+          background: color-mix(in srgb, var(--brand) 8%, transparent);
+          padding: var(--space-4) var(--space-5);
         }
         .legal-article blockquote p {
           margin: 0;
         }
         .legal-table-wrap {
           overflow-x: auto;
-          margin: 18px 0 28px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
+          margin: var(--space-5) 0 var(--space-6);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-sm);
         }
         .legal-article table {
           width: 100%;
@@ -314,29 +320,29 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
         }
         .legal-article th,
         .legal-article td {
-          padding: 13px 14px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          padding: var(--space-3) var(--space-4);
+          border-bottom: 1px solid var(--border);
           text-align: left;
           vertical-align: top;
         }
         .legal-article th {
-          color: #f5f5f5;
-          background: rgba(255, 255, 255, 0.05);
-          font-size: 13px;
+          color: var(--text);
+          background: var(--bg-subtle);
+          font-size: var(--text-sm);
         }
         .legal-article td {
-          color: #d0d0d0;
-          font-size: 14px;
+          color: var(--text-soft);
+          font-size: var(--text-base);
         }
-        @media (max-width: 860px) {
+        @media (max-width: 768px) {
           .legal-header {
             align-items: flex-start;
             flex-direction: column;
           }
           .legal-shell {
             grid-template-columns: 1fr;
-            gap: 28px;
-            padding-top: 32px;
+            gap: var(--space-8);
+            padding-top: var(--space-8);
           }
           .legal-toc {
             position: static;
@@ -348,7 +354,7 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
             grid-column: 1 / -1;
           }
         }
-        @media (max-width: 520px) {
+        @media (max-width: 480px) {
           .legal-nav {
             flex-wrap: wrap;
           }

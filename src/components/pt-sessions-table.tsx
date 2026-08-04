@@ -41,7 +41,7 @@ const STATUS_LABEL: Record<PTSession["status"], string> = {
   scheduled: "Scheduled", active: "Active", completed: "Completed", cancelled: "Cancelled",
 };
 const STATUS_COLOR: Record<PTSession["status"], string> = {
-  scheduled: "var(--warning)", active: "var(--brand)", completed: "#60a5fa", cancelled: "var(--danger)",
+  scheduled: "var(--warning)", active: "var(--brand)", completed: "var(--info)", cancelled: "var(--danger)",
 };
 
 function fmtDate(iso?: string) {

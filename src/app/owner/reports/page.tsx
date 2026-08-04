@@ -107,7 +107,7 @@ export default async function OwnerReportsPage() {
   // Zero-member empty state
   if (members.length === 0) {
     return (
-      <div className="rpt-root">
+      <div className="odp2-scroll rpt-root">
         {pageHeader}
         <div className="rpt-empty">
           <UsersRound />
@@ -120,7 +120,7 @@ export default async function OwnerReportsPage() {
   }
 
   return (
-    <div className="rpt-root">
+    <div className="odp2-scroll rpt-root">
       {pageHeader}
       <p className="rpt-subtitle">
         As of {asOfDate} · <strong>{members.length}</strong> members · <strong>{activeSessions.length}</strong> training now

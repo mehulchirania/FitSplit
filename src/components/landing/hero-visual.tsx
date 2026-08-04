@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useThemeTokens } from "@/hooks/use-theme-tokens";
 
 type Particle = { x: number; y: number; r: number; vx: number; vy: number; base: number };
+
+const PARTICLE_TOKENS = { brand: "--brand" };
 
 /** Cursor-reactive particle field — vanilla canvas, no WebGL dependency. */
 function ParticleCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  // Canvas fillStyle can't take var(...), so the brand token is resolved at
+  // runtime here and re-resolved whenever data-theme changes (see
+  // use-theme-tokens.ts). redrawRef lets the theme-change callback trigger
+  // an immediate repaint even while the animation loop is paused (reduced
+  // motion, pointer idle) instead of waiting for the next frame/interaction.
+  const redrawRef = useRef<() => void>(() => {});
+  const tokensRef = useThemeTokens(PARTICLE_TOKENS, () => redrawRef.current());
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -49,6 +59,7 @@ function ParticleCanvas() {
 
     function draw() {
       ctx!.clearRect(0, 0, width, height);
+      const brand = tokensRef.current.brand || "#C8F135";
       for (const p of particles) {
         if (!reduced) {
           p.x += p.vx;
@@ -65,11 +76,14 @@ function ParticleCanvas() {
         const alpha = Math.min(0.85, p.base + glow * 0.7);
         ctx!.beginPath();
         ctx!.arc(p.x, p.y, p.r + glow * 1.4, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(200, 241, 53, ${alpha})`;
+        ctx!.fillStyle = brand;
+        ctx!.globalAlpha = alpha;
         ctx!.fill();
       }
+      ctx!.globalAlpha = 1;
       if (!reduced) raf = requestAnimationFrame(draw);
     }
+    redrawRef.current = draw;
 
     function onPointerMove(e: PointerEvent) {
       if (!canvas) return;

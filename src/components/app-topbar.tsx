@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { MainNav } from "@/components/main-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Bell, Menu, UserRound, X } from "@/components/icons";
 
 import { logoutUser } from "@/lib/auth";
@@ -238,6 +239,8 @@ export function AppTopbar({
         <MainNav role={role} staffType={staffType} />
 
         <div className="topbar-actions">
+          <ThemeToggle />
+
           {/* ── Notification bell — member & owner ───────────────── */}
           {(role === "member" || role === "owner") ? (
             <DropdownMenu.Root>

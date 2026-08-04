@@ -38,8 +38,8 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   const val = payload[0].value;
   return (
     <div style={{
-      background: "rgba(18,18,18,0.95)",
-      border: "1px solid rgba(255,255,255,0.1)",
+      background: "color-mix(in srgb, var(--bg-elevated) 95%, transparent)",
+      border: "1px solid var(--border)",
       borderRadius: 10,
       padding: "8px 12px",
       fontSize: 13,
@@ -102,7 +102,7 @@ export function AttendanceTrendChart({ data }: { data: DailySessionCount[] }) {
                 fontSize: "1.1rem",
                 fontWeight: 700,
                 lineHeight: 1,
-                color: pct > 0 ? "var(--success, #22c55e)" : pct < 0 ? "var(--danger, #ef4444)" : "var(--text-soft)",
+                color: pct > 0 ? "var(--success)" : pct < 0 ? "var(--danger)" : "var(--text-soft)",
               }}>
                 {pct > 0 ? "↑" : pct < 0 ? "↓" : "—"}{Math.abs(pct)}%
               </div>
@@ -131,18 +131,18 @@ export function AttendanceTrendChart({ data }: { data: DailySessionCount[] }) {
                 interval={6}
               />
 
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+              <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--bg-muted)" }} />
 
               {avg7 > 0 && (
                 <ReferenceLine
                   y={avg7}
-                  stroke="rgba(200,241,53,0.35)"
+                  stroke="color-mix(in srgb, var(--brand) 35%, transparent)"
                   strokeDasharray="5 4"
                   strokeWidth={1.5}
                   label={{
                     value: "7d avg",
                     position: "insideTopRight",
-                    fill: "rgba(200,241,53,0.55)",
+                    fill: "color-mix(in srgb, var(--brand) 55%, transparent)",
                     fontSize: 10,
                   }}
                 />
@@ -158,7 +158,7 @@ export function AttendanceTrendChart({ data }: { data: DailySessionCount[] }) {
                       key={i}
                       fill={
                         d.sessions === 0
-                          ? "rgba(255,255,255,0.06)"
+                          ? "var(--border)"
                           : d.sessions >= avg7 && avg7 > 0
                           ? "var(--brand)"
                           : `color-mix(in srgb, var(--brand) ${Math.round(brightness * 70 + 30)}%, transparent)`
@@ -200,7 +200,7 @@ export function AttendanceTrendChart({ data }: { data: DailySessionCount[] }) {
             Below avg
           </span>
           <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 10, height: 10, borderRadius: 2, background: "rgba(255,255,255,0.08)", display: "inline-block" }} />
+            <span style={{ width: 10, height: 10, borderRadius: 2, background: "var(--border)", display: "inline-block" }} />
             Rest day
           </span>
         </div>

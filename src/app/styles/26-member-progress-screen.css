@@ -9,15 +9,15 @@
 .m3d-pg__stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0 24px;
-  margin-top: 22px;
+  gap: 0 var(--space-6);
+  margin-top: var(--space-6);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  padding: 18px 0;
+  padding: var(--space-5) 0;
 }
 .m3d-pg__stat {
   min-width: 0;
-  padding-left: 24px;
+  padding-left: var(--space-6);
   border-left: 1px solid var(--border);
 }
 .m3d-pg__stat:first-child {
@@ -26,35 +26,36 @@
 }
 .m3d-pg__stat strong {
   display: block;
-  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
-  font-size: 21px;
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: var(--text-xl);
   font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .m3d-pg__stat span {
   display: block;
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   letter-spacing: 0.1em;
   color: var(--text-soft);
   font-weight: 600;
-  margin-top: 4px;
+  margin-top: var(--space-1);
 }
 
 .m3d-pg__prs {
-  margin-top: 28px;
-  padding-bottom: 28px;
+  margin-top: var(--space-8);
+  padding-bottom: var(--space-8);
   border-bottom: 1px solid var(--border);
 }
 .m3d-pg__pr-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 13px 8px;
-  margin: 0 -8px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  margin: 0 calc(var(--space-2) * -1);
   border-bottom: 1px solid var(--border);
 }
 .m3d-pg__pr-row:last-child {
@@ -72,18 +73,18 @@
   color: var(--text);
 }
 .m3d-pg__pr-value {
-  font-family: var(--font-dm-sans), "DM Sans", sans-serif;
+  font-family: var(--font-archivo), "Archivo", sans-serif;
   color: var(--text-soft);
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .m3d-pg__pr-date {
   margin-left: auto;
   color: var(--text-faint);
-  font-size: 12px;
+  font-size: var(--text-xs);
   white-space: nowrap;
 }
 
-@media (max-width: 900px) {
-  .m3d-pg__stats { padding: 14px 0; }
-  .m3d-pg__stat { padding-left: 18px; margin-right: 18px; }
+@media (max-width: 1024px) {
+  .m3d-pg__stats { padding: var(--space-4) 0; }
+  .m3d-pg__stat { padding-left: var(--space-5); margin-right: var(--space-5); }
 }

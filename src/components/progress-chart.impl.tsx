@@ -96,8 +96,8 @@ export function ProgressChart({ exercises, liftLogs, onExerciseSelect }: Props) 
               padding: "5px 12px",
               borderRadius: "999px",
               border: "1px solid",
-              borderColor: selectedId === opt.id ? "rgba(200,241,53,.4)" : "var(--border)",
-              background: selectedId === opt.id ? "rgba(200,241,53,.1)" : "transparent",
+              borderColor: selectedId === opt.id ? "color-mix(in srgb, var(--brand) 40%, transparent)" : "var(--border)",
+              background: selectedId === opt.id ? "color-mix(in srgb, var(--brand) 10%, transparent)" : "transparent",
               color: selectedId === opt.id ? "var(--brand)" : "var(--text-soft)",
               fontSize: "12px",
               fontWeight: selectedId === opt.id ? 700 : 500,
@@ -123,11 +123,11 @@ export function ProgressChart({ exercises, liftLogs, onExerciseSelect }: Props) 
           <AreaChart data={chartData} margin={{ top: 4, right: 4, bottom: 0, left: -24 }}>
             <defs>
               <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#C8F135" stopOpacity={0.4} />
-                <stop offset="95%" stopColor="#C8F135" stopOpacity={0} />
+                <stop offset="5%" stopColor="var(--brand)" stopOpacity={0.4} />
+                <stop offset="95%" stopColor="var(--brand)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="rgba(255,255,255,0.04)" strokeDasharray="4 4" vertical={false} />
+            <CartesianGrid stroke="var(--border)" strokeDasharray="4 4" vertical={false} />
             <XAxis
               dataKey="date"
               tick={{ fill: "var(--text-faint)", fontSize: 11 }}
@@ -142,8 +142,8 @@ export function ProgressChart({ exercises, liftLogs, onExerciseSelect }: Props) 
             />
             <Tooltip
               contentStyle={{
-                background: "rgba(10, 10, 10, 0.8)",
-                border: "1px solid rgba(255, 255, 255, 0.1)",
+                background: "color-mix(in srgb, var(--bg-elevated) 90%, transparent)",
+                border: "1px solid var(--border)",
                 borderRadius: "12px",
                 fontSize: "12px",
                 color: "var(--text)",
@@ -156,12 +156,12 @@ export function ProgressChart({ exercises, liftLogs, onExerciseSelect }: Props) 
             <Area
               type="monotone"
               dataKey="weight"
-              stroke="#C8F135"
+              stroke="var(--brand)"
               strokeWidth={3}
               fillOpacity={1}
               fill="url(#colorWeight)"
-              dot={{ fill: "#C8F135", r: 4, strokeWidth: 0, strokeOpacity: 0.2 }}
-              activeDot={{ r: 6, strokeWidth: 4, stroke: "rgba(200,241,53,0.3)" }}
+              dot={{ fill: "var(--brand)", r: 4, strokeWidth: 0, strokeOpacity: 0.2 }}
+              activeDot={{ r: 6, strokeWidth: 4, stroke: "color-mix(in srgb, var(--brand) 30%, transparent)" }}
             />
           </AreaChart>
         </ResponsiveContainer>

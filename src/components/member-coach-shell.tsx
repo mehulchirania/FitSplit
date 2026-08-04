@@ -11,6 +11,7 @@ import { WorkoutScreen } from "@/components/member-workout-screen";
 import { LogsScreen } from "@/components/member-logs-screen";
 import { ProgressScreen } from "@/components/member-progress-screen";
 import { MacrosScreen } from "@/components/member-macros-screen";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, MealLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
 import type { MemberProfile, Member } from "@/types/domain";
 import React, { useState, useEffect, useMemo, useTransition, useRef } from "react";
@@ -325,6 +326,9 @@ function MobileTopBar({ firstName, gymName }: {
         <div className="mcr-topbar__hi">Hi, {firstName} 👋</div>
       </div>
       <div className="mcr-topbar__right">
+        {/* Members never see the global AppTopbar (it returns null on /member*),
+            so this is their only route to the theme control. */}
+        <ThemeToggle className="mcr-topbar__theme" />
         <div className="mcr-avatar-wrap">
           <button
             className="mcr-topbar__avatar-btn"

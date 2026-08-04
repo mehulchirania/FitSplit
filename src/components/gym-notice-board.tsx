@@ -4,10 +4,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { GymNotice } from "@/types/domain";
 
 const TYPE_CONFIG: Record<string, { label: string; accent: string }> = {
-  rule:         { label: "Gym Rule",     accent: "#ef4444" },
+  rule:         { label: "Gym Rule",     accent: "var(--danger)" },
   tip:          { label: "Training Tip", accent: "var(--brand)" },
-  reminder:     { label: "Reminder",     accent: "#f59e0b" },
-  announcement: { label: "Notice",       accent: "#60a5fa" },
+  reminder:     { label: "Reminder",     accent: "var(--warning)" },
+  announcement: { label: "Notice",       accent: "var(--info)" },
 };
 
 const AUTO_MS = 7000;

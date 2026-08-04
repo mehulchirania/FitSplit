@@ -159,7 +159,7 @@ export function WorkoutLiftLogForm({
                 className="radix-select-content"
                 position="popper"
                 style={{
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                  boxShadow: "var(--shadow)",
                   maxHeight: "320px",
                   overflowY: "auto",
                   zIndex: 200,

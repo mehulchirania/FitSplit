@@ -11,9 +11,9 @@ interface StatCardProps {
 
 const accentVars: Record<NonNullable<StatCardProps["accent"]>, string> = {
   green: "var(--brand)",
-  amber: "#f59e0b",
-  red: "#ef4444",
-  blue: "#3b82f6",
+  amber: "var(--warning)",
+  red: "var(--danger)",
+  blue: "var(--info)",
   default: "var(--border)",
 };
 

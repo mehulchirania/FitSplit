@@ -223,7 +223,7 @@ function BuildCustomForm({
 
   const tabActive: React.CSSProperties = {
     padding: "4px 10px", borderRadius: 7, fontSize: "0.8rem", fontWeight: 700, cursor: "pointer",
-    border: "1px solid rgba(200,241,53,.4)", background: "var(--brand-soft)", color: "var(--brand)",
+    border: "1px solid color-mix(in srgb, var(--brand) 40%, transparent)", background: "var(--brand-soft)", color: "var(--brand)",
     display: "flex", alignItems: "center", gap: 4
   };
   const tabInactive: React.CSSProperties = {

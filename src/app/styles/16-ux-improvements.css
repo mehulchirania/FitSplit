@@ -5,10 +5,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── 1. Missing design tokens ─────────────────────────────────────────────── */
-
+/* --success/--success-soft used to be redeclared here with DIFFERENT hex
+   values than 00-base-shell.css's canonical tokens (#16a34a/#dcfce7 vs the
+   base's #2D6A2F/#DDF0DC light, #22c55e/rgba(...) vs #5FBF62/rgba(...) dark)
+   — this file loads after the base tokens, so it was silently winning and
+   recreating the exact "four competing palettes" bug the base file exists to
+   prevent. Removed; every `var(--success)` / `var(--success-soft)` below now
+   resolves to the one canonical value. The remaining tokens here are genuine
+   additions with no base-file equivalent. */
 :root {
-  --success: #16a34a;
-  --success-soft: #dcfce7;
   --danger-strong: #b91c1c;
   --brand-border: color-mix(in srgb, var(--brand) 30%, var(--border));
   --surface-raised: var(--bg-elevated);
@@ -18,8 +23,6 @@
 }
 
 html[data-theme="dark"] {
-  --success: #22c55e;
-  --success-soft: rgba(34, 197, 94, 0.12);
   --danger-strong: #f87171;
   --input-bg: rgba(255, 255, 255, 0.05);
   --input-border: rgba(255, 255, 255, 0.12);
@@ -32,16 +35,16 @@ html[data-theme="dark"] {
   align-items: center;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-soft);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 760;
-  gap: 6px;
+  gap: var(--space-2);
   justify-content: center;
-  min-height: 36px;
-  padding: 7px 15px;
+  min-height: var(--space-8);
+  padding: var(--space-2) var(--space-4);
   transition: background var(--fast), border-color var(--fast), color var(--fast), transform var(--fast);
 }
 
@@ -54,6 +57,17 @@ html[data-theme="dark"] {
 
 .button-ghost:active:not(:disabled) {
   transform: scale(0.97);
+}
+
+.button-ghost:focus-visible {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 28%, transparent);
+  outline: none;
+}
+
+.button-ghost:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* Missing .button-link — inline text-button */
@@ -74,6 +88,11 @@ html[data-theme="dark"] {
   opacity: 0.75;
 }
 
+.button-link:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+
 .button-link:disabled {
   cursor: not-allowed;
   opacity: 0.4;
@@ -86,43 +105,40 @@ html[data-theme="dark"] {
   outline-offset: 3px;
 }
 
-/* Inputs, selects, textareas get a softer glow-ring instead */
-input:focus-visible,
-select:focus-visible,
-textarea:focus-visible {
-  border-color: var(--brand) !important;
-  box-shadow: var(--ring) !important;
-  outline: none !important;
-}
+/* input/select/textarea focus-visible ring: consolidated into the single
+   canonical `input:focus` rule in 02-shared-components.css (which already
+   uses var(--ring)) — this was a duplicate, !important-laden copy of the
+   same declaration and is deleted.
 
-/* Login form inputs — visible focus */
+   .login-form input:focus used to be declared twice in this file (here and
+   in section 25 below) with slightly different properties each time.
+   Merged into one rule; the light-theme background override now uses
+   var(--bg-elevated) instead of a raw #ffffff (identical value, but a
+   token). */
 .login-form input:focus {
   background: var(--input-bg);
-  border-color: var(--brand) !important;
+  border-color: var(--brand);
   box-shadow: var(--ring);
   outline: none;
 }
 
 html[data-theme="light"] .login-form input:focus {
-  background: #ffffff;
+  background: var(--bg-elevated);
 }
 
 /* ── 4. Button: consistent disabled state ───────────────────────────────── */
-
-.button:disabled,
-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
+/* Consolidated into 00-base-shell.css (`.button:disabled, button:disabled`) —
+   was declared identically in three files. */
 
 /* ── 5. Landing page — mobile nav fix ────────────────────────────────────── */
 
-@media (max-width: 780px) {
+/* Was max-width: 780px, remapped to canonical 768px (.landing-nav, .landing-nav-links, .landing-nav-links a). */
+@media (max-width: 768px) {
   .landing-nav {
     border-radius: 22px;
     flex-wrap: wrap;
     gap: 8px;
-    padding: 10px 12px;
+    padding: var(--space-2) var(--space-3);
     position: fixed;
     top: 10px;
   }
@@ -141,9 +157,9 @@ button:disabled {
 
   .landing-nav-links a {
     flex: 1;
-    font-size: 0.78rem;
+    font-size: var(--text-xs);
     min-height: 36px;
-    padding: 8px 10px;
+    padding: var(--space-2) var(--space-2);
     text-align: center;
     white-space: nowrap;
   }
@@ -165,7 +181,8 @@ button:disabled {
 }
 
 /* Proof stat numbers — larger on desktop */
-@media (min-width: 860px) {
+/* Was min-width: 860px, remapped to canonical 1024px (.landing-proof strong). */
+@media (min-width: 1024px) {
   .landing-proof strong {
     font-size: clamp(2.2rem, 4vw, 3.4rem);
     letter-spacing: -0.03em;
@@ -199,9 +216,13 @@ button:disabled {
   border: 1px solid var(--border) !important;
 }
 
+/* !important kept — this rule exists specifically to beat a higher-specificity
+   hardcoded override in the member-dashboard file (not owned by this pass).
+   Raw rgba(255,255,255,x) replaced with color-mix against --text, which is
+   near-white in dark mode, for an identical result from a token. */
 html[data-theme="dark"] .md-hero-stat-new {
-  background: rgba(255, 255, 255, 0.04) !important;
-  border-color: rgba(255, 255, 255, 0.06) !important;
+  background: color-mix(in srgb, var(--text) 4%, transparent) !important;
+  border-color: color-mix(in srgb, var(--text) 6%, transparent) !important;
 }
 
 .md-hero-stat-new:hover {
@@ -210,7 +231,7 @@ html[data-theme="dark"] .md-hero-stat-new {
 }
 
 html[data-theme="dark"] .md-hero-stat-new:hover {
-  background: rgba(255, 255, 255, 0.07) !important;
+  background: color-mix(in srgb, var(--text) 7%, transparent) !important;
 }
 
 /* Stat values — inherit theme text properly */
@@ -243,7 +264,8 @@ html[data-theme="dark"] .md-hero-new {
 
 /* ── 10. Workout day tabs — better mobile active indicator ───────────────── */
 
-@media (max-width: 640px) {
+/* Was max-width: 640px, remapped to canonical 768px (.md-tab-btn.active, .md-tab-btn.active::after, .md-tab-btn.active .md-tab-icon). */
+@media (max-width: 768px) {
   .md-tab-btn.active {
     color: var(--brand) !important;
     position: relative;
@@ -280,7 +302,7 @@ html[data-theme="dark"] .md-hero-new {
   flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 16px;
-  padding: 10px 16px;
+  padding: var(--space-2) var(--space-4);
 }
 
 @keyframes session-pulse {
@@ -292,7 +314,7 @@ html[data-theme="dark"] .md-hero-new {
   align-items: center;
   color: var(--success);
   display: flex;
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 700;
   gap: 6px;
   letter-spacing: 0.02em;
@@ -304,7 +326,7 @@ html[data-theme="dark"] .md-hero-new {
   border-radius: 0 0 14px 14px;
   border-top: 1px solid var(--border);
   margin-top: 16px;
-  padding: 14px 0 4px;
+  padding: var(--space-3) 0 var(--space-1);
 }
 
 .day-log-actions {
@@ -316,7 +338,7 @@ html[data-theme="dark"] .md-hero-new {
 
 .day-log-actions-label {
   color: var(--text-faint);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 500;
   margin-right: 2px;
   width: 100%;
@@ -328,9 +350,9 @@ html[data-theme="dark"] .md-hero-new {
   border-radius: 20px;
   color: var(--text-soft);
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 600;
-  padding: 7px 14px;
+  padding: var(--space-2) var(--space-3);
   transition: background var(--fast), border-color var(--fast), color var(--fast);
 }
 
@@ -343,7 +365,7 @@ html[data-theme="dark"] .md-hero-new {
 /* Skip reason chips — bigger touch targets */
 .day-log-chip {
   min-height: 36px;
-  padding: 7px 14px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .day-log-chip.is-selected {
@@ -371,13 +393,10 @@ html[data-theme="dark"] .md-hero-new {
 
 /* ── 14. Member progress history card — spacing ──────────────────────────── */
 
+/* background/border/radius/shadow/overflow moved to the shared card
+   selector group in 00-base-shell.css — only the additive property here. */
 .member-progress-history-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
-  overflow: hidden;
-  padding-bottom: 20px;
+  padding-bottom: var(--space-5);
 }
 
 /* ── 15. Empty state — improved design ───────────────────────────────────── */
@@ -390,7 +409,7 @@ html[data-theme="dark"] .md-hero-new {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 48px 24px;
+  padding: var(--space-12) var(--space-6);
   text-align: center;
 }
 
@@ -408,12 +427,12 @@ html[data-theme="dark"] .md-hero-new {
 
 .md-empty h2 {
   color: var(--text);
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   margin-bottom: 4px;
 }
 
 .md-empty p {
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   line-height: 1.5;
   max-width: 320px;
 }
@@ -422,10 +441,10 @@ html[data-theme="dark"] .md-hero-new {
   background: var(--brand);
   border-radius: 999px;
   color: var(--bg);
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   font-weight: 700;
   margin-top: 4px;
-  padding: 9px 20px;
+  padding: var(--space-2) var(--space-5);
   text-decoration: none;
   transition: opacity var(--fast);
 }
@@ -450,7 +469,7 @@ html[data-theme="dark"] .md-hero-new {
   display: flex;
   gap: 4px;
   margin-bottom: 12px;
-  padding: 4px;
+  padding: var(--space-1);
 }
 
 .workout-mode-toggle button {
@@ -460,10 +479,10 @@ html[data-theme="dark"] .md-hero-new {
   color: var(--text-soft);
   cursor: pointer;
   flex: 1;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   min-height: 34px;
-  padding: 6px 10px;
+  padding: var(--space-1) var(--space-2);
   transition: background var(--fast), color var(--fast);
 }
 
@@ -479,11 +498,17 @@ html[data-theme="dark"] .md-hero-new {
 
 /* ── 17. Injury / AI trainer card — cleaner look ─────────────────────────── */
 
+/* Deliberately elevates .injury-card off the shared "subtle recessed" group
+   it's declared in over in 02-shared-components.css (.workout-session-panel,
+   .injury-card, .ai-modification-panel, etc. all get --bg-subtle there) —
+   this file loads later and intentionally makes just this one card read as
+   a proper elevated surface. border/border-radius are duplicates of that
+   same group and are removed; only the two properties that actually change
+   are kept. */
 .injury-card {
   background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-5);
 }
 
 .injury-card label > textarea {
@@ -498,26 +523,11 @@ html[data-theme="dark"] .md-hero-new {
 }
 
 /* ── 19. Panel title — consistent cross-page ─────────────────────────────── */
-
-.panel-title {
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  margin-bottom: 0;
-  padding: 16px 20px;
-}
-
-.panel-title h2 {
-  align-items: center;
-  display: flex;
-  font-size: 0.95rem;
-  font-weight: 800;
-  gap: 8px;
-  letter-spacing: 0;
-  margin: 0;
-}
+/* Was a full redeclaration of .panel-title / .panel-title h2 (a third,
+   drifting copy alongside 00-base-shell.css and 03-visual-refresh.css).
+   Consolidated into 00-base-shell.css (structure/padding/gap/font-weight)
+   and 03-visual-refresh.css (font-size token + glass tint). Nothing unique
+   left to declare here. */
 
 /* ── 20. Status pills — add the missing success variant ──────────────────── */
 
@@ -601,21 +611,13 @@ html[data-theme="light"] .cal-cell--skipped {
 }
 
 /* ── 25. Login card — focus-in input borders ─────────────────────────────── */
-
-.login-form input:focus {
-  border-color: var(--brand) !important;
-  box-shadow: var(--ring);
-  outline: none;
-}
-
-html[data-theme="light"] .login-form input:focus {
-  background: #ffffff;
-  border-color: var(--brand) !important;
-}
+/* Was a second, near-identical .login-form input:focus declaration (with a
+   raw #ffffff) — merged into the one definition near the top of this file
+   (section 3). */
 
 /* Login submit button — full width + height */
 .login-submit {
-  font-size: 1rem;
+  font-size: var(--text-md);
   letter-spacing: 0.01em;
   min-height: 52px;
 }
@@ -653,7 +655,10 @@ html[data-theme="light"] .login-form input:focus {
 
 /* ── 29. Member training layout — sidebar sticky ─────────────────────────── */
 
-@media (min-width: 900px) {
+/* Was min-width: 900px, remapped to canonical 1024px (.member-workout-side) —
+   1024 is documented as "laptop / sidebar appears", which is exactly what
+   this rule does, so this is the most confident remap in this file. */
+@media (min-width: 1024px) {
   .member-workout-side {
     position: sticky;
     top: calc(72px + 16px);
@@ -671,7 +676,7 @@ html[data-theme="light"] .login-form input:focus {
   border-radius: var(--radius);
   display: grid;
   gap: 10px;
-  padding: 18px;
+  padding: var(--space-4);
 }
 
 .ai-modification-panel .eyebrow {
@@ -679,46 +684,22 @@ html[data-theme="light"] .login-form input:focus {
 }
 
 /* ── 31. Form inputs — global consistent look ─────────────────────────────── */
-
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="number"],
-input[type="password"],
-input[type="search"],
-select,
-textarea {
-  background: var(--input-bg);
-  border: 1px solid var(--input-border);
-  border-radius: var(--radius-xs);
-  color: var(--text);
-  font-size: 0.92rem;
-  min-height: 42px;
-  padding: 10px 12px;
-  transition: border-color var(--fast), box-shadow var(--fast);
-  width: 100%;
-}
-
-input[type="text"]:focus,
-input[type="email"]:focus,
-input[type="tel"]:focus,
-input[type="number"]:focus,
-input[type="password"]:focus,
-input[type="search"]:focus,
-select:focus,
-textarea:focus {
-  border-color: var(--brand);
-  box-shadow: var(--ring);
-  outline: none;
-}
+/* This used to redeclare inputs by [type=...] attribute selector, which has
+   higher specificity than the bare `input` rule and so silently won over
+   it: a different radius (--radius-xs, 6px, vs --radius-sm, 10px, used
+   everywhere else) and a different height (42px vs 44px) for every
+   text/email/tel/number/password/search input, while any other input type
+   (date, url, checkbox-adjacent text fallback, etc.) still got the bare
+   rule's look. Deleted — 02-shared-components.css's `input, select,
+   textarea` rule is now the single definition for every input type. */
 
 /* Don't override the specialty login form inputs */
 .login-form input {
   background: unset;
   border: unset;
-  border-radius: 14px;
+  border-radius: var(--radius);
   min-height: 44px;
-  padding: 12px 14px;
+  padding: var(--space-3) var(--space-4);
 }
 
 /* ── 32. Member workout console — exercise eyebrow text spacing ───────────── */
@@ -728,7 +709,7 @@ textarea:focus {
 }
 
 .selected-workout-day > p:first-of-type {
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   margin-bottom: 10px;
 }
 
@@ -740,10 +721,10 @@ textarea:focus {
   border-radius: 10px;
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   gap: 6px 14px;
   margin-bottom: 14px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .day-muscle-targets span {
@@ -763,15 +744,20 @@ textarea:focus {
 
 /* ── 35. Mobile — better touch targets for all buttons ───────────────────── */
 
-@media (max-width: 640px) {
+/* Was max-width: 640px, remapped to canonical 768px (.button, button.button,
+   .day-log-btn, .day-log-chip, .topbar min-height) — touch-target minimums
+   apply to tablets too, not just phones, so the wider range is intentional,
+   not just nearest-value rounding. */
+@media (max-width: 768px) {
   .button,
   button.button {
     min-height: 44px;
   }
 
+  /* Bumped from 40px — below the 44px mobile touch-target floor. */
   .day-log-btn,
   .day-log-chip {
-    min-height: 40px;
+    min-height: 44px;
   }
 
   .topbar {
@@ -781,7 +767,8 @@ textarea:focus {
 
 /* ── 36. Topbar — tighter on mobile ──────────────────────────────────────── */
 
-@media (max-width: 540px) {
+/* Was max-width: 540px, remapped to canonical 480px (.topbar margin/top/width). */
+@media (max-width: 480px) {
   .topbar {
     margin: 8px auto 0;
     top: 8px;
@@ -827,8 +814,15 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
   border-color: var(--border) !important;
 }
 
-/* On desktop the tab list shouldn't sit behind/over the topbar */
-@media (min-width: 641px) {
+/* On desktop the tab list shouldn't sit behind/over the topbar.
+   Was min-width: 641px, remapped to canonical 768px (.md-tab-list top).
+   11-member-tabs.css (not owned by this pass) gives .md-tab-list its own
+   mobile treatment at max-width: 768px — the old 641px complement left a
+   127px band (641-768px) where BOTH the mobile layout and this desktop-offset
+   rule applied simultaneously. Moving this to min-width: 768px closes that
+   overlap down to the single 768px boundary pixel, which is standard and
+   harmless. This is a genuine fix, not just a nearest-value rounding. */
+@media (min-width: 768px) {
   .md-tab-list {
     top: calc(72px + 16px) !important;
   }
@@ -837,7 +831,7 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
 /* Light mode: fully opaque background so text stays readable */
 html[data-theme="light"] .md-tab-list {
   background: color-mix(in srgb, var(--bg-elevated) 92%, transparent) !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--text) 8%, transparent) !important;
 }
 
 /* ── 42. Progress history card — inner panel title flush ─────────────────── */
@@ -857,7 +851,7 @@ html[data-theme="light"] .md-tab-list {
   color: var(--text-faint);
   display: flex;
   flex-wrap: wrap;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   gap: 4px;
   margin-bottom: 6px;
@@ -878,13 +872,8 @@ html[data-theme="light"] .md-tab-list {
 
 /* ── 44. Owner section cards — consistent look ───────────────────────────── */
 
-.odp-section-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow-soft);
-  overflow: hidden;
-}
+/* background/border/radius/shadow/overflow moved to the shared card
+   selector group in 00-base-shell.css; nothing additional needed here. */
 
 /* Notifications side panel */
 .odp-side .notification-list {
@@ -896,7 +885,7 @@ html[data-theme="light"] .md-tab-list {
 
 .activity-feed-entry {
   border-bottom: 1px solid var(--border);
-  padding: 14px 20px;
+  padding: var(--space-3) var(--space-5);
   transition: background var(--fast);
 }
 
@@ -909,23 +898,17 @@ html[data-theme="light"] .md-tab-list {
 }
 
 /* ── 46. Profile page form panels ─────────────────────────────────────────── */
+/* background/border/border-radius/overflow used to be redeclared here for
+   both .form-panel and .list-panel, verbatim duplicates of the canonical
+   card treatment in 00-base-shell.css. Only the genuinely additive bits
+   (wider horizontal padding, stacking margin) are kept. */
 
 .form-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px 24px;
+  padding: var(--space-5) var(--space-6);
 }
 
 .form-panel + .form-panel {
-  margin-top: 16px;
-}
-
-.list-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
+  margin-top: var(--space-4);
 }
 
 /* ── 47. Body weight logger — chart background ───────────────────────────── */
@@ -967,18 +950,18 @@ html[data-theme="light"] .md-hero-new::before {
 
 .notification-count-badge {
   align-items: center;
-  background: var(--danger, #ef4444);
+  background: var(--danger);
   border: 2px solid var(--bg-elevated);
   border-radius: 99px;
   color: #fff;
   display: flex;
-  font-size: 0.6rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   height: 18px;
   justify-content: center;
   line-height: 1;
   min-width: 18px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   pointer-events: none;
   position: absolute;
   right: 1px;
@@ -1025,7 +1008,7 @@ html[data-theme="light"] .md-hero-new::before {
   align-items: flex-start;
   display: flex;
   gap: 12px;
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   position: relative;
 }
 
@@ -1076,7 +1059,7 @@ html[data-theme="light"] .md-hero-new::before {
 
 .notif-title {
   color: var(--text);
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   font-weight: 600;
   line-height: 1.3;
 }
@@ -1084,12 +1067,12 @@ html[data-theme="light"] .md-hero-new::before {
 .notif-time {
   color: var(--text-faint);
   flex-shrink: 0;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
 }
 
 .notif-body {
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
   margin: 0;
   overflow-wrap: anywhere;
@@ -1098,7 +1081,7 @@ html[data-theme="light"] .md-hero-new::before {
 .notif-chevron {
   align-self: center;
   color: var(--text-faint);
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   flex-shrink: 0;
   margin-left: 4px;
 }
@@ -1111,11 +1094,11 @@ html[data-theme="light"] .md-hero-new::before {
   cursor: pointer;
   display: flex;
   flex-shrink: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   justify-content: center;
   line-height: 1;
   opacity: 0;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   transition: opacity 150ms, color 150ms;
   width: 36px;
 }
@@ -1123,7 +1106,7 @@ html[data-theme="light"] .md-hero-new::before {
 .notif-dismiss:focus-visible {
   opacity: 1;
 }
-.notif-dismiss:hover { color: var(--danger, #ef4444); }
+.notif-dismiss:hover { color: var(--danger); }
 
 /* Empty state */
 .notif-empty {
@@ -1132,12 +1115,12 @@ html[data-theme="light"] .md-hero-new::before {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 40px 20px;
+  padding: var(--space-10) var(--space-5);
   text-align: center;
 }
 .notif-empty svg { color: var(--text-faint); opacity: 0.5; }
-.notif-empty p  { color: var(--text); font-size: 0.95rem; font-weight: 600; margin: 0; }
-.notif-empty span { color: var(--text-faint); font-size: 0.82rem; }
+.notif-empty p  { color: var(--text); font-size: var(--text-base); font-weight: 600; margin: 0; }
+.notif-empty span { color: var(--text-faint); font-size: var(--text-sm); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    53. Notification dropdown improvements
@@ -1154,9 +1137,9 @@ html[data-theme="light"] .md-hero-new::before {
   border-radius: 6px;
   color: var(--text-soft);
   cursor: pointer;
-  font-size: 0.73rem;
+  font-size: var(--text-xs);
   font-weight: 500;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2);
   transition: background 150ms, color 150ms;
   white-space: nowrap;
 }
@@ -1179,12 +1162,12 @@ html[data-theme="light"] .md-hero-new::before {
   display: flex;
   gap: 8px;
   justify-content: space-between;
-  padding: 8px 0;
+  padding: var(--space-2) 0;
 }
 
 .notif-dd-text { flex: 1; min-width: 0; }
-.notif-dd-title { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
-.notif-dd-body  { color: var(--text-soft); font-size: 0.78rem; line-height: 1.4; margin: 2px 0 0; overflow-wrap: anywhere; }
+.notif-dd-title { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.notif-dd-body  { color: var(--text-soft); font-size: var(--text-xs); line-height: 1.4; margin: 2px 0 0; overflow-wrap: anywhere; }
 
 .notif-dd-meta {
   align-items: center;
@@ -1192,29 +1175,29 @@ html[data-theme="light"] .md-hero-new::before {
   display: flex;
   flex-direction: column;
   flex-shrink: 0;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   gap: 2px;
   text-align: right;
 }
-.notif-dd-chevron { color: var(--text-soft); font-size: 1rem; }
+.notif-dd-chevron { color: var(--text-soft); font-size: var(--text-md); }
 
 .notif-view-all {
   background: transparent;
   border-top: 1px solid var(--border);
   color: var(--brand);
   display: block;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   margin-top: 8px;
-  padding: 10px 16px 2px;
+  padding: var(--space-2) var(--space-4) var(--space-0);
   text-align: center;
   text-decoration: none;
   transition: opacity 150ms;
 }
 .notif-view-all:hover { opacity: 0.75; }
 
-.notification-empty { padding: 20px 16px; }
-.notification-empty p { font-size: 0.84rem; margin: 0; }
+.notification-empty { padding: var(--space-5) var(--space-4); }
+.notification-empty p { font-size: var(--text-sm); margin: 0; }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    54. Owner notifications full-page
@@ -1232,7 +1215,7 @@ html[data-theme="light"] .md-hero-new::before {
 }
 
 .notif-page-title-row h1 {
-  font-size: 1.6rem;
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin: 0;
 }
@@ -1252,11 +1235,11 @@ html[data-theme="light"] .md-hero-new::before {
   border-bottom: 2px solid transparent;
   color: var(--text-soft);
   display: flex;
-  font-size: 0.875rem;
+  font-size: var(--text-base);
   font-weight: 500;
   gap: 6px;
   margin-bottom: -1px;
-  padding: 10px 16px;
+  padding: var(--space-2) var(--space-4);
   text-decoration: none;
   transition: color 150ms, border-color 150ms;
   white-space: nowrap;
@@ -1272,9 +1255,9 @@ html[data-theme="light"] .md-hero-new::before {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: 99px;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 600;
-  padding: 1px 6px;
+  padding: var(--space-0) var(--space-1);
 }
 .notif-filter-tab-active .notif-filter-count {
   background: color-mix(in srgb, var(--brand) 12%, transparent);

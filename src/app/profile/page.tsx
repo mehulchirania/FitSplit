@@ -34,8 +34,8 @@ export default async function ProfilePage({
     <section
       className="form-panel"
       style={{
-        background: "color-mix(in srgb, var(--warning, #f5b945) 14%, transparent)",
-        border: "1px solid color-mix(in srgb, var(--warning, #f5b945) 40%, var(--border))",
+        background: "color-mix(in srgb, var(--warning) 14%, transparent)",
+        border: "1px solid color-mix(in srgb, var(--warning) 40%, var(--border))",
         marginBottom: 16
       }}
     >

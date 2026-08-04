@@ -5,60 +5,63 @@
 
 .md-page {
   min-height: 100dvh;
-  padding-bottom: 80px;
+  padding-bottom: var(--space-20);
 }
 
 /* ── Hero ── */
 .md-hero {
-  padding: 32px 0 28px;
-  margin-bottom: 32px;
+  padding: var(--space-8) 0 var(--space-8);
+  margin-bottom: var(--space-8);
   border: none;
 }
 .md-hero-inner {
   display: flex;
   align-items: flex-start;
-  gap: 32px;
+  gap: var(--space-8);
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--space-6);
   flex-wrap: wrap;
 }
 .md-hero-copy { flex: 1; min-width: 260px; }
 .md-greeting {
   color: var(--brand);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 750;
   letter-spacing: 0.1em;
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
   text-transform: uppercase;
 }
 .md-hero-title {
+  /* Fluid hero display type — intentionally kept off the fixed scale to match
+     the same clamp() pattern 00-base-shell.css uses for h1 (fluid headlines
+     are the one documented exception to the token scale). */
   font-size: clamp(24px, 3vw, 36px);
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
   color: var(--text);
-  margin: 0 0 14px;
+  margin: 0 0 var(--space-4);
 }
 .md-hero-meta {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .md-badge {
   display: inline-flex;
   align-items: center;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 100px;
+  border-radius: var(--radius-pill);
   color: var(--text-soft);
-  font-size: 12px;
+  font-size: var(--text-xs);
   font-weight: 500;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
 }
 .md-badge-accent {
   background: var(--brand-soft);
-  border-color: rgba(200,241,53,.25);
+  border-color: color-mix(in srgb, var(--brand) 25%, transparent);
   color: var(--brand);
 }
 .md-hero-metrics { flex-shrink: 0; }
@@ -68,32 +71,32 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   max-width: 400px;
-  margin: 80px auto;
-  padding: 0 24px;
+  margin: var(--space-20) auto;
+  padding: 0 var(--space-6);
   text-align: center;
 }
 .md-empty-icon {
   width: 72px;
   height: 72px;
-  border-radius: 16px;
+  border-radius: var(--radius);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-faint);
-  margin-bottom: 8px;
+  margin-bottom: var(--space-2);
 }
 .md-empty h2 {
-  font-size: 18px;
+  font-size: var(--text-lg);
   font-weight: 700;
   color: var(--text);
   margin: 0;
 }
 .md-empty p {
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--text-soft);
   line-height: 1.6;
   margin: 0;
@@ -103,32 +106,32 @@
 .content-grid {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 0 24px;
+  padding: 0 var(--space-6);
   display: grid;
   grid-template-columns: 1fr 380px;
-  gap: 24px;
+  gap: var(--space-6);
   align-items: start;
 }
 .list-panel {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 24px;
+  padding: var(--space-6);
 }
 .panel-title h2 {
-  font-size: 16px;
+  font-size: var(--text-md);
   font-weight: 700;
   color: var(--text);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   margin: 0;
 }
 
 /* Day tabs */
 .day-tabs-wrap {
   position: relative;
-  margin-bottom: 20px;
+  margin-bottom: var(--space-5);
 }
 .day-tabs-wrap::after {
   content: "";
@@ -144,7 +147,7 @@
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: var(--space-1);
   scrollbar-width: none;
 }
 .day-tabs::-webkit-scrollbar { display: none; }
@@ -152,9 +155,10 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  padding: 8px 14px;
-  border-radius: 10px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  min-height: 44px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-soft);
@@ -166,11 +170,15 @@
 .day-tabs button:hover { background: var(--bg-subtle); color: var(--text); }
 .day-tabs button.is-selected {
   background: var(--brand-soft);
-  border-color: rgba(200,241,53,.3);
+  border-color: color-mix(in srgb, var(--brand) 30%, transparent);
   color: var(--brand);
 }
-.day-tabs span { font-size: 11px; font-weight: 500; }
-.day-tabs strong { font-size: 13px; font-weight: 700; }
+.day-tabs span { font-size: var(--text-2xs); font-weight: 500; }
+.day-tabs strong {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums lining-nums;
+}
 
 /* Workout mode toggle */
 .workout-mode-toggle {
@@ -178,18 +186,19 @@
   gap: 4px;
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 4px;
-  margin-bottom: 20px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-1);
+  margin-bottom: var(--space-5);
 }
 .workout-mode-toggle button {
   flex: 1;
-  padding: 6px 12px;
-  border-radius: 7px;
+  padding: var(--space-2) var(--space-3);
+  min-height: 44px;
+  border-radius: var(--radius-xs);
   border: none;
   background: transparent;
   color: var(--text-soft);
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   transition: all 140ms ease;
@@ -197,31 +206,31 @@
 .workout-mode-toggle button.is-selected {
   background: var(--bg-elevated);
   color: var(--text);
-  box-shadow: 0 1px 3px rgba(0,0,0,.2);
+  box-shadow: var(--shadow-soft);
 }
 
 /* Selected workout day */
 .selected-workout-day .eyebrow {
-  font-size: 11px;
+  font-size: var(--text-2xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-faint);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
 }
-.selected-workout-day > p { color: var(--text-soft); font-size: 14px; margin: 0 0 12px; }
+.selected-workout-day > p { color: var(--text-soft); font-size: var(--text-sm); margin: 0 0 var(--space-3); }
 .day-muscle-targets {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin-bottom: 16px;
+  margin-bottom: var(--space-4);
 }
 .day-muscle-targets span {
-  font-size: 12px;
+  font-size: var(--text-xs);
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 3px 10px;
+  border-radius: var(--radius-xs);
+  padding: var(--space-1) var(--space-3);
   color: var(--text-soft);
 }
 
@@ -230,36 +239,36 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 .injury-card h2 {
-  font-size: 15px;
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-2);
 }
 .injury-card p {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--text-soft);
   line-height: 1.5;
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
 }
 .injury-card label {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
   color: var(--text-soft);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .injury-card textarea {
-  padding: 10px 12px;
+  padding: var(--space-3);
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--bg-subtle);
   color: var(--text);
-  font-size: 13px;
+  font-size: var(--text-sm);
   resize: vertical;
   min-height: 72px;
   font-family: inherit;
@@ -275,33 +284,33 @@
   border: 1px solid var(--border);
   border-left: 3px solid var(--brand);
   border-radius: var(--radius);
-  padding: 20px;
-  margin-bottom: 16px;
+  padding: var(--space-5);
+  margin-bottom: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-2);
 }
-.ai-modification-panel h2 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
+.ai-modification-panel h2 { font-size: var(--text-sm); font-weight: 700; color: var(--text); margin: 0; }
 
 /* Breadcrumb trail */
 .breadcrumb {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 .breadcrumb-item {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .breadcrumb-sep {
   color: var(--text-faint);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
 }
 .breadcrumb-link {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -313,7 +322,7 @@
   color: var(--brand);
 }
 .breadcrumb-current {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;

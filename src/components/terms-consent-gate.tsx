@@ -55,11 +55,11 @@ export function TermsConsentGate() {
         style={{
           width: "100%",
           maxWidth: "460px",
-          background: "var(--bg-elevated, #15171a)",
+          background: "var(--bg-elevated)",
           border: "1px solid var(--border)",
           borderRadius: "18px",
           padding: "28px",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
+          boxShadow: "var(--shadow)",
         }}
       >
         <h2 id="terms-gate-title" style={{ fontSize: "1.3rem", fontWeight: 700, color: "var(--text)", margin: "0 0 12px" }}>
@@ -74,7 +74,7 @@ export function TermsConsentGate() {
         </p>
 
         {error && (
-          <p style={{ color: "var(--danger, #ef4444)", fontSize: "0.9rem", margin: "0 0 12px" }} role="alert">
+          <p style={{ color: "var(--danger)", fontSize: "0.9rem", margin: "0 0 12px" }} role="alert">
             {error}
           </p>
         )}

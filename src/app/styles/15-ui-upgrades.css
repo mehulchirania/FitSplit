@@ -60,12 +60,12 @@ html[data-theme="dark"] .status-active {
   color: var(--text);
   display: flex;
   flex-direction: column;
-  font-size: 0.76rem;
+  font-size: var(--text-xs);
   font-weight: 720;
   gap: 7px;
   justify-content: center;
   min-height: 72px;
-  padding: 12px 10px;
+  padding: var(--space-3) var(--space-2);
   position: relative;
   text-align: center;
   text-decoration: none;
@@ -105,9 +105,9 @@ html[data-theme="dark"] .status-active {
 }
 
 .odp-ql-badge {
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   min-width: 16px;
-  padding: 2px 5px;
+  padding: var(--space-0) var(--space-1);
   /* keep it positioned inline since flex-column */
   position: static;
 }
@@ -145,7 +145,15 @@ html[data-theme="dark"] .odp-ql-link:hover {
 
 /* ── #1: Mobile bottom-nav token fix ────────────────────────────────────── */
 /* var(--surface) and var(--shadow-lg) were undefined; map to design system tokens */
-@media (max-width: 760px) {
+/* Was max-width: 760px, remapped to canonical 768px (.mobile-bottom-nav,
+   .mobile-bottom-nav a:hover, .mobile-bottom-nav a.is-active/[aria-current]
+   and their svg). 06-programs-mobile-legacy-landing.css (not owned by this
+   pass) still shows/hides .mobile-bottom-nav itself at max-width: 760px, so
+   there's now an 8px band (761-768px) where this cosmetic rule is "armed"
+   before the nav is actually visible — harmless, since a display:none
+   element needs no hover/active styling. Flagging in case 06 is remapped
+   too and someone wants these to match exactly again. */
+@media (max-width: 768px) {
   .mobile-bottom-nav {
     background: color-mix(in srgb, var(--bg-elevated) 84%, transparent);
     box-shadow: var(--shadow);
@@ -171,7 +179,7 @@ html[data-theme="dark"] .odp-ql-link:hover {
 
 /* ── #8: Notification red dot ──────────────────────────────────────────── */
 .notification-red-dot {
-  background: var(--danger, #ef4444);
+  background: var(--danger);
   border: 2px solid var(--bg-elevated);
   border-radius: 50%;
   height: 10px;
@@ -187,7 +195,7 @@ html[data-theme="dark"] .odp-ql-link:hover {
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 14px;
-  padding-top: 10px;
+  padding-top: var(--space-2);
   border-top: 1px solid var(--border);
 }
 
@@ -195,7 +203,7 @@ html[data-theme="dark"] .odp-ql-link:hover {
   align-items: center;
   color: var(--text-soft);
   display: flex;
-  font-size: 0.74rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   gap: 6px;
 }
@@ -226,7 +234,7 @@ html[data-theme="dark"] .odp-ql-link:hover {
   display: grid;
   gap: 12px;
   grid-template-columns: 40px 1fr auto;
-  padding: 16px 20px;
+  padding: var(--space-4) var(--space-5);
   transition: border-color var(--medium), box-shadow var(--medium), transform var(--spring);
 }
 
@@ -250,7 +258,7 @@ html[data-theme="dark"] .focus-exercise-card {
   color: var(--brand);
   display: flex;
   flex: 0 0 40px;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 800;
   height: 40px;
   justify-content: center;
@@ -265,10 +273,10 @@ html[data-theme="dark"] .focus-exercise-card {
   border: 1px solid var(--border);
   border-radius: 8px;
   color: var(--text);
-  font-size: 1.05rem;
+  font-size: var(--text-md);
   font-weight: 800;
   letter-spacing: -0.01em;
-  padding: 4px 10px;
+  padding: var(--space-1) var(--space-2);
   margin-top: 6px;
 }
 
@@ -283,10 +291,10 @@ html[data-theme="dark"] .focus-exercise-card {
   border-radius: 4px;
   color: #fff;
   display: inline-block;
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   font-weight: 900;
   letter-spacing: 0.04em;
-  padding: 2px 5px;
+  padding: var(--space-0) var(--space-1);
   text-transform: uppercase;
 }
 
@@ -297,11 +305,11 @@ html[data-theme="dark"] .focus-exercise-card {
 
 /* ── Workout makeup card ─────────────────────────────────────────────────── */
 .makeup-card {
-  background: color-mix(in srgb, var(--warning, #f59e0b) 8%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--warning, #f59e0b) 30%, var(--border));
+  background: color-mix(in srgb, var(--warning) 8%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--warning) 30%, var(--border));
   border-radius: var(--radius);
   margin-top: 12px;
-  padding: 14px 16px;
+  padding: var(--space-3) var(--space-4);
 }
 
 .makeup-card-header {
@@ -313,20 +321,20 @@ html[data-theme="dark"] .focus-exercise-card {
 
 .makeup-card-icon {
   flex-shrink: 0;
-  font-size: 1.4rem;
+  font-size: var(--text-xl);
   line-height: 1;
   margin-top: 2px;
 }
 
 .makeup-card-header h3 {
-  font-size: 0.92rem;
+  font-size: var(--text-base);
   font-weight: 700;
   margin: 2px 0 4px;
 }
 
 .makeup-card-sub {
   color: var(--text-soft);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   margin: 0;
 }
 
@@ -349,16 +357,16 @@ html[data-theme="dark"] .focus-exercise-card {
   background: var(--bg-surface);
   border-radius: 4px;
   color: var(--text-soft);
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 2px 6px;
+  padding: var(--space-0) var(--space-1);
   text-transform: uppercase;
   white-space: nowrap;
 }
 
 .makeup-exercise-name {
-  font-size: 0.88rem;
+  font-size: var(--text-base);
   font-weight: 500;
 }
 
@@ -370,7 +378,7 @@ html[data-theme="dark"] .focus-exercise-card {
 
 .makeup-dismiss {
   color: var(--text-faint);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
 }
 
 /* ── Workout training calendar ───────────────────────────────────────────── */
@@ -394,7 +402,7 @@ html[data-theme="dark"] .focus-exercise-card {
 }
 
 .cal-month-label {
-  font-size: 0.92rem;
+  font-size: var(--text-base);
   font-weight: 700;
   margin: 0 0 4px;
 }
@@ -410,20 +418,20 @@ html[data-theme="dark"] .focus-exercise-card {
   align-items: center;
   border-radius: 999px;
   display: inline-flex;
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 600;
   gap: 4px;
-  padding: 2px 8px;
+  padding: var(--space-0) var(--space-2);
 }
 
 .cal-stat-trained {
-  background: color-mix(in srgb, var(--success, #22c55e) 12%, transparent);
-  color: var(--success, #22c55e);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  color: var(--success);
 }
 
 .cal-stat-skipped {
-  background: color-mix(in srgb, var(--danger, #ef4444) 12%, transparent);
-  color: var(--danger, #ef4444);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
 }
 
 .cal-nav-btn {
@@ -433,9 +441,9 @@ html[data-theme="dark"] .focus-exercise-card {
   color: var(--text);
   cursor: pointer;
   flex-shrink: 0;
-  font-size: 1.1rem;
+  font-size: var(--text-lg);
   line-height: 1;
-  padding: 4px 9px;
+  padding: var(--space-1) var(--space-2);
   transition: background 0.15s, border-color 0.15s;
 }
 
@@ -458,9 +466,9 @@ html[data-theme="dark"] .focus-exercise-card {
   width: 6px;
 }
 
-.cal-dot--trained  { background: var(--success, #22c55e); }
-.cal-dot--skipped  { background: var(--danger,  #ef4444); }
-.cal-dot--makeup   { background: var(--warning, #f59e0b); }
+.cal-dot--trained  { background: var(--success); }
+.cal-dot--skipped  { background: var(--danger); }
+.cal-dot--makeup   { background: var(--warning); }
 
 /* ── Grid ── */
 .cal-grid {
@@ -475,10 +483,10 @@ html[data-theme="dark"] .focus-exercise-card {
 
 .cal-dow {
   color: var(--text-faint);
-  font-size: 0.65rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
-  padding: 2px 0;
+  padding: var(--space-0) 0;
   text-align: center;
   text-transform: uppercase;
 }
@@ -493,10 +501,10 @@ html[data-theme="dark"] .focus-exercise-card {
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   gap: 2px;
   justify-content: center;
-  padding: 1px;
+  padding: var(--space-0);
   position: relative;
   transition: background 0.1s, border-color 0.1s;
 }
@@ -508,12 +516,12 @@ html[data-theme="dark"] .focus-exercise-card {
 
 /* Trained day — subtle green fill */
 .cal-cell--trained {
-  background: color-mix(in srgb, var(--success, #22c55e) 14%, transparent);
+  background: color-mix(in srgb, var(--success) 14%, transparent);
 }
 
 /* Skipped day — subtle red fill */
 .cal-cell--skipped {
-  background: color-mix(in srgb, var(--danger, #ef4444) 10%, transparent);
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
 }
 
 .cal-cell--empty {
@@ -548,12 +556,12 @@ html[data-theme="dark"] .focus-exercise-card {
   border: 1px solid var(--border);
   border-radius: 8px;
   margin-top: 10px;
-  padding: 10px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 
 .cal-detail-date {
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 700;
   margin: 0 0 6px;
 }
@@ -576,15 +584,15 @@ html[data-theme="dark"] .focus-exercise-card {
   align-items: center;
   color: var(--text-faint);
   display: flex;
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   gap: 5px;
 }
 
 /* Responsive: even tighter at very small widths */
 @container (max-width: 320px) {
-  .cal-cell       { font-size: 0.68rem; border-radius: 4px; }
+  .cal-cell       { font-size: var(--text-2xs); border-radius: 4px; }
   .cal-dot        { height: 5px; width: 5px; }
-  .cal-dow        { font-size: 0.58rem; }
+  .cal-dow        { font-size: var(--text-2xs); }
 }
 
 /* ── Avatar / profile-photo uploads (member + staff) ─────────────────────── */
@@ -625,7 +633,7 @@ html[data-theme="dark"] .focus-exercise-card {
 }
 .avatar-uploader__trigger:hover { transform: translateY(-1px); }
 .avatar-uploader__img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.avatar-uploader__initials { font-size: 1.2rem; font-weight: 800; letter-spacing: 0.02em; }
+.avatar-uploader__initials { font-size: var(--text-lg); font-weight: 800; letter-spacing: 0.02em; }
 [data-theme="light"] .avatar-uploader__initials { color: var(--brand-strong); }
 
 .avatar-uploader__edit {
@@ -652,7 +660,7 @@ html[data-theme="dark"] .focus-exercise-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 14px;
-  padding: 14px;
+  padding: var(--space-3);
   box-shadow: var(--shadow-lg, 0 12px 40px rgba(0,0,0,0.35));
   display: flex;
   flex-direction: column;
@@ -678,28 +686,28 @@ html[data-theme="dark"] .focus-exercise-card {
   align-items: center;
   justify-content: center;
   text-align: center;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   border: 1px dashed var(--border);
-  padding: 16px;
+  padding: var(--space-4);
 }
 .avatar-uploader__file {
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--brand-strong, var(--brand));
   cursor: pointer;
 }
-.avatar-uploader__file input { display: block; margin-top: 6px; font-size: 0.78rem; }
+.avatar-uploader__file input { display: block; margin-top: 6px; font-size: var(--text-xs); }
 .avatar-uploader__zoom {
   display: flex;
   align-items: center;
   gap: 10px;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   color: var(--text-soft);
 }
 .avatar-uploader__zoom input { flex: 1; }
-.avatar-uploader__msg { margin: 0; font-size: 0.8rem; }
-.avatar-uploader__msg--error { color: var(--danger, #ef4444); }
+.avatar-uploader__msg { margin: 0; font-size: var(--text-sm); }
+.avatar-uploader__msg--error { color: var(--danger); }
 .avatar-uploader__msg--success { color: #22c55e; }
 .avatar-uploader__actions { display: flex; gap: 8px; }
 .avatar-uploader__save {
@@ -708,9 +716,9 @@ html[data-theme="dark"] .focus-exercise-card {
   color: var(--primary-foreground);
   border: none;
   border-radius: 9px;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   cursor: pointer;
 }
 .avatar-uploader__save:disabled { opacity: 0.55; cursor: not-allowed; }
@@ -719,7 +727,7 @@ html[data-theme="dark"] .focus-exercise-card {
   color: var(--text-soft);
   border: 1px solid var(--border);
   border-radius: 9px;
-  padding: 8px 12px;
-  font-size: 0.85rem;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
   cursor: pointer;
 }

@@ -1,29 +1,38 @@
 /* Admin panels, catalog rows, media/video/image modals, session/lift panels.
    Split mechanically from app/globals.css; preserve import order in app/layout.tsx. */
 
+/* "Enterprise" plan-tier accent (see .adm-plan--enterprise / .adm-tag--enterprise
+   below) — amber-family but a distinct categorical meaning from --warning
+   and --accent (already used for the "studio" tier), so no existing token
+   fits. #D97706 (amber-600) is only ~2.6:1 as text on white, so light theme
+   gets a darker (amber-700) variant to clear the 4.5:1 badge-text floor. */
+:root, html[data-theme="dark"] { --adm-gold: #D97706; }
+html[data-theme="light"] { --adm-gold: #B45309; }
+
 /* Admin stats strip */
 .admin-stats-strip {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 12px;
-  margin-bottom: 16px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
 }
 .admin-stat {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 18px 20px;
+  padding: var(--space-4) var(--space-5);
 }
 .admin-stat-value {
-  font-size: 1.7rem;
+  font-size: var(--text-2xl);
   font-weight: 800;
   color: var(--text);
   line-height: 1;
-  margin-bottom: 5px;
+  margin-bottom: var(--space-1);
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .admin-stat-label {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   font-weight: 500;
   text-transform: uppercase;
@@ -37,13 +46,13 @@
 }
 .admin-gym-table th,
 .admin-gym-table td {
-  padding: 12px 16px;
+  padding: var(--space-3) var(--space-4);
   text-align: left;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 .admin-gym-table th {
-  font-size: 0.72rem;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   font-weight: 600;
   text-transform: uppercase;
@@ -54,21 +63,21 @@
 }
 
 .gym-logo-manager {
-  gap: 16px;
+  gap: var(--space-4);
 }
 
 .gym-logo-current,
 .gym-logo-editor {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 14px;
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
 }
 
 .gym-brand-preview {
   align-items: center;
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: center;
   min-height: 74px;
 }
@@ -77,17 +86,17 @@
 .gym-logo-placeholder {
   background: var(--bg);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius);
   display: block;
   height: 58px;
   object-fit: contain;
-  padding: 5px;
+  padding: var(--space-1);
   width: 58px;
 }
 
 .gym-brand-preview > span:not(.gym-logo-placeholder) {
   color: var(--text-faint);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 900;
 }
 
@@ -105,19 +114,25 @@
   position: relative;
 }
 
+/* Intentionally always-dark, regardless of site theme: this is an image
+   crop/positioning canvas (like a photo editor's stage), not a themed
+   surface — a fixed dark backdrop is what makes uploaded logos of any
+   colour (including near-white ones) visible while cropping. Text placed
+   on it uses a fixed light colour to match, not the theme's --text-faint,
+   since this canvas doesn't follow the theme. */
 .gym-logo-canvas {
   aspect-ratio: 1;
   background: #0a0a0a;
   border: 1px dashed var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg);
   display: block;
   max-width: 280px;
   width: 100%;
 }
 
 .gym-logo-empty {
-  color: var(--text-faint);
-  font-size: 0.84rem;
+  color: color-mix(in srgb, white 60%, transparent);
+  font-size: var(--text-sm);
   font-weight: 700;
   max-width: 220px;
   position: absolute;
@@ -126,15 +141,15 @@
 
 .gym-logo-controls {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .gym-logo-controls label {
   color: var(--text-soft);
   display: grid;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 800;
-  gap: 6px;
+  gap: var(--space-2);
 }
 
 .gym-logo-controls input[type="range"] {
@@ -145,23 +160,27 @@
 .profile-card-admin {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
-  padding: 24px 28px;
+  gap: var(--space-5);
+  padding: var(--space-6) var(--space-8);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
   flex-wrap: wrap;
 }
 .profile-avatar-lg {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: var(--brand);
+  /* Lime-fill avatar: --primary/--primary-foreground are identical in both
+     themes, unlike --brand (dark olive on light, bright lime on dark) —
+     --brand here previously paired with --primary-foreground text, which
+     failed contrast (~2.9:1) in light mode. */
+  background: var(--primary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.3rem;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--primary-foreground);
   flex-shrink: 0;
@@ -178,8 +197,8 @@
 .catalog-exercise-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px 0;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
 }
 .catalog-exercise-thumb {
   width: 44px;
@@ -202,14 +221,19 @@
   position: relative;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
+/* Fixed dark scrim + white "View" label, intentionally theme-independent:
+   this overlay sits on top of arbitrary uploaded thumbnail photos, not the
+   page chrome, so it needs to stay legible regardless of what's in the
+   photo and regardless of site theme (same rationale as the image-preview
+   overlays used elsewhere in the design). */
 .thumbnail-preview-trigger:not(:disabled)::after {
   align-items: center;
-  background: rgba(0, 0, 0, 0.58);
-  border-radius: 999px;
-  color: #fff;
+  background: color-mix(in srgb, black 58%, transparent);
+  border-radius: var(--radius-pill);
+  color: white;
   content: "View";
   display: flex;
-  font-size: 0.62rem;
+  font-size: var(--text-2xs);
   font-weight: 800;
   inset: auto 5px 5px 5px;
   justify-content: center;
@@ -224,7 +248,7 @@
 .thumbnail-preview-trigger:not(:disabled):hover,
 .thumbnail-preview-trigger:not(:disabled):focus-visible {
   border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.24);
+  box-shadow: var(--shadow);
   transform: translateY(-1px);
 }
 .thumbnail-preview-trigger:not(:disabled):hover::after,
@@ -247,22 +271,22 @@
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
   border-radius: 0;
-  padding: 20px 16px;
+  padding: var(--space-5) var(--space-4);
   margin: 0;
 }
 .exercise-edit-panel .exercise-form-section {
-  padding: 14px 0;
+  padding: var(--space-4) 0;
 }
 .exercise-edit-panel .exercise-form-section:first-of-type {
   padding-top: 0;
 }
 .exercise-edit-panel label {
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-soft);
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: var(--space-1);
 }
 .exercise-edit-panel input[type="text"],
 .exercise-edit-panel input[type="url"],
@@ -270,11 +294,11 @@
 .exercise-edit-panel textarea {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
-  font-size: 13px;
-  padding: 8px 10px;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
 }
 .exercise-edit-panel input[type="text"]:focus,
 .exercise-edit-panel input[type="url"]:focus,
@@ -284,7 +308,7 @@
   border-color: var(--brand);
 }
 .exercise-edit-panel .exercise-form-actions {
-  padding-top: 12px;
+  padding-top: var(--space-3);
 }
 .catalog-exercise-copy {
   flex: 1;
@@ -293,33 +317,33 @@
 .catalog-exercise-copy strong {
   color: var(--text);
   display: block;
-  font-size: 0.92rem;
+  font-size: var(--text-base);
 }
 .catalog-exercise-copy p {
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   margin: 2px 0 0;
 }
 .catalog-exercise-actions {
   align-items: center;
   display: flex;
   flex-shrink: 0;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .video-indicator {
   align-items: center;
   background: var(--brand-soft);
   border: 1px solid color-mix(in srgb, var(--brand) 34%, var(--border));
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--brand-strong);
   display: inline-flex;
-  font-size: 0.7rem;
+  font-size: var(--text-xs);
   font-weight: 600;
-  gap: 4px;
+  gap: var(--space-1);
   height: 30px;
   justify-content: center;
   letter-spacing: 0.01em;
-  padding: 0 10px 0 8px;
+  padding: 0 var(--space-3) 0 var(--space-2);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -342,7 +366,7 @@
 }
 .catalog-edit-toggle {
   min-width: 86px;
-  padding: 6px 12px;
+  padding: var(--space-2) var(--space-3);
 }
 .catalog-edit-close {
   display: none;
@@ -356,9 +380,9 @@
 .exercise-video-button {
   align-items: center;
   display: inline-flex;
-  font-size: 0.75rem;
-  gap: 6px;
-  padding: 5px 10px;
+  font-size: var(--text-xs);
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
   white-space: nowrap;
 }
 .exercise-video-button--demo {
@@ -370,16 +394,18 @@
   background: color-mix(in srgb, var(--brand) 20%, transparent);
 }
 
-/* YouTube / video modal */
+/* YouTube / video modal. The backdrop scrim is intentionally always dark
+   (dims whatever page is behind it) regardless of site theme — standard
+   modal/lightbox convention, not a light/dark bug. */
 .video-modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.82);
+  background: color-mix(in srgb, black 82%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 9999;
-  padding: 16px;
+  padding: var(--space-4);
 }
 .video-modal {
   background: var(--bg-elevated);
@@ -387,7 +413,7 @@
   overflow: hidden;
   width: 100%;
   max-width: 700px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 24px 64px color-mix(in srgb, black 50%, transparent);
 }
 /* Portrait modal (YouTube Shorts) — narrow container so 9:16 doesn't stretch */
 .video-modal--portrait {
@@ -397,9 +423,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 18px;
+  padding: var(--space-4) var(--space-5);
   border-bottom: 1px solid var(--border);
-  gap: 12px;
+  gap: var(--space-3);
 }
 /* Landscape embed (default) */
 .video-embed {
@@ -419,13 +445,14 @@
 }
 
 /* Image preview modal */
+/* Same theme-independent scrim rationale as the video modal above. */
 .image-modal-backdrop {
   align-items: center;
-  background: rgba(0, 0, 0, 0.84);
+  background: color-mix(in srgb, black 84%, transparent);
   display: flex;
   inset: 0;
   justify-content: center;
-  padding: 16px;
+  padding: var(--space-4);
   position: fixed;
   z-index: 220;
 }
@@ -433,7 +460,7 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  box-shadow: 0 28px 80px rgba(0, 0, 0, 0.55);
+  box-shadow: 0 28px 80px color-mix(in srgb, black 55%, transparent);
   max-height: min(780px, 92vh);
   max-width: min(760px, 94vw);
   overflow: hidden;
@@ -443,13 +470,13 @@
   align-items: center;
   border-bottom: 1px solid var(--border);
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: space-between;
-  padding: 14px 18px;
+  padding: var(--space-4) var(--space-5);
 }
 .image-modal-header h3 {
   color: var(--text);
-  font-size: 1rem;
+  font-size: var(--text-md);
   margin: 0;
 }
 .image-modal-media {
@@ -464,27 +491,27 @@
 .workout-session-bar {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-3);
   flex-wrap: wrap;
 }
 .session-elapsed {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 14px;
+  gap: var(--space-2);
+  font-size: var(--text-md);
   font-weight: 600;
-  font-variant-numeric: tabular-nums;
+  font-variant-numeric: tabular-nums lining-nums;
   color: var(--brand);
   flex: 1;
 }
 .session-end-btn {
-  font-size: 13px;
-  padding: 6px 16px;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-4);
 }
 
 /* Lift log panel */
@@ -492,9 +519,9 @@
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 20px;
+  padding: var(--space-5);
 }
-.lift-log-panel h2 { font-size: 15px; font-weight: 700; color: var(--text); margin: 0; }
+.lift-log-panel h2 { font-size: var(--text-base); font-weight: 700; color: var(--text); margin: 0; }
 
 /* Sidebar: sticky, scrollable internally */
 .list-panel.member-workout-side {
@@ -504,7 +531,7 @@
 .member-workout-side {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-3);
   position: sticky;
   top: 80px;
   max-height: calc(100vh - 100px);
@@ -512,23 +539,24 @@
 }
 
 /* Lift log table */
-.lift-log-table { display: flex; flex-direction: column; gap: 4px; margin-top: 12px; }
+.lift-log-table { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
 .lift-log-table div {
   display: grid;
   grid-template-columns: 1fr auto auto auto;
-  gap: 12px;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-size: 13px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
   align-items: center;
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .lift-log-table div:first-child {
   color: var(--text-faint);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  padding-bottom: 4px;
+  padding-bottom: var(--space-1);
 }
 .lift-log-table div + div { background: var(--bg-subtle); }
 .lift-log-table span { color: var(--text-soft); }
@@ -537,44 +565,44 @@
 /* muscle-targets inside exercise-row */
 .muscle-targets {
   display: flex;
-  gap: 6px;
+  gap: var(--space-2);
   flex-wrap: wrap;
-  margin: 4px 0 2px;
+  margin: var(--space-1) 0 2px;
 }
 .muscle-targets span {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-faint);
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 7px;
+  border-radius: var(--radius-xs);
+  padding: 2px var(--space-2);
 }
 
 /* lift log fields grid */
 .lift-log-fields {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
+  gap: var(--space-3);
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .content-grid {
     grid-template-columns: 1fr;
-    padding: 0 16px;
-    gap: 16px;
+    padding: 0 var(--space-4);
+    gap: var(--space-4);
   }
-  .md-hero { margin-bottom: 18px; }
+  .md-hero { margin-bottom: var(--space-4); }
   .md-hero-inner {
-    gap: 18px;
+    gap: var(--space-4);
   }
   .md-hero-metrics { align-self: stretch; }
-  .list-panel { padding: 16px; }
+  .list-panel { padding: var(--space-4); }
   .lift-log-fields { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 480px) {
   .lift-log-fields { grid-template-columns: 1fr; }
-  .md-hero-title { font-size: 22px; }
+  .md-hero-title { font-size: var(--text-xl); }
 }
 
 /* Member dashboard polish: stable header, anchored menus, and responsive lift logging. */
@@ -591,11 +619,11 @@
 }
 
 .profile-dropdown {
-  border-radius: 16px;
-  box-shadow: 0 24px 70px rgb(0 0 0 / 0.38);
-  gap: 6px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
+  gap: var(--space-2);
   max-width: calc(100vw - 24px);
-  padding: 8px;
+  padding: var(--space-2);
   right: 0;
   top: calc(100% + 10px);
   width: 220px;
@@ -616,12 +644,12 @@
   animation: dropdown-in 200ms var(--slow) both;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 18px;
-  box-shadow: 0 24px 70px rgb(0 0 0 / 0.38);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow);
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   max-width: calc(100vw - 24px);
-  padding: 14px;
+  padding: var(--space-4);
   position: absolute;
   right: 0;
   top: calc(100% + 10px);
@@ -632,29 +660,29 @@
 .notification-dropdown-header {
   align-items: flex-start;
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: space-between;
 }
 
 .notification-dropdown-header h2 {
   color: var(--text);
-  font-size: 1rem;
+  font-size: var(--text-md);
   margin: 2px 0 0;
 }
 
 .notification-dropdown-list {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .notification-dropdown-item {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
   grid-template-columns: auto minmax(0, 1fr);
-  padding: 10px;
+  padding: var(--space-2);
 }
 
 .notification-dropdown-item strong,
@@ -665,43 +693,47 @@
 .notification-dropdown-item p,
 .notification-empty {
   color: var(--text-soft);
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   line-height: 1.45;
   margin: 3px 0 0;
 }
 
 .notification-dot {
   background: var(--brand);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   height: 8px;
-  margin-top: 6px;
+  margin-top: var(--space-2);
   width: 8px;
 }
 
 .notification-badge {
   align-items: center;
-  background: var(--brand);
+  /* Lime-fill badge: --primary/--primary-foreground are identical in both
+     themes, unlike --brand (dark olive on light, bright lime on dark) —
+     --brand here previously paired with --primary-foreground text, which
+     failed contrast (~2.9:1) in light mode. */
+  background: var(--primary);
   border: 2px solid var(--bg-elevated);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--primary-foreground);
   display: inline-flex;
-  font-size: 0.68rem;
+  font-size: var(--text-2xs);
   font-weight: 900;
   height: 18px;
   justify-content: center;
   min-width: 18px;
-  padding: 0 4px;
+  padding: 0 var(--space-1);
   position: absolute;
   right: -4px;
   top: -5px;
 }
 
 .md-page {
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 .md-hero {
-  margin-bottom: 24px;
+  margin-bottom: var(--space-6);
   padding: 0 clamp(12px, 3vw, 24px);
 }
 
@@ -713,11 +745,15 @@
     var(--bg-elevated) 55%
   );
   border: 1px solid var(--border);
-  border-radius: 28px;
+  border-radius: var(--radius-lg);
   border-top: 3px solid var(--brand);
-  box-shadow: 0 24px 80px rgb(0 0 0 / 0.24), 0 1px 0 rgb(255 255 255 / 0.06) inset;
+  /* The inset highlight is a "glossy dark card" sheen — visibly a subtle
+     rim light in dark theme, a harmless no-op in light theme (a near-white
+     highlight on an already-light card blends in rather than looking
+     wrong), so it's left as one declaration rather than a per-theme pair. */
+  box-shadow: 0 24px 80px color-mix(in srgb, black 24%, transparent), 0 1px 0 color-mix(in srgb, white 6%, transparent) inset;
   display: grid;
-  gap: 24px;
+  gap: var(--space-6);
   grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
   margin: 0 auto;
   max-width: 1180px;
@@ -733,8 +769,8 @@
 }
 
 .md-hero-title {
-  font-size: clamp(1.65rem, 3vw, 2.55rem);
-  margin-bottom: 16px;
+  font-size: clamp(var(--text-2xl), 3vw, var(--text-4xl));
+  margin-bottom: var(--space-4);
   max-width: 760px;
   overflow-wrap: anywhere;
 }
@@ -744,10 +780,10 @@
 }
 
 .md-badge {
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 650;
   line-height: 1.2;
-  padding: 5px 13px;
+  padding: var(--space-1) var(--space-3);
 }
 
 .md-hero-metrics {
@@ -756,29 +792,29 @@
 }
 
 .content-grid {
-  gap: 22px;
+  gap: var(--space-5);
   grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
   max-width: 1180px;
 }
 
 .list-panel.member-workout-side {
-  padding: 14px;
+  padding: var(--space-3);
 }
 
 .member-workout-side {
-  gap: 14px;
+  gap: var(--space-3);
   top: 92px;
 }
 
 .lift-log-panel {
   display: grid;
-  gap: 14px;
+  gap: var(--space-3);
 }
 
 .lift-log-title {
   align-items: flex-start;
   display: flex;
-  gap: 12px;
+  gap: var(--space-3);
   justify-content: space-between;
   margin-bottom: 0;
 }
@@ -787,7 +823,7 @@
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -803,12 +839,12 @@
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border);
   display: flex;
-  gap: 10px;
-  padding: 14px 20px;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
 }
 .catalog-section-title {
   color: var(--text);
-  font-size: 1rem;
+  font-size: var(--text-md);
   font-weight: 700;
   margin: 0;
 }
@@ -816,14 +852,14 @@
 .gym-selector {
   align-items: flex-start;
   display: inline-grid;
-  gap: 6px;
-  margin-top: 16px;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
   min-width: min(100%, 320px);
 }
 
 .gym-selector span {
   color: var(--text-soft);
-  font-size: 0.76rem;
+  font-size: var(--text-xs);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -836,13 +872,13 @@
     linear-gradient(135deg, var(--text-soft) 50%, transparent 50%) right 11px center / 6px 6px no-repeat,
     var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   color: var(--text);
   font: inherit;
-  font-size: 0.92rem;
+  font-size: var(--text-base);
   font-weight: 700;
   min-height: 42px;
-  padding: 9px 34px 9px 12px;
+  padding: var(--space-2) 34px var(--space-2) var(--space-3);
 }
 
 .gym-selector select:focus-visible {
@@ -871,8 +907,8 @@
 .catalog-group-summary-inner {
   align-items: center;
   display: flex;
-  gap: 10px;
-  padding: 12px 20px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   transition: background 120ms ease;
 }
 .catalog-group-summary:hover .catalog-group-summary-inner {
@@ -880,7 +916,7 @@
 }
 .catalog-group-name {
   color: var(--text);
-  font-size: 0.9rem;
+  font-size: var(--text-base);
   font-weight: 700;
 }
 .panel-icon {
@@ -902,7 +938,7 @@
 }
 .catalog-list {
   border-top: 1px solid var(--border);
-  padding: 0 20px;
+  padding: 0 var(--space-5);
 }
 
 /* ── catalog add section ──────────────────────────────────────────────────── */
@@ -914,8 +950,8 @@
 .exercise-form-section {
   border-bottom: 1px solid var(--border);
   display: grid;
-  gap: 14px;
-  padding: 16px 0;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
 }
 .exercise-form-section:first-of-type {
   padding-top: 0;
@@ -926,7 +962,7 @@
 }
 .exercise-form-section-title {
   color: var(--text);
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 800;
   letter-spacing: 0.06em;
   margin: 0;
@@ -934,53 +970,53 @@
 }
 .exercise-form-section-hint {
   color: var(--text-soft);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
   margin: -6px 0 0;
 }
 .exercise-form-label {
   color: var(--text-soft);
   display: block;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 700;
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 .exercise-form-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   justify-content: flex-end;
-  padding-top: 4px;
+  padding-top: var(--space-1);
 }
 
 /* form-grid: two-column responsive layout inside form sections */
 .form-grid {
   display: grid;
-  gap: 12px;
+  gap: var(--space-3);
   grid-template-columns: 1fr 1fr;
 }
-@media (max-width: 520px) {
+@media (max-width: 480px) {
   .form-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Equipment chip multi-select ──────────────────────────────────────────── */
 .exercise-form-equipment {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .equipment-chip-grid {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: var(--space-2);
 }
 .equipment-chip {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   color: var(--text-soft);
   cursor: pointer;
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   font-weight: 600;
-  padding: 4px 12px;
+  padding: var(--space-1) var(--space-3);
   transition: background 120ms, border-color 120ms, color 120ms;
 }
 .equipment-chip:hover {
@@ -993,12 +1029,12 @@
   color: var(--brand-strong);
 }
 .equipment-custom-input {
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   margin-top: 2px;
 }
 .equipment-selected-preview {
   color: var(--text-soft);
-  font-size: 0.78rem;
+  font-size: var(--text-xs);
   margin: 0;
 }
 .equipment-selected-preview strong {
@@ -1008,20 +1044,20 @@
 /* ── Video entries (dynamic add/remove) ───────────────────────────────────── */
 .video-entries {
   display: grid;
-  gap: 10px;
+  gap: var(--space-2);
 }
 .video-entry-card {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
 }
 .video-entry-header {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
 }
 .video-channel-select {
   background: var(--bg);
@@ -1029,8 +1065,8 @@
   border-radius: var(--radius-sm);
   color: var(--text);
   flex: 1;
-  font-size: 0.84rem;
-  padding: 5px 8px;
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-2);
 }
 .video-entry-remove {
   align-items: center;
@@ -1040,19 +1076,19 @@
   color: var(--text-faint);
   cursor: pointer;
   display: inline-flex;
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   height: 30px;
   justify-content: center;
-  padding: 0 8px;
+  padding: 0 var(--space-2);
   transition: background 120ms, border-color 120ms, color 120ms;
 }
 .video-entry-remove:hover {
-  background: color-mix(in srgb, red 12%, transparent);
-  border-color: color-mix(in srgb, red 40%, var(--border));
-  color: #e55;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
+  color: var(--danger);
 }
 .video-entry-url {
-  font-size: 0.84rem;
+  font-size: var(--text-sm);
   width: 100%;
 }
 .video-add-btn {
@@ -1062,9 +1098,9 @@
   border-radius: var(--radius-sm);
   color: var(--text-soft);
   cursor: pointer;
-  font-size: 0.82rem;
+  font-size: var(--text-sm);
   font-weight: 600;
-  padding: 7px 14px;
+  padding: var(--space-2) var(--space-4);
   transition: border-color 120ms, color 120ms;
 }
 .video-add-btn:hover {
@@ -1076,13 +1112,13 @@
 .exercise-restore-section {
   border-top: 1px solid var(--border);
   display: grid;
-  gap: 8px;
-  margin-top: 4px;
-  padding-top: 14px;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  padding-top: var(--space-4);
 }
 .exercise-restore-hint {
   color: var(--text-soft);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   line-height: 1.5;
   margin: 0;
 }
@@ -1091,7 +1127,7 @@
 .toggle-track {
   background: var(--bg-subtle);
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   display: inline-block;
   flex-shrink: 0;
   height: 18px;
@@ -1101,7 +1137,7 @@
 }
 .toggle-thumb {
   background: var(--text-faint);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   height: 12px;
   left: 2px;
   position: absolute;
@@ -1119,8 +1155,8 @@
   cursor: pointer;
   display: inline-flex;
   flex-shrink: 0;
-  gap: 6px;
-  padding: 4px 6px;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-2);
   transition: background 120ms;
 }
 .tutorial-toggle-btn:hover {
@@ -1128,7 +1164,7 @@
 }
 .tutorial-toggle-btn .toggle-label {
   color: var(--text-faint);
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 1;
@@ -1156,12 +1192,12 @@
   align-items: center;
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   cursor: pointer;
   display: inline-flex;
   flex-shrink: 0;
-  gap: 6px;
-  padding: 3px 10px 3px 6px;
+  gap: var(--space-2);
+  padding: 3px var(--space-3) 3px var(--space-2);
   transition: background 120ms, border-color 120ms;
 }
 .group-tutorial-toggle:hover {
@@ -1170,7 +1206,7 @@
 }
 .group-tutorial-toggle .toggle-label {
   color: var(--text-faint);
-  font-size: 0.7rem;
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   line-height: 1;
@@ -1203,26 +1239,26 @@
   border-left: 3px solid color-mix(in srgb, var(--brand) 50%, var(--border));
   border-radius: var(--radius-sm);
   display: grid;
-  gap: 4px;
-  padding: 10px 12px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
 }
 .tutorial-readonly-label {
   color: var(--text-soft);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 .tutorial-readonly-url {
   color: var(--brand);
-  font-size: 0.8rem;
+  font-size: var(--text-sm);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .tutorial-readonly-note {
   color: var(--text-faint);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-style: italic;
   margin-top: 2px;
 }
@@ -1232,16 +1268,16 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
-  gap: 16px;
+  margin-bottom: var(--space-6);
+  gap: var(--space-4);
   flex-wrap: wrap;
 }
 
 .catalog-filter-chips {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   overflow-x: auto;
-  padding-bottom: 4px;
+  padding-bottom: var(--space-1);
   scrollbar-width: none; /* Firefox */
 }
 
@@ -1249,13 +1285,17 @@
   display: none; /* Chrome/Safari */
 }
 
+/* Solid, opaque surfaces — the translucent "glass panel" treatment these
+   used to lean on (rgba(255,255,255,*) borders/fills, assuming a dark
+   backdrop showing through) has been removed from the design system;
+   cards now get their surface from the opaque shared card treatment. */
 .filter-chip {
-  padding: 6px 16px;
-  background: color-mix(in srgb, var(--bg-elevated) 60%, transparent);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 99px;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-pill);
   color: var(--text-soft);
-  font-size: 0.85rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
@@ -1264,7 +1304,7 @@
 
 .filter-chip:hover {
   color: var(--text);
-  background: rgba(255,255,255,0.04);
+  background: var(--bg-subtle);
 }
 
 .filter-chip.active {
@@ -1277,16 +1317,16 @@
 .catalog-view-toggles {
   display: flex;
   background: var(--bg-elevated);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
   padding: 2px;
 }
 
 .view-toggle-btn {
-  padding: 6px 10px;
+  padding: var(--space-2) var(--space-2);
   background: transparent;
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius-xs);
   color: var(--text-faint);
   cursor: pointer;
   transition: all 0.2s;
@@ -1300,7 +1340,7 @@
 }
 
 .view-toggle-btn.active {
-  background: rgba(255,255,255,0.08);
+  background: var(--bg-muted);
   color: var(--text);
 }
 
@@ -1308,22 +1348,22 @@
 .catalog-list-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
+  gap: var(--space-4);
   padding: 0;
 }
 
 .catalog-list-cards .catalog-exercise-entry {
   border-bottom: none;
-  background: color-mix(in srgb, var(--bg-elevated) 40%, transparent);
-  border: 1px solid rgba(255,255,255,0.04);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: var(--space-3);
 }
 
 .catalog-list-cards .catalog-exercise-row {
   flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: var(--space-3);
 }
 
 .catalog-list-cards .catalog-exercise-thumb {
@@ -1335,9 +1375,9 @@
 .catalog-list-cards .catalog-exercise-actions {
   width: 100%;
   justify-content: space-between;
-  margin-top: 8px;
-  padding-top: 12px;
-  border-top: 1px dashed rgba(255,255,255,0.06);
+  margin-top: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px dashed var(--border);
 }
 
 /* ── Admin Overview redesign (adm-* prefix) ─────────────────────────────── */
@@ -1347,16 +1387,16 @@
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
 }
 .adm-crumb {
-  font-size: 11.5px;
+  font-size: var(--text-xs);
   color: var(--text-faint);
   margin-bottom: 3px;
 }
 .adm-title {
-  font-size: 22px;
+  font-size: var(--text-xl);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text);
@@ -1364,7 +1404,7 @@
 }
 .adm-head-actions {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   align-items: center;
   flex-shrink: 0;
 }
@@ -1374,20 +1414,24 @@
 .adm-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 16px;
-  border-radius: 10px;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
   font: inherit;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
-  background: var(--brand);
+  /* Lime-fill button: --primary/--primary-foreground are identical in both
+     themes, unlike --brand (dark olive on light, bright lime on dark) —
+     --brand here previously paired with --primary-foreground text, which
+     failed contrast (~2.9:1) in light mode. */
+  background: var(--primary);
   color: var(--primary-foreground);
   border: none;
   cursor: pointer;
   text-decoration: none;
   transition: background 120ms;
 }
-.adm-btn:hover { background: var(--brand-strong); }
+.adm-btn:hover { background: color-mix(in srgb, var(--primary) 88%, black); }
 .adm-btn:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: 2px;
@@ -1409,66 +1453,66 @@
 }
 .adm-btn--ghost:hover { background: var(--bg-elevated); }
 .adm-btn--sm {
-  font-size: 0.8rem;
-  padding: 5px 12px;
-  gap: 5px;
-  border-radius: 7px;
+  font-size: var(--text-sm);
+  padding: var(--space-1) var(--space-3);
+  gap: var(--space-1);
+  border-radius: var(--radius-xs);
 }
 
 /* KPI row */
 .adm-kpis {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-5);
 }
-@media (max-width: 900px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 500px) { .adm-kpis { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .adm-kpis { grid-template-columns: 1fr; } }
 .adm-kpis--3 { grid-template-columns: repeat(3, 1fr); }
 .adm-kpis--4 { grid-template-columns: repeat(4, 1fr); }
-@media (max-width: 900px) {
+@media (max-width: 1024px) {
   .adm-kpis--3, .adm-kpis--4 { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 500px) {
+@media (max-width: 480px) {
   .adm-kpis--3, .adm-kpis--4 { grid-template-columns: 1fr; }
 }
 
 .adm-kpi {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
 }
 .adm-kpi small {
   display: block;
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--text-faint);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
 .adm-kpi strong {
   display: block;
-  font-size: 28px;
+  font-size: var(--text-2xl);
   font-weight: 800;
   letter-spacing: -0.03em;
   color: var(--text);
   line-height: 1;
-  margin-bottom: 4px;
+  margin-bottom: var(--space-1);
+  font-variant-numeric: tabular-nums lining-nums;
 }
 .adm-kpi em {
   font-style: normal;
-  font-size: 11px;
+  font-size: var(--text-2xs);
   color: var(--text-faint);
 }
 .adm-kpi--brand { border-color: color-mix(in srgb, var(--brand) 30%, var(--border)); }
 .adm-kpi--brand small { color: var(--brand); }
-[data-theme="light"] .adm-kpi--brand small { color: var(--brand-strong); }
 .adm-kpi--accent { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
 .adm-kpi--accent small { color: var(--accent); }
-.adm-kpi--warn  { border-color: color-mix(in srgb, var(--warning, #D97706) 30%, var(--border)); }
-.adm-kpi--warn small { color: var(--warning, #D97706); }
+.adm-kpi--warn  { border-color: color-mix(in srgb, var(--warning) 30%, var(--border)); }
+.adm-kpi--warn small { color: var(--warning); }
 .adm-kpi--danger { border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); }
 .adm-kpi--danger small { color: var(--danger); }
 
@@ -1476,26 +1520,26 @@
 .adm-grid-2 {
   display: grid;
   grid-template-columns: 1.6fr 1fr;
-  gap: 16px;
+  gap: var(--space-4);
 }
-@media (max-width: 900px) { .adm-grid-2 { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .adm-grid-2 { grid-template-columns: 1fr; } }
 
 /* Card */
 .adm-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius);
   overflow: hidden;
 }
 .adm-card__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 16px 12px;
+  padding: var(--space-4) var(--space-4) var(--space-3);
   border-bottom: 1px solid var(--border);
 }
 .adm-card__head h3 {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text);
   margin: 0;
@@ -1503,14 +1547,13 @@
   align-items: center;
 }
 .adm-card__link {
-  font-size: 12px;
+  font-size: var(--text-xs);
   color: var(--brand);
   text-decoration: none;
   font-weight: 600;
 }
-[data-theme="light"] .adm-card__link { color: var(--brand-strong); }
 .adm-card__link:hover { text-decoration: underline; }
-.adm-card__body { padding: 12px 16px; }
+.adm-card__body { padding: var(--space-3) var(--space-4); }
 .adm-card__body--flush { padding: 0; }
 
 /* Gym row */
@@ -1518,44 +1561,48 @@
   display: grid;
   grid-template-columns: 28px 1.6fr 1fr 60px 80px;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   text-decoration: none;
   color: inherit;
   transition: background 80ms;
 }
 .adm-gym-row:hover { background: var(--bg-subtle); }
 .adm-gym-row--border { border-bottom: 1px solid var(--border); }
+/* Background is a per-gym decorative identity colour set inline from TSX
+   (one option is var(--brand), which is bright lime in dark theme — plain
+   white text on lime is ~1.4:1, illegible). --primary-foreground is
+   near-black in both themes and reads on every colour in that palette. */
 .adm-gym-row__avatar {
   width: 28px;
   height: 28px;
-  border-radius: 8px;
-  color: white;
+  border-radius: var(--radius-xs);
+  color: var(--primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10.5px;
+  font-size: var(--text-2xs);
   font-weight: 800;
   flex-shrink: 0;
 }
-.adm-gym-row__info strong { font-size: 12.5px; font-weight: 700; color: var(--text); display: block; }
-.adm-gym-row__info small { font-size: 10.5px; color: var(--text-faint); }
+.adm-gym-row__info strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); display: block; }
+.adm-gym-row__info small { font-size: var(--text-2xs); color: var(--text-faint); }
 .adm-gym-row__bar {
   height: 5px;
   background: var(--bg-subtle);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   overflow: hidden;
   border: 1px solid var(--border);
 }
 .adm-gym-row__bar-fill {
   height: 100%;
   background: var(--brand);
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   min-width: 4px;
 }
 .adm-gym-row__count {
-  font-size: 13px;
-  font-variant-numeric: tabular-nums;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums lining-nums;
   color: var(--text);
   text-align: right;
 }
@@ -1564,87 +1611,83 @@
 .adm-tag {
   display: inline-flex;
   align-items: center;
-  padding: 3px 8px;
-  border-radius: 5px;
-  font-size: 10px;
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
   white-space: nowrap;
 }
 .adm-tag--ok      { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand); }
 .adm-tag--neutral { background: var(--bg-subtle); color: var(--text-soft); }
-[data-theme="light"] .adm-tag--ok { color: var(--brand-strong); }
 
 /* Activity rows */
 .adm-activity-row {
-  padding: 9px 0;
+  padding: var(--space-2) 0;
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 .adm-activity-row--border { border-bottom: 1px solid var(--border); }
 .adm-activity-row__label {
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--brand);
 }
-[data-theme="light"] .adm-activity-row__label { color: var(--brand-strong); }
-.adm-activity-row__body { font-size: 12px; color: var(--text); line-height: 1.4; }
-.adm-activity-row__time { font-size: 10px; color: var(--text-faint); }
+.adm-activity-row__body { font-size: var(--text-xs); color: var(--text); line-height: 1.4; }
+.adm-activity-row__time { font-size: var(--text-2xs); color: var(--text-faint); }
 
 /* Empty state */
 .adm-empty {
-  padding: 24px 16px;
-  font-size: 12.5px;
+  padding: var(--space-6) var(--space-4);
+  font-size: var(--text-sm);
   color: var(--text-soft);
   text-align: center;
 }
 .adm-empty a { color: var(--brand); text-decoration: none; }
-[data-theme="light"] .adm-empty a { color: var(--brand-strong); }
 
 /* ── Page descriptor text ──────────────────────────────────────────────────── */
 .adm-page-desc {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--text-soft);
-  margin: -8px 0 16px;
+  margin: -8px 0 var(--space-4);
   line-height: 1.5;
 }
 .adm-link { color: var(--brand); text-decoration: none; font-weight: 500; }
-[data-theme="light"] .adm-link { color: var(--brand-strong); }
-.adm-section-head { margin: 24px 0 8px; }
-.adm-section-head h2 { font-size: 15px; font-weight: 700; color: var(--text); }
+.adm-section-head { margin: var(--space-6) 0 var(--space-2); }
+.adm-section-head h2 { font-size: var(--text-base); font-weight: 700; color: var(--text); }
 
 /* ── Filter bar ──────────────────────────────────────────────────────────────── */
 .adm-filter-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 14px;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 .adm-search {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   flex: 1;
   max-width: 280px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 6px 11px;
-  font-size: 12px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
   color: var(--text-soft);
   cursor: text;
 }
-.adm-chips { display: flex; gap: 5px; flex-wrap: wrap; }
+.adm-chips { display: flex; gap: var(--space-1); flex-wrap: wrap; }
 .adm-chip {
   display: inline-flex;
   align-items: center;
-  padding: 5px 12px;
-  border-radius: 999px;
-  font-size: 11px;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
   font-weight: 600;
   background: var(--bg-elevated);
   color: var(--text-soft);
@@ -1653,44 +1696,48 @@
   transition: background 80ms, color 80ms;
 }
 .adm-chip:hover { background: var(--bg-subtle); color: var(--text); }
+/* Lime-fill chip: --primary/--primary-foreground are identical in both
+   themes, unlike --brand (dark olive on light, bright lime on dark) —
+   --brand here previously paired with --primary-foreground text, which
+   failed contrast (~2.9:1) in light mode. */
 .adm-chip--on {
-  background: var(--brand);
+  background: var(--primary);
   color: var(--primary-foreground);
-  border-color: var(--brand);
+  border-color: var(--primary);
 }
 
 /* ── Gym workspaces table ─────────────────────────────────────────────────── */
 .adm-gym-table-head {
   display: grid;
   grid-template-columns: 30px 1.6fr 1fr 80px 100px 80px 34px;
-  padding: 7px 16px;
+  padding: var(--space-2) var(--space-4);
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border);
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
   color: var(--text-faint);
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
 }
 .adm-gym-table-row {
   display: grid;
   grid-template-columns: 30px 1.6fr 1fr 80px 100px 80px 34px;
-  padding: 10px 16px;
-  gap: 12px;
+  padding: var(--space-2) var(--space-4);
+  gap: var(--space-3);
   align-items: center;
   transition: background 80ms;
 }
 .adm-gym-table-row:hover { background: var(--bg-subtle); }
 .adm-gym-table-row--border { border-bottom: 1px solid var(--border); }
 .adm-gym-table-row--dim { opacity: 0.5; }
-.adm-gym-table-row__owner { font-size: 12px; color: var(--text-soft); }
+.adm-gym-table-row__owner { font-size: var(--text-xs); color: var(--text-soft); }
 .adm-gym-table-row__actions { display: flex; align-items: center; justify-content: flex-end; }
 .adm-row-link {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
+  border-radius: var(--radius-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1700,23 +1747,27 @@
 }
 .adm-row-link:hover { background: var(--bg-subtle); color: var(--text); }
 
-/* Plan tier badges */
+/* Plan tier badges. --adm-gold: "enterprise" tier accent, distinct from
+   --warning (different meaning) and from --accent (already used for
+   "studio" tier) — no token covers a 3rd amber-family categorical hue, so
+   it's a fixed custom property (like --odp2-gold in 20-owner-dashboard.css)
+   with a darker light-theme variant so the badge text clears 4.5:1. */
 .adm-plan {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 5px;
-  font-size: 10px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
-.adm-plan--enterprise { background: color-mix(in srgb, #D97706 18%, transparent); color: #D97706; }
+.adm-plan--enterprise { background: color-mix(in srgb, var(--adm-gold) 18%, transparent); color: var(--adm-gold); }
 .adm-plan--studio { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 .adm-plan--starter { background: var(--bg-subtle); color: var(--text-soft); }
 
 /* Trial tag */
 .adm-tag--trial { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
-.adm-tag--enterprise { background: color-mix(in srgb, #D97706 18%, transparent); color: #D97706; }
+.adm-tag--enterprise { background: color-mix(in srgb, var(--adm-gold) 18%, transparent); color: var(--adm-gold); }
 .adm-tag--studio { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
 .adm-tag--starter { background: var(--bg-subtle); color: var(--text-soft); }
 
@@ -1725,27 +1776,30 @@
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 18px;
-  padding: 18px 20px;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-5);
   margin-bottom: 0;
 }
+/* Same per-gym decorative-palette avatar as .adm-gym-row__avatar above —
+   --primary-foreground reads on every colour in that palette, including
+   the lime (--brand) option, where plain white failed at ~1.4:1. */
 .adm-gym-hero__avatar {
   width: 60px;
   height: 60px;
-  border-radius: 14px;
-  color: white;
+  border-radius: var(--radius-lg);
+  color: var(--primary-foreground);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 800;
-  font-size: 22px;
+  font-size: var(--text-xl);
   flex-shrink: 0;
 }
-.adm-gym-hero__name { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin: 0 0 4px; }
-.adm-gym-hero__meta { font-size: 12px; color: var(--text-soft); margin: 0 0 10px; }
-.adm-gym-hero__tags { display: flex; gap: 6px; flex-wrap: wrap; }
-.adm-gym-hero__actions { display: flex; gap: 8px; flex-shrink: 0; }
-@media (max-width: 700px) {
+.adm-gym-hero__name { font-size: var(--text-xl); font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin: 0 0 var(--space-1); }
+.adm-gym-hero__meta { font-size: var(--text-xs); color: var(--text-soft); margin: 0 0 var(--space-2); }
+.adm-gym-hero__tags { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.adm-gym-hero__actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
+@media (max-width: 768px) {
   .adm-gym-hero { grid-template-columns: auto 1fr; }
   .adm-gym-hero__actions { grid-column: 1 / -1; }
 }
@@ -1754,18 +1808,21 @@
 .adm-staff-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 11px 16px;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
   transition: background 80ms;
 }
 .adm-staff-row:hover { background: var(--bg-subtle); }
 .adm-staff-row--border { border-bottom: 1px solid var(--border); }
+/* Same per-gym/per-person decorative-palette avatar pattern as
+   .adm-gym-row__avatar — --primary-foreground reads on every colour in
+   that palette, including the lime (--brand) option. */
 .adm-staff-row__avatar {
   width: 34px;
   height: 34px;
-  border-radius: 10px;
-  color: white;
-  font-size: 11px;
+  border-radius: var(--radius-sm);
+  color: var(--primary-foreground);
+  font-size: var(--text-xs);
   font-weight: 800;
   display: flex;
   align-items: center;
@@ -1773,16 +1830,16 @@
   flex-shrink: 0;
 }
 .adm-staff-row__info { flex: 1; min-width: 0; }
-.adm-staff-row__info strong { font-size: 13px; font-weight: 700; color: var(--text); display: block; }
-.adm-staff-row__info small { font-size: 11px; color: var(--text-soft); }
+.adm-staff-row__info strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); display: block; }
+.adm-staff-row__info small { font-size: var(--text-xs); color: var(--text-soft); }
 
 /* ── Billing rows ────────────────────────────────────────────────────────── */
 .adm-billing-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 9px 0;
-  font-size: 12.5px;
+  padding: var(--space-2) 0;
+  font-size: var(--text-sm);
   border-bottom: 1px solid var(--border);
 }
 .adm-billing-row:last-child { border-bottom: none; }
@@ -1792,8 +1849,8 @@
 /* ── Form input ─────────────────────────────────────────────────────────── */
 .adm-input {
   width: 100%;
-  padding: 7px 10px;
-  font-size: 12.5px;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-sm);
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius-xs);
@@ -1818,7 +1875,7 @@
 }
 .adm-label {
   display: block;
-  font-size: 10px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -1830,20 +1887,20 @@
 .adm-details-panel {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
-  margin-top: 12px;
+  border-radius: var(--radius);
+  margin-top: var(--space-3);
   overflow: hidden;
 }
 .adm-details-panel__summary {
-  padding: 13px 16px;
-  font-size: 13px;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
   font-weight: 600;
   color: var(--text-soft);
   cursor: pointer;
   list-style: none;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   user-select: none;
 }
 .adm-details-panel__summary:focus-visible {
@@ -1853,12 +1910,12 @@
 .adm-details-panel__summary::-webkit-details-marker { display: none; }
 .adm-details-panel__summary::before {
   content: "▸";
-  font-size: 10px;
+  font-size: var(--text-2xs);
   color: var(--text-faint);
   transition: transform 120ms;
 }
 details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
-.adm-details-panel__body { padding: 16px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 16px; }
+.adm-details-panel__body { padding: var(--space-4); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: var(--space-4); }
 .adm-details-panel--danger { border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); }
 .adm-details-panel__summary--danger { color: var(--danger); }
 
@@ -1866,53 +1923,59 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
 .adm-program-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: var(--space-3);
 }
-@media (max-width: 900px) { .adm-program-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 600px) { .adm-program-grid { grid-template-columns: 1fr; } }
+@media (max-width: 1024px) { .adm-program-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 480px) { .adm-program-grid { grid-template-columns: 1fr; } }
 
 .adm-program-card {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius);
   overflow: hidden;
   text-decoration: none;
   color: inherit;
   display: block;
   transition: transform 100ms, box-shadow 100ms;
 }
-.adm-program-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+.adm-program-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
 .adm-program-card__header {
   height: 60px;
   position: relative;
-  padding: 0 12px;
+  padding: 0 var(--space-3);
   display: flex;
   align-items: flex-end;
-  padding-bottom: 8px;
+  padding-bottom: var(--space-2);
 }
+/* Header background is a per-program decorative colour set inline from
+   TSX (same pattern as the gym/staff avatar palettes above) — one option
+   is var(--brand), which is bright lime in dark theme, so plain white
+   title text would be illegible there too. --primary-foreground reads on
+   every colour in the palette; the shadow adds extra insurance since,
+   unlike the avatars, this text sits over a whole gradient/photo header. */
 .adm-program-card__title {
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: white;
-  text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  color: var(--primary-foreground);
+  text-shadow: 0 1px 3px color-mix(in srgb, black 30%, transparent);
 }
 .adm-program-card__body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: var(--space-2) var(--space-3);
 }
-.adm-program-card__meta { font-size: 11px; color: var(--text-soft); }
-.adm-program-card__count { font-size: 11px; color: var(--text); }
+.adm-program-card__meta { font-size: var(--text-xs); color: var(--text-soft); }
+.adm-program-card__count { font-size: var(--text-xs); color: var(--text); }
 
 /* ── Inbox two-panel ──────────────────────────────────────────────────────── */
 .adm-inbox {
   display: grid;
   grid-template-columns: 1fr 1.4fr;
-  gap: 16px;
+  gap: var(--space-4);
   align-items: start;
 }
-@media (max-width: 800px) { .adm-inbox { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .adm-inbox { grid-template-columns: 1fr; } }
 
 .adm-inbox__list-card,
 .adm-inbox__detail-card { height: 100%; }
@@ -1923,7 +1986,7 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
   background: none;
   border: none;
   cursor: pointer;
-  padding: 11px 14px;
+  padding: var(--space-3) var(--space-4);
   font: inherit;
   transition: background 80ms;
   display: block;
@@ -1937,63 +2000,61 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
   align-items: center;
   margin-bottom: 3px;
 }
-.adm-inbox-thread__head strong { font-size: 12.5px; font-weight: 700; color: var(--text); }
-.adm-inbox-thread__head small { font-size: 10.5px; color: var(--text-faint); }
-.adm-inbox-thread__body { font-size: 12px; color: var(--text-soft); margin-bottom: 7px; }
-.adm-inbox-thread__tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.adm-inbox-thread__head strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); }
+.adm-inbox-thread__head small { font-size: var(--text-2xs); color: var(--text-faint); }
+.adm-inbox-thread__body { font-size: var(--text-xs); color: var(--text-soft); margin-bottom: var(--space-2); }
+.adm-inbox-thread__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
 
 .adm-inbox-tag {
   display: inline-flex;
   align-items: center;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 10px;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-xs);
+  font-size: var(--text-2xs);
   font-weight: 700;
   letter-spacing: 0.05em;
 }
 .adm-inbox-tag--ok      { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand); }
-[data-theme="light"] .adm-inbox-tag--ok { color: var(--brand-strong); }
 .adm-inbox-tag--accent  { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
-.adm-inbox-tag--warn    { background: color-mix(in srgb, #D97706 15%, transparent); color: #D97706; }
+.adm-inbox-tag--warn    { background: var(--warning-soft); color: var(--warning); }
 .adm-inbox-tag--danger  { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
 
 .adm-inbox__detail-head { flex-direction: column; align-items: flex-start; gap: 3px; }
-.adm-inbox__detail-head h3 { font-size: 14px; font-weight: 700; color: var(--text); margin: 0; }
-.adm-inbox__detail-meta { font-size: 11.5px; color: var(--text-soft); }
+.adm-inbox__detail-head h3 { font-size: var(--text-sm); font-weight: 700; color: var(--text); margin: 0; }
+.adm-inbox__detail-meta { font-size: var(--text-xs); color: var(--text-soft); }
 
 .adm-inbox-bubble {
   background: var(--bg-subtle);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-size: 12.5px;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
   line-height: 1.6;
   color: var(--text-soft);
-  margin-bottom: 12px;
+  margin-bottom: var(--space-3);
 }
 .adm-inbox-reply {
   background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
   border: 1px solid color-mix(in srgb, var(--brand) 20%, var(--border));
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   padding: 12px 14px;
   margin-bottom: 12px;
 }
 .adm-inbox-reply__label {
   display: block;
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--brand);
-  margin-bottom: 6px;
+  margin-bottom: var(--space-2);
 }
-[data-theme="light"] .adm-inbox-reply__label { color: var(--brand-strong); }
 .adm-inbox-reply__area {
   width: 100%;
   background: transparent;
   border: none;
   outline: none;
   font: inherit;
-  font-size: 12.5px;
+  font-size: var(--text-sm);
   line-height: 1.5;
   color: var(--text);
   resize: none;
@@ -2001,7 +2062,7 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
 .adm-inbox-reply-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .adm-btn--active {
@@ -2015,17 +2076,17 @@ details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
 .adm-ex-group-summary {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
   list-style: none;
   user-select: none;
   background: var(--bg-subtle);
-  gap: 8px;
+  gap: var(--space-2);
 }
 .adm-ex-group-summary::-webkit-details-marker { display: none; }
 .adm-ex-group-summary:hover { background: color-mix(in srgb, var(--brand) 6%, var(--bg-subtle)); }
-.adm-ex-group-name { font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
-.adm-ex-group-chevron { display: inline-block; font-size: 11px; color: var(--text-faint); transition: transform 120ms; }
+.adm-ex-group-name { font-size: var(--text-xs); font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+.adm-ex-group-chevron { display: inline-block; font-size: var(--text-xs); color: var(--text-faint); transition: transform 120ms; }
 details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(90deg); }
 
 .adm-ex-list { display: flex; flex-direction: column; }
@@ -2033,8 +2094,8 @@ details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(
 .adm-ex-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
   list-style: none;
   transition: background 80ms;
@@ -2042,19 +2103,19 @@ details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(
 .adm-ex-row:hover { background: var(--bg-subtle); }
 .adm-ex-row::-webkit-details-marker { display: none; }
 .adm-ex-row__copy { flex: 1; min-width: 0; }
-.adm-ex-row__copy strong { font-size: 12.5px; font-weight: 700; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.adm-ex-row__copy p { font-size: 11px; color: var(--text-soft); margin: 1px 0 0; }
-.adm-ex-row__actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.adm-ex-row__copy strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.adm-ex-row__copy p { font-size: var(--text-xs); color: var(--text-soft); margin: 1px 0 0; }
+.adm-ex-row__actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
 
 /* ── Program table rows (admin programs page) ─────────────────────────────── */
 .adm-prog-head {
   display: grid;
   grid-template-columns: 1.8fr 1fr 0.8fr 0.8fr 88px 160px;
-  gap: 12px;
-  padding: 7px 16px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   background: var(--bg-subtle);
   border-bottom: 1px solid var(--border);
-  font-size: 9.5px;
+  font-size: var(--text-2xs);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -2064,8 +2125,8 @@ details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(
 .adm-prog-row {
   display: grid;
   grid-template-columns: 1.8fr 1fr 0.8fr 0.8fr 88px 160px;
-  gap: 12px;
-  padding: 10px 16px;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--border);
   align-items: center;
   transition: background 80ms;
@@ -2081,7 +2142,7 @@ details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(
 .adm-prog-row:hover { background: var(--bg-subtle); }
 .adm-prog-row__title { min-width: 0; }
 .adm-prog-row__title strong {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 700;
   color: var(--text);
   display: block;
@@ -2090,7 +2151,7 @@ details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(
   text-overflow: ellipsis;
 }
 .adm-prog-row__title span {
-  font-size: 11px;
+  font-size: var(--text-xs);
   color: var(--text-soft);
   display: block;
 }

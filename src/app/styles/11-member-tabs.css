@@ -1,22 +1,22 @@
 .md-tabs-container {
   display: flex;
   flex-direction: column;
-  gap: 28px;
+  gap: var(--space-8);
 }
 
 .md-tab-list {
   display: flex;
-  gap: 8px;
+  gap: var(--space-2);
   background: color-mix(in srgb, var(--bg-elevated) 30%, transparent);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  padding: 6px;
-  border-radius: calc(var(--radius) + 8px);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding: var(--space-2);
+  border-radius: var(--radius-lg);
   position: sticky;
   top: 16px;
   z-index: 10;
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow);
   overflow-x: auto;
   scrollbar-width: none;
 }
@@ -30,13 +30,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 12px 20px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
   background: transparent;
   border: none;
   border-radius: var(--radius);
   color: var(--text-soft);
-  font-size: 0.95rem;
+  font-size: var(--text-base);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -82,7 +82,7 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .md-tab-list {
     position: fixed;
     bottom: 0;
@@ -95,25 +95,33 @@
     border-left: none;
     border-right: none;
     border-bottom: none;
-    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom));
     background: color-mix(in srgb, var(--bg-elevated) 90%, transparent);
-    box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    /* Shadow kept as a literal dark rgba: shadows are the one theme-invariant
+       color role in this system (00-base-shell's own --shadow tokens stay
+       black-family in both themes), and this bar's shadow points upward
+       (-4px), which none of the downward-only --shadow presets match. */
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
     z-index: 100;
     justify-content: space-around;
   }
-  
+
   .md-tabs-container {
-    padding-bottom: 80px;
+    padding-bottom: var(--space-20);
   }
-  
+
   .md-tab-btn {
     flex-direction: column;
-    padding: 6px;
-    font-size: 0.75rem;
-    gap: 4px;
+    padding: var(--space-2);
+    font-size: var(--text-xs);
+    gap: var(--space-1);
+    /* !important retained: 16-ux-improvements.css (loaded later, higher
+       specificity via .md-tab-btn.active) sets color/opacity with its own
+       !important on this same class in the same breakpoint, and the active
+       tab's background must stay transparent under it. */
     background: transparent !important;
   }
-  
+
   .md-tab-icon {
     width: 22px;
     height: 22px;
@@ -129,7 +137,10 @@
 }
 
 /* Hide the global mobile bottom nav on the member dashboard since the tabs now serve that purpose */
-@media (max-width: 640px) {
+@media (max-width: 768px) {
+  /* !important retained: overrides .mobile-bottom-nav's own display rule
+     defined in a different stylesheet outside this file's scope; without it
+     the global nav could win on source order or specificity. */
   body:has(.md-tab-list) .mobile-bottom-nav {
     display: none !important;
   }

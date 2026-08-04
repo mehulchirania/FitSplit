@@ -196,7 +196,7 @@ export function MacroProgressPanel({
             <span style={{ fontSize: "0.82rem", fontWeight: 700, color: "var(--brand)" }}>{water} / {waterGoal} L</span>
           </div>
           <div style={{ height: "5px", background: "var(--bg-subtle)", borderRadius: "3px", overflow: "hidden", border: "1px solid var(--border)" }}>
-            <div style={{ height: "100%", width: `${getPercent(water, waterGoal)}%`, background: "linear-gradient(90deg, #38bdf8, var(--brand))", borderRadius: "3px", transition: "width 200ms ease" }} />
+            <div style={{ height: "100%", width: `${getPercent(water, waterGoal)}%`, background: "linear-gradient(90deg, var(--info), var(--brand))", borderRadius: "3px", transition: "width 200ms ease" }} />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "4px" }}>
             {([-0.5, -0.25, 0.25, 0.5] as const).map((amt) => (
@@ -218,9 +218,9 @@ export function MacroProgressPanel({
       <div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
           {([
-            { key: "protein" as const, label: "Protein", color: "#f87171", goal: proteinGoal, unit: "g" },
-            { key: "carbs" as const, label: "Carbs", color: "#fbbf24", goal: carbsGoal, unit: "g" },
-            { key: "fat" as const, label: "Fat", color: "#34d399", goal: fatGoal, unit: "g" }
+            { key: "protein" as const, label: "Protein", color: "var(--danger)", goal: proteinGoal, unit: "g" },
+            { key: "carbs" as const, label: "Carbs", color: "var(--warning)", goal: carbsGoal, unit: "g" },
+            { key: "fat" as const, label: "Fat", color: "var(--success)", goal: fatGoal, unit: "g" }
           ]).map((item) => {
             const val = macros[item.key];
             const percent = getPercent(val, item.goal);
@@ -259,9 +259,9 @@ export function MacroProgressPanel({
                   contentStyle={{ background: "var(--bg-elevated)", border: "1px solid var(--border)", borderRadius: 8, fontSize: "0.78rem" }}
                   labelStyle={{ color: "var(--text)", fontWeight: 700 }}
                 />
-                <Bar dataKey="Protein" fill="#f87171" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Carbs" fill="#fbbf24" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Fat" fill="#34d399" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Protein" fill="var(--danger)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Carbs" fill="var(--warning)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="Fat" fill="var(--success)" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -273,9 +273,9 @@ export function MacroProgressPanel({
               return (
                 <div key={log.id} style={{ display: "grid", gridTemplateColumns: "90px 1fr 1fr 1fr 1fr", gap: 6, alignItems: "center", background: "var(--bg-subtle)", border: "1px solid var(--border)", borderRadius: 8, padding: "8px 12px", fontSize: "0.8rem" }}>
                   <span style={{ color: "var(--text-soft)", fontWeight: 600 }}>{log.date.slice(5)}</span>
-                  <span style={{ color: "#f87171", fontWeight: 700, textAlign: "right" }}>{log.protein}g P</span>
-                  <span style={{ color: "#fbbf24", fontWeight: 700, textAlign: "right" }}>{log.carbs}g C</span>
-                  <span style={{ color: "#34d399", fontWeight: 700, textAlign: "right" }}>{log.fat}g F</span>
+                  <span style={{ color: "var(--danger)", fontWeight: 700, textAlign: "right" }}>{log.protein}g P</span>
+                  <span style={{ color: "var(--warning)", fontWeight: 700, textAlign: "right" }}>{log.carbs}g C</span>
+                  <span style={{ color: "var(--success)", fontWeight: 700, textAlign: "right" }}>{log.fat}g F</span>
                   <span style={{ color: "var(--text-faint)", fontWeight: 600, textAlign: "right" }}>{cal} kcal</span>
                 </div>
               );

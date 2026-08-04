@@ -154,12 +154,12 @@ export default async function EditGymPage({
         <div
           className="adm-card"
           style={{
-            borderColor: "color-mix(in srgb, var(--danger, #c0392b) 35%, transparent)",
+            borderColor: "color-mix(in srgb, var(--danger) 35%, transparent)",
             marginBottom: 20,
           }}
         >
           <div className="adm-card__head">
-            <h3 style={{ color: "var(--danger, #c0392b)" }}>Danger zone</h3>
+            <h3 style={{ color: "var(--danger)" }}>Danger zone</h3>
           </div>
           <div className="adm-card__body">
             <div
@@ -186,7 +186,7 @@ export default async function EditGymPage({
               style={{
                 marginTop: 16,
                 paddingTop: 16,
-                borderTop: "1px solid color-mix(in srgb, var(--danger, #c0392b) 20%, transparent)",
+                borderTop: "1px solid color-mix(in srgb, var(--danger) 20%, transparent)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",

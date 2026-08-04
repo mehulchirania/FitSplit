@@ -106,7 +106,7 @@ export function ProgramViewModal({
             <h2 className="ep-head__title" style={{ fontSize: 18 }}>
               {program.title}
             </h2>
-            <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--ep-soft, #8b8f8a)" }}>
+            <p style={{ margin: "3px 0 0", fontSize: 12, color: "var(--text-soft)" }}>
               {activeDays.length} training day{activeDays.length !== 1 ? "s" : ""} · {totalEx} exercise{totalEx !== 1 ? "s" : ""}
               {!readOnly && assignedCount !== undefined ? ` · ${assignedCount} assigned` : ""}
             </p>
@@ -118,21 +118,21 @@ export function ProgramViewModal({
 
         {/* Program description */}
         {program.description && (
-          <div style={{ padding: "8px 22px", borderBottom: "1px solid var(--ep-border, rgba(255,255,255,.10))", background: "var(--ep-bg-sub, #1e1e1e)", flexShrink: 0 }}>
-            <p style={{ margin: 0, fontSize: 12.5, color: "var(--ep-soft, #8b8f8a)", lineHeight: 1.45 }}>{program.description}</p>
+          <div style={{ padding: "8px 22px", borderBottom: "1px solid var(--border)", background: "var(--bg-subtle)", flexShrink: 0 }}>
+            <p style={{ margin: 0, fontSize: 12.5, color: "var(--text-soft)", lineHeight: 1.45 }}>{program.description}</p>
           </div>
         )}
 
         {/* Meta chips row */}
         <div style={{
           display: "flex", gap: 8, flexWrap: "wrap",
-          padding: "8px 22px", borderBottom: "1px solid var(--ep-border, rgba(255,255,255,.10))",
-          background: "var(--ep-bg-sub, #1e1e1e)", flexShrink: 0,
+          padding: "8px 22px", borderBottom: "1px solid var(--border)",
+          background: "var(--bg-subtle)", flexShrink: 0,
         }}>
           {meta.map(({ label, value }) => (
             <div key={label} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--ep-faint, #5a5e58)" }}>{label}</span>
-              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ep-text, #F5F5F5)" }}>{value}</span>
+              <span style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-faint)" }}>{label}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "var(--text)" }}>{value}</span>
             </div>
           ))}
         </div>
@@ -180,7 +180,7 @@ export function ProgramViewModal({
                   {/* Column header */}
                   <div className="ep-ex-head">
                     <span className="ep-ex-head__name">Exercise</span>
-                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--ep-faint, #5a5e58)", textAlign: "right", flexShrink: 0 }}>Prescription</span>
+                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--text-faint)", textAlign: "right", flexShrink: 0 }}>Prescription</span>
                     <span className="ep-ex-head__sp" />
                   </div>
                   <div className="ep-ex-list">
@@ -195,16 +195,16 @@ export function ProgramViewModal({
                             flexShrink: 0, fontSize: 9.5, fontWeight: 800,
                             letterSpacing: ".04em", textTransform: "uppercase",
                             padding: "2px 7px", borderRadius: 5,
-                            background: "rgba(255,255,255,.06)", color: "var(--ep-soft, #8b8f8a)",
+                            background: "var(--bg-muted)", color: "var(--text-soft)",
                           }}>{ex.muscleGroup}</span>
                           <span className="ep-ex__name">{ex.name}</span>
                           <div className="ep-ex__controls">
                             {/* Prescription */}
                             <span style={{
                               fontSize: 13, fontWeight: 700, fontVariantNumeric: "tabular-nums",
-                              color: "var(--ep-text, #F5F5F5)",
-                              background: "var(--ep-bg-inp, #202020)",
-                              border: "1px solid var(--ep-border, rgba(255,255,255,.10))",
+                              color: "var(--text)",
+                              background: "var(--bg-muted)",
+                              border: "1px solid var(--border)",
                               borderRadius: 7, padding: "4px 10px", whiteSpace: "nowrap",
                             }}>
                               {getPrescription(item.sets, item.reps, item.durationSeconds)}
@@ -212,7 +212,7 @@ export function ProgramViewModal({
                             {/* Video buttons */}
                             {hasTutorial && (
                               <button type="button" className="ep-iconbtn"
-                                style={{ width: "auto", padding: "0 8px", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--ep-brand, #C8F135)" }}
+                                style={{ width: "auto", padding: "0 8px", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--brand)" }}
                                 title="Tutorial video"
                                 onClick={() => setVideo({ title: ex.name, group: ex.muscleGroup, url: ex.videoUrl! })}>
                                 <IcPlay /> Tutorial
@@ -220,7 +220,7 @@ export function ProgramViewModal({
                             )}
                             {hasDemo && (
                               <button type="button" className="ep-iconbtn"
-                                style={{ width: "auto", padding: "0 8px", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--ep-soft, #8b8f8a)" }}
+                                style={{ width: "auto", padding: "0 8px", gap: 4, fontSize: 11, fontWeight: 700, color: "var(--text-soft)" }}
                                 title="Gym demo video"
                                 onClick={() => setVideo({ title: ex.name, group: ex.muscleGroup, url: ex.gymVideoUrl! })}>
                                 <IcPlay /> Demo
@@ -230,18 +230,18 @@ export function ProgramViewModal({
                               <details style={{ position: "relative" }}>
                                 <summary style={{
                                   listStyle: "none", cursor: "pointer", fontSize: 11, fontWeight: 700,
-                                  color: "var(--ep-faint, #5a5e58)", padding: "4px 8px",
-                                  borderRadius: 7, border: "1px solid var(--ep-border, rgba(255,255,255,.10))",
+                                  color: "var(--text-faint)", padding: "4px 8px",
+                                  borderRadius: 7, border: "1px solid var(--border)",
                                   userSelect: "none",
                                 }}>
                                   Notes
                                 </summary>
                                 <div style={{
                                   position: "absolute", right: 0, bottom: "calc(100% + 6px)", zIndex: 10,
-                                  width: 280, background: "var(--ep-bg, #161616)",
-                                  border: "1px solid var(--ep-border-s, rgba(255,255,255,.18))",
-                                  borderRadius: 10, padding: 12, boxShadow: "0 12px 40px rgba(0,0,0,.6)",
-                                  fontSize: 12, lineHeight: 1.5, color: "var(--ep-soft, #8b8f8a)",
+                                  width: 280, background: "var(--bg-elevated)",
+                                  border: "1px solid var(--border-strong)",
+                                  borderRadius: 10, padding: 12, boxShadow: "var(--shadow)",
+                                  fontSize: 12, lineHeight: 1.5, color: "var(--text-soft)",
                                 }}>
                                   {ex.instructions}
                                 </div>
@@ -254,7 +254,7 @@ export function ProgramViewModal({
                   </div>
                   {/* Tally of exercises not in this catalog */}
                   {unknownCount > 0 && (
-                    <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--ep-faint, #5a5e58)", textAlign: "center" }}>
+                    <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--text-faint)", textAlign: "center" }}>
                       + {unknownCount} gym-specific exercise{unknownCount !== 1 ? "s" : ""} not shown (added by trainer, outside this catalog)
                     </p>
                   )}

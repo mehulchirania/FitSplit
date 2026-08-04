@@ -21,7 +21,7 @@ export default function GlobalError({
 
   return (
     <html lang="en">
-      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "#111", color: "#f5f5f5" }}>
+      <body style={{ margin: 0, fontFamily: "system-ui, sans-serif", background: "var(--bg, #0A0A0A)", color: "var(--text, #f5f5f5)" }}>
         <div style={{
           display: "flex",
           flexDirection: "column",
@@ -36,7 +36,7 @@ export default function GlobalError({
           <h2 style={{ fontSize: "1.25rem", fontWeight: 700, margin: 0 }}>
             Something went wrong
           </h2>
-          <p style={{ color: "#a3a3a3", fontSize: "0.9rem", maxWidth: 380, lineHeight: 1.6, margin: 0 }}>
+          <p style={{ color: "var(--text-faint, #a3a3a3)", fontSize: "0.9rem", maxWidth: 380, lineHeight: 1.6, margin: 0 }}>
             {error.message ?? "An unexpected error occurred. Your data is safe — please try again."}
           </p>
           <button
@@ -44,8 +44,8 @@ export default function GlobalError({
             style={{
               marginTop: 8,
               padding: "10px 28px",
-              background: "#C8F135",
-              color: "#0a0a0a",
+              background: "var(--primary, #C8F135)",
+              color: "var(--primary-foreground, #0a0a0a)",
               border: "none",
               borderRadius: "8px",
               cursor: "pointer",
