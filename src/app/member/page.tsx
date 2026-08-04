@@ -30,7 +30,7 @@ export default async function MemberDashboard() {
     { assignment },
     { programs },
     { liftLogs },
-    { exercises },
+    { exercises, catalog: exerciseCatalog },
     { sessions },
     { gym },
     { dayLogs },
@@ -132,6 +132,8 @@ export default async function MemberDashboard() {
       coachNoteUpdatedAt={profile.coachNoteUpdatedAt}
       program={program}
       assignment={assignment}
+      allPrograms={programs}
+      exerciseCatalog={exerciseCatalog}
       currentWeek={currentWeek}
       exercises={exercises}
       liftLogs={liftLogs}

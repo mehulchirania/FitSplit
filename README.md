@@ -4,6 +4,16 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 
 **Status: NOT LIVE.** This is a pre-launch build with no real customers. Everything in Firebase today — all 4 gyms, all 80 member profiles, all staff accounts — is test/demo data seeded for development. `fitsplit.in` is deployed but not launched; "deployed" here never means "in front of real users."
 
+### 🚦 Go-Live Checklist (as of 2026-08-04)
+
+Web app and Firestore rules are production-ready (`npm run typecheck` clean, no `allow read, write: if true` wildcards, `/privacy` and `/terms` routes exist). Remaining blockers before store submission / public launch:
+
+- [ ] **`mobile/eas.json` `submit.production.ios` is empty** — no `appleId`, `ascAppId`, or `appleTeamId` set. `eas submit --platform ios` will fail until these are added.
+- [ ] **`mobile/eas.json` has no `env` block on any build profile** — confirm `EXPO_PUBLIC_FIREBASE_*` client config is set as EAS secrets (`eas secret:create` / EAS dashboard) for `production` builds, since `mobile/lib/firebase.ts` reads them from env and nothing in-repo sets them for EAS builds.
+- [ ] **`mobile/eas.json` Android submit has no `serviceAccountKeyPath`** — needed for unattended Play Store submission via `eas submit --platform android`; otherwise it'll prompt interactively.
+- [ ] Cosmetic: `.env.example` has a real-looking Firebase client key/project id (`fitsplit-29215`) rather than a placeholder — low risk (Firebase client keys are public by design) but worth swapping for hygiene.
+- [ ] No self-documented "known issues" list exists — this checklist is the first one; keep it updated as blockers are cleared.
+
 ---
 
 ## ⚡ Tech Stack & Architecture
@@ -32,7 +42,7 @@ FitSplit is a Firebase-backed gym operations and personal training platform. It 
 | Mobile push | Expo push service (`expo-notifications`), separate channel from the web's FCM |
 | Shared code | `packages/core` (`@fitsplit/core`) — domain types, `workout-utils`, `split-library`, validation helpers, used by both web and mobile |
 
-**Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders. The mobile app talks to the same Firestore project directly via the client SDK for reads (enforced by `firestore.rules`) and through dedicated Cloud Function callables (`functions/src/index.ts`) for writes that need more than a rules-compliant write — see `docs/20_EXPO_MIGRATION_PLAN.md` and `docs/21_MOBILE_GO_LIVE_CHECKLIST.md`.
+**Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders. The mobile app talks to the same Firestore project directly via the client SDK for reads (enforced by `firestore.rules`) and through dedicated Cloud Function callables (`functions/src/index.ts`) for writes that need more than a rules-compliant write.
 
 **Firestore cost posture:** Gym-scoped collections are the canonical tenant data path. The 2026-06-28 cost pass removed the highest-volume progress/offline root writes and replaced admin gym/member-count scans with denormalized gym counters. Remaining cost work is tracked in `docs/12_ARCHITECTURE_AUDIT_2026.md`.
 

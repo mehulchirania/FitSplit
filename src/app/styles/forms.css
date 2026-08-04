@@ -16,3 +16,33 @@
   color: var(--text);
   font-size: var(--text-sm);
 }
+
+/* Detail preview shown inside a confirm dialog before a destructive-ish or
+   hard-to-undo create/update action (e.g. "Add member"). */
+.member-preview-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: var(--space-4) 0;
+  padding: var(--space-4);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.member-preview-list__row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.member-preview-list__row dt {
+  color: var(--text-soft);
+}
+
+.member-preview-list__row dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+  text-align: right;
+}

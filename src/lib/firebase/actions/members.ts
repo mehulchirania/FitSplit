@@ -27,11 +27,13 @@ import {
   writeAuthProfileIndex,
   mirrorProfileToGym,
   mirrorGymScopedRecord,
+  batchMirrorGymScopedRecords,
   assertCanManageMember,
   assertMemberBelongsToCallerGym,
   assertCanManageGym,
   parsePngDataUrl,
-  patchUserClaims
+  patchUserClaims,
+  sendPushToMember
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -39,11 +41,19 @@ import { ensurePrimaryWorkspace } from "./gyms";
 
 const CreateMemberSchema = z.object({
   fullName: ZodHelpers.textRequired("Full name"),
-  email: ZodHelpers.emailRequired,
+  // Members log in with a username/PIN, not email — the auth account itself
+  // uses a synthetic @members.fitsplit.app address (see memberAuthEmail)
+  // regardless of what's entered here, so a real email was never required
+  // for login to work. This field is just optional contact info.
+  email: ZodHelpers.emailOrEmpty,
   phone: z.string().optional(),
   username: ZodHelpers.username,
   goal: z.string().optional(),
-  gymId: z.string().optional()
+  gymId: z.string().optional(),
+  // Optional workout split to assign at creation time, so the owner doesn't
+  // need a second trip to the bulk-assign flow right after adding someone.
+  programId: z.string().optional(),
+  programTitle: z.string().optional()
 });
 
 export async function createMemberProfile(
@@ -60,7 +70,10 @@ export async function createMemberProfile(
     if (!parsed.success) return parsed.state;
 
     const memberId = randomUUID();
-    const { fullName, email, phone = "", username, goal = "General fitness", gymId: rawGymId } = parsed.data;
+    const {
+      fullName, email, phone = "", username, goal = "General fitness", gymId: rawGymId,
+      programId, programTitle
+    } = parsed.data;
     const gymId = (rawGymId || user.gymId || PRIMARY_GYM_ID).trim() || PRIMARY_GYM_ID;
     
     const now = new Date().toISOString();
@@ -173,7 +186,74 @@ export async function createMemberProfile(
       );
     });
 
-    return success(`${fullName} was added as a FitSplit member.`, gymId, ["members"]);
+    // Optional split assignment, done as a second step (not inside the txn
+    // above) so a program write hiccup never blocks the member record itself
+    // from being created — mirrors the write shapes assignProgramToMember
+    // uses so program-assignment reads elsewhere are unaffected. There's no
+    // "cancel existing assignment" step here because this member is brand new.
+    if (programId) {
+      const resolvedProgramTitle = programTitle || "Workout program";
+      const assignmentId = randomUUID();
+      const notificationId = randomUUID();
+      const assignActivityId = randomUUID();
+
+      await batchMirrorGymScopedRecords(db, gymId, [
+        {
+          collection: "programAssignments",
+          id: assignmentId,
+          data: {
+            id: assignmentId,
+            gymId,
+            memberId,
+            programId,
+            assignedAt: now,
+            status: "active",
+            createdBy: user.uid,
+            createdAt: now,
+            updatedAt: now
+          }
+        },
+        {
+          collection: "notifications",
+          id: notificationId,
+          data: {
+            id: notificationId,
+            recipientRole: "member",
+            recipientId: memberId,
+            gymId,
+            type: "program_assigned",
+            title: "Workout program assigned",
+            body: `${resolvedProgramTitle} is now available in your weekly schedule.`,
+            actionHref: "/member",
+            memberId,
+            createdAt: now
+          }
+        },
+        {
+          collection: "activityEvents",
+          id: assignActivityId,
+          data: {
+            id: assignActivityId,
+            gymId,
+            audience: "owner",
+            title: `Program assigned — ${resolvedProgramTitle}`,
+            detail: `${fullName} was started on ${resolvedProgramTitle}.`,
+            icon: "dumbbell",
+            createdAt: now
+          }
+        }
+      ]);
+
+      void sendPushToMember(
+        db,
+        memberId,
+        "Workout program assigned",
+        `${resolvedProgramTitle} is now available in your weekly schedule.`,
+        "/member"
+      );
+    }
+
+    return success(`${fullName} was added as a FitSplit member.`, gymId, ["members", "programs"]);
   } catch (error) {
     console.error("Unable to create member profile", error);
 

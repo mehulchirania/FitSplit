@@ -1,10 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useEffect, useMemo, useOptimistic, useRef, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { bulkAssignProgram, bulkToggleMemberAccess } from "@/lib/firebase/actions";
+import { bulkAssignProgram, bulkToggleMemberAccess, createMemberProfile } from "@/lib/firebase/actions";
+import { initialFormActionState } from "@/types/action-state";
+import type { FormActionState } from "@/types/action-state";
 import { AddMemberForm } from "@/components/add-member-form";
+import type { AddMemberPreview } from "@/components/add-member-form";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -23,6 +27,8 @@ export type HybridMember = {
   hasPlan: boolean;
   programTitle?: string;
   daysToExpiry: number | null;
+  /** True for a row inserted optimistically while the create request is still in flight. */
+  pending?: boolean;
 };
 
 export type HybridProgram = { id: string; title: string };
@@ -241,7 +247,7 @@ export function MembersHybridView({
   // the real end date — a member at daysToExpiry <= 0 must never render as
   // "Expiring · in -24d" (docs/14 U6). Normalize once; everything downstream
   // (stats, rail buckets, pills, copy) stays consistent.
-  const initialMembers = useMemo(
+  const normalizedMembers = useMemo(
     () =>
       rawMembers.map((m) =>
         m.daysToExpiry != null &&
@@ -251,6 +257,16 @@ export function MembersHybridView({
           : m
       ),
     [rawMembers]
+  );
+
+  // Optimistic member list — a newly-added member appears here the instant
+  // "Add member" is confirmed, before the server round-trip finishes. React
+  // reverts this back to `normalizedMembers` automatically once the create
+  // transition below finishes and fresh server data flows back in via
+  // router.refresh(), so no manual cleanup is needed on success OR failure.
+  const [optimisticMembers, addOptimisticMember] = useOptimistic(
+    normalizedMembers,
+    (state, newMember: HybridMember) => [newMember, ...state]
   );
 
   const [query, setQuery] = useState("");
@@ -263,23 +279,26 @@ export function MembersHybridView({
   const [bulkMode, setBulkMode] = useState<"assign" | null>(null);
   const [selectedProgramId, setSelectedProgramId] = useState(programs[0]?.id ?? "");
   const [showAddMember, setShowAddMember] = useState(false);
+  const [createError, setCreateError] = useState<FormActionState | null>(null);
   // optimistic access state
   const [accessById, setAccessById] = useState<Map<string, boolean>>(
-    () => new Map(initialMembers.map((m) => [m.id, m.isActive]))
+    () => new Map(normalizedMembers.map((m) => [m.id, m.isActive]))
   );
   const [isPending, startTransition] = useTransition();
+  const [isCreatingMember, startCreateTransition] = useTransition();
   const cbAllRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   // ── Derived stats ──────────────────────────────────────────────────────────
 
   const stats = useMemo(() => {
-    const total = initialMembers.length;
-    const active = initialMembers.filter((m) => accessById.get(m.id) ?? m.isActive).length;
-    const noPlan = initialMembers.filter((m) => !m.hasPlan).length;
-    const expiring = initialMembers.filter((m) => m.membershipStatus === "expiring_soon").length;
-    const expired = initialMembers.filter((m) => m.membershipStatus === "expired").length;
+    const total = optimisticMembers.length;
+    const active = optimisticMembers.filter((m) => accessById.get(m.id) ?? m.isActive).length;
+    const noPlan = optimisticMembers.filter((m) => !m.hasPlan).length;
+    const expiring = optimisticMembers.filter((m) => m.membershipStatus === "expiring_soon").length;
+    const expired = optimisticMembers.filter((m) => m.membershipStatus === "expired").length;
     return { total, active, noPlan, expiring, expired };
-  }, [initialMembers, accessById]);
+  }, [optimisticMembers, accessById]);
 
   // ── Attention rail groups ──────────────────────────────────────────────────
 
@@ -290,8 +309,11 @@ export function MembersHybridView({
       { type: "noplan", label: "No workout plan", tone: "accent" },
     ];
     const byType: Record<QType, HybridMember[]> = { expired: [], expiring: [], noplan: [] };
-    for (const m of initialMembers) {
-      if (dismissed.has(m.id)) continue;
+    for (const m of optimisticMembers) {
+      // Skip rows still saving — flagging "no plan yet" while the create
+      // request is mid-flight is just noise for something that resolves in
+      // well under a second.
+      if (dismissed.has(m.id) || m.pending) continue;
       if (m.membershipStatus === "expired") byType.expired.push(m);
       else if (m.membershipStatus === "expiring_soon") byType.expiring.push(m);
       else if (!m.hasPlan) byType.noplan.push(m);
@@ -299,7 +321,7 @@ export function MembersHybridView({
     return defs
       .map((d) => ({ ...d, items: byType[d.type] }))
       .filter((g) => g.items.length > 0);
-  }, [initialMembers, dismissed]);
+  }, [optimisticMembers, dismissed]);
 
   const queueCount = railGroups.reduce((sum, g) => sum + g.items.length, 0);
 
@@ -314,15 +336,16 @@ export function MembersHybridView({
   // ── Filtered + sorted directory ────────────────────────────────────────────
 
   const filtered = useMemo(() => {
-    let list = initialMembers;
-    if (bucket === "active") list = list.filter((m) => accessById.get(m.id) ?? m.isActive);
-    else if (bucket === "no-plan") list = list.filter((m) => !m.hasPlan);
+    let list = optimisticMembers;
+    if (bucket === "active") list = list.filter((m) => m.pending || (accessById.get(m.id) ?? m.isActive));
+    else if (bucket === "no-plan") list = list.filter((m) => m.pending || !m.hasPlan);
     else if (bucket === "expiring") list = list.filter(
-      (m) => m.membershipStatus === "expired" || m.membershipStatus === "expiring_soon"
+      (m) => m.pending || m.membershipStatus === "expired" || m.membershipStatus === "expiring_soon"
     );
 
     const q = query.trim().toLowerCase();
     if (q) list = list.filter((m) =>
+      m.pending ||
       m.fullName.toLowerCase().includes(q) ||
       (m.username ?? "").toLowerCase().includes(q)
     );
@@ -336,8 +359,11 @@ export function MembersHybridView({
         Number(accessById.get(b.id) ?? b.isActive) - Number(accessById.get(a.id) ?? a.isActive) ||
         a.fullName.localeCompare(b.fullName),
     };
-    return [...list].sort(cmp[sortKey]);
-  }, [initialMembers, bucket, query, sortKey, accessById]);
+    // Array.prototype.sort is stable (ES2019+), so this second pass only
+    // moves pending rows to the front — it can't otherwise be sure a
+    // just-added member is visible without switching sort/filter/page first.
+    return [...list].sort(cmp[sortKey]).sort((a, b) => Number(b.pending) - Number(a.pending));
+  }, [optimisticMembers, bucket, query, sortKey, accessById]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const pageKey = `${bucket}|${query}|${sortKey}`;
@@ -413,6 +439,50 @@ export function MembersHybridView({
     });
   }
 
+  // ── Add member ─────────────────────────────────────────────────────────────
+
+  function handleCreateMember(formData: FormData, preview: AddMemberPreview) {
+    setCreateError(null);
+    const optimisticId = `optimistic-${Date.now()}`;
+    const initials = preview.fullName
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .slice(0, 2)
+      .join("")
+      .toUpperCase();
+
+    startCreateTransition(async () => {
+      addOptimisticMember({
+        id: optimisticId,
+        fullName: preview.fullName,
+        avatarInitials: initials || "?",
+        isActive: true,
+        username: preview.username,
+        goal: preview.goal,
+        joinedAt: new Date().toISOString().slice(0, 10),
+        hasPlan: Boolean(preview.programTitle),
+        programTitle: preview.programTitle,
+        daysToExpiry: null,
+        pending: true,
+      });
+      // Close immediately — the row is already visible in the table, so
+      // there's nothing left for the owner to wait on here.
+      setShowAddMember(false);
+
+      const result = await createMemberProfile(initialFormActionState, formData);
+
+      if (result.status === "success") {
+        toast.success(result.message);
+        router.refresh();
+      } else {
+        setCreateError(result);
+        setShowAddMember(true);
+        toast.error(result.message);
+      }
+    });
+  }
+
   // ── Filter tabs ────────────────────────────────────────────────────────────
 
   const tabs: { key: Bucket; label: string; value: number; tone?: string }[] = [
@@ -459,7 +529,12 @@ export function MembersHybridView({
       {/* ── Add member panel ── */}
       {showAddMember && (
         <div className="mhv-add-panel">
-          <AddMemberForm />
+          <AddMemberForm
+            programs={programs}
+            isPending={isCreatingMember}
+            error={createError}
+            onConfirm={handleCreateMember}
+          />
         </div>
       )}
 
@@ -555,6 +630,41 @@ export function MembersHybridView({
                 {slice.map((m) => {
                   const sel = selected.has(m.id);
                   const isActive = accessById.get(m.id) ?? m.isActive;
+                  // The optimistic row has no real member ID yet — links into
+                  // it, selection, and bulk actions all need to wait for the
+                  // create request to resolve into a real record.
+                  if (m.pending) {
+                    return (
+                      <tr key={m.id} className="mhv-row mhv-row--pending" aria-busy="true">
+                        <td />
+                        <td>
+                          <div className="mhv-member">
+                            <div className={`mhv-avatar ${avatarColor(m.id)}`} aria-hidden>
+                              {m.avatarInitials}
+                            </div>
+                            <div>
+                              <span className="mhv-member__name">{m.fullName}</span>
+                              <div className="mhv-member__sub">
+                                {m.username && <span>@{m.username}</span>}
+                                {m.username && m.goal && <span> · </span>}
+                                {m.goal && <span className="mhv-member__goal">{m.goal}</span>}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span className="mhv-pill mhv-pill--ghost">Adding…</span></td>
+                        <td>
+                          {m.hasPlan ? (
+                            <span className="mhv-pill mhv-pill--ghost">{m.programTitle ?? "Assigned"}</span>
+                          ) : (
+                            <span className="mhv-pill mhv-pill--outline">No plan</span>
+                          )}
+                        </td>
+                        <td className="mhv-col-joined" />
+                        <td />
+                      </tr>
+                    );
+                  }
                   return (
                     <tr
                       key={m.id}

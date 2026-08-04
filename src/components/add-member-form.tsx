@@ -1,28 +1,41 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
-import { createMemberProfile } from "@/lib/firebase/actions";
 import type { FormActionState } from "@/types/action-state";
-import { initialFormActionState } from "@/types/action-state";
 import { FormActionContext, FieldError } from "./form-action-context";
+
+export type AddMemberPreview = {
+  fullName: string;
+  username: string;
+  email: string;
+  phone: string;
+  goal: string;
+  programTitle?: string;
+};
 
 const emptyForm = {
   email: "",
   fullName: "",
   goal: "",
   phone: "",
-  username: ""
+  username: "",
+  programId: ""
 };
 
-export function AddMemberForm() {
-  const router = useRouter();
+export function AddMemberForm({
+  programs,
+  isPending,
+  error,
+  onConfirm
+}: {
+  programs: { id: string; title: string }[];
+  isPending: boolean;
+  error: FormActionState | null;
+  onConfirm: (formData: FormData, preview: AddMemberPreview) => void;
+}) {
   const [formValues, setFormValues] = useState(emptyForm);
   const [pendingForm, setPendingForm] = useState<FormData | null>(null);
-  const [status, setStatus] = useState<FormActionState | null>(null);
-  const [dismissedMessage, setDismissedMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
 
   function updateValue(key: keyof typeof emptyForm, value: string) {
     setFormValues((current) => ({ ...current, [key]: value }));
@@ -44,22 +57,27 @@ export function AddMemberForm() {
     }
 
     const submittedForm = pendingForm;
-    setPendingForm(null);
-    setDismissedMessage("");
-    startTransition(async () => {
-      const result = await createMemberProfile(initialFormActionState, submittedForm);
-      setStatus(result);
-      if (result.status === "success") {
-        setFormValues(emptyForm);
-        router.refresh();
-      }
+    const programTitle = programs.find((p) => p.id === formValues.programId)?.title;
+
+    onConfirm(submittedForm, {
+      fullName: formValues.fullName,
+      username: formValues.username,
+      email: formValues.email,
+      phone: formValues.phone,
+      goal: formValues.goal || "General fitness",
+      programTitle
     });
+
+    setPendingForm(null);
+    // Reset immediately — the row already landed in the list optimistically,
+    // so there's nothing left to wait for from the member's point of view.
+    setFormValues(emptyForm);
   }
 
-  const showResultModal = status?.message && !isPending && dismissedMessage !== status.message;
+  const selectedProgramTitle = programs.find((p) => p.id === formValues.programId)?.title;
 
   return (
-    <FormActionContext.Provider value={status}>
+    <FormActionContext.Provider value={error}>
       <form className="form-panel" onSubmit={handleSubmit}>
         <h2>Add member</h2>
         <div className="form-grid">
@@ -124,37 +142,58 @@ export function AddMemberForm() {
             />
             <FieldError name="goal" />
           </label>
+          <label>
+            <span className="flex items-center gap-2">Split <span style={{ fontSize: "0.78rem", color: "var(--text-faint)" }}>(optional)</span></span>
+            <select
+              name="programId"
+              onChange={(event) => updateValue("programId", event.target.value)}
+              value={formValues.programId}
+            >
+              <option value="">No split yet — assign later</option>
+              {programs.map((program) => (
+                <option key={program.id} value={program.id}>{program.title}</option>
+              ))}
+            </select>
+            <FieldError name="programId" />
+          </label>
         </div>
         <button className="button button-primary" disabled={isPending} type="submit">
-          {isPending ? "Saving member..." : "Save member"}
+          Save member
         </button>
       </form>
 
       {pendingForm ? (
         <div className="dialog-backdrop" role="presentation">
           <div aria-modal="true" className="confirm-dialog" role="dialog">
-            <h2>Add this member?</h2>
-            <p>This will create a FitSplit member profile after validation passes.</p>
+            <h2>Are you sure you want to add member: {formValues.fullName}?</h2>
+            <dl className="member-preview-list">
+              <div className="member-preview-list__row">
+                <dt>Username</dt>
+                <dd>@{formValues.username}</dd>
+              </div>
+              <div className="member-preview-list__row">
+                <dt>Email</dt>
+                <dd>{formValues.email || "Not provided"}</dd>
+              </div>
+              <div className="member-preview-list__row">
+                <dt>Phone</dt>
+                <dd>{formValues.phone}</dd>
+              </div>
+              <div className="member-preview-list__row">
+                <dt>Goal</dt>
+                <dd>{formValues.goal || "General fitness"}</dd>
+              </div>
+              <div className="member-preview-list__row">
+                <dt>Split</dt>
+                <dd>{selectedProgramTitle || "Not assigned"}</dd>
+              </div>
+            </dl>
             <div className="quick-actions">
               <button className="button button-secondary" onClick={() => setPendingForm(null)} type="button">
                 Cancel
               </button>
               <button className="button button-primary" onClick={confirmCreate} type="button">
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {showResultModal ? (
-        <div className="dialog-backdrop" role="presentation">
-          <div aria-live="polite" aria-modal="true" className="confirm-dialog" role="dialog">
-            <h2>{status?.status === "success" ? "Member saved" : "Could not save member"}</h2>
-            <p className={`form-message form-message-${status?.status}`}>{status?.message}</p>
-            <div className="quick-actions">
-              <button className="button button-primary" onClick={() => setDismissedMessage(status?.message || "")} type="button">
-                Done
+                Add member
               </button>
             </div>
           </div>

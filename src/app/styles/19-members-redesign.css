@@ -530,6 +530,27 @@ html[data-theme="dark"] .mhv-rgroup__head { background: var(--bg-subtle); }
 }
 .mhv-row:last-child td { border-bottom: none; }
 
+/* Optimistic "just added, still saving" row — visible immediately, not yet
+   interactive since it has no real member ID until the create request lands. */
+.mhv-row--pending {
+  cursor: default;
+}
+.mhv-row--pending td {
+  opacity: 0.6;
+}
+.mhv-row--pending .mhv-avatar {
+  animation: mhv-pending-pulse 1.3s ease-in-out infinite;
+}
+@keyframes mhv-pending-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mhv-row--pending .mhv-avatar {
+    animation: none;
+  }
+}
+
 /* Checkbox */
 .mhv-check {
   appearance: none;

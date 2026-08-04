@@ -11,8 +11,10 @@ import { WorkoutScreen } from "@/components/member-workout-screen";
 import { LogsScreen } from "@/components/member-logs-screen";
 import { ProgressScreen } from "@/components/member-progress-screen";
 import { MacrosScreen } from "@/components/member-macros-screen";
+import { MemberProgramsClient } from "@/components/member-programs-client";
+import { MemberExerciseCatalogScreen } from "@/components/member-exercise-catalog-screen";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, MealLog, WorkoutProgram, ProgramAssignment, GymNotice } from "@/types/domain";
+import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, MealLog, WorkoutProgram, ProgramAssignment, GymNotice, MuscleGroup } from "@/types/domain";
 import type { MemberProfile, Member } from "@/types/domain";
 import React, { useState, useEffect, useMemo, useTransition, useRef } from "react";
 import Link from "next/link";
@@ -73,6 +75,8 @@ interface MemberCoachShellProps {
   coachNoteUpdatedAt?: string | null;
   program: WorkoutProgram | null;
   assignment: ProgramAssignment | null;
+  allPrograms: WorkoutProgram[];
+  exerciseCatalog: Array<{ muscleGroup: MuscleGroup; exercises: Exercise[] }>;
   exercises: Exercise[];
   liftLogs: LiftLog[];
   dayLogs: DayLog[];
@@ -146,11 +150,13 @@ function Sidebar({
   };
 
   const screenItems = [
-    { v: "overview", label: "Overview", icon: <Icons.Home size={18} /> },
-    { v: "workout",  label: "Workout",  icon: <Icons.Dumbbell size={18} /> },
-    { v: "logs",     label: "Logs",     icon: <Icons.Note size={18} /> },
-    { v: "progress", label: "Progress", icon: <Icons.Chart size={18} /> },
-    { v: "macros",   label: "Macros",   icon: <Icons.Heart size={18} /> },
+    { v: "overview",  label: "Overview",  icon: <Icons.Home size={18} /> },
+    { v: "workout",   label: "Workout",   icon: <Icons.Dumbbell size={18} /> },
+    { v: "logs",      label: "Logs",      icon: <Icons.Note size={18} /> },
+    { v: "progress",  label: "Progress",  icon: <Icons.Chart size={18} /> },
+    { v: "macros",    label: "Macros",    icon: <Icons.Heart size={18} /> },
+    { v: "programs",  label: "Programs",  icon: <Icons.Calendar size={18} /> },
+    { v: "exercises", label: "Exercises", icon: <Icons.Search size={18} /> },
   ];
 
   const gymShort = gymName.split(" · ")[0];
@@ -202,16 +208,6 @@ function Sidebar({
             <span>{it.label}</span>
           </button>
         ))}
-        {/* Quick links — full-page views for less-frequent actions */}
-        <div className="m3d-side__section-sep" />
-        <Link href="/member/programs" className="m3d-side__item m3d-side__item--link">
-          <Icons.Note size={18} />
-          <span>Programs</span>
-        </Link>
-        <Link href="/member/exercises" className="m3d-side__item m3d-side__item--link">
-          <Icons.Search size={18} />
-          <span>Exercises</span>
-        </Link>
       </nav>
 
       {/* ── Snowflake-style profile footer ── */}
@@ -542,17 +538,19 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
     weeklyStreak, daysTrainedThisWeek,
     membershipStatus, membershipEndDate,
     coachNote, coachNoteFrom,
-    program, currentWeek, exercises, liftLogs, dayLogs, activityLogs,
+    program, assignment, allPrograms, exerciseCatalog,
+    currentWeek, exercises, liftLogs, dayLogs, activityLogs,
     macroLogs, mealLogs, macroLog, macroTarget,
     memberId, gymId, todayDate,
     member, profile,
   } = props;
 
   const weeklyTarget = getWeeklyTarget(program);
+  const gymShort = gymName.split(" · ")[0];
 
   // Mobile bottom-tab nav — unchanged, fully independent from desktop nav.
   const [tab, setTab] = useState("train");
-  // Desktop sidebar nav — Overview/Workout/Logs/Progress/Macros.
+  // Desktop sidebar nav — Overview/Workout/Logs/Progress/Macros/Programs/Exercises.
   const [screen, setScreen] = useState("overview");
 
   // Seed the default day from the member's actual training state (in-progress
@@ -644,6 +642,18 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
 
             {screen === "macros" && (
               <MacrosScreen memberId={memberId} gymId={gymId} todayDate={todayDate} macroLog={macroLog} macroTarget={macroTarget} macroLogs={macroLogs} mealLogs={mealLogs} profile={profile} member={member} />
+            )}
+
+            {screen === "programs" && (
+              <MemberProgramsClient
+                programs={allPrograms}
+                assignedProgramId={assignment?.programId ?? null}
+                gymName={gymShort}
+              />
+            )}
+
+            {screen === "exercises" && (
+              <MemberExerciseCatalogScreen catalog={exerciseCatalog} />
             )}
           </div>
 
