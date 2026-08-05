@@ -5,7 +5,7 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import type { DocumentData } from "firebase-admin/firestore";
-import type { Role } from "@/types/domain";
+import type { ConsumerPlan, Role } from "@/types/domain";
 import { collectionPaths } from "@/lib/firebase/collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "@/lib/firebase/admin";
 
@@ -30,6 +30,10 @@ type ProfileRecord = {
   role: Role;
   staffType?: string;
   defaultGymId: string;
+  /** Workspace the user is currently in. Absent ⇒ `defaultGymId`. See Increment 3. */
+  activeGymId?: string;
+  /** Consumer billing plan. Always "free" in v1 — no billing exists. */
+  plan?: ConsumerPlan;
   isActive: boolean;
   mustChangePassword?: boolean;
   termsAcceptedAt?: string;
@@ -54,6 +58,8 @@ export type AuthenticatedUser = {
   termsAcceptedAt?: string;
   /** Public download URL of the user's avatar (member) or staff image, if uploaded. */
   avatarUrl?: string;
+  /** Consumer billing plan, for `resolveEntitlements`. Always "free" in v1. */
+  plan?: ConsumerPlan;
 };
 
 type DemoLogin = {
@@ -325,6 +331,8 @@ function toProfile(id: string, data: DocumentData | undefined): ProfileRecord | 
     role,
     staffType: data.staffType ? String(data.staffType) : undefined,
     defaultGymId: String(data.defaultGymId ?? ""),
+    activeGymId: data.activeGymId ? String(data.activeGymId) : undefined,
+    plan: data.plan === "pro" ? "pro" : data.plan === "free" ? "free" : undefined,
     isActive: data.isActive !== false,
     mustChangePassword: data.mustChangePassword === true,
     termsAcceptedAt: data.termsAcceptedAt ? String(data.termsAcceptedAt) : undefined,
@@ -508,7 +516,8 @@ function authUserFromProfile(profile: ProfileRecord): AuthenticatedUser {
     memberId: profile.role === "member" ? profile.id : undefined,
     mustChangePassword: profile.mustChangePassword === true,
     termsAcceptedAt: profile.termsAcceptedAt,
-    avatarUrl: profile.avatarUrl
+    avatarUrl: profile.avatarUrl,
+    plan: profile.plan
   };
 }
 

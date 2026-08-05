@@ -103,6 +103,43 @@ export type GymNotice = {
   createdAt: string;
 };
 
+/**
+ * Whether a workspace is a real gym or a solo consumer's private workspace.
+ * See `GymWorkspace.type` — absent always means "business".
+ */
+export type WorkspaceType = "business" | "personal";
+
+/** Billing plan attached to a consumer account. Always "free" today (no billing exists). */
+export type ConsumerPlan = "free" | "pro";
+
+/**
+ * One account's membership of one workspace, stored at
+ * `authProfiles/{uid}/affiliations/{gymId}`.
+ *
+ * An account has exactly one affiliation per workspace it belongs to: its own
+ * personal workspace, plus one per real gym that has enrolled it. This is what
+ * lets a consumer who later joins a gym keep a single identity instead of
+ * registering twice.
+ */
+export type Affiliation = {
+  gymId: string;
+  gymName: string;
+  type: WorkspaceType;
+  /** The role this account holds *in this workspace* — it can differ per gym. */
+  role: Role;
+  /** The account's member/staff doc id inside this workspace. */
+  memberId: string;
+  /** "left" affiliations are retained so the user keeps their history. */
+  status: "active" | "left";
+  joinedAt: string;
+  leftAt?: string;
+};
+
+/** True when a workspace is a solo consumer's, not a real gym. */
+export function isPersonalWorkspace(gym: Pick<GymWorkspace, "type"> | null | undefined): boolean {
+  return gym?.type === "personal";
+}
+
 export type GymWorkspace = {
   id: string;
   name: string;
@@ -114,6 +151,17 @@ export type GymWorkspace = {
    * Denormalised here so queries can filter by owner without a join.
    */
   ownerId?: string;
+  /**
+   * Which kind of workspace this is.
+   *   business — a real gym with staff, members, packages, and attendance.
+   *   personal — a self-coached consumer's private workspace (`personal-{uid}`),
+   *              where the consumer is the sole member and there is no staff doc.
+   *
+   * Absent means "business": every gym that existed before B2C predates this
+   * field, so the undefined case must keep behaving exactly as it always has.
+   * Read it through `isPersonalWorkspace()` rather than comparing directly.
+   */
+  type?: WorkspaceType;
   status: "active" | "paused" | "inactive";
   /**
    * Governs which members trainers of this gym can see/query.
