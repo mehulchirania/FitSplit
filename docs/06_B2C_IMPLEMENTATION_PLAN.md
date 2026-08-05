@@ -351,18 +351,27 @@ identity; consumer-to-consumer social features.
 
 ## 5. Subagent dispatch
 
-Sequential chain: **0 → 1 → 2 → {3, 4, 5} → 6**. Increments 3, 4 and 5 fan out in parallel once 2
-lands; 5 wants `isolation: "worktree"` since it's a different package.
+Corrected chain: **0 → {1, 3, 4} → 2 → 5 → 6**.
 
-| # | Agent | Isolation | Gate before merge |
+Increments 3 and 4 turn out **not** to depend on signup — 3 needs only the `Affiliation` type and a
+backfill of existing users, and 4 needs only a personal-gym doc, which can be seeded by hand. Both
+depend on Increment 0 alone, so all three of 1/3/4 fan out immediately. Only 2 (which consumes the
+OTP verify contract) and 5 (which consumes both) are genuinely serialised.
+
+All parallel agents run in **worktrees**, not branches: a second session is concurrently editing
+`mobile/`, `src/components/onboarding/`, `src/app/styles/28-31-*`, and the `member-*-screen.tsx`
+shell files in the main working tree. Worktree isolation is what keeps the two efforts off each
+other. Every brief carries that exclusion list.
+
+| # | Status | Isolation | Gate before merge |
 |---|---|---|---|
-| 0 | sonnet | branch | typecheck + unit tests |
-| 1 | sonnet | branch | `test:rules` + **manual login sweep of `docs/04`** |
-| 2 | sonnet | branch | manual signup on dev server + Firestore inspection |
-| 3 | sonnet | branch | single-affiliation-unchanged test + full E2E |
-| 4 | sonnet | branch | manual pick-program → log-lift round trip |
-| 5 | sonnet | **worktree** | physical Android build |
-| 6 | sonnet | branch | `knip` + full E2E |
+| 0 | ✅ done — `36e0f48` on `feat/b2c-foundation` | main tree | typecheck + 7 unit tests ✅ |
+| 1 | dispatched | worktree | `test:rules` + **login-resolution regression test** |
+| 3 | dispatched | worktree | **single-affiliation-unchanged assertion** + full E2E |
+| 4 | dispatched | worktree | browser-verified pick-program → log-lift round trip |
+| 2 | blocked on 1 | worktree | manual signup + Firestore inspection, no orphan on abort |
+| 5 | blocked on 1, 2 | worktree | physical Android build + account deletion |
+| 6 | blocked on 2, 4 | worktree | `knip` + full E2E |
 
 Each subagent brief must carry: this file's §1 and §2 verbatim, its own increment section, the
 memory constraints (lime `#C8F135` is fill-only on light surfaces; palette lives in one file; no
