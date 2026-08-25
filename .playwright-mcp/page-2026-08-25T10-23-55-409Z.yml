@@ -1,0 +1,132 @@
+- generic [ref=f30e1]:
+  - generic [ref=f30e2]:
+    - generic [ref=f30e27]:
+      - generic [ref=f30e335]:
+        - generic [ref=f30e336]:
+          - generic [ref=f30e337]:
+            - generic [ref=f30e338]:
+              - generic [ref=f30e339]: Body Mass & BMI
+              - generic [ref=f30e345]:
+                - generic [ref=f30e346]: "90"
+                - generic [ref=f30e347]: kg
+              - generic [ref=f30e348]:
+                - generic [ref=f30e349]:
+                  - text: "BMI:"
+                  - strong [ref=f30e350]: "27.8"
+                - generic [ref=f30e351]: Overweight
+            - generic [ref=f30e352]:
+              - generic [ref=f30e353]: Maintenance
+              - generic [ref=f30e357]:
+                - generic [ref=f30e358]: "2592"
+                - generic [ref=f30e359]: kcal
+              - generic [ref=f30e360]: Est. daily calories to maintain weight
+            - generic [ref=f30e362]:
+              - generic [ref=f30e363]: Weight Loss Target
+              - generic [ref=f30e368]:
+                - generic [ref=f30e369]: "2092"
+                - generic [ref=f30e370]: kcal
+              - generic [ref=f30e371]: ~0.5kg loss / week (-500 kcal)
+          - generic [ref=f30e373]:
+            - generic [ref=f30e374]: Caloric Targets
+            - application [ref=f30e381]:
+              - generic [ref=f30e395]:
+                - generic [ref=f30e396]:
+                  - generic [ref=f30e397]: Loss
+                  - generic [ref=f30e399]: Maint.
+                  - generic [ref=f30e401]: Gain
+                - generic [ref=f30e403]:
+                  - generic [ref=f30e404]: "0"
+                  - generic [ref=f30e406]: "800"
+                  - generic [ref=f30e408]: "1600"
+                  - generic [ref=f30e410]: "2400"
+                  - generic [ref=f30e412]: "3200"
+        - generic [ref=f30e414]:
+          - generic [ref=f30e415]:
+            - generic [ref=f30e416]: Weight
+            - generic [ref=f30e417]: 90 kg
+          - generic [ref=f30e418]:
+            - generic [ref=f30e419]: Height
+            - generic [ref=f30e420]: 180 cm
+          - generic [ref=f30e421]:
+            - generic [ref=f30e422]: Age
+            - generic [ref=f30e423]: "29"
+          - generic [ref=f30e425]:
+            - generic [ref=f30e426]: BMI
+            - generic [ref=f30e427]: "27.8"
+          - button "Edit body metrics" [ref=f30e428] [cursor=pointer]: Edit metrics
+        - generic [ref=f30e431]:
+          - generic [ref=f30e433]:
+            - heading "Daily Macro Tracker" [level=2] [ref=f30e434]
+            - paragraph [ref=f30e436]: General guidelines
+          - generic [ref=f30e437]:
+            - generic [ref=f30e438]:
+              - generic [ref=f30e440]:
+                - strong [ref=f30e441]: "0"
+                - generic [ref=f30e442]: of 2200
+              - generic [ref=f30e443]: kcal
+            - generic [ref=f30e444]:
+              - generic [ref=f30e445]:
+                - generic [ref=f30e446]: Water
+                - generic [ref=f30e447]: 0 / 3 L
+              - generic [ref=f30e449]:
+                - button "-500ml" [ref=f30e450] [cursor=pointer]
+                - button "-250ml" [ref=f30e451] [cursor=pointer]
+                - button "+250ml" [ref=f30e452] [cursor=pointer]
+                - button "+500ml" [ref=f30e453] [cursor=pointer]
+          - generic [ref=f30e454]:
+            - generic [ref=f30e455]:
+              - generic [ref=f30e457]:
+                - text: Protein
+                - generic [ref=f30e458]:
+                  - strong [ref=f30e459]: "0"
+                  - generic [ref=f30e460]: /140g
+              - generic [ref=f30e463]:
+                - text: Carbs
+                - generic [ref=f30e464]:
+                  - strong [ref=f30e465]: "0"
+                  - generic [ref=f30e466]: /240g
+              - generic [ref=f30e469]:
+                - text: Fat
+                - generic [ref=f30e470]:
+                  - strong [ref=f30e471]: "0"
+                  - generic [ref=f30e472]: /70g
+            - paragraph [ref=f30e474]: Derived from meals logged above. To correct a number here, edit or delete the meal in today's meal log instead.
+          - generic [ref=f30e475]:
+            - paragraph [ref=f30e476]: 7-Day History
+            - application [ref=f30e480]:
+              - generic [ref=f30e520]:
+                - generic [ref=f30e521]:
+                  - generic [ref=f30e522]: 08-02
+                  - generic [ref=f30e524]: 08-03
+                - generic [ref=f30e526]:
+                  - generic [ref=f30e527]: "0"
+                  - generic [ref=f30e529]: "50"
+                  - generic [ref=f30e531]: "100"
+                  - generic [ref=f30e533]: "150"
+                  - generic [ref=f30e535]: "200"
+            - generic [ref=f30e537]:
+              - generic [ref=f30e538]:
+                - generic [ref=f30e539]: 08-03
+                - generic [ref=f30e540]: 25g P
+                - generic [ref=f30e541]: 3g C
+                - generic [ref=f30e542]: 2g F
+                - generic [ref=f30e543]: 130 kcal
+              - generic [ref=f30e544]:
+                - generic [ref=f30e545]: 08-02
+                - generic [ref=f30e546]: 200g P
+                - generic [ref=f30e547]: 24g C
+                - generic [ref=f30e548]: 16g F
+                - generic [ref=f30e549]: 1040 kcal
+          - generic [ref=f30e550]:
+            - strong [ref=f30e551]: "Trainer note:"
+            - text: Trainer has not prescribed specific targets yet. Using general standard nutritional targets.
+      - navigation [ref=f30e304]:
+        - link "Coach" [ref=f30e305] [cursor=pointer]:
+          - /url: /member/coach
+        - button "Train" [ref=f30e310] [cursor=pointer]
+        - button "Progress" [ref=f30e318] [cursor=pointer]
+        - button "Body" [active] [ref=f30e321] [cursor=pointer]
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f30e330] [cursor=pointer]
+  - alert [ref=f30e334]
+  - generic [ref=f30e552]: "0"

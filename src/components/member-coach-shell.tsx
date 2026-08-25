@@ -19,7 +19,7 @@ import type { MemberProfile, Member } from "@/types/domain";
 import React, { useState, useEffect, useMemo, useTransition, useRef } from "react";
 import Link from "next/link";
 import { logoutUser } from "@/lib/auth";
-import { getWeekStart, resolveTodaysSession, estimateSessionMinutes } from "@/lib/workout-utils";
+import { getWeekStart, getTrainedDateKeys, resolveTodaysSession, estimateSessionMinutes } from "@/lib/workout-utils";
 
 /* ── Inline SVG icon helpers ──────────────────────── */
 // Omit conflicting SVG attrs (d is string in SVG spec but we pass ReactNode; strokeWidth handled via sw)
@@ -531,6 +531,84 @@ function MobileTodayCard({ program, currentWeek, selectedDayIndex }: {
   );
 }
 
+/* ── Mobile week strip ────────────────────────────────────────────────
+   Signature element for the Train (Overview) tab: a 7-box ledger strip
+   where a trained day gets a highlighter tick, the way a real logbook
+   gets marked up as the week happens. Reuses liftLogs/dayLogs already
+   passed to the shell — no new data fetch. ─────────────────────────── */
+const WEEKDAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
+
+function MobileWeekStrip({ liftLogs, dayLogs }: { liftLogs: LiftLog[]; dayLogs: DayLog[] }) {
+  const trainedDates = useMemo(() => getTrainedDateKeys(liftLogs, dayLogs), [liftLogs, dayLogs]);
+  const today = useMemo(() => {
+    const weekStartIso = getWeekStart();
+    return { weekStartIso };
+  }, []);
+
+  const days = useMemo(() => {
+    const start = new Date(today.weekStartIso + "T00:00:00");
+    const now = new Date();
+    const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() + i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      return {
+        label: WEEKDAY_LABELS[i],
+        trained: trainedDates.has(key),
+        isToday: key === nowKey,
+      };
+    });
+  }, [today, trainedDates]);
+
+  return (
+    <div className="mcr-weekstrip" aria-label="This week's training days">
+      {days.map((d, i) => (
+        <div key={i} className={`mcr-weekstrip__day${d.isToday ? " mcr-weekstrip__day--today" : ""}${d.trained ? " mcr-weekstrip__day--done" : ""}`}>
+          <span className="mcr-weekstrip__mark">{d.trained ? <Icons.Check size={12} sw={3} /> : null}</span>
+          <span className="mcr-weekstrip__label">{d.label}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ── Mobile Progress ribbon ───────────────────────────────────────────
+   Signature element for the Progress tab: the newest personal record,
+   underlined like fresh highlighter ink on the page, at the top of the
+   tab so the one thing worth bragging about is the first thing seen. */
+function MobileLatestPRRibbon({ liftLogs, exercises }: { liftLogs: LiftLog[]; exercises: Exercise[] }) {
+  const latest = useMemo(() => {
+    const maxByExercise = new Map<string, number>();
+    for (const log of liftLogs) {
+      if (!log.exerciseId || typeof log.weight !== "number") continue;
+      const current = maxByExercise.get(log.exerciseId) ?? 0;
+      if (log.weight > current) maxByExercise.set(log.exerciseId, log.weight);
+    }
+    const sorted = [...liftLogs]
+      .filter((l) => l.loggedAt)
+      .sort((a, b) => new Date(b.loggedAt).getTime() - new Date(a.loggedAt).getTime());
+    for (const log of sorted) {
+      if (typeof log.weight === "number" && log.weight > 0 && log.weight === maxByExercise.get(log.exerciseId)) {
+        const ex = exercises.find((e) => e.id === log.exerciseId);
+        return { name: ex?.name ?? "Lift", weight: log.weight, reps: log.reps };
+      }
+    }
+    return null;
+  }, [liftLogs, exercises]);
+
+  if (!latest) return null;
+
+  return (
+    <div className="mcr-pr-ribbon">
+      <span className="mcr-pr-ribbon__eyebrow">Latest PR</span>
+      <span className="mcr-pr-ribbon__value">
+        {latest.name} <mark>{latest.weight} kg × {latest.reps}</mark>
+      </span>
+    </div>
+  );
+}
+
 /* ── Main export ─────────────────────────────────────────────────── */
 export function MemberCoachShell(props: MemberCoachShellProps) {
   const {
@@ -679,6 +757,8 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                       liftLogs={liftLogs}
                     />
 
+                    <MobileWeekStrip liftLogs={liftLogs} dayLogs={dayLogs} />
+
                     {program ? (
                       <>
                         {/* Hero framing only — the real logger (with its own day
@@ -723,14 +803,18 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
             )}
 
             {tab === "progress" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div className="mcr-progress-tab">
+                <div className="mcr-progress-tab__head">
+                  <h1 className="mcr-progress-tab__title">Progress</h1>
+                  <MobileLatestPRRibbon liftLogs={liftLogs} exercises={exercises} />
+                </div>
                 <MemberProgressPanel exercises={exercises} initialLiftLogs={liftLogs} dayLogs={dayLogs} memberId={memberId} program={program} />
                 <MemberHistory liftLogs={liftLogs} exercises={exercises} dayLogs={dayLogs} activityLogs={activityLogs} macroLogs={macroLogs} macroTarget={macroTarget} />
               </div>
             )}
 
             {tab === "body" && (
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+              <div className="mcr-body-tab">
                 <ProfileMetricsWidget profile={profile} />
                 <EditableMetrics member={{ ...member, ...profile }} />
                 <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />

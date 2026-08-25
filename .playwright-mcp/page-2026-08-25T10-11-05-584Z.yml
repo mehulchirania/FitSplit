@@ -1,0 +1,132 @@
+- generic [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e13]:
+      - generic [ref=f3e627]:
+        - generic [ref=f3e628]:
+          - generic [ref=f3e629]:
+            - generic [ref=f3e630]:
+              - generic [ref=f3e631]: Body Mass & BMI
+              - generic [ref=f3e637]:
+                - generic [ref=f3e638]: "90"
+                - generic [ref=f3e639]: kg
+              - generic [ref=f3e640]:
+                - generic [ref=f3e641]:
+                  - text: "BMI:"
+                  - strong [ref=f3e642]: "27.8"
+                - generic [ref=f3e643]: Overweight
+            - generic [ref=f3e644]:
+              - generic [ref=f3e645]: Maintenance
+              - generic [ref=f3e649]:
+                - generic [ref=f3e650]: "2592"
+                - generic [ref=f3e651]: kcal
+              - generic [ref=f3e652]: Est. daily calories to maintain weight
+            - generic [ref=f3e654]:
+              - generic [ref=f3e655]: Weight Loss Target
+              - generic [ref=f3e660]:
+                - generic [ref=f3e661]: "2092"
+                - generic [ref=f3e662]: kcal
+              - generic [ref=f3e663]: ~0.5kg loss / week (-500 kcal)
+          - generic [ref=f3e665]:
+            - generic [ref=f3e666]: Caloric Targets
+            - application [ref=f3e673]:
+              - generic [ref=f3e687]:
+                - generic [ref=f3e688]:
+                  - generic [ref=f3e689]: Loss
+                  - generic [ref=f3e691]: Maint.
+                  - generic [ref=f3e693]: Gain
+                - generic [ref=f3e695]:
+                  - generic [ref=f3e696]: "0"
+                  - generic [ref=f3e698]: "800"
+                  - generic [ref=f3e700]: "1600"
+                  - generic [ref=f3e702]: "2400"
+                  - generic [ref=f3e704]: "3200"
+        - generic [ref=f3e706]:
+          - generic [ref=f3e707]:
+            - generic [ref=f3e708]: Weight
+            - generic [ref=f3e709]: 90 kg
+          - generic [ref=f3e710]:
+            - generic [ref=f3e711]: Height
+            - generic [ref=f3e712]: 180 cm
+          - generic [ref=f3e713]:
+            - generic [ref=f3e714]: Age
+            - generic [ref=f3e715]: "29"
+          - generic [ref=f3e717]:
+            - generic [ref=f3e718]: BMI
+            - generic [ref=f3e719]: "27.8"
+          - button "Edit body metrics" [ref=f3e720] [cursor=pointer]: Edit metrics
+        - generic [ref=f3e723]:
+          - generic [ref=f3e725]:
+            - heading "Daily Macro Tracker" [level=2] [ref=f3e726]
+            - paragraph [ref=f3e728]: General guidelines
+          - generic [ref=f3e729]:
+            - generic [ref=f3e730]:
+              - generic [ref=f3e732]:
+                - strong [ref=f3e733]: "0"
+                - generic [ref=f3e734]: of 2200
+              - generic [ref=f3e735]: kcal
+            - generic [ref=f3e736]:
+              - generic [ref=f3e737]:
+                - generic [ref=f3e738]: Water
+                - generic [ref=f3e739]: 0 / 3 L
+              - generic [ref=f3e741]:
+                - button "-500ml" [ref=f3e742] [cursor=pointer]
+                - button "-250ml" [ref=f3e743] [cursor=pointer]
+                - button "+250ml" [ref=f3e744] [cursor=pointer]
+                - button "+500ml" [ref=f3e745] [cursor=pointer]
+          - generic [ref=f3e746]:
+            - generic [ref=f3e747]:
+              - generic [ref=f3e749]:
+                - text: Protein
+                - generic [ref=f3e750]:
+                  - strong [ref=f3e751]: "0"
+                  - generic [ref=f3e752]: /140g
+              - generic [ref=f3e755]:
+                - text: Carbs
+                - generic [ref=f3e756]:
+                  - strong [ref=f3e757]: "0"
+                  - generic [ref=f3e758]: /240g
+              - generic [ref=f3e761]:
+                - text: Fat
+                - generic [ref=f3e762]:
+                  - strong [ref=f3e763]: "0"
+                  - generic [ref=f3e764]: /70g
+            - paragraph [ref=f3e766]: Derived from meals logged above. To correct a number here, edit or delete the meal in today's meal log instead.
+          - generic [ref=f3e767]:
+            - paragraph [ref=f3e768]: 7-Day History
+            - application [ref=f3e772]:
+              - generic [ref=f3e812]:
+                - generic [ref=f3e813]:
+                  - generic [ref=f3e814]: 08-02
+                  - generic [ref=f3e816]: 08-03
+                - generic [ref=f3e818]:
+                  - generic [ref=f3e819]: "0"
+                  - generic [ref=f3e821]: "50"
+                  - generic [ref=f3e823]: "100"
+                  - generic [ref=f3e825]: "150"
+                  - generic [ref=f3e827]: "200"
+            - generic [ref=f3e829]:
+              - generic [ref=f3e830]:
+                - generic [ref=f3e831]: 08-03
+                - generic [ref=f3e832]: 25g P
+                - generic [ref=f3e833]: 3g C
+                - generic [ref=f3e834]: 2g F
+                - generic [ref=f3e835]: 130 kcal
+              - generic [ref=f3e836]:
+                - generic [ref=f3e837]: 08-02
+                - generic [ref=f3e838]: 200g P
+                - generic [ref=f3e839]: 24g C
+                - generic [ref=f3e840]: 16g F
+                - generic [ref=f3e841]: 1040 kcal
+          - generic [ref=f3e842]:
+            - strong [ref=f3e843]: "Trainer note:"
+            - text: Trainer has not prescribed specific targets yet. Using general standard nutritional targets.
+      - navigation [ref=f3e280]:
+        - link "Coach" [ref=f3e281] [cursor=pointer]:
+          - /url: /member/coach
+        - button "Train" [ref=f3e286] [cursor=pointer]
+        - button "Progress" [ref=f3e294] [cursor=pointer]
+        - button "Body" [active] [ref=f3e297] [cursor=pointer]
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f3e306] [cursor=pointer]
+  - alert [ref=f3e310]
+  - generic [ref=f3e626]: "0"

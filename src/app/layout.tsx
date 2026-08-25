@@ -50,6 +50,10 @@ import "./styles/24-member-workout.css";
 import "./styles/25-member-logs.css";
 import "./styles/26-member-progress-screen.css";
 import "./styles/27-member-macros.css";
+import "./styles/28-mobile-foundation.css";
+import "./styles/29-mobile-member-shell.css";
+import "./styles/30-mobile-workout-logs.css";
+import "./styles/31-mobile-macros-coach.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const archivo = Archivo({

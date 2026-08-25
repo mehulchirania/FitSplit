@@ -1,0 +1,302 @@
+- generic [active] [ref=f30e1]:
+  - generic [ref=f30e2]:
+    - generic [ref=f30e27]:
+      - generic [ref=f30e30]:
+        - generic [ref=f30e31]:
+          - generic [ref=f30e32]:
+            - generic [ref=f30e33]: Sri Shakthi Hanuman Gym
+            - generic [ref=f30e34]: Hi, Mehul 👋
+          - generic [ref=f30e35]:
+            - 'button "Theme: automatic, currently light to match your system. Activate to switch to light." [ref=f30e36] [cursor=pointer]'
+            - button "Account menu" [ref=f30e41] [cursor=pointer]:
+              - generic [ref=f30e42]: M
+        - generic [ref=f30e44]:
+          - generic [ref=f30e45]:
+            - heading "Your progress" [level=3] [ref=f30e46]
+            - generic [ref=f30e47]:
+              - generic [ref=f30e48]:
+                - strong [ref=f30e53]: 1w
+                - generic [ref=f30e54]: streak
+              - generic [ref=f30e55]:
+                - strong [ref=f30e63]:
+                  - text: "1"
+                  - generic [ref=f30e64]: /6
+                - generic [ref=f30e65]: this week
+              - generic [ref=f30e66]:
+                - strong [ref=f30e73]: 40kg
+                - generic [ref=f30e74]: best lift
+              - generic [ref=f30e75]:
+                - strong [ref=f30e79]: 90kg
+                - generic [ref=f30e80]: body wt.
+          - generic "This week's training days" [ref=f30e81]:
+            - generic [ref=f30e82]: M
+            - generic [ref=f30e85]: T
+            - generic [ref=f30e90]: W
+            - generic [ref=f30e93]: T
+            - generic [ref=f30e96]: F
+            - generic [ref=f30e99]: S
+            - generic [ref=f30e102]: S
+          - generic [ref=f30e105]:
+            - generic [ref=f30e106]: Your coach's plan
+            - heading "Push 1" [level=2] [ref=f30e110]
+            - generic [ref=f30e111]: Week 5 · 6 lifts · 18 sets · ~35m
+          - generic [ref=f30e113]:
+            - generic [ref=f30e115]:
+              - generic [ref=f30e116]: WEEK · Push 1
+              - heading "Push 1" [level=1] [ref=f30e117]
+            - generic [ref=f30e118]:
+              - 'button "Day 1: Push 1" [ref=f30e119] [cursor=pointer]'
+              - 'button "Day 2: Pull 1" [ref=f30e120] [cursor=pointer]'
+              - 'button "Day 3: Legs 1" [ref=f30e121] [cursor=pointer]'
+              - 'button "Day 4: Push 2" [ref=f30e122] [cursor=pointer]'
+              - 'button "Day 5: Pull 2" [ref=f30e123] [cursor=pointer]'
+              - 'button "Day 6: Legs 2" [ref=f30e124] [cursor=pointer]'
+            - generic [ref=f30e125]:
+              - generic [ref=f30e127]:
+                - generic [ref=f30e128]: "01"
+                - generic [ref=f30e129]:
+                  - button "Machine Chest Press 3 × 8-10" [ref=f30e130] [cursor=pointer]:
+                    - generic [ref=f30e131]: Machine Chest Press
+                    - generic [ref=f30e132]: 3 × 8-10
+                  - generic [ref=f30e137]: UP NEXT
+                  - generic [ref=f30e139]:
+                    - button "Preview Machine Chest Press DeltaBolic tutorial" [ref=f30e140] [cursor=pointer]:
+                      - generic [ref=f30e144]: DeltaBolic
+                    - button "Preview Machine Chest Press gym demo" [ref=f30e145] [cursor=pointer]:
+                      - generic [ref=f30e149]: Gym video
+                  - 'combobox "Recommended: Barbell Bench Press" [ref=f30e151] [cursor=pointer]':
+                    - option "Machine Chest Press (Original)" [selected]
+                    - 'option "⭐ Recommended: Barbell Bench Press"'
+                    - option "Barbell Flat Chest Press"
+                    - option "Barbell Incline Chest Press"
+                    - option "Cable Crossover"
+                    - option "Decline Barbell Press"
+                    - option "Dumbbell Incline Chest Press"
+                    - option "Dumbbell Pullover"
+                    - option "Dumbell Decline Chest Press"
+                    - option "Dumbell Flat Chest Press"
+                    - option "Dumbell Incline Chest Press"
+                    - option "Incline Dumbbell Press"
+                    - option "Machine Chest Fly"
+                    - option "One-Arm Pushup"
+                    - option "Pec Deck Fly"
+                    - option "Push-Ups"
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Flat Chest Press"'
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Incline Chest Press"'
+                  - button "Details →" [ref=f30e152] [cursor=pointer]
+              - generic [ref=f30e154]:
+                - generic [ref=f30e155]: "02"
+                - generic [ref=f30e156]:
+                  - button "Cable Crossover 3 × 8-10" [ref=f30e157] [cursor=pointer]:
+                    - generic [ref=f30e158]: Cable Crossover
+                    - generic [ref=f30e159]: 3 × 8-10
+                  - generic [ref=f30e164]: UP NEXT
+                  - generic [ref=f30e166]:
+                    - button "Preview Cable Crossover DeltaBolic tutorial" [ref=f30e167] [cursor=pointer]:
+                      - generic [ref=f30e171]: DeltaBolic
+                    - button "Preview Cable Crossover gym demo" [ref=f30e172] [cursor=pointer]:
+                      - generic [ref=f30e176]: Gym video
+                  - 'combobox "Recommended: Barbell Bench Press" [ref=f30e178] [cursor=pointer]':
+                    - option "Cable Crossover (Original)" [selected]
+                    - 'option "⭐ Recommended: Barbell Bench Press"'
+                    - option "Barbell Flat Chest Press"
+                    - option "Barbell Incline Chest Press"
+                    - option "Decline Barbell Press"
+                    - option "Dumbbell Incline Chest Press"
+                    - option "Dumbbell Pullover"
+                    - option "Dumbell Decline Chest Press"
+                    - option "Dumbell Flat Chest Press"
+                    - option "Dumbell Incline Chest Press"
+                    - option "Incline Dumbbell Press"
+                    - option "Machine Chest Fly"
+                    - option "Machine Chest Press"
+                    - option "One-Arm Pushup"
+                    - option "Pec Deck Fly"
+                    - option "Push-Ups"
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Flat Chest Press"'
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Incline Chest Press"'
+                  - button "Details →" [ref=f30e179] [cursor=pointer]
+              - generic [ref=f30e181]:
+                - generic [ref=f30e182]: "03"
+                - generic [ref=f30e183]:
+                  - button "Pec Deck Fly 3 × 10-12" [ref=f30e184] [cursor=pointer]:
+                    - generic [ref=f30e185]: Pec Deck Fly
+                    - generic [ref=f30e186]: 3 × 10-12
+                  - generic [ref=f30e191]: UP NEXT
+                  - generic [ref=f30e193]:
+                    - button "Preview Pec Deck Fly DeltaBolic tutorial" [ref=f30e194] [cursor=pointer]:
+                      - generic [ref=f30e198]: DeltaBolic
+                    - button "Preview Pec Deck Fly gym demo" [ref=f30e199] [cursor=pointer]:
+                      - generic [ref=f30e203]: Gym video
+                  - 'combobox "Recommended: Barbell Bench Press" [ref=f30e205] [cursor=pointer]':
+                    - option "Pec Deck Fly (Original)" [selected]
+                    - 'option "⭐ Recommended: Barbell Bench Press"'
+                    - option "Barbell Flat Chest Press"
+                    - option "Barbell Incline Chest Press"
+                    - option "Cable Crossover"
+                    - option "Decline Barbell Press"
+                    - option "Dumbbell Incline Chest Press"
+                    - option "Dumbbell Pullover"
+                    - option "Dumbell Decline Chest Press"
+                    - option "Dumbell Flat Chest Press"
+                    - option "Dumbell Incline Chest Press"
+                    - option "Incline Dumbbell Press"
+                    - option "Machine Chest Fly"
+                    - option "Machine Chest Press"
+                    - option "One-Arm Pushup"
+                    - option "Push-Ups"
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Flat Chest Press"'
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Incline Chest Press"'
+                  - button "Details →" [ref=f30e206] [cursor=pointer]
+              - generic [ref=f30e208]:
+                - generic [ref=f30e209]: "04"
+                - generic [ref=f30e210]:
+                  - button "Overhead Press 3 × 10-12" [ref=f30e211] [cursor=pointer]:
+                    - generic [ref=f30e212]: Overhead Press
+                    - generic [ref=f30e213]: 3 × 10-12
+                  - generic [ref=f30e218]: UP NEXT
+                  - generic [ref=f30e220]:
+                    - button "Preview Overhead Press DeltaBolic tutorial" [ref=f30e221] [cursor=pointer]:
+                      - generic [ref=f30e225]: DeltaBolic
+                    - button "Preview Overhead Press gym demo" [ref=f30e226] [cursor=pointer]:
+                      - generic [ref=f30e230]: Gym video
+                  - 'combobox "Recommended: Arnold Press" [ref=f30e232] [cursor=pointer]':
+                    - option "Overhead Press (Original)" [selected]
+                    - 'option "⭐ Recommended: Arnold Press"'
+                    - option "Band Pull-Aparts"
+                    - option "Barbell Shrugs"
+                    - option "Barbell Shrugs or Trap Bar Shrugs"
+                    - option "Barbell Upright Row"
+                    - option "Body Weight Hip Thruster or Barbell Hip Thursters"
+                    - option "Cable Lateral Raise"
+                    - option "Cable Shrugs"
+                    - option "Dumbbell Front Raise"
+                    - option "Dumbbell Lateral Raise"
+                    - option "Dumbbell Shrugs or Trap Bar Shrugs"
+                    - option "Dumbell Rear Delt Flys on Incline Bench"
+                    - option "Dumbell Upright Row"
+                    - option "Dumbell Upright Row or Face Pulls"
+                    - option "Face Pull"
+                    - option "Face Pulls or Rear Delt Flys in Butterfly Machine"
+                    - option "Front Squats in Machine or Hack Squats"
+                    - option "Leg Raises on Ab Bench"
+                    - option "Reverse Pec Deck"
+                    - option "Seated Dumbell Arnold Press"
+                    - option "Smith Machine Shoulder Press"
+                    - option "Standing Dumbbell Side Lateral Raise"
+                    - option "Sumo Squats"
+                    - option "V Ups"
+                    - option "Walking Leg Lunges with Dumbell"
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Shoulder Press"'
+                    - 'option "Warm-up: Free Squats"'
+                    - 'option "Warm-up: Walking Leg Lunges Without Dumbells"'
+                  - button "Details →" [ref=f30e233] [cursor=pointer]
+              - generic [ref=f30e235]:
+                - generic [ref=f30e236]: "05"
+                - generic [ref=f30e237]:
+                  - button "Dumbbell Lateral Raise 3 × 10-12" [ref=f30e238] [cursor=pointer]:
+                    - generic [ref=f30e239]: Dumbbell Lateral Raise
+                    - generic [ref=f30e240]: 3 × 10-12
+                  - generic [ref=f30e245]: UP NEXT
+                  - generic [ref=f30e247]:
+                    - button "Preview Dumbbell Lateral Raise DeltaBolic tutorial" [ref=f30e248] [cursor=pointer]:
+                      - generic [ref=f30e252]: DeltaBolic
+                    - button "Preview Dumbbell Lateral Raise gym demo" [ref=f30e253] [cursor=pointer]:
+                      - generic [ref=f30e257]: Gym video
+                  - 'combobox "Recommended: Arnold Press" [ref=f30e259] [cursor=pointer]':
+                    - option "Dumbbell Lateral Raise (Original)" [selected]
+                    - 'option "⭐ Recommended: Arnold Press"'
+                    - option "Band Pull-Aparts"
+                    - option "Barbell Shrugs"
+                    - option "Barbell Shrugs or Trap Bar Shrugs"
+                    - option "Barbell Upright Row"
+                    - option "Body Weight Hip Thruster or Barbell Hip Thursters"
+                    - option "Cable Lateral Raise"
+                    - option "Cable Shrugs"
+                    - option "Dumbbell Front Raise"
+                    - option "Dumbbell Shrugs or Trap Bar Shrugs"
+                    - option "Dumbell Rear Delt Flys on Incline Bench"
+                    - option "Dumbell Upright Row"
+                    - option "Dumbell Upright Row or Face Pulls"
+                    - option "Face Pull"
+                    - option "Face Pulls or Rear Delt Flys in Butterfly Machine"
+                    - option "Front Squats in Machine or Hack Squats"
+                    - option "Leg Raises on Ab Bench"
+                    - option "Overhead Press"
+                    - option "Reverse Pec Deck"
+                    - option "Seated Dumbell Arnold Press"
+                    - option "Smith Machine Shoulder Press"
+                    - option "Standing Dumbbell Side Lateral Raise"
+                    - option "Sumo Squats"
+                    - option "V Ups"
+                    - option "Walking Leg Lunges with Dumbell"
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Shoulder Press"'
+                    - 'option "Warm-up: Free Squats"'
+                    - 'option "Warm-up: Walking Leg Lunges Without Dumbells"'
+                  - button "Details →" [ref=f30e260] [cursor=pointer]
+              - generic [ref=f30e262]:
+                - generic [ref=f30e263]: "06"
+                - generic [ref=f30e264]:
+                  - button "Dumbbell Front Raise 3 × 10-12" [ref=f30e265] [cursor=pointer]:
+                    - generic [ref=f30e266]: Dumbbell Front Raise
+                    - generic [ref=f30e267]: 3 × 10-12
+                  - generic [ref=f30e272]: UP NEXT
+                  - generic [ref=f30e274]:
+                    - button "Preview Dumbbell Front Raise DeltaBolic tutorial" [ref=f30e275] [cursor=pointer]:
+                      - generic [ref=f30e279]: DeltaBolic
+                    - button "Preview Dumbbell Front Raise gym demo" [ref=f30e280] [cursor=pointer]:
+                      - generic [ref=f30e284]: Gym video
+                  - 'combobox "Recommended: Arnold Press" [ref=f30e286] [cursor=pointer]':
+                    - option "Dumbbell Front Raise (Original)" [selected]
+                    - 'option "⭐ Recommended: Arnold Press"'
+                    - option "Band Pull-Aparts"
+                    - option "Barbell Shrugs"
+                    - option "Barbell Shrugs or Trap Bar Shrugs"
+                    - option "Barbell Upright Row"
+                    - option "Body Weight Hip Thruster or Barbell Hip Thursters"
+                    - option "Cable Lateral Raise"
+                    - option "Cable Shrugs"
+                    - option "Dumbbell Lateral Raise"
+                    - option "Dumbbell Shrugs or Trap Bar Shrugs"
+                    - option "Dumbell Rear Delt Flys on Incline Bench"
+                    - option "Dumbell Upright Row"
+                    - option "Dumbell Upright Row or Face Pulls"
+                    - option "Face Pull"
+                    - option "Face Pulls or Rear Delt Flys in Butterfly Machine"
+                    - option "Front Squats in Machine or Hack Squats"
+                    - option "Leg Raises on Ab Bench"
+                    - option "Overhead Press"
+                    - option "Reverse Pec Deck"
+                    - option "Seated Dumbell Arnold Press"
+                    - option "Smith Machine Shoulder Press"
+                    - option "Standing Dumbbell Side Lateral Raise"
+                    - option "Sumo Squats"
+                    - option "V Ups"
+                    - option "Walking Leg Lunges with Dumbell"
+                    - 'option "Warm-up: 2.5 Kg Dumbbell Shoulder Press"'
+                    - 'option "Warm-up: Free Squats"'
+                    - 'option "Warm-up: Walking Leg Lunges Without Dumbells"'
+                  - button "Details →" [ref=f30e287] [cursor=pointer]
+            - generic [ref=f30e288]:
+              - generic [ref=f30e289]:
+                - strong [ref=f30e290]: 0:00
+                - text: ELAPSED
+              - generic [ref=f30e291]: 1 of 18 sets
+              - generic [ref=f30e295]:
+                - button "Skip today" [ref=f30e297] [cursor=pointer]
+                - button "Finish workout" [ref=f30e298] [cursor=pointer]
+          - generic [ref=f30e299]:
+            - generic [ref=f30e300]:
+              - generic [ref=f30e301]: Membership
+              - strong [ref=f30e302]: No membership
+            - link "Manage" [ref=f30e303] [cursor=pointer]:
+              - /url: /member/membership
+      - navigation [ref=f30e304]:
+        - link "Coach" [ref=f30e305] [cursor=pointer]:
+          - /url: /member/coach
+        - button "Train" [ref=f30e310] [cursor=pointer]
+        - button "Progress" [ref=f30e318] [cursor=pointer]
+        - button "Body" [ref=f30e321] [cursor=pointer]
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f30e330] [cursor=pointer]
+  - alert [ref=f30e334]
