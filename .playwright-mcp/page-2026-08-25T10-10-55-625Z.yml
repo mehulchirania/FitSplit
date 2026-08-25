@@ -1,0 +1,132 @@
+- generic [ref=f3e1]:
+  - generic [ref=f3e2]:
+    - generic [ref=f3e13]:
+      - generic [ref=f3e488]:
+        - generic [ref=f3e489]:
+          - heading "Progress" [level=1] [ref=f3e490]
+          - generic [ref=f3e491]:
+            - generic [ref=f3e492]: Latest PR
+            - generic [ref=f3e493]:
+              - text: Pec Deck Fly
+              - mark [ref=f3e494]: 40 kg × 8
+        - generic [ref=f3e495]:
+          - generic [ref=f3e496]:
+            - generic [ref=f3e498]:
+              - paragraph [ref=f3e499]: Progress
+              - heading "Strength trend" [level=2] [ref=f3e500]
+            - generic [ref=f3e501]:
+              - generic [ref=f3e502]:
+                - button "Pec Deck Fly" [ref=f3e503] [cursor=pointer]
+                - button "Dumbbell Lateral Raise" [ref=f3e504] [cursor=pointer]
+                - button "Overhead Press" [ref=f3e505] [cursor=pointer]
+              - paragraph [ref=f3e506]: Tap an exercise above to jump straight to logging it ↓
+              - application [ref=f3e510]:
+                - generic [ref=f3e527]:
+                  - generic [ref=f3e528]:
+                    - generic [ref=f3e529]: 2/8
+                    - generic [ref=f3e531]: 2/8
+                    - generic [ref=f3e533]: 3/8
+                    - generic [ref=f3e535]: 3/8
+                  - generic [ref=f3e537]:
+                    - generic [ref=f3e538]: "0"
+                    - generic [ref=f3e540]: "15"
+                    - generic [ref=f3e542]: "30"
+                    - generic [ref=f3e544]: "45"
+          - generic [ref=f3e546]:
+            - heading "Log your sets" [level=2] [ref=f3e549]
+            - generic [ref=f3e550]:
+              - generic [ref=f3e551]:
+                - text: Exercise
+                - combobox "Select exercise" [ref=f3e552] [cursor=pointer]:
+                  - generic: Machine Chest Press
+                - combobox [ref=f3e556]
+              - paragraph [ref=f3e557]: No prior logs for this exercise yet.
+              - generic [ref=f3e558]:
+                - generic [ref=f3e559]:
+                  - text: Weight (kg)
+                  - spinbutton "Weight (kg)" [ref=f3e560]
+                - generic [ref=f3e561]:
+                  - text: Sets
+                  - spinbutton "Sets" [ref=f3e562]: "3"
+                - generic [ref=f3e563]:
+                  - text: Reps
+                  - textbox "Reps" [ref=f3e564]:
+                    - /placeholder: e.g. 10 or 8,8,7
+              - button "Log Set" [ref=f3e565] [cursor=pointer]
+            - group [ref=f3e566]:
+              - generic "View Lift History" [ref=f3e567] [cursor=pointer]
+        - generic [ref=f3e569]:
+          - article [ref=f3e570]:
+            - generic [ref=f3e571]:
+              - generic [ref=f3e572]:
+                - heading "03 Aug 2026" [level=2] [ref=f3e573]
+                - paragraph [ref=f3e574]: Chest
+              - generic [ref=f3e575]:
+                - generic [ref=f3e576]: 2 sets
+                - generic [ref=f3e577]: 2 PR
+            - generic [ref=f3e578]:
+              - generic [ref=f3e579]:
+                - generic [ref=f3e580]:
+                  - text: Pec Deck Fly
+                  - generic [ref=f3e581]: PR
+                - generic [ref=f3e582]: 40kg x 1 x 8
+              - generic [ref=f3e583]:
+                - generic [ref=f3e584]:
+                  - text: Pec Deck Fly
+                  - generic [ref=f3e585]: PR
+                - generic [ref=f3e586]: 40kg x 1 x 8
+            - generic [ref=f3e587]:
+              - generic [ref=f3e588]: Macros
+              - generic [ref=f3e589]: 25g protein / 3g carbs / 2g fat / 0L water
+          - article [ref=f3e590]:
+            - generic [ref=f3e591]:
+              - generic [ref=f3e592]:
+                - heading "02 Aug 2026" [level=2] [ref=f3e593]
+                - paragraph [ref=f3e594]: Chest / Shoulders
+              - generic [ref=f3e595]:
+                - generic [ref=f3e596]: 6 sets
+                - generic [ref=f3e597]: 6 PR
+            - generic [ref=f3e598]:
+              - generic [ref=f3e599]:
+                - generic [ref=f3e600]:
+                  - text: Pec Deck Fly
+                  - generic [ref=f3e601]: PR
+                - generic [ref=f3e602]: 40kg x 1 x 8-10
+              - generic [ref=f3e603]:
+                - generic [ref=f3e604]:
+                  - text: Pec Deck Fly
+                  - generic [ref=f3e605]: PR
+                - generic [ref=f3e606]: 40kg x 1 x 8-10
+              - generic [ref=f3e607]:
+                - generic [ref=f3e608]:
+                  - text: Dumbbell Lateral Raise
+                  - generic [ref=f3e609]: PR
+                - generic [ref=f3e610]: 40kg x 1 x 10-12
+              - generic [ref=f3e611]:
+                - generic [ref=f3e612]:
+                  - text: Dumbbell Lateral Raise
+                  - generic [ref=f3e613]: PR
+                - generic [ref=f3e614]: 40kg x 1 x 10-12
+              - generic [ref=f3e615]:
+                - generic [ref=f3e616]:
+                  - text: Dumbbell Lateral Raise
+                  - generic [ref=f3e617]: PR
+                - generic [ref=f3e618]: 40kg x 1 x 10-12
+              - generic [ref=f3e619]:
+                - generic [ref=f3e620]:
+                  - text: Overhead Press
+                  - generic [ref=f3e621]: PR
+                - generic [ref=f3e622]: 40kg x 1 x 8-10
+            - generic [ref=f3e623]:
+              - generic [ref=f3e624]: Macros
+              - generic [ref=f3e625]: 200g protein / 24g carbs / 16g fat / 0L water
+      - navigation [ref=f3e280]:
+        - link "Coach" [ref=f3e281] [cursor=pointer]:
+          - /url: /member/coach
+        - button "Train" [ref=f3e286] [cursor=pointer]
+        - button "Progress" [active] [ref=f3e294] [cursor=pointer]
+        - button "Body" [ref=f3e297] [cursor=pointer]
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f3e306] [cursor=pointer]
+  - alert [ref=f3e310]
+  - generic [ref=f3e626]: "0"

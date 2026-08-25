@@ -50,9 +50,9 @@ export function ProfileMetricsWidget({ profile }: { profile: ProfileMetrics }) {
   }
 
   const chartData = [
-    { name: "Loss", calories: weightLoss, fill: "var(--brand-purple)" },
-    { name: "Maint.", calories: maintenance, fill: "var(--brand-orange)" },
-    { name: "Gain", calories: maintenance ? maintenance + 500 : 0, fill: "var(--brand-green)" }
+    { name: "Loss", calories: weightLoss, fill: "var(--danger)" },
+    { name: "Maint.", calories: maintenance, fill: "var(--warning)" },
+    { name: "Gain", calories: maintenance ? maintenance + 500 : 0, fill: "var(--success)" }
   ].filter(d => d.calories > 0);
 
   return (

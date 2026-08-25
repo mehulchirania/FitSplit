@@ -1,0 +1,332 @@
+/* ============================================================================
+   Mobile — Macros, Coach, Settings & Membership (agent D)
+
+   Layered after 00-base-shell.css, 21-member-redesign.css, 27-member-macros.css
+   and 18-billing-trainers.css. Only touches the ≤768px tier; desktop rules in
+   those files are untouched. Read 00-base-shell.css for the token contract —
+   no new palette/spacing/type/radius values are introduced here.
+
+   Signature elements (see report):
+   - Macros  → "the log dock": a fixed thumb-zone ticket strip that mirrors a
+     gym log book's sign-off line, always reachable with one thumb.
+   - Coach   → "the marked note": the pinned coach note gets a highlighter-lime
+     rule down its spine on mobile, the one lime accent on the whole screen.
+   ========================================================================= */
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MACROS  (m3d-mc-*)
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .m3d-mc-body {
+    padding: 0 var(--space-4);
+    /* Clear the fixed dock (its own height + safe area) so the last card
+       (EditableMetrics) is never hidden behind it. */
+    padding-bottom: calc(var(--space-20) + env(safe-area-inset-bottom, 0px));
+    gap: var(--space-5) !important;
+  }
+
+  /* Header CTA is redundant with the fixed dock below on mobile — the dock
+     is the reachable one, so hide the desktop header button here rather than
+     showing two ways to do the same thing. */
+  .m3d-mc__logbtn {
+    display: none;
+  }
+
+  .m3d-mc-hero {
+    padding: var(--space-5) var(--space-4);
+  }
+  .m3d-mc-hero__kcal {
+    font-size: var(--text-3xl);
+  }
+  .m3d-mc-hero__row {
+    row-gap: var(--space-1);
+  }
+  .m3d-mc-hero__remaining {
+    /* On narrow phones the remaining-kcal chip wants its own line rather
+       than fighting the goal figure for horizontal room. */
+    flex-basis: 100%;
+    margin-left: 0;
+  }
+
+  /* Quick-add pills: full-bleed horizontal scroll strip so a thumb can swipe
+     through options one-handed without hunting for a wrapped row. */
+  .m3d-mc-quickadd {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    margin: 0 calc(var(--space-4) * -1);
+    padding: var(--space-1) var(--space-4) var(--space-2);
+    scrollbar-width: none;
+  }
+  .m3d-mc-quickadd::-webkit-scrollbar {
+    display: none;
+  }
+  .m3d-mc-pill {
+    scroll-snap-align: start;
+    flex-shrink: 0;
+    font-size: var(--text-base);
+  }
+
+  /* Meal rows: stack time above the name/kcal so nothing truncates the meal
+     name on a 360px viewport, and grow the delete target. */
+  .m3d-mc-meal-row {
+    align-items: flex-start;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+  .m3d-mc-meal-time {
+    width: auto;
+    padding-top: 2px;
+  }
+  .m3d-mc-meal-protein {
+    width: auto;
+  }
+
+  /* ── Fixed thumb-zone dock ── */
+  .m3d-mc-dock {
+    align-items: center;
+    background: var(--bg-elevated);
+    border-top: 1px solid var(--border);
+    bottom: 0;
+    box-shadow: var(--shadow);
+    display: flex;
+    gap: var(--space-3);
+    left: 0;
+    padding: var(--space-3) var(--space-4);
+    padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+    position: fixed;
+    right: 0;
+    z-index: 30;
+  }
+  .m3d-mc-dock__stub {
+    color: var(--text-soft);
+    flex: 1;
+    font-size: var(--text-sm);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums lining-nums;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .m3d-mc-dock__cta {
+    background: var(--primary);
+    border: none;
+    border-radius: var(--radius-pill);
+    color: var(--primary-foreground);
+    cursor: pointer;
+    flex-shrink: 0;
+    font-size: var(--text-sm);
+    font-weight: 800;
+    letter-spacing: var(--tracking-wide);
+    min-height: 48px;
+    padding: 0 var(--space-6);
+    transition: transform var(--fast), box-shadow var(--medium);
+  }
+  .m3d-mc-dock__cta:active {
+    transform: scale(0.96);
+  }
+
+  /* ── Manual-log dialog becomes a bottom sheet, not a floating card ── */
+  .m3d-mc-dialog {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-left: none;
+    border-right: none;
+    bottom: 0;
+    left: 0;
+    max-height: 86vh;
+    max-width: 100%;
+    padding: var(--space-5) var(--space-4);
+    padding-bottom: calc(var(--space-5) + env(safe-area-inset-bottom, 0px));
+    right: 0;
+    top: auto;
+    transform: none;
+    width: 100%;
+  }
+  .m3d-mc-dialog__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .m3d-mc-dialog__field input,
+  .m3d-mc-dialog__computed {
+    font-size: var(--text-md);
+    min-height: 48px;
+  }
+  .m3d-mc-dialog__submit,
+  .m3d-mc-dialog__actions .m3d-btn-ghost {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .m3d-mc-dock {
+    animation: fsFadeIn var(--fast) ease;
+  }
+}
+
+/* Above the tablet tier the dock is desktop-irrelevant chrome — never render
+   it, regardless of viewport resize edge cases. */
+@media (min-width: 769px) {
+  .m3d-mc-dock {
+    display: none !important;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   COACH  (mcv-*)
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mcv-root {
+    max-width: none;
+  }
+
+  .mcv-header {
+    padding: calc(var(--space-3) + env(safe-area-inset-top, 0px)) var(--space-4) var(--space-3);
+  }
+
+  .mcv-bubble {
+    max-width: 86%;
+  }
+  .mcv-bubble__text {
+    font-size: var(--text-base);
+  }
+
+  /* The one deliberate lime mark on this screen: a highlighter spine down
+     the pinned note, echoing "the marked-up training log" concept instead
+     of a generic tinted card. */
+  .mcv-pinned-note {
+    border-left: 3px solid var(--brand);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding-left: var(--space-3);
+  }
+
+  /* Quick replies and send button both need the 44px floor; the desktop
+     sizing (28-32px) reads fine with a mouse but is a miss target for a
+     thumb. */
+  .mcv-quick-btn {
+    font-size: var(--text-sm);
+    min-height: 44px;
+    padding: 0 var(--space-4);
+  }
+  .mcv-input {
+    font-size: var(--text-md);
+    min-height: 46px;
+  }
+  .mcv-send {
+    height: 46px;
+    width: 46px;
+  }
+  .mcv-composer {
+    padding-top: var(--space-3);
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   SETTINGS  (mset-*)
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .mset-root {
+    padding: 0 var(--space-4) var(--space-20);
+  }
+
+  .mset-tab {
+    min-height: 48px;
+  }
+
+  .mset-row {
+    min-height: 44px;
+    padding: var(--space-4);
+  }
+
+  .mset-edit-btn,
+  .mset-action-btn {
+    min-height: 44px;
+  }
+
+  .mset-save-btn,
+  .mset-cancel-btn {
+    min-height: 48px;
+    flex: 1;
+  }
+
+  /* 4-across number tiles get tight below 400px — two rows of two reads
+     easier than four squeezed columns fighting tabular-nums for width. */
+  .mset-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-3);
+  }
+
+  .mset-field-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .mset-field input,
+  .mset-field select {
+    font-size: var(--text-md);
+    min-height: 46px;
+  }
+
+  .mset-toggle {
+    flex-shrink: 0;
+  }
+
+  .mset-logout {
+    min-height: 52px;
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────────────────
+   MEMBERSHIP  (.membership-page, .msc-*, .payment-history-row, .pkg-option,
+   .method-pill) — scoped to .membership-page so owner/billing screens
+   sharing these class names on desktop are untouched.
+   ───────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .membership-page {
+    padding: 0 var(--space-4) var(--space-20);
+  }
+
+  .membership-page .membership-status-card {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+  .membership-page .msc-right {
+    align-self: stretch;
+    border-top: 1px solid var(--border);
+    justify-content: space-around;
+    padding-top: var(--space-3);
+    width: 100%;
+  }
+
+  .membership-page .payment-history-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-4);
+  }
+
+  .membership-page .pkg-option {
+    align-items: center;
+    min-height: 44px;
+    padding: var(--space-4);
+  }
+  .membership-page .pkg-option input[type="radio"] {
+    height: 20px;
+    width: 20px;
+  }
+
+  .membership-page .method-pills {
+    gap: var(--space-2);
+  }
+  .membership-page .method-pill {
+    min-height: 44px;
+  }
+
+  .membership-page .membership-renew-toggle {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+}

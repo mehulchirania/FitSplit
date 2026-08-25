@@ -1,0 +1,378 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Mobile — Workout logger + Logs feed  (Agent C)
+
+   Scope strategy: the workout logger is mounted TWICE (member-coach-shell.tsx)
+   — once in `.mcr-desktop-only` (screen picker), once wrapped in
+   `.mcr-train-logger` inside `.mcr-mobile-only` (the Train tab). Those two
+   trees are switched by CSS display, not by conditional render, so this file
+   scopes almost everything under `.mcr-train-logger` rather than a width
+   media query — that way the desktop mount is untouched at any viewport,
+   and the mobile mount is correct wherever `.mcr-mobile-only` is shown.
+
+   The logs feed (`.m3d-lg`, member-logs-screen.tsx) is currently only wired
+   into the desktop screen list (see report) — its rules below use a width
+   media query instead, so they take effect the moment it is shown at a
+   narrow viewport, however it gets there.
+
+   Base rules for 24-member-workout.css / 25-member-logs.css are read-only
+   references here; nothing in that file is edited. This file loads after
+   both, so equal-specificity rules here win by source order.
+   ────────────────────────────────────────────────────────────────────── */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WORKOUT — mobile Train-tab logger
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mcr-train-logger .m3d-wk { padding-bottom: 0; }
+
+.mcr-train-logger .m3d-wk__head { margin-bottom: var(--space-2); }
+
+/* Day picker — bigger chips, real touch targets, thumb-swipeable */
+.mcr-train-logger .m3d-wk__daypicker {
+  margin: var(--space-3) calc(var(--space-4) * -1) 0;
+  padding: var(--space-1) var(--space-4) var(--space-2);
+  scroll-snap-type: x proximity;
+}
+.mcr-train-logger .m3d-daychip {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  scroll-snap-align: start;
+  transition: transform var(--fast), background-color var(--fast), border-color var(--fast);
+}
+.mcr-train-logger .m3d-daychip:active { transform: scale(0.96); }
+
+/* Exercise rows — bigger tap area for the whole header row */
+.mcr-train-logger .m3d-wk__row { gap: var(--space-3); padding-bottom: var(--space-4); }
+.mcr-train-logger .m3d-wk__row-head {
+  min-height: 44px;
+  width: 100%;
+  flex-wrap: wrap;
+  row-gap: var(--space-1);
+}
+.mcr-train-logger .m3d-wk__row-head:active { opacity: 0.7; }
+.mcr-train-logger .m3d-wk__name--active { font-size: var(--text-md); }
+.mcr-train-logger .m3d-wk__details-btn {
+  margin-left: 0;
+  min-height: 44px;
+  padding: var(--space-2) 0;
+}
+
+/* ── Signature element: tally marks ──────────────────────────────────────
+   Hidden everywhere except the mobile logger. One stroke per prescribed
+   set, lime-filled the instant that set is logged — the same shorthand a
+   lifter already uses on a paper card, so progress reads without opening
+   the row. Encodes real state (done vs. not), nothing decorative. */
+.m3d-wk__tally { display: none; }
+.mcr-train-logger .m3d-wk__tally {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  flex-basis: 100%;
+  height: 12px;
+}
+.m3d-wk__tally-mark {
+  width: 3px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--border-strong);
+  opacity: 0.5;
+  transform: rotate(8deg);
+  transition: background-color var(--fast), opacity var(--fast), height var(--fast);
+}
+.m3d-wk__tally-mark--on {
+  background: var(--brand);
+  opacity: 1;
+  height: 12px;
+}
+
+/* ── Set rows: stepper controls instead of bare number fields ───────────
+   Default (desktop mount): steppers are visually removed via display:none
+   on the buttons/label, and the wrapper divs collapse with display:contents
+   so the input alone still occupies the original grid cell — the desktop
+   5-column grid from 24-member-workout.css is completely unaffected. */
+.m3d-wk__field { display: contents; }
+.m3d-wk__field-label { display: none; }
+.m3d-wk__stepper { display: contents; }
+.m3d-wk__step-btn { display: none; }
+
+.mcr-train-logger .m3d-wk__sets { flex-basis: 100%; }
+.mcr-train-logger .m3d-wk__set-head { display: none; }
+
+.mcr-train-logger .m3d-wk__set-row {
+  display: grid;
+  grid-template-columns: 18px 1fr 1fr 46px 48px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-1);
+  border-radius: var(--radius-sm);
+  transition: background-color var(--fast);
+}
+.mcr-train-logger .m3d-wk__set-row + .m3d-wk__set-row { border-top: 1px solid var(--border); }
+.mcr-train-logger .m3d-wk__set-row--done { background: var(--brand-soft); }
+
+/* RPE — optional, logged less often than weight/reps, so it stays a plain
+   compact field rather than earning its own stepper (that would crowd the
+   thumb-zone check button on a 360px-wide screen). Still >=44px tall. */
+.mcr-train-logger .m3d-wk__set-row > input[placeholder="—"] {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  font-size: var(--text-md);
+  padding: var(--space-2) var(--space-1);
+}
+
+.mcr-train-logger .m3d-wk__field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.mcr-train-logger .m3d-wk__field-label {
+  display: block;
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: var(--tracking-caps);
+  color: var(--text-faint);
+}
+.mcr-train-logger .m3d-wk__stepper {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+.mcr-train-logger .m3d-wk__step-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  min-height: 44px;
+  border: none;
+  background: var(--bg-subtle);
+  color: var(--text-soft);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1;
+  touch-action: manipulation;
+  transition: background-color var(--fast), transform 80ms;
+}
+.mcr-train-logger .m3d-wk__step-btn:active:not(:disabled) {
+  background: var(--brand-soft);
+  color: var(--brand);
+  transform: scale(0.92);
+}
+.mcr-train-logger .m3d-wk__step-btn:disabled { opacity: 0.4; }
+
+.mcr-train-logger .m3d-wk__stepper input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: none !important;
+  border-left: 1px solid var(--border) !important;
+  border-right: 1px solid var(--border) !important;
+  border-radius: 0 !important;
+  font-size: var(--text-md) !important; /* >=16px stops iOS auto-zoom on focus */
+  text-align: center;
+  background: transparent;
+}
+
+.mcr-train-logger .m3d-wk__set-n {
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+  justify-self: center;
+}
+
+/* The log-set action — the single most-repeated tap on this screen. Large,
+   round, always in the same spot at the end of each set row so a sweaty
+   one-handed tap doesn't need precision. Visible pressed state is critical
+   here — the member needs proof the tap registered before moving on. */
+.mcr-train-logger .m3d-wk__check {
+  width: 48px;
+  height: 48px;
+  border-width: 1.5px;
+  font-size: var(--text-lg);
+  flex-shrink: 0;
+  justify-self: end;
+}
+.mcr-train-logger .m3d-wk__check:active:not(:disabled) {
+  transform: scale(0.9);
+}
+.mcr-train-logger .m3d-wk__check--on {
+  box-shadow: 0 0 0 4px var(--brand-soft);
+}
+
+.mcr-train-logger .m3d-wk__last {
+  font-size: var(--text-sm);
+  padding: 0 var(--space-2);
+}
+
+.mcr-train-logger .m3d-wk__rest {
+  max-width: none;
+  margin-left: var(--space-2);
+  margin-right: var(--space-2);
+}
+
+/* Exercise swap select + video preview — full width, real height */
+.mcr-train-logger .m3d-wk__swap-dropdown-wrap { flex-basis: 100%; }
+.mcr-train-logger .m3d-wk__swap-select {
+  min-height: 44px;
+  width: 100%;
+}
+.mcr-train-logger .m3d-wk__video-preview-inline { flex-basis: 100%; }
+
+/* ── Sticky footer: keep Finish/Skip reachable, above the fixed tab bar ─── */
+.mcr-train-logger .m3d-wk__footer {
+  position: sticky;
+  bottom: calc(60px + env(safe-area-inset-bottom, 0px));
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-4) calc(var(--space-3) + env(safe-area-inset-bottom, 0px) / 2);
+  border-radius: var(--radius) var(--radius) 0 0;
+  box-shadow: var(--shadow);
+  z-index: 5;
+  gap: var(--space-3);
+}
+.mcr-train-logger .m3d-wk__footer-actions { width: 100%; justify-content: space-between; margin-left: 0; }
+.mcr-train-logger .m3d-wk__finish {
+  min-height: 48px;
+  flex: 1;
+  font-size: var(--text-base);
+}
+.mcr-train-logger .m3d-wk__finish:active:not(:disabled) { transform: scale(0.97); }
+.mcr-train-logger .m3d-wk__skip-wrap .m3d-btn-sm { min-height: 48px; }
+.mcr-train-logger .m3d-wk__skip-pop { min-width: 200px; }
+.mcr-train-logger .m3d-wk__skip-pop button { min-height: 44px; }
+
+/* ── Detail drawer: full-width sheet on phones, not a 440px side panel ──── */
+@media (max-width: 480px) {
+  .m3d-wk-drawer {
+    width: 100%;
+    max-width: 100vw;
+    left: 0;
+    top: auto;
+    bottom: 0;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 86vh;
+    padding: var(--space-5) var(--space-5) calc(var(--space-8) + env(safe-area-inset-bottom, 0px));
+    animation: fsSheetIn 260ms var(--slow);
+  }
+  @keyframes fsSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .m3d-wk-drawer,
+  .mcr-train-logger .m3d-wk__step-btn,
+  .mcr-train-logger .m3d-wk__check,
+  .mcr-train-logger .m3d-wk__finish,
+  .mcr-train-logger .m3d-daychip { animation: none !important; transition: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   LOGS — activity feed
+   Not currently wired into the mobile tab bar (see report) — these rules
+   fire on width alone so they apply the moment it is, at any embed point.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Desktop default: the new title+meta wrapper (added to the JSX so mobile
+   can stack them) collapses out of the layout tree so the existing
+   25-member-logs.css flex-row rules for .m3d-lg__row-title/-meta apply
+   exactly as before. */
+.m3d-lg__row-text { display: contents; }
+
+@media (max-width: 768px) {
+  .m3d-lg__intro { margin-top: calc(var(--space-3) * -1); }
+
+  .m3d-lg__pt-card { min-height: 44px; }
+
+  .m3d-lg__group-label {
+    position: sticky;
+    top: 0;
+    background: var(--bg);
+    padding-top: var(--space-1);
+    padding-bottom: var(--space-2);
+    z-index: 1;
+  }
+
+  /* ── Signature element: the ledger spine ────────────────────────────
+     A ruled vertical line runs down the left margin of each day's rows,
+     with a small tick at every entry — the ruled margin of a paper
+     logbook, not a card list. It replaces the plain icon-only left edge
+     and gives the feed a single deliberate identity mark; everything
+     else in the row stays quiet. */
+  .m3d-lg__rows {
+    position: relative;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding-left: var(--space-5);
+  }
+  .m3d-lg__rows::before {
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 4px;
+    bottom: 4px;
+    width: 1px;
+    background: var(--border-strong);
+  }
+
+  .m3d-lg__row {
+    position: relative;
+    min-height: 56px;
+    padding: var(--space-3) var(--space-3) var(--space-3) var(--space-4);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: var(--space-2);
+  }
+  .m3d-lg__rows .m3d-lg__row:last-child { margin-bottom: 0; }
+  .m3d-lg__row::before {
+    content: "";
+    position: absolute;
+    left: calc(-1 * var(--space-4) + -1px);
+    top: 50%;
+    width: 7px;
+    height: 7px;
+    margin-top: -3.5px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 1.5px solid var(--border-strong);
+  }
+  .m3d-lg__row:active { background: var(--bg-subtle); transform: none; }
+
+  .m3d-lg__row-icon { width: 36px; height: 36px; }
+
+  /* Title + meta stack instead of the meta simply disappearing — the
+     amount lifted / macros hit is information, not decoration, so it
+     stays visible on a phone. */
+  .m3d-lg__row-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+    flex: 1;
+  }
+  .m3d-lg__row-title { white-space: normal; font-size: var(--text-base); }
+  .m3d-lg__row-meta {
+    display: block;
+    flex: none;
+    white-space: normal;
+    font-size: var(--text-xs);
+  }
+  .m3d-lg__row-time {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0;
+    font-size: var(--text-2xs);
+  }
+  .m3d-lg__row-arrow { display: none; }
+
+  .m3d-lg__more-wrap button { min-height: 48px; width: 100%; }
+}
+
+@media (max-width: 768px) and (prefers-reduced-motion: no-preference) {
+  .m3d-lg__row { transition: background-color var(--fast); }
+}

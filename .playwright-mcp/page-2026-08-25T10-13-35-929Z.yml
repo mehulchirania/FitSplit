@@ -1,0 +1,94 @@
+- generic [active] [ref=f9e1]:
+  - generic [ref=f9e2]:
+    - generic [ref=f9e4]:
+      - complementary [ref=f9e5]:
+        - button "Go to dashboard" [ref=f9e6] [cursor=pointer]:
+          - generic [ref=f9e7]:
+            - img "FitSplit" [ref=f9e9]
+            - generic [ref=f9e10]: ×
+            - img "Sri Shakthi Hanuman Gym" [ref=f9e12]
+          - generic [ref=f9e13]:
+            - generic [ref=f9e14]: FitSplit
+            - generic [ref=f9e15]: Sri Shakthi Hanuman Gym
+        - navigation [ref=f9e16]:
+          - button "Overview" [ref=f9e17] [cursor=pointer]
+          - button "Workout" [ref=f9e21] [cursor=pointer]
+          - button "Logs" [ref=f9e29] [cursor=pointer]
+          - button "Progress" [ref=f9e34] [cursor=pointer]
+          - button "Macros" [ref=f9e37] [cursor=pointer]
+          - button "Programs" [ref=f9e41] [cursor=pointer]
+          - button "Exercises" [ref=f9e46] [cursor=pointer]
+        - generic [ref=f9e51]:
+          - button "Account menu" [ref=f9e52] [cursor=pointer]:
+            - generic [ref=f9e53]: M
+            - generic [ref=f9e54]:
+              - strong [ref=f9e55]: Mehul
+              - generic [ref=f9e56]: Member
+          - button "Log out" [ref=f9e60] [cursor=pointer]
+      - generic [ref=f9e64]:
+        - banner [ref=f9e65]:
+          - generic [ref=f9e66]:
+            - generic [ref=f9e67] [cursor=pointer]: Dashboard
+            - generic [ref=f9e68]: /
+            - generic [ref=f9e69] [cursor=pointer]: Overview
+        - generic [ref=f9e72]:
+          - generic [ref=f9e73]:
+            - generic [ref=f9e74]: M
+            - generic [ref=f9e75]:
+              - generic [ref=f9e76]: MEMBER · SRI SHAKTHI HANUMAN GYM
+              - heading "Mehul" [level=1] [ref=f9e77]
+              - generic [ref=f9e78]: Push Pull Legs · 6-day · Week 5
+          - generic [ref=f9e79]:
+            - generic [ref=f9e80]:
+              - strong [ref=f9e81]: 13%
+              - generic [ref=f9e82]: ADHERENCE · 4 WK
+            - generic [ref=f9e83]:
+              - strong [ref=f9e84]: 1 wks
+              - generic [ref=f9e85]: WORKOUT STREAK
+            - generic [ref=f9e86]:
+              - strong [ref=f9e87]:
+                - text: "1"
+                - generic [ref=f9e88]: /6
+              - generic [ref=f9e89]: SESSIONS THIS WEEK
+            - generic [ref=f9e90]:
+              - strong [ref=f9e91]: 2.5 kg × 8
+              - generic [ref=f9e92]: RECENT PR · MACHINE CHEST PRESS
+          - generic [ref=f9e93]:
+            - generic [ref=f9e94]: TODAY · TUESDAY, 25 AUGUST
+            - generic [ref=f9e95]:
+              - button "Push 1 · Day 1 Machine Chest Press · Cable Crossover · Pec Deck Fly · Overhead Press · Dumbbell Lateral Raise · Dumbbell Front Raise 6 lifts · 18 sets · est. 35 min" [ref=f9e96] [cursor=pointer]:
+                - generic [ref=f9e97]:
+                  - text: Push 1
+                  - generic [ref=f9e98]: · Day 1
+                - generic [ref=f9e99]: Machine Chest Press · Cable Crossover · Pec Deck Fly · Overhead Press · Dumbbell Lateral Raise · Dumbbell Front Raise
+                - generic [ref=f9e100]: 6 lifts · 18 sets · est. 35 min
+              - button "Continue workout →" [ref=f9e101] [cursor=pointer]
+            - generic [ref=f9e102]:
+              - generic [ref=f9e103]: MON
+              - generic [ref=f9e106]:
+                - generic [ref=f9e107]: ✓
+                - generic [ref=f9e108]: TUE
+              - generic [ref=f9e109]: WED
+              - generic [ref=f9e112]: THU
+              - generic [ref=f9e115]: FRI
+              - generic [ref=f9e118]: SAT
+              - generic [ref=f9e121]: SUN
+          - generic [ref=f9e124]:
+            - generic [ref=f9e125]:
+              - generic [ref=f9e126]: RECENT ACTIVITY
+              - button "View all →" [ref=f9e127] [cursor=pointer]
+            - generic [ref=f9e128]:
+              - generic [ref=f9e130]: Machine Chest Press
+              - generic [ref=f9e131]: 2.5 kg × 8
+              - generic [ref=f9e132]: Tue, 03:43 pm
+            - generic [ref=f9e133]:
+              - generic [ref=f9e135]: Pec Deck Fly
+              - generic [ref=f9e136]: 40 kg × 8
+              - generic [ref=f9e137]: Mon, 02:39 pm
+            - generic [ref=f9e138]:
+              - generic [ref=f9e140]: Pec Deck Fly
+              - generic [ref=f9e141]: 40 kg × 8
+              - generic [ref=f9e142]: Mon, 11:47 am
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=f9e148] [cursor=pointer]
+  - alert [ref=f9e152]

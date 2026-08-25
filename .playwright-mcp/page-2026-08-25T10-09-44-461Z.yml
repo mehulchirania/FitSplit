@@ -1,0 +1,26 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e423]:
+      - generic [ref=e424]:
+        - generic [ref=e425]: FitSplit
+        - button "Skip" [ref=e426] [cursor=pointer]
+      - region "FitSplit feature preview" [ref=e427]:
+        - generic [ref=e428]:
+          - group [ref=e477]:
+            - heading [level=2] [ref=e478]: Know today's work before you touch a plate
+            - paragraph [ref=e435]: Open Push Day A and see your exercises, target muscles, and sets × reps — no scrolling through a program PDF on the gym floor.
+          - 'group "Slide 2 of 4: Watch the lift, right there" [ref=e479]':
+            - heading "Watch the lift, right there" [level=2] [ref=e480]
+            - paragraph [ref=e442]: Every exercise has a 1-tap form video. Unsure on a cable row? Watch it mid-set without leaving the screen.
+          - group [ref=e443]:
+            - heading [level=2] [ref=e450]: Machine's taken? Swap it.
+            - paragraph [ref=e451]: Every exercise offers same-muscle alternatives, so a busy gym floor never stalls your session.
+          - group [ref=e452]:
+            - heading [level=2] [ref=e456]: Log it, tell your coach
+            - paragraph [ref=e457]: Track meals and body weight, then message your coach directly — all in the same app you train with.
+      - generic [ref=e458]:
+        - generic [ref=e459]: Set 2 of 4
+        - button "Next" [active] [ref=e466] [cursor=pointer]
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e472] [cursor=pointer]
+  - alert [ref=e476]

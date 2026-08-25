@@ -23,7 +23,10 @@ import {
   SKIP_REASONS,
   getNextExerciseSwap,
   getLastLiftForExercise,
-  hasLoggedWeight
+  hasLoggedWeight,
+  suggestNextSet,
+  formatEffort,
+  type EffortScale,
 } from "@fitsplit/core";
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -33,7 +36,14 @@ interface WorkoutScreenProps {
   profile: AuthenticatedProfile;
 }
 
-type SetRow = { weight: string; reps: string; done: boolean; pending: boolean };
+type SetRow = {
+  weight: string;
+  reps: string;
+  done: boolean;
+  pending: boolean;
+  /** Effort value in the member's chosen scale (RIR 0–10 or RPE 1–10). Undefined = not entered. */
+  effortValue?: number;
+};
 type RowsState = Record<number, SetRow[]>;
 
 const todayKey = () => new Date().toISOString().slice(0, 10);
@@ -73,6 +83,9 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
   const [elapsed, setElapsed] = useState(0);
   const [restRemaining, setRestRemaining] = useState(0);
   const [restTotal, setRestTotal] = useState(90);
+
+  // Effort tracking: member picks their preferred scale (RIR or RPE) once per session
+  const [effortScale, setEffortScale] = useState<EffortScale>("rir");
 
   // Modals
   const [infoModalExercise, setInfoModalExercise] = useState<Exercise | null>(null);
@@ -246,8 +259,18 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
       return;
     }
 
+
+
+    const effort = rows[exIdx]?.[setIdx]?.effortValue;
+    const effortPayload =
+      effort !== undefined
+        ? effortScale === "rir"
+          ? { effortRir: effort }
+          : { effortRpe: effort }
+        : {};
+
     try {
-      await logLiftSet({ memberId, exerciseId: activeExerciseId, reps, weightKg: weight, sets: 1, sessionId });
+      await logLiftSet({ memberId, exerciseId: activeExerciseId, reps, weightKg: weight, sets: 1, sessionId, ...effortPayload });
       markDone();
     } catch (err) {
       // The OS reported connectivity but the write still failed (flaky signal,
@@ -377,23 +400,41 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
             </Text>
           )}
         </View>
-        <View style={styles.toggleRow}>
-          <Pressable
-            style={[styles.toggleBtn, variant === "timeline" && styles.toggleBtnActive]}
-            onPress={() => setVariant("timeline")}
-          >
-            <Text style={[styles.toggleText, variant === "timeline" && styles.toggleTextActive]}>
-              Timeline
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.toggleBtn, variant === "ledger" && styles.toggleBtnActive]}
-            onPress={() => setVariant("ledger")}
-          >
-            <Text style={[styles.toggleText, variant === "ledger" && styles.toggleTextActive]}>
-              Ledger
-            </Text>
-          </Pressable>
+        <View style={styles.controlsRow}>
+          {/* Effort scale toggle */}
+          <View style={styles.toggleRow}>
+            <Pressable
+              style={[styles.toggleBtn, effortScale === "rir" && styles.toggleBtnActive]}
+              onPress={() => setEffortScale("rir")}
+            >
+              <Text style={[styles.toggleText, effortScale === "rir" && styles.toggleTextActive]}>RIR</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toggleBtn, effortScale === "rpe" && styles.toggleBtnActive]}
+              onPress={() => setEffortScale("rpe")}
+            >
+              <Text style={[styles.toggleText, effortScale === "rpe" && styles.toggleTextActive]}>RPE</Text>
+            </Pressable>
+          </View>
+          {/* View variant toggle */}
+          <View style={styles.toggleRow}>
+            <Pressable
+              style={[styles.toggleBtn, variant === "timeline" && styles.toggleBtnActive]}
+              onPress={() => setVariant("timeline")}
+            >
+              <Text style={[styles.toggleText, variant === "timeline" && styles.toggleTextActive]}>
+                Timeline
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.toggleBtn, variant === "ledger" && styles.toggleBtnActive]}
+              onPress={() => setVariant("ledger")}
+            >
+              <Text style={[styles.toggleText, variant === "ledger" && styles.toggleTextActive]}>
+                Ledger
+              </Text>
+            </Pressable>
+          </View>
         </View>
       </View>
 
@@ -447,6 +488,19 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
                       Last: {lastLift.weight}kg × {lastLift.reps}
                     </Text>
                   )}
+                  {/* Progressive overload hint — "why this number?" */}
+                  {(() => {
+                    const history = liftLogs
+                      .filter((l) => l.exerciseId === activeExId)
+                      .map((l) => ({ weight: l.weight, reps: l.reps }));
+                    if (history.length === 0) return null;
+                    const hint = suggestNextSet(history);
+                    return (
+                      <Text style={styles.overloadHint}>
+                        💡 {hint.why}
+                      </Text>
+                    );
+                  })()}
                 </Pressable>
                 <View style={styles.actionRow}>
                   <Pressable style={styles.headerBtn} onPress={() => handleSwap(exIdx)}>
@@ -465,51 +519,76 @@ export default function WorkoutScreen({ profile }: WorkoutScreenProps) {
               {variant === "timeline" && (
                 <View style={styles.setRowsList}>
                   {rows[exIdx]?.map((row, setIdx) => (
-                    <View key={setIdx} style={styles.setRow}>
-                      <Text style={styles.setLabel}>Set {setIdx + 1}</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="kg"
-                        placeholderTextColor={theme.textSoft}
-                        keyboardType="numeric"
-                        value={row.weight}
-                        onChangeText={(text) => {
-                          setRows((r) => ({
-                            ...r,
-                            [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, weight: text } : s))
-                          }));
-                        }}
-                        editable={!row.done && !row.pending}
-                      />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="reps"
-                        placeholderTextColor={theme.textSoft}
-                        keyboardType="numeric"
-                        value={row.reps}
-                        onChangeText={(text) => {
-                          setRows((r) => ({
-                            ...r,
-                            [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, reps: text } : s))
-                          }));
-                        }}
-                        editable={!row.done && !row.pending}
-                      />
-                      <Pressable
-                        style={[
-                          styles.checkbox,
-                          row.done && styles.checkboxDone,
-                          row.pending && styles.checkboxPending
-                        ]}
-                        onPress={() => submitSet(exIdx, setIdx)}
-                        disabled={row.done || row.pending}
-                      >
-                        {row.pending ? (
-                          <ActivityIndicator size="small" color="#0A0A0A" />
-                        ) : (
-                          <Text style={styles.checkboxText}>{row.done ? "✓" : "Log"}</Text>
-                        )}
-                      </Pressable>
+                    <View key={setIdx}>
+                      <View style={styles.setRow}>
+                        <Text style={styles.setLabel}>Set {setIdx + 1}</Text>
+                        <TextInput
+                          style={styles.input}
+                          placeholder="kg"
+                          placeholderTextColor={theme.textSoft}
+                          keyboardType="numeric"
+                          value={row.weight}
+                          onChangeText={(text) => {
+                            setRows((r) => ({
+                              ...r,
+                              [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, weight: text } : s))
+                            }));
+                          }}
+                          editable={!row.done && !row.pending}
+                        />
+                        <TextInput
+                          style={styles.input}
+                          placeholder="reps"
+                          placeholderTextColor={theme.textSoft}
+                          keyboardType="numeric"
+                          value={row.reps}
+                          onChangeText={(text) => {
+                            setRows((r) => ({
+                              ...r,
+                              [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, reps: text } : s))
+                            }));
+                          }}
+                          editable={!row.done && !row.pending}
+                        />
+                        {/* Effort input: RIR (0–4) or RPE (6–10) */}
+                        <TextInput
+                          style={[styles.input, styles.inputEffort]}
+                          placeholder={effortScale === "rir" ? "RIR" : "RPE"}
+                          placeholderTextColor={theme.textSoft}
+                          keyboardType="numeric"
+                          value={row.effortValue !== undefined ? String(row.effortValue) : ""}
+                          onChangeText={(text) => {
+                            const val = text === "" ? undefined : Math.min(10, Math.max(0, Number(text) || 0));
+                            setRows((r) => ({
+                              ...r,
+                              [exIdx]: r[exIdx].map((s, i) => (i === setIdx ? { ...s, effortValue: val } : s))
+                            }));
+                          }}
+                          editable={!row.done && !row.pending}
+                          maxLength={2}
+                        />
+                        <Pressable
+                          style={[
+                            styles.checkbox,
+                            row.done && styles.checkboxDone,
+                            row.pending && styles.checkboxPending
+                          ]}
+                          onPress={() => submitSet(exIdx, setIdx)}
+                          disabled={row.done || row.pending}
+                        >
+                          {row.pending ? (
+                            <ActivityIndicator size="small" color="#0A0A0A" />
+                          ) : (
+                            <Text style={styles.checkboxText}>{row.done ? "✓" : "Log"}</Text>
+                          )}
+                        </Pressable>
+                      </View>
+                      {/* Effort badge — shows formatted value once done */}
+                      {row.done && row.effortValue !== undefined && (
+                        <Text style={styles.effortBadge}>
+                          {formatEffort(row.effortValue, effortScale)}
+                        </Text>
+                      )}
                     </View>
                   ))}
                 </View>
@@ -633,6 +712,7 @@ const styles = StyleSheet.create({
   timerRow: { gap: 2 },
   timeLabel: { fontSize: 16, fontWeight: "700", color: theme.text },
   restLabel: { fontSize: 12, color: theme.brand },
+  controlsRow: { flexDirection: "row", gap: 8, alignItems: "center" },
   toggleRow: { flexDirection: "row", backgroundColor: theme.accentSoft, borderRadius: 6, padding: 3 },
   toggleBtn: { paddingVertical: 6, paddingHorizontal: 12, borderRadius: 4 },
   toggleBtnActive: { backgroundColor: theme.brand },
@@ -657,12 +737,31 @@ const styles = StyleSheet.create({
   exerciseName: { fontSize: 18, fontWeight: "700", color: theme.text },
   exerciseMeta: { fontSize: 13, color: theme.textSoft, marginTop: 2 },
   lastLiftText: { fontSize: 12, color: theme.brand, marginTop: 4 },
+  overloadHint: {
+    fontSize: 11,
+    color: theme.textSoft,
+    marginTop: 6,
+    fontStyle: "italic",
+    lineHeight: 16,
+  },
   actionRow: { flexDirection: "row", gap: 8 },
   headerBtn: { backgroundColor: theme.accentSoft, paddingVertical: 4, paddingHorizontal: 8, borderRadius: 4 },
   headerBtnText: { fontSize: 12, color: theme.text },
   setRowsList: { marginTop: 12, gap: 8 },
   setRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   setLabel: { flex: 1, fontSize: 14, color: theme.text, fontWeight: "600" },
+  inputEffort: {
+    width: 48,
+    borderColor: "rgba(200, 241, 53, 0.3)",
+  },
+  effortBadge: {
+    fontSize: 10,
+    color: theme.brand,
+    fontWeight: "600",
+    paddingLeft: 8,
+    paddingBottom: 4,
+    opacity: 0.8,
+  },
   input: {
     width: 60,
     backgroundColor: theme.bg,

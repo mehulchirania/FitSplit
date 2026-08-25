@@ -278,8 +278,10 @@ export function LogsScreen({
                     <span className={`m3d-lg__row-icon m3d-lg__row-icon--${item.kind}`}>
                       {iconGlyph(item.kind)}
                     </span>
-                    <span className="m3d-lg__row-title">{item.title}</span>
-                    {item.meta && <span className="m3d-lg__row-meta">{item.meta}</span>}
+                    <span className="m3d-lg__row-text">
+                      <span className="m3d-lg__row-title">{item.title}</span>
+                      {item.meta && <span className="m3d-lg__row-meta">{item.meta}</span>}
+                    </span>
                     <span className="m3d-lg__row-time">
                       {formatTime(item.loggedAt)} <span className="m3d-lg__row-arrow">→</span>
                     </span>

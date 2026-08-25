@@ -1,4 +1,4 @@
-import type { Exercise, LiftLog, SkipReason, WorkoutExercise } from "./domain";
+import type { Exercise, LiftLog, MuscleGroup, SkipReason, WorkoutExercise } from "./domain";
 
 export const dayNames = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 
@@ -371,4 +371,312 @@ export function getLastLiftForExercise(exerciseId: string | undefined, liftLogs:
 /** Whether a lift log carries a real load — bodyweight sets are logged with weight 0/null. */
 export function hasLoggedWeight(log: LiftLog) {
   return typeof log.weight === "number" && log.weight > 0;
+}
+
+// ─── 1RM Estimation (ported from opengym frontend/src/lib/onerm.js) ───────────
+
+/**
+ * Maximum reps for which 1RM extrapolation is considered reliable.
+ * Anything above this is clamped before formula application.
+ */
+export const ONE_RM_REP_CAP = 12;
+
+export type OneRmFormula = "epley" | "brzycki" | "lombardi";
+
+const ONE_RM_FORMULAS: Record<OneRmFormula, (w: number, r: number) => number> = {
+  epley:    (w, r) => w * (1 + r / 30),
+  brzycki:  (w, r) => w * 36 / (37 - r),
+  lombardi: (w, r) => w * Math.pow(r, 0.1),
+};
+
+/**
+ * Estimate the one-rep max for a given weight and rep count using the specified
+ * formula. Reps are capped at ONE_RM_REP_CAP to avoid wild extrapolations.
+ * Returns 0 for bodyweight sets (weight === 0) or invalid input.
+ */
+export function estimate1RM(
+  weightKg: number,
+  reps: number,
+  formula: OneRmFormula = "epley"
+): number {
+  if (weightKg <= 0 || reps <= 0) return 0;
+  const r = Math.min(reps, ONE_RM_REP_CAP);
+  if (r === 1) return weightKg; // already a true 1RM
+  return Math.round(ONE_RM_FORMULAS[formula](weightKg, r));
+}
+
+/**
+ * Best (highest) 1RM estimate across all three formulas for a given set.
+ * More conservative than any single formula alone.
+ */
+export function best1RM(weightKg: number, reps: number): number {
+  if (weightKg <= 0 || reps <= 0) return 0;
+  return Math.max(
+    estimate1RM(weightKg, reps, "epley"),
+    estimate1RM(weightKg, reps, "brzycki"),
+    estimate1RM(weightKg, reps, "lombardi")
+  );
+}
+
+// ─── Weekly Streak (opengym frontend/src/lib/history.js) ──────────────────────
+
+/**
+ * Compute how many consecutive ISO weeks (Mon–Sun) the member has trained in,
+ * counting backwards from the *current* week.
+ *
+ * A week counts when at least one date key in `trainedDateKeys` falls within it.
+ * Uses the "weekly" (not daily) definition from opengym — far more forgiving
+ * and better for retention psychology.
+ *
+ * `currentWeekStart` defaults to the IST-anchored Monday returned by
+ * `getWeekStart()` so callers don't have to pass it explicitly.
+ */
+export function computeWeeklyStreak(
+  trainedDateKeys: Set<string>,
+  currentWeekStart: string = getWeekStart()
+): number {
+  if (trainedDateKeys.size === 0) return 0;
+
+  let streak = 0;
+  let weekStart = new Date(`${currentWeekStart}T00:00:00`);
+
+  // Walk backwards week by week until we hit a week with no training
+  for (let i = 0; i < 104; i++) { // cap at 2 years to avoid infinite loops
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+
+    const yyyy = weekStart.getFullYear();
+    const mm = String(weekStart.getMonth() + 1).padStart(2, "0");
+    const dd = String(weekStart.getDate()).padStart(2, "0");
+    const weekStartKey = `${yyyy}-${mm}-${dd}`;
+    const weekEndKey = `${weekEnd.getFullYear()}-${String(weekEnd.getMonth() + 1).padStart(2, "0")}-${String(weekEnd.getDate()).padStart(2, "0")}`;
+
+    const trainedThisWeek = Array.from(trainedDateKeys).some(
+      (key) => key >= weekStartKey && key < weekEndKey
+    );
+
+    if (!trainedThisWeek) break;
+    streak++;
+
+    // Step back one week
+    weekStart.setDate(weekStart.getDate() - 7);
+  }
+
+  return streak;
+}
+
+// ─── Workout Volume ────────────────────────────────────────────────────────────
+
+/**
+ * Total training volume (kg × reps) for a set of completed sets.
+ * Bodyweight sets (weight === 0) contribute 0 to volume — same convention as
+ * opengym's `workoutVolume` helper.
+ */
+export function computeWorkoutVolume(
+  sets: { weight: number; reps: number | string; done: boolean }[]
+): number {
+  let total = 0;
+  for (const s of sets) {
+    if (!s.done) continue;
+    const r = typeof s.reps === "string" ? Number(s.reps) : s.reps;
+    total += (s.weight ?? 0) * (Number.isFinite(r) ? r : 0);
+  }
+  return total;
+}
+
+// ─── Progressive Overload Engine (opengym frontend/src/lib/progression.js) ────
+
+export type OverloadPolicy = "linear" | "double";
+
+export type OverloadSuggestion = {
+  /** Suggested next weight in kg (0 for bodyweight). */
+  suggestedWeightKg: number;
+  /** Suggested rep target (e.g. "8–10" or "10"). */
+  suggestedReps: string;
+  /** Human-readable explanation of why this number was chosen. */
+  why: string;
+};
+
+/** Default load increment in kg (smallest meaningful plate change). */
+const DEFAULT_INCREMENT_KG = 2.5;
+/** How many consecutive successful sessions before adding load. */
+const LINEAR_ADVANCE_AFTER = 1;
+/** How many misses before a 10 % deload. */
+const DELOAD_AFTER = 3;
+
+/**
+ * Suggest the next working set weight and reps based on recent history.
+ *
+ * `history` should be the member's logged sets for this exercise, most-recent
+ * first. At least 1 entry is required; returns a hold suggestion for empty
+ * history.
+ *
+ * Policies:
+ *   - `linear`  — add `DEFAULT_INCREMENT_KG` each session after hitting reps.
+ *   - `double`  — progress reps first, then weight (double-progression).
+ */
+export function suggestNextSet(
+  history: { weight: number; reps: number | string }[],
+  policy: OverloadPolicy = "linear"
+): OverloadSuggestion {
+  if (history.length === 0) {
+    return {
+      suggestedWeightKg: 0,
+      suggestedReps: "8",
+      why: "No history yet — start with a comfortable weight.",
+    };
+  }
+
+  const last = history[0];
+  const lastWeight = last.weight ?? 0;
+  const lastReps = typeof last.reps === "string" ? Number(last.reps) || 0 : last.reps;
+
+  // Count recent consecutive misses (reps below target of 8)
+  const TARGET_REPS = 8;
+  const misses = history.slice(0, DELOAD_AFTER).filter(
+    (h) => (typeof h.reps === "string" ? Number(h.reps) : h.reps) < TARGET_REPS
+  ).length;
+
+  if (misses >= DELOAD_AFTER && lastWeight > 0) {
+    const deloaded = Math.max(Math.round((lastWeight * 0.9) / DEFAULT_INCREMENT_KG) * DEFAULT_INCREMENT_KG, DEFAULT_INCREMENT_KG);
+    return {
+      suggestedWeightKg: deloaded,
+      suggestedReps: String(TARGET_REPS),
+      why: `${DELOAD_AFTER} consecutive sessions below target — deloading 10 % to ${deloaded} kg to rebuild quality reps.`,
+    };
+  }
+
+  if (policy === "double") {
+    // Double progression: hit rep ceiling (12) before adding weight
+    const REP_CEILING = 12;
+    if (lastReps >= REP_CEILING) {
+      const next = lastWeight > 0 ? lastWeight + DEFAULT_INCREMENT_KG : 0;
+      return {
+        suggestedWeightKg: next,
+        suggestedReps: String(TARGET_REPS),
+        why: `Hit ${REP_CEILING} reps at ${lastWeight} kg — adding ${DEFAULT_INCREMENT_KG} kg and resetting reps to ${TARGET_REPS}.`,
+      };
+    }
+    return {
+      suggestedWeightKg: lastWeight,
+      suggestedReps: String(lastReps + 1),
+      why: `Still building reps at ${lastWeight} kg (${lastReps} → ${lastReps + 1}) before adding load.`,
+    };
+  }
+
+  // Linear: add weight after LINEAR_ADVANCE_AFTER successful sessions
+  const successes = history.slice(0, LINEAR_ADVANCE_AFTER).filter(
+    (h) => (typeof h.reps === "string" ? Number(h.reps) : h.reps) >= TARGET_REPS
+  ).length;
+
+  if (successes >= LINEAR_ADVANCE_AFTER && lastWeight > 0) {
+    const next = lastWeight + DEFAULT_INCREMENT_KG;
+    return {
+      suggestedWeightKg: next,
+      suggestedReps: String(TARGET_REPS),
+      why: `Hit ${TARGET_REPS}+ reps at ${lastWeight} kg — adding ${DEFAULT_INCREMENT_KG} kg (linear progression).`,
+    };
+  }
+
+  return {
+    suggestedWeightKg: lastWeight,
+    suggestedReps: String(TARGET_REPS),
+    why: lastWeight === 0
+      ? "Bodyweight exercise — focus on hitting your rep target before adding load."
+      : `Same weight (${lastWeight} kg) — aim for ${TARGET_REPS} clean reps before progressing.`,
+  };
+}
+
+// ─── Effort Scale (RIR / RPE) — opengym frontend/src/lib/effort.js ────────────
+
+export type EffortScale = "rir" | "rpe";
+
+/**
+ * Normalise RIR (Reps In Reserve, 0–10) or RPE (1–10 session scale) to a
+ * canonical 0–10 effort score where 10 = maximal effort.
+ *
+ * RIR:  0 = failure (canonical 10), 10 = very easy (canonical 0)
+ * RPE:  1 = minimal (canonical 1),  10 = maximal (canonical 10)
+ */
+export function toCanonicalEffort(value: number, scale: EffortScale): number {
+  if (scale === "rpe") return Math.max(0, Math.min(10, value));
+  // RIR: invert — 0 RIR is max effort
+  return Math.max(0, Math.min(10, 10 - value));
+}
+
+/**
+ * Convert a canonical 0–10 effort score back to the preferred display scale.
+ */
+export function fromCanonicalEffort(canonical: number, scale: EffortScale): number {
+  if (scale === "rpe") return Math.round(Math.max(0, Math.min(10, canonical)));
+  return Math.round(Math.max(0, Math.min(10, 10 - canonical)));
+}
+
+/** Format an effort value for display, e.g. "RIR 2" or "RPE 8". */
+export function formatEffort(value: number, scale: EffortScale): string {
+  return scale === "rir" ? `RIR ${value}` : `RPE ${value}`;
+}
+
+// ─── Muscle Volume Heatmap ─────────────────────────────────────────────────────
+
+/**
+ * Build a normalised (0–1) per-MuscleGroup intensity map from a set of lift
+ * logs. Used by the muscle-map heatmap component to shade the body diagram.
+ *
+ * Volume per muscle group = Σ (weight × reps) for all logs in that group.
+ * The resulting map is normalised against the maximum group volume so the
+ * most-trained group always renders at full intensity (1.0).
+ */
+export function getMuscleHeatmap(
+  liftLogs: { exerciseId: string; weight: number; reps: string | number }[],
+  exercises: Pick<Exercise, "id" | "muscleGroup">[]
+): Map<MuscleGroup, number> {
+  const volumeByGroup = new Map<MuscleGroup, number>();
+
+  for (const log of liftLogs) {
+    const ex = exercises.find((e) => e.id === log.exerciseId);
+    if (!ex) continue;
+    const reps = typeof log.reps === "string" ? Number(log.reps) : log.reps;
+    const vol = (log.weight ?? 0) * (Number.isFinite(reps) ? reps : 0);
+    volumeByGroup.set(ex.muscleGroup, (volumeByGroup.get(ex.muscleGroup) ?? 0) + vol);
+  }
+
+  const maxVol = Math.max(0, ...volumeByGroup.values());
+  if (maxVol === 0) return volumeByGroup;
+
+  for (const [group, vol] of volumeByGroup) {
+    volumeByGroup.set(group, vol / maxVol);
+  }
+
+  return volumeByGroup;
+}
+
+// ─── Activity Heatmap Data ─────────────────────────────────────────────────────
+
+/**
+ * Build a date-keyed (YYYY-MM-DD) activity count map for the trailing N days
+ * (default 84 = 12 weeks), used by the GitHub-style calendar heatmap.
+ *
+ * For FitSplit the "count" is binary (0 or 1) since we track whether a day
+ * was trained, not session counts. The map includes every day in the window
+ * so the rendering component can always draw the full grid without gaps.
+ */
+export function buildActivityHeatmapData(
+  trainedDateKeys: Set<string>,
+  trailingDays = 84
+): Map<string, number> {
+  const result = new Map<string, number>();
+  const today = nowInIST();
+
+  for (let i = trailingDays - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    const key = `${yyyy}-${mm}-${dd}`;
+    result.set(key, trainedDateKeys.has(key) ? 1 : 0);
+  }
+
+  return result;
 }

@@ -1,0 +1,24 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e481]:
+      - generic [ref=e482]: FitSplit
+      - generic [ref=e484]:
+        - heading "Welcome back." [level=1] [ref=e485]
+        - paragraph [ref=e486]: Sign in with your mobile number or username and 4-digit PIN.
+        - tablist "Login type" [ref=e487]:
+          - tab "Member" [selected] [ref=e488] [cursor=pointer]
+          - tab "Staff" [ref=e489] [cursor=pointer]
+        - generic [ref=e490]:
+          - generic [ref=e491]:
+            - generic [ref=e492]: Mobile number or username
+            - textbox "Mobile number or username" [ref=e493]
+          - generic [ref=e494]:
+            - generic [ref=e495]: 4-digit PIN
+            - textbox "4-digit PIN" [ref=e496]
+          - generic [ref=e497]:
+            - button "Log in" [ref=e498] [cursor=pointer]
+            - button "Forgot PIN?" [ref=e499] [cursor=pointer]
+      - paragraph [ref=e500]: Secure access for members, trainers & gym owners.
+    - region "Notifications alt+T"
+  - button "Open Next.js Dev Tools" [ref=e472] [cursor=pointer]
+  - alert [ref=e476]

@@ -118,6 +118,17 @@ function sessionStartStorageKey(sessionId: string) {
   return `fitsplit:workout-session-start:${sessionId}`;
 }
 
+/** Nudge a numeric field string by `delta`, clamped at `min`. Blank/garbage input
+ *  treated as 0 so the mobile stepper always has a sane starting point — the
+ *  member can still type an exact value directly in the field underneath. */
+function stepValue(current: string, delta: number, min = 0): string {
+  const n = Number(current || 0);
+  const base = Number.isFinite(n) ? n : 0;
+  const next = Math.max(min, base + delta);
+  const rounded = Math.round(next * 10) / 10;
+  return String(rounded);
+}
+
 function swapStorageKey(memberId: string, dayId: string) {
   return `fitsplit:exercise-swaps:${memberId}:${dayId}`;
 }
@@ -564,6 +575,15 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
                   <button type="button" className="m3d-wk__row-head" onClick={() => setFocusIndex(isActive ? null : exIdx)}>
                     <span className={`m3d-wk__name${isActive ? " m3d-wk__name--active" : ""}`}>{dictEx?.name ?? "Exercise"}</span>
                     <span className="m3d-wk__meta">{ex.sets ?? exRows.length} × {ex.reps ?? "—"}</span>
+                    {/* Tally marks — the signature element for this screen. A member
+                        logging a set at a machine reads progress the way a paper
+                        training log is marked up: one stroke per set, filled in as
+                        it's done, at a glance without opening the row. */}
+                    <span className="m3d-wk__tally" aria-hidden="true">
+                      {exRows.map((s, i) => (
+                        <i key={i} className={`m3d-wk__tally-mark${s.done ? " m3d-wk__tally-mark--on" : ""}`} />
+                      ))}
+                    </span>
                   </button>
                   {isSwapped && originalEx && (
                     <button type="button" className="m3d-wk__swap-note" onClick={() => clearSwap(exIdx)}>
@@ -618,12 +638,30 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
                         <span>SET</span><span>KG</span><span>REPS</span><span>RPE</span><span />
                       </div>
                       {exRows.map((s, setIdx) => (
-                        <div key={setIdx} className="m3d-wk__set-row">
+                        <div key={setIdx} className={`m3d-wk__set-row${s.done ? " m3d-wk__set-row--done" : ""}`}>
                           <span className="m3d-wk__set-n">{setIdx + 1}</span>
-                          <input type="number" inputMode="decimal" step="0.5" min="0" value={s.weight} disabled={s.done}
-                            onChange={(e) => updateRow(exIdx, setIdx, { weight: e.target.value })} />
-                          <input type="number" inputMode="numeric" step="1" min="1" placeholder={ex.reps || "reps"} value={s.reps} disabled={s.done}
-                            onChange={(e) => updateRow(exIdx, setIdx, { reps: e.target.value })} />
+                          <div className="m3d-wk__field">
+                            <span className="m3d-wk__field-label">KG</span>
+                            <div className="m3d-wk__stepper">
+                              <button type="button" className="m3d-wk__step-btn" tabIndex={-1} aria-label="Decrease weight" disabled={s.done}
+                                onClick={() => updateRow(exIdx, setIdx, { weight: stepValue(s.weight, -2.5) })}>−</button>
+                              <input type="number" inputMode="decimal" step="0.5" min="0" value={s.weight} disabled={s.done}
+                                onChange={(e) => updateRow(exIdx, setIdx, { weight: e.target.value })} />
+                              <button type="button" className="m3d-wk__step-btn" tabIndex={-1} aria-label="Increase weight" disabled={s.done}
+                                onClick={() => updateRow(exIdx, setIdx, { weight: stepValue(s.weight, 2.5) })}>+</button>
+                            </div>
+                          </div>
+                          <div className="m3d-wk__field">
+                            <span className="m3d-wk__field-label">REPS</span>
+                            <div className="m3d-wk__stepper">
+                              <button type="button" className="m3d-wk__step-btn" tabIndex={-1} aria-label="Decrease reps" disabled={s.done}
+                                onClick={() => updateRow(exIdx, setIdx, { reps: stepValue(s.reps, -1) })}>−</button>
+                              <input type="number" inputMode="numeric" step="1" min="1" placeholder={ex.reps || "reps"} value={s.reps} disabled={s.done}
+                                onChange={(e) => updateRow(exIdx, setIdx, { reps: e.target.value })} />
+                              <button type="button" className="m3d-wk__step-btn" tabIndex={-1} aria-label="Increase reps" disabled={s.done}
+                                onClick={() => updateRow(exIdx, setIdx, { reps: stepValue(s.reps, 1) })}>+</button>
+                            </div>
+                          </div>
                           <input type="number" inputMode="decimal" step="0.5" min="0" max="10" placeholder="—" value={s.rpe} disabled={s.done}
                             onChange={(e) => updateRow(exIdx, setIdx, { rpe: e.target.value })} />
                           <button type="button" className={`m3d-wk__check${s.done ? " m3d-wk__check--on" : ""}`} disabled={s.done || s.pending} onClick={() => submitSet(exIdx, setIdx)}>

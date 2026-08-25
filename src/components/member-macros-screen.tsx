@@ -270,7 +270,7 @@ export function MacrosScreen({
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div className="m3d-mc-body" style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
         <div className="m3d-mc-hero">
           <div className="m3d-mc-hero__row">
             <span className="m3d-mc-hero__kcal">{totalKcal}</span>
@@ -409,6 +409,19 @@ export function MacrosScreen({
         <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
         <ProfileMetricsWidget profile={profile} />
         <EditableMetrics member={{ ...member, ...profile }} />
+      </div>
+
+      {/* Mobile-only thumb-zone dock — the primary "log something" action pinned
+          within reach so it never has to be scrolled to. Mirrors the header
+          button 1:1 in behaviour; hidden above the 768px breakpoint via CSS,
+          where the header button already covers this. */}
+      <div className="m3d-mc-dock" aria-hidden={dialogOpen}>
+        <span className="m3d-mc-dock__stub">
+          {remaining >= 0 ? `${remaining} kcal left today` : `${Math.abs(remaining)} kcal over today`}
+        </span>
+        <button type="button" className="m3d-mc-dock__cta" onClick={() => setDialogOpen(true)}>
+          + Log a meal
+        </button>
       </div>
 
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
