@@ -24,7 +24,18 @@ const DIFFICULTY_COLORS: Record<string, string> = {
   advanced: "var(--danger)",
 };
 
-function ProgramCard({ program, assignedProgramId }: { program: WorkoutProgram; assignedProgramId: string | null }) {
+import { selectProgramForSelf } from "@/lib/firebase/actions/programs";
+import { useTransition } from "react";
+
+function ProgramCard({
+  program,
+  assignedProgramId,
+  onSelect
+}: {
+  program: WorkoutProgram;
+  assignedProgramId: string | null;
+  onSelect?: (programId: string, title: string) => void;
+}) {
   const isAssigned = program.id === assignedProgramId;
   const activeDays = program.days.filter((d) => d.exercises.length > 0);
   const exerciseCount = program.days.reduce((n, d) => n + d.exercises.length, 0);
@@ -36,7 +47,7 @@ function ProgramCard({ program, assignedProgramId }: { program: WorkoutProgram; 
           <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor" stroke="none">
             <path d="M12 2l3.1 6.3L22 9.3l-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l6.9-1z"/>
           </svg>
-          Your plan
+          Your active plan
         </div>
       )}
 
@@ -77,6 +88,28 @@ function ProgramCard({ program, assignedProgramId }: { program: WorkoutProgram; 
         </div>
       )}
 
+      <div style={{ marginTop: "12px", display: "flex", gap: "8px", alignItems: "center" }}>
+        {!isAssigned && onSelect && (
+          <button
+            type="button"
+            className="btn btn-sm btn-primary"
+            style={{
+              width: "100%",
+              backgroundColor: "#C8F135",
+              color: "#0A0A0A",
+              fontWeight: "700",
+              border: "none",
+              borderRadius: "8px",
+              padding: "10px",
+              cursor: "pointer"
+            }}
+            onClick={() => onSelect(program.id, program.title)}
+          >
+            Start this split →
+          </button>
+        )}
+      </div>
+
       {program.tags?.length ? (
         <div className="mp-card__tags">
           {program.tags.slice(0, 3).map((t) => (
@@ -88,8 +121,24 @@ function ProgramCard({ program, assignedProgramId }: { program: WorkoutProgram; 
   );
 }
 
-export function MemberProgramsClient({ programs, assignedProgramId, gymName }: MemberProgramsClientProps) {
+export function MemberProgramsClient({ programs, assignedProgramId: initialAssignedId, gymName }: MemberProgramsClientProps) {
   const [showAll, setShowAll] = useState(false);
+  const [assignedProgramId, setAssignedProgramId] = useState(initialAssignedId);
+  const [isPending, startTransition] = useTransition();
+
+  function handleSelectProgram(programId: string, programTitle: string) {
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.set("programId", programId);
+      formData.set("programTitle", programTitle);
+      const res = await selectProgramForSelf(formData);
+      if (res.status === "success") {
+        setAssignedProgramId(programId);
+      } else {
+        alert(res.message);
+      }
+    });
+  }
 
   // Gym-custom plans always first
   const gymPlans = programs.filter((p) => p.source === "gym");
@@ -112,11 +161,11 @@ export function MemberProgramsClient({ programs, assignedProgramId, gymName }: M
               <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none" style={{ color: "var(--brand)" }}>
                 <path d="M12 2l3.1 6.3L22 9.3l-5 4.9 1.2 6.8L12 17.8l-6.2 3.2L7 14.2 2 9.3l6.9-1z"/>
               </svg>
-              Your current plan
+              Your active plan
             </h2>
           </div>
           <div className="mp-grid">
-            <ProgramCard program={assignedProgram} assignedProgramId={assignedProgramId} />
+            <ProgramCard program={assignedProgram} assignedProgramId={assignedProgramId} onSelect={handleSelectProgram} />
           </div>
         </section>
       )}
@@ -131,7 +180,7 @@ export function MemberProgramsClient({ programs, assignedProgramId, gymName }: M
           <p className="mp-section__desc">Custom programs designed by your gym for its members.</p>
           <div className="mp-grid">
             {gymPlans.map((p) => (
-              <ProgramCard key={p.id} program={p} assignedProgramId={assignedProgramId} />
+              <ProgramCard key={p.id} program={p} assignedProgramId={assignedProgramId} onSelect={handleSelectProgram} />
             ))}
           </div>
         </section>
@@ -144,10 +193,10 @@ export function MemberProgramsClient({ programs, assignedProgramId, gymName }: M
             <h2 className="mp-section__title">FitSplit catalog</h2>
             <span className="mp-section__count">{catalogPlans.length}</span>
           </div>
-          <p className="mp-section__desc">Proven training templates — ask your trainer to assign one.</p>
+          <p className="mp-section__desc">Proven training templates — choose any split to make it your active workout plan.</p>
           <div className="mp-grid">
             {visibleCatalog.map((p) => (
-              <ProgramCard key={p.id} program={p} assignedProgramId={assignedProgramId} />
+              <ProgramCard key={p.id} program={p} assignedProgramId={assignedProgramId} onSelect={handleSelectProgram} />
             ))}
           </div>
           {catalogPlans.length > CATALOG_PREVIEW && (

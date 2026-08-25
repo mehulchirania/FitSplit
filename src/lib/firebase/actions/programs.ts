@@ -2,7 +2,7 @@
 "use server";
 
 import { randomUUID } from "crypto";
-import { requireRole, requireOwner } from "@/lib/auth";
+import { requireRole, requireOwner, requireAuth } from "@/lib/auth";
 import { collectionPaths, PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
 import type { FormActionState } from "@/types/action-state";
@@ -43,6 +43,11 @@ const BulkAssignSchema = z.object({
 
 const DeleteProgramSchema = z.object({
   programId: ZodHelpers.textRequired("Program ID")
+});
+
+const SelectProgramForSelfSchema = z.object({
+  programId: ZodHelpers.textRequired("Workout program"),
+  programTitle: z.string().optional()
 });
 
 async function resolveExerciseRecordId(sourceExerciseId: string) {
@@ -155,6 +160,75 @@ export async function assignProgramToMember(
   } catch (error) {
     console.error("Unable to assign program to member", error);
     return failure(error, "Unable to assign workout program. Please try again.");
+  }
+}
+
+/**
+ * Self-serve program selection for consumers and members (Increment 4).
+ * Allows any authenticated user to pick/switch their active program in their workspace.
+ */
+export async function selectProgramForSelf(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const currentUser = await requireAuth();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+
+    const parsed = parseActionData(formData, SelectProgramForSelfSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { programId } = parsed.data;
+    const programTitle = parsed.data.programTitle || "Workout program";
+    const memberId = currentUser.memberId || currentUser.uid;
+    const gymId = currentUser.gymId || `personal-${currentUser.uid}`;
+
+    if (!hasFirebaseAdminConfig()) {
+      return success(`${programTitle} is now your active workout split.`, undefined, ["programs", "sessions"]);
+    }
+
+    const db = requireFirebase();
+    const assignmentId = randomUUID();
+    const now = new Date().toISOString();
+
+    // Cancel prior active assignments
+    const existingAssignments = await db
+      .collection(collectionPaths.programAssignments)
+      .where("gymId", "==", gymId)
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .get();
+    const existingScopedAssignments = await scopedGymDoc(db, gymId, "programAssignments", "_placeholder")
+      .parent
+      .where("memberId", "==", memberId)
+      .where("status", "==", "active")
+      .get();
+
+    await Promise.all(
+      [...existingAssignments.docs, ...existingScopedAssignments.docs].map((doc) =>
+        doc.ref.set({ status: "cancelled", updatedAt: now }, { merge: true })
+      )
+    );
+
+    const assignmentRecord = {
+      id: assignmentId,
+      gymId,
+      memberId,
+      programId,
+      assignedAt: now,
+      status: "active" as const,
+      createdBy: currentUser.uid,
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await mirrorGymScopedRecord(db, gymId, "programAssignments", assignmentId, assignmentRecord);
+
+    revalidateGymTags(gymId, ["programs", "sessions", "members"]);
+    return success(`${programTitle} is now your active split!`, gymId, ["programs", "sessions"]);
+  } catch (error) {
+    console.error("Unable to select program for self", error);
+    return failure(error, "Unable to select program. Please try again.");
   }
 }
 

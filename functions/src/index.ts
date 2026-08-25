@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // runtime: nodejs22 — upgraded from nodejs20 on 2026-05-24
-import { randomUUID } from "node:crypto";
+import { createHmac, randomInt, randomUUID, timingSafeEqual } from "node:crypto";
 import { initializeApp } from "firebase-admin/app";
 import { getAuth } from "firebase-admin/auth";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
@@ -2306,3 +2306,233 @@ export const logMealMobile = onCall({ region }, async (request) => {
 
   return { status: "success", message: "Meal logged.", data: { gymId, mealId } };
 });
+
+// ─── B2C Consumer Phone OTP Identity Service ─────────────────────────────────
+
+const OTP_SECRET = process.env.OTP_SECRET || "fitsplit-internal-otp-hmac-salt-key-2026";
+
+function normalizeE164Phone(rawPhone: string): string {
+  const digits = rawPhone.replace(/\D/g, "");
+  if (!digits) throw new HttpsError("invalid-argument", "Mobile number is required.");
+  if (digits.length === 10) return `+91${digits}`;
+  if (digits.length === 12 && digits.startsWith("91")) return `+${digits}`;
+  if (digits.length >= 10 && digits.length <= 15) return `+${digits}`;
+  throw new HttpsError("invalid-argument", "Enter a valid 10-digit mobile number.");
+}
+
+function hashOtpCode(phone: string, code: string, salt: string): string {
+  return createHmac("sha256", OTP_SECRET)
+    .update(`${phone}:${code}:${salt}`)
+    .digest("hex");
+}
+
+export const requestPhoneOtp = onCall({ region }, async (request) => {
+  const phone = normalizeE164Phone(asString(request.data?.phone, "Mobile number"));
+  const cleanDigits = phone.replace(/\D/g, "");
+  const now = Date.now();
+
+  // Rate-limiting check: max 5 requests per 15 minutes, min 30s cooldown
+  const attemptDocRef = db.collection("otpAttempts").doc(cleanDigits);
+  const attemptDoc = await attemptDocRef.get();
+  if (attemptDoc.exists) {
+    const data = attemptDoc.data();
+    const lastRequestedAt = data?.lastRequestedAt ?? 0;
+    const count = data?.count ?? 0;
+    const windowStart = data?.windowStart ?? now;
+
+    if (now - lastRequestedAt < 30_000) {
+      const waitSeconds = Math.ceil((30_000 - (now - lastRequestedAt)) / 1000);
+      throw new HttpsError("resource-exhausted", `Please wait ${waitSeconds}s before requesting another code.`);
+    }
+
+    if (now - windowStart < 15 * 60_000 && count >= 5) {
+      throw new HttpsError("resource-exhausted", "Too many OTP requests. Please try again in 15 minutes.");
+    }
+
+    const resetWindow = now - windowStart >= 15 * 60_000;
+    await attemptDocRef.set({
+      lastRequestedAt: now,
+      count: resetWindow ? 1 : count + 1,
+      windowStart: resetWindow ? now : windowStart
+    }, { merge: true });
+  } else {
+    await attemptDocRef.set({
+      lastRequestedAt: now,
+      count: 1,
+      windowStart: now
+    });
+  }
+
+  // Generate 6-digit random code
+  const code = String(randomInt(100000, 999999));
+  const salt = randomUUID();
+  const hashedCode = hashOtpCode(phone, code, salt);
+  const expiresAt = now + 5 * 60_000; // 5 minutes
+
+  // Store hashed OTP
+  await db.collection("phoneOtps").doc(cleanDigits).set({
+    phone,
+    cleanDigits,
+    salt,
+    hashedCode,
+    expiresAt,
+    attemptsRemaining: 5,
+    createdAt: new Date().toISOString()
+  });
+
+  // Log in dev / emulator for seamless testing
+  console.log(`[requestPhoneOtp] Dispatched OTP to ${phone.slice(0, 7)}*** (expires in 5m)`);
+
+  return {
+    status: "success",
+    message: "OTP sent successfully. Valid for 5 minutes.",
+    data: {
+      phone,
+      expiresAt,
+      // For local testing convenience if not in strict production
+      ...(process.env.NODE_ENV !== "production" ? { debugOtp: code } : {})
+    }
+  };
+});
+
+export const verifyPhoneOtp = onCall({ region }, async (request) => {
+  const phone = normalizeE164Phone(asString(request.data?.phone, "Mobile number"));
+  const code = asString(request.data?.code, "OTP Code");
+  const cleanDigits = phone.replace(/\D/g, "");
+  const now = Date.now();
+
+  if (!/^\d{6}$/.test(code)) {
+    throw new HttpsError("invalid-argument", "OTP must be 6 digits.");
+  }
+
+  const otpDocRef = db.collection("phoneOtps").doc(cleanDigits);
+  const otpDoc = await otpDocRef.get();
+
+  if (!otpDoc.exists) {
+    throw new HttpsError("not-found", "No active OTP found. Please request a new code.");
+  }
+
+  const otpData = otpDoc.data()!;
+  if (now > (otpData.expiresAt ?? 0)) {
+    await otpDocRef.delete();
+    throw new HttpsError("deadline-exceeded", "OTP has expired. Please request a new code.");
+  }
+
+  if ((otpData.attemptsRemaining ?? 0) <= 0) {
+    await otpDocRef.delete();
+    throw new HttpsError("permission-denied", "Too many incorrect attempts. Please request a new code.");
+  }
+
+  const expectedHash = hashOtpCode(phone, code, otpData.salt);
+  const isMatch = timingSafeEqual(Buffer.from(expectedHash), Buffer.from(otpData.hashedCode));
+
+  if (!isMatch) {
+    await otpDocRef.update({ attemptsRemaining: FieldValue.increment(-1) });
+    throw new HttpsError("invalid-argument", "Incorrect OTP code. Please try again.");
+  }
+
+  // OTP is valid! Burn immediately so it cannot be re-used.
+  await otpDocRef.delete();
+
+  // Check if account already exists in phoneAccounts index
+  let uid: string;
+  let isNewAccount = false;
+
+  const phoneAccountDoc = await db.collection("phoneAccounts").doc(cleanDigits).get();
+  if (phoneAccountDoc.exists && phoneAccountDoc.data()?.uid) {
+    uid = phoneAccountDoc.data()!.uid;
+  } else {
+    // Check if an existing authProfile has this phone
+    const profileQuery = await db.collection("authProfiles")
+      .where("phone", "in", [phone, cleanDigits, `+91 ${cleanDigits.slice(-10)}`])
+      .limit(1)
+      .get();
+
+    if (!profileQuery.empty) {
+      uid = profileQuery.docs[0].id;
+      // Backfill phoneAccounts index
+      await db.collection("phoneAccounts").doc(cleanDigits).set({
+        uid,
+        phone,
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+    } else {
+      // Brand new consumer account
+      uid = randomUUID();
+      isNewAccount = true;
+    }
+  }
+
+  // Create or verify Firebase Auth user
+  try {
+    await auth.getUser(uid);
+  } catch (err: any) {
+    if (err.code === "auth/user-not-found") {
+      await auth.createUser({
+        uid,
+        displayName: "FitSplit Member",
+        emailVerified: false,
+        disabled: false
+      });
+    } else {
+      throw err;
+    }
+  }
+
+  const customToken = await auth.createCustomToken(uid, {
+    phone,
+    authSource: "phone_otp"
+  });
+
+  return {
+    status: "success",
+    message: "Phone verified successfully.",
+    data: {
+      uid,
+      phone,
+      customToken,
+      isNewAccount
+    }
+  };
+});
+
+export const deleteOwnAccount = onCall({ region }, async (request) => {
+  const user = getCallableUser(request);
+  const uid = user.uid;
+  const now = new Date().toISOString();
+
+  // Delete phoneAccount index entry if exists
+  const profileDoc = await db.collection("authProfiles").doc(uid).get();
+  const phone = profileDoc.data()?.phone;
+  if (phone) {
+    const cleanDigits = String(phone).replace(/\D/g, "");
+    if (cleanDigits) {
+      await db.collection("phoneAccounts").doc(cleanDigits).delete().catch(() => null);
+    }
+  }
+
+  // Archive & delete personal workspace if personal
+  const personalGymId = `personal-${uid}`;
+  const gymDocRef = db.collection("gyms").doc(personalGymId);
+  const gymSnapshot = await gymDocRef.get();
+
+  if (gymSnapshot.exists) {
+    await db.collection("archives").doc(`gym_${personalGymId}_${Date.now()}`).set({
+      archivedAt: now,
+      archivedBy: uid,
+      reason: "consumer_account_deleted",
+      data: gymSnapshot.data()
+    }).catch(() => null);
+
+    await gymDocRef.delete().catch(() => null);
+  }
+
+  // Delete authProfile
+  await db.collection("authProfiles").doc(uid).delete().catch(() => null);
+
+  // Delete Auth User
+  await auth.deleteUser(uid).catch(() => null);
+
+  return { status: "success", message: "Your account and data have been completely deleted." };
+});
+

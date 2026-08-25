@@ -115,11 +115,11 @@ const HERO_PATHS: {
   },
   {
     eyebrow: "I train myself",
-    badge: "Coming soon",
-    live: false,
+    badge: "Live now",
+    live: true,
     title: "Follow a plan. Log every set.",
     body: "A proven split, offline-first lift logging, and progress you can actually see — no gym membership required.",
-    cta: { label: "Join the waitlist", kind: "modal" }
+    cta: { label: "Start training free →", kind: "href", href: "/signup" }
   }
 ];
 
@@ -141,9 +141,9 @@ const MODEL_STEPS = [
   {
     n: "03",
     title: "Solo athletes train free",
-    body: "No gym? Start free with real programs and logging, upgrade to Pro for the full library and unlimited history. Leave a gym — your data stays yours.",
-    pill: "Consumer · coming soon",
-    live: false
+    body: "No gym? Start free with real programs and logging. Pick any split from the library and track progressive overload. Your data stays yours forever.",
+    pill: "Consumer · live",
+    live: true
   }
 ];
 
@@ -159,32 +159,35 @@ type Plan = {
   tagline: string;
   features: string[];
   cta: string;
+  href?: string;
   highlight?: boolean;
 };
 
 const PLANS: Plan[] = [
   {
     name: "Free",
-    badge: "Coming soon",
+    badge: "Free forever",
     tagline: "Everything you need to start training with structure.",
     features: [
       "Unlimited workout logging with offline sync",
-      "Starter workout splits",
-      "This week's analytics",
+      "Full split library & starter templates",
+      "Progressive overload & 1RM estimation",
+      "Muscle heatmap & consistency calendar",
       "Macro and body-metric logging"
     ],
-    cta: "Start free"
+    cta: "Start free →",
+    href: "/signup"
   },
   {
     name: "Pro",
     badge: "Coming soon",
-    tagline: "For lifters who want the full library and long-term tracking.",
+    tagline: "For lifters who want AI coaching and multi-gym analytics.",
     features: [
-      "Full split library with weekly variations",
-      "Custom programs built around you",
-      "Unlimited history",
-      "Trend and PR charts",
-      "Macro targets and history"
+      "AI Coach workout adjustments",
+      "Custom splits built around your schedule",
+      "Multi-gym workspace sync",
+      "Advanced trend & fatigue analytics",
+      "Dedicated priority support"
     ],
     cta: "Join the waitlist",
     highlight: true
@@ -310,6 +313,9 @@ function Nav({ onLogin }: { onLogin: () => void }) {
           <button type="button" className="lp-btn lp-btn--ghost" onClick={onLogin}>
             Sign in
           </button>
+          <a href="/signup" className="lp-btn lp-btn--primary" style={{ textDecoration: "none" }}>
+            Sign up free
+          </a>
         </div>
       </div>
     </header>
@@ -437,9 +443,15 @@ function Athletes({ onComingSoon }: { onComingSoon: () => void }) {
                   </li>
                 ))}
               </ul>
-              <button type="button" className="lp-btn lp-btn--primary lp-plan__cta" onClick={onComingSoon}>
-                {plan.cta}
-              </button>
+              {plan.href ? (
+                <a href={plan.href} className="lp-btn lp-btn--primary lp-plan__cta" style={{ textDecoration: "none", textAlign: "center" }}>
+                  {plan.cta}
+                </a>
+              ) : (
+                <button type="button" className="lp-btn lp-btn--primary lp-plan__cta" onClick={onComingSoon}>
+                  {plan.cta}
+                </button>
+              )}
             </div>
           ))}
         </div>

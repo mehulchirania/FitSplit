@@ -8,6 +8,7 @@ import { registerForPushNotificationsAsync } from "@/lib/notifications";
 import { theme } from "@/lib/theme";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import LoginScreen from "@/screens/LoginScreen";
+import SignupScreen from "@/screens/SignupScreen";
 import BottomNav, { type ScreenType } from "@/components/BottomNav";
 import OverviewScreen from "@/screens/OverviewScreen";
 import WorkoutScreen from "@/screens/WorkoutScreen";
@@ -21,6 +22,7 @@ export default function App() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [loadingProfile, setLoadingProfile] = useState(false);
   const [currentScreen, setCurrentScreen] = useState<ScreenType>("overview");
+  const [authView, setAuthView] = useState<"login" | "signup">("login");
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (nextUser) => {
@@ -79,8 +81,10 @@ export default function App() {
             <View style={styles.content}>{renderScreen()}</View>
             <BottomNav currentScreen={currentScreen} onScreenChange={setCurrentScreen} />
           </View>
+        ) : authView === "signup" ? (
+          <SignupScreen onGoToLogin={() => setAuthView("login")} />
         ) : (
-          <LoginScreen />
+          <LoginScreen onGoToSignup={() => setAuthView("signup")} />
         )}
       </ErrorBoundary>
       <StatusBar style="light" />

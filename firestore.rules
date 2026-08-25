@@ -389,6 +389,12 @@ service cloud.firestore {
         allow read: if isAdmin() || isMemberSelf(userId);
         allow write: if false;
       }
+
+      // Member's affiliations across workspaces (personal + enrolled gyms).
+      match /affiliations/{gymId} {
+        allow read: if isAdmin() || isMemberSelf(userId);
+        allow write: if false; // written exclusively by Admin SDK / Functions
+      }
     }
 
     // Public marketing snapshot for a gym that opted into the /discover
@@ -603,6 +609,20 @@ service cloud.firestore {
 
     // Phone uniqueness index — Admin SDK only (same pattern as usernames).
     match /phones/{id} {
+      allow read, write: if false;
+    }
+
+    // Global consumer phone account index — Admin SDK only.
+    match /phoneAccounts/{id} {
+      allow read, write: if false;
+    }
+
+    // Temporary hashed OTP secrets & rate-limit records — Admin SDK only.
+    match /phoneOtps/{id} {
+      allow read, write: if false;
+    }
+
+    match /otpAttempts/{id} {
       allow read, write: if false;
     }
 

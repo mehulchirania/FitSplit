@@ -8,6 +8,7 @@ import type { DocumentData } from "firebase-admin/firestore";
 import type { ConsumerPlan, Role } from "@/types/domain";
 import { collectionPaths } from "@/lib/firebase/collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "@/lib/firebase/admin";
+import { verifyWorkspaceCookie, ACTIVE_WORKSPACE_COOKIE } from "@/lib/workspace";
 
 const sessionCookieName = "fitsplit-session";
 const legacyCookieNames = [
@@ -416,10 +417,23 @@ async function resolveProfileForIdentifier(identifier: string) {
     }
   }
 
-  // 2. Check phones lookup collection
+  // 2. Check phoneAccounts (global consumer index) & phones (gym-scoped index)
   for (const key of keys) {
     const cleanDigits = key.replace(/\D/g, "");
     if (cleanDigits.length >= 10) {
+      try {
+        const phoneAccountDoc = await db.collection("phoneAccounts").doc(cleanDigits).get();
+        if (phoneAccountDoc.exists) {
+          const uid = phoneAccountDoc.data()?.uid;
+          if (uid) {
+            const profile = await getProfileById(uid);
+            if (profile) return profile;
+          }
+        }
+      } catch {
+        // ignore
+      }
+
       try {
         const phoneDoc = await db.collection(collectionPaths.phones).doc(cleanDigits).get();
         if (phoneDoc.exists) {
@@ -1030,15 +1044,19 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
         }
       }
 
+      // Multi-workspace overlay: check if a signed workspace cookie exists
+      const workspaceCookie = cookieStore.get(ACTIVE_WORKSPACE_COOKIE)?.value;
+      const activeWorkspace = verifyWorkspaceCookie(workspaceCookie);
+
       return {
         uid: decodedSession.uid,
         email: decodedSession.email,
         phone: decodedSession.phone || "",
         fullName: decodedSession.fullName || "FitSplit user",
-        role: decodedSession.role,
+        role: (activeWorkspace?.role as Role) || decodedSession.role,
         staffType: decodedSession.staffType,
-        gymId: decodedSession.gymId,
-        memberId: decodedSession.memberId,
+        gymId: activeWorkspace?.gymId || decodedSession.gymId,
+        memberId: activeWorkspace?.memberId || decodedSession.memberId,
         mustChangePassword,
         termsAcceptedAt: decodedSession.termsAcceptedAt,
         avatarUrl: decodedSession.avatarUrl

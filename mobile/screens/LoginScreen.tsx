@@ -3,7 +3,11 @@ import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleShee
 import { signIn, type LoginMode } from "@/lib/auth";
 import { theme } from "@/lib/theme";
 
-export default function LoginScreen() {
+interface LoginScreenProps {
+  onGoToSignup?: () => void;
+}
+
+export default function LoginScreen({ onGoToSignup }: LoginScreenProps) {
   const [mode, setMode] = useState<LoginMode>("member");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -98,6 +102,14 @@ export default function LoginScreen() {
           </Pressable>
         </View>
 
+        {onGoToSignup && (
+          <Pressable style={styles.signupPrompt} onPress={onGoToSignup}>
+            <Text style={styles.signupPromptText}>
+              New to FitSplit? <Text style={styles.signupPromptAccent}>Create a free account</Text>
+            </Text>
+          </Pressable>
+        )}
+
         <Text style={styles.footnote}>Forgot your PIN? Ask your gym owner for a reset.</Text>
       </View>
     </KeyboardAvoidingView>
@@ -161,5 +173,8 @@ const styles = StyleSheet.create({
   submitButtonPressed: { backgroundColor: theme.brandStrong },
   submitButtonDisabled: { opacity: 0.7 },
   submitText: { color: theme.primaryForeground, fontSize: 16, fontWeight: "700" },
-  footnote: { fontSize: 13, color: theme.textSoft, textAlign: "center", marginTop: 20 }
+  signupPrompt: { marginTop: 18, alignItems: "center" },
+  signupPromptText: { fontSize: 14, color: theme.textSoft },
+  signupPromptAccent: { color: theme.brand, fontWeight: "700" },
+  footnote: { fontSize: 13, color: theme.textSoft, textAlign: "center", marginTop: 16 }
 });

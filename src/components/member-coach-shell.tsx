@@ -705,8 +705,8 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                   </div>
                   <div className="mcr-no-plan">
                     <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
-                    <h2>No workout plan assigned</h2>
-                    <p>Your trainer hasn&apos;t assigned a program yet. <Link href="/member/coach">Reach out to your coach →</Link></p>
+                    <h2>No workout split active</h2>
+                    <p>Choose a training split from the program library to begin logging your lifts. <button onClick={() => setScreen("programs")} style={{ background: "none", border: "none", color: "#C8F135", fontWeight: "700", cursor: "pointer", padding: 0 }}>Browse splits →</button></p>
                   </div>
                 </>
               )
