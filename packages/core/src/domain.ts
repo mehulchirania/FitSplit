@@ -193,6 +193,63 @@ export type GymWorkspace = {
     maxMembers?: number;
     maxStorage?: number;
   };
+  /**
+   * Whether this gym is discoverable on the public `/discover` marketplace.
+   * Absent/false ⇒ not listed. Owner-controlled toggle in gym settings.
+   */
+  isPubliclyListed?: boolean;
+  /** Present only when `isPubliclyListed` is true. Public-facing marketing copy. */
+  publicListing?: PublicListing;
+};
+
+/**
+ * Public-facing marketing info shown on the `/discover` marketplace for a gym
+ * that has opted in via `GymWorkspace.isPubliclyListed`. Distinct from the
+ * gym's internal `location`/`logoUrl` fields so owners can curate what
+ * strangers see without touching operational data.
+ */
+export type PublicListing = {
+  description: string;
+  city: string;
+  coverImageUrl?: string;
+};
+
+/**
+ * A consumer's request to join a real (business) gym found via the
+ * marketplace. Lives at `gyms/{gymId}/joinRequests/{requestId}`.
+ *
+ * Unlike an owner-issued invite, this is initiated by the consumer and must
+ * be approved by the gym owner before an `Affiliation` is created — gyms are
+ * physical businesses with capacity, so joining is not instant.
+ */
+export type JoinRequest = {
+  id: string;
+  gymId: string;
+  gymName?: string;
+  requesterUid: string;
+  requesterName: string;
+  requesterPhone?: string;
+  message?: string;
+  status: "pending" | "approved" | "rejected";
+  requestedAt: string;
+  resolvedAt?: string;
+  resolvedByName?: string;
+};
+
+/**
+ * An append-only record of a consumer subscription action (upgrade request,
+ * cancellation, etc.). Lives at `authProfiles/{uid}/subscriptionEvents/{id}`.
+ *
+ * v1 has no real payment gateway — see `src/lib/billing/provider.ts`. Every
+ * event here is a `StubBillingProvider` intent record, not a real charge.
+ */
+export type SubscriptionEvent = {
+  id: string;
+  uid: string;
+  type: "upgrade_requested" | "upgrade_stubbed" | "cancelled";
+  plan: ConsumerPlan;
+  createdAt: string;
+  notes?: string;
 };
 
 /**

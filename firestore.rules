@@ -343,6 +343,21 @@ service cloud.firestore {
         // Trainers: no access.
       }
 
+      // A consumer's request to join this gym via the public /discover
+      // marketplace. Requester creates their own pending request and can read
+      // it back; only gym owner/admin can read the full queue or resolve it.
+      match /joinRequests/{requestId} {
+        allow read: if isAdmin()
+          || isOwnerForGym(gymId)
+          || (request.auth != null && resource.data.requesterUid == request.auth.uid);
+        allow create: if request.auth != null
+          && request.resource.data.gymId == gymId
+          && request.resource.data.requesterUid == request.auth.uid
+          && request.resource.data.status == "pending";
+        allow update: if isAdmin() || isOwnerForGym(gymId); // approve/reject only
+        allow delete: if false;
+      }
+
       // Pre-computed dashboard summary — read by owner, written by Functions.
       match /summaries/{summaryId} {
         allow read: if isAdmin() || isOwnerForGym(gymId);
@@ -366,6 +381,23 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(["age", "heightCm", "weightKg", "goal", "fitnessGoals", "phone", "medicalNotes", "primarySlot", "secondarySlot", "updatedAt"])
         );
+
+      // Append-only record of consumer subscription intents. No real payment
+      // gateway exists yet (src/lib/billing/provider.ts) — these are never
+      // charges. Written only by the Admin SDK via the billing provider.
+      match /subscriptionEvents/{eventId} {
+        allow read: if isAdmin() || isMemberSelf(userId);
+        allow write: if false;
+      }
+    }
+
+    // Public marketing snapshot for a gym that opted into the /discover
+    // marketplace (GymWorkspace.isPubliclyListed). Mirrored from the gym doc
+    // by the Admin SDK on toggle — never the full gym doc, so no operational
+    // data (roster, financials) is ever exposed to a signed-out reader.
+    match /publicListings/{gymId} {
+      allow read: if true;
+      allow write: if false;
     }
 
     match /profiles/{userId} {
