@@ -30,6 +30,8 @@ dev-server*.log
 
 # typescript
 *.tsbuildinfo
+
+# code-analysis / graphify output
 graphify-out/
 
 # OS
@@ -40,8 +42,27 @@ Thumbs.db
 # testing
 coverage/
 
-# typescript build cache
-*.tsbuildinfo
-
-# agent configs
+# agent configs & worktrees (never commit agent state)
 .claude/
+
+# playwright-mcp session captures
+.playwright-mcp/
+
+# debug screenshots dumped at repo root by agents / playwright
+chart-fix-verify.png
+invalid-login.png
+logout-root.png
+member-desktop-home.png
+member-mobile-body.png
+member-mobile-coach.png
+member-mobile-exercise-expanded.png
+member-mobile-exercise-scrolled.png
+member-mobile-home.png
+member-mobile-home2.png
+member-mobile-progress.png
+member-mobile-set-logged.png
+member-mobile-train-fresh.png
+mobile-signin.png
+onboarding-initial.png
+owner-mobile.png
+staff-tab.png
