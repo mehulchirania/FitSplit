@@ -536,6 +536,18 @@ export type LiftLog = {
   ptSessionId?: string;
   /** UID of the trainer who logged this set */
   loggedByTrainerId?: string;
+  /**
+   * Reps In Reserve at time of logging (0 = failure, ≤4 typical working range).
+   * Mutually exclusive with `effortRpe` — only one scale stored per set.
+   * Absent on sets logged before effort tracking was introduced.
+   */
+  effortRir?: number;
+  /**
+   * Session RPE (Rate of Perceived Exertion, 1–10 scale) at time of logging.
+   * Mutually exclusive with `effortRir` — only one scale stored per set.
+   * Absent on sets logged before effort tracking was introduced.
+   */
+  effortRpe?: number;
 };
 
 export type BodyMetricLog = {

@@ -16,6 +16,10 @@ export type LogLiftSetPayload = {
   weightKg?: number;
   sets?: number;
   sessionId?: string;
+  /** Reps In Reserve (0 = failure). Stored when the member's effort scale is RIR. */
+  effortRir?: number;
+  /** Session RPE (1–10). Stored when the member's effort scale is RPE. */
+  effortRpe?: number;
 };
 
 type LogLiftSetResult = {
