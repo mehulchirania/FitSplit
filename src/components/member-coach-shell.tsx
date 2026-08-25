@@ -578,7 +578,7 @@ function MobileWeekStrip({ liftLogs, dayLogs }: { liftLogs: LiftLog[]; dayLogs: 
    underlined like fresh highlighter ink on the page, at the top of the
    tab so the one thing worth bragging about is the first thing seen. */
 function MobileLatestPRRibbon({ liftLogs, exercises }: { liftLogs: LiftLog[]; exercises: Exercise[] }) {
-  const latest = useMemo(() => {
+  function findLatestPR(): { name: string; weight: number; reps: string } | null {
     const maxByExercise = new Map<string, number>();
     for (const log of liftLogs) {
       if (!log.exerciseId || typeof log.weight !== "number") continue;
@@ -595,7 +595,9 @@ function MobileLatestPRRibbon({ liftLogs, exercises }: { liftLogs: LiftLog[]; ex
       }
     }
     return null;
-  }, [liftLogs, exercises]);
+  }
+
+  const latest = findLatestPR();
 
   if (!latest) return null;
 

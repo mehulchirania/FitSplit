@@ -438,7 +438,7 @@ export function computeWeeklyStreak(
   if (trainedDateKeys.size === 0) return 0;
 
   let streak = 0;
-  let weekStart = new Date(`${currentWeekStart}T00:00:00`);
+  const weekStart = new Date(`${currentWeekStart}T00:00:00`);
 
   // Walk backwards week by week until we hit a week with no training
   for (let i = 0; i < 104; i++) { // cap at 2 years to avoid infinite loops
