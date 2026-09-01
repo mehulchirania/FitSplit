@@ -21,7 +21,8 @@ import {
   writeAuthProfileIndex,
   mirrorProfileToGym,
   upsertAuthUser,
-  patchUserClaims
+  patchUserClaims,
+  assertCanManageGym
 } from "./shared";
 import { z } from "zod";
 import { parseActionData, ZodHelpers } from "./validation";
@@ -50,6 +51,14 @@ const UpdateGymLogoSchema = z.object({
 const SetGymStatusSchema = z.object({
   gymId: ZodHelpers.textRequired("Gym ID"),
   status: z.string().optional()
+});
+
+const UpdateMarketplaceListingSchema = z.object({
+  gymId: ZodHelpers.textRequired("Gym ID"),
+  isPubliclyListed: z.string().optional(),
+  description: z.string().optional(),
+  city: z.string().optional(),
+  coverImageDataUrl: z.string().optional()
 });
 
 const AddGymNoticeSchema = z.object({
@@ -471,6 +480,105 @@ export async function updateGymLogo(
     return success("Gym logo updated.", gymId, ["gyms"]);
   } catch (error) {
     return failure(error, "Unable to update gym logo.");
+  }
+}
+
+/**
+ * Owner-controlled opt-in for the public `/discover` marketplace. Updates the
+ * gym's own `isPubliclyListed`/`publicListing` fields AND mirrors a curated
+ * subset (id, name, city, description, coverImageUrl — never financial/roster
+ * data) to the top-level `publicListings/{gymId}` doc, which is the only
+ * thing an unauthenticated visitor's Firestore rules allow reading (see
+ * firestore.rules — publicListings write is Admin-SDK-only). Un-toggling
+ * deletes the publicListings doc so the gym immediately disappears from
+ * anonymous reads, even though the gym's own `publicListing` copy is kept
+ * around in case the owner re-enables it later.
+ */
+export async function updateMarketplaceListing(
+  previousStateOrFormData: FormActionState | FormData,
+  maybeFormData?: FormData
+): Promise<FormActionState> {
+  try {
+    const user = await requireOwner();
+    const formData = getActionFormData(previousStateOrFormData, maybeFormData);
+    const parsed = parseActionData(formData, UpdateMarketplaceListingSchema);
+    if (!parsed.success) return parsed.state;
+
+    const { gymId, isPubliclyListed: isPubliclyListedRaw, coverImageDataUrl } = parsed.data;
+    const description = (parsed.data.description ?? "").trim();
+    const city = (parsed.data.city ?? "").trim();
+    const isPubliclyListed = isPubliclyListedRaw === "true" || isPubliclyListedRaw === "on";
+
+    assertCanManageGym(user, gymId);
+
+    if (isPubliclyListed) {
+      if (!description) throw new Error("Add a short description for your marketplace listing.");
+      if (!city) throw new Error("Add the city your gym is in.");
+    }
+
+    const { db, storage } = requireFirebaseServices();
+    const now = new Date().toISOString();
+
+    const gymDoc = await db.collection(collectionPaths.gyms).doc(gymId).get();
+    const gymData = gymDoc.data() ?? {};
+    const existingListing = (gymData.publicListing ?? {}) as { coverImageUrl?: string };
+    let coverImageUrl = existingListing.coverImageUrl;
+
+    if (coverImageDataUrl) {
+      const buffer = parsePngDataUrl(coverImageDataUrl);
+      const token = randomUUID();
+      const coverPath = `gym-marketplace-covers/${gymId}/cover-1200.png`;
+      const bucket = storage.bucket();
+
+      await bucket.file(coverPath).save(buffer, {
+        contentType: "image/png",
+        metadata: {
+          cacheControl: "public, max-age=31536000",
+          metadata: { firebaseStorageDownloadTokens: token }
+        }
+      });
+
+      coverImageUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(coverPath)}?alt=media&token=${token}`;
+    }
+
+    const publicListing = isPubliclyListed
+      ? { description, city, ...(coverImageUrl ? { coverImageUrl } : {}) }
+      : { description, city, ...(coverImageUrl ? { coverImageUrl } : {}) }; // keep the draft even when un-listed
+
+    await db.collection(collectionPaths.gyms).doc(gymId).set(
+      {
+        isPubliclyListed,
+        publicListing,
+        updatedAt: now
+      },
+      { merge: true }
+    );
+
+    const publicListingRef = db.collection("publicListings").doc(gymId);
+    if (isPubliclyListed) {
+      // Curated subset only — no financial/roster data ever lands here.
+      await publicListingRef.set(
+        {
+          id: gymId,
+          name: String(gymData.name ?? "FitSplit gym"),
+          city,
+          description,
+          ...(coverImageUrl ? { coverImageUrl } : {}),
+          updatedAt: now
+        },
+        { merge: true }
+      );
+    } else {
+      await publicListingRef.delete();
+    }
+
+    return success(
+      isPubliclyListed ? "Your gym is now listed on the FitSplit marketplace." : "Your gym is no longer listed on the marketplace.",
+      gymId,
+      ["gyms"]
+    );
+  } catch (error) {
+    return failure(error, "Unable to update marketplace listing.");
   }
 }
 

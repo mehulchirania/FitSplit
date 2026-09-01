@@ -6,8 +6,26 @@ import {
   getPendingPaymentRequests,
   getActiveProgramAssignments,
 } from "@/lib/firebase/read-models";
+import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "@/lib/firebase/admin";
 import { OdpWorkspaceShell } from "@/components/odp-workspace-shell";
 import type { OdpSidebarData } from "@/components/odp-sidebar";
+
+async function getPendingJoinRequestsCount(gymId: string): Promise<number> {
+  if (!hasFirebaseAdminConfig()) return 0;
+  try {
+    const { db } = getFirebaseAdminServices();
+    const snapshot = await db
+      .collection("gyms")
+      .doc(gymId)
+      .collection("joinRequests")
+      .where("status", "==", "pending")
+      .count()
+      .get();
+    return snapshot.data().count;
+  } catch {
+    return 0;
+  }
+}
 
 export default async function OwnerLayout({
   children,
@@ -19,11 +37,12 @@ export default async function OwnerLayout({
   const isTrainer =
     currentUser.role === "owner" && !!currentUser.staffType && currentUser.staffType !== "owner";
 
-  const [{ gym }, { members }, pendingPayments, { assignments }] = await Promise.all([
+  const [{ gym }, { members }, pendingPayments, { assignments }, pendingJoinRequestsCount] = await Promise.all([
     getGymDetail(gymId),
     getMembers(gymId),
     isTrainer ? Promise.resolve([]) : getPendingPaymentRequests(gymId),
     getActiveProgramAssignments(gymId),
+    isTrainer ? Promise.resolve(0) : getPendingJoinRequestsCount(gymId),
   ]);
 
   const assignedIds = new Set(assignments.map((a) => a.memberId));
@@ -44,6 +63,7 @@ export default async function OwnerLayout({
     totalMembers: members.length,
     pendingPaymentsCount: isTrainer ? 0 : pendingPayments.length,
     noPlanCount,
+    pendingJoinRequestsCount,
   };
 
   return (

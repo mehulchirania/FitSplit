@@ -159,6 +159,16 @@ export function mapWorkspace(docId: string, data: Record<string, unknown>): GymW
             : undefined,
         }
       : undefined,
+    isPubliclyListed: data.isPubliclyListed === true,
+    publicListing: data.publicListing && typeof data.publicListing === "object"
+      ? {
+          description: String((data.publicListing as Record<string, unknown>).description ?? ""),
+          city: String((data.publicListing as Record<string, unknown>).city ?? ""),
+          coverImageUrl: (data.publicListing as Record<string, unknown>).coverImageUrl
+            ? String((data.publicListing as Record<string, unknown>).coverImageUrl)
+            : undefined,
+        }
+      : undefined,
   };
 }
 

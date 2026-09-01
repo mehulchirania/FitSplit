@@ -80,6 +80,7 @@ export type OdpSidebarData = {
   totalMembers: number;
   pendingPaymentsCount: number;
   noPlanCount: number;
+  pendingJoinRequestsCount: number;
 };
 
 export function OdpSidebar({ data }: { data: OdpSidebarData }) {
@@ -125,11 +126,12 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
   ].filter((item) => !isTrainer || !["/owner/billing", "/owner/reports"].includes(item.href));
 
   const NAV_SETTINGS = [
-    { href: "/owner/packages",  label: "Packages" },
-    { href: "/owner/exercises", label: "Exercise catalog" },
-    { href: "/owner/trainers",  label: "Trainers" },
-    { href: "/owner/settings",  label: "Gym profile" },
-  ].filter((item) => !isTrainer || !["/owner/packages", "/owner/settings"].includes(item.href));
+    { href: "/owner/packages",       label: "Packages",      badge: 0 },
+    { href: "/owner/exercises",      label: "Exercise catalog", badge: 0 },
+    { href: "/owner/trainers",       label: "Trainers",      badge: 0 },
+    { href: "/owner/join-requests",  label: "Join requests", badge: data.pendingJoinRequestsCount },
+    { href: "/owner/settings",       label: "Gym profile",   badge: 0 },
+  ].filter((item) => !isTrainer || !["/owner/packages", "/owner/join-requests", "/owner/settings"].includes(item.href));
 
   const roleLabel = data.role === "admin" ? "Super Admin" : isTrainer ? "Trainer" : "Owner";
 
@@ -186,6 +188,9 @@ export function OdpSidebar({ data }: { data: OdpSidebarData }) {
             >
               <span className="odp2-nav-link-icon">{IC.settings}</span>
               {item.label}
+              {item.badge > 0 && (
+                <span className="odp2-nav-badge">{item.badge > 999 ? "999+" : item.badge}</span>
+              )}
             </Link>
           ))}
         </div>

@@ -1,0 +1,336 @@
+/* ---------------------------------------------------------------------------
+   Public marketplace (/discover) + the owner-side marketplace listing form
+   and join-request queue that feed it. Reuses the single theme file's tokens
+   (00-base-shell.css) — no new colors introduced here.
+   --------------------------------------------------------------------------- */
+
+.disc-page {
+  margin: 0 auto;
+  max-width: 1080px;
+  padding: var(--space-6, 24px) var(--space-4, 16px) var(--space-8, 48px);
+}
+
+.disc-header {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: var(--space-4, 16px) 0 var(--space-6, 24px);
+}
+
+.disc-brand {
+  align-items: center;
+  color: var(--text);
+  display: inline-flex;
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 800;
+  gap: 10px;
+  letter-spacing: var(--tracking-tight);
+  text-decoration: none;
+}
+
+.disc-brand img {
+  border-radius: 8px;
+  height: 28px;
+  width: 28px;
+}
+
+.disc-header-cta {
+  padding: 10px 20px;
+}
+
+.disc-back {
+  color: var(--text-soft);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.disc-back:hover {
+  color: var(--text);
+}
+
+.disc-hero {
+  padding: var(--space-4, 16px) 0 var(--space-8, 40px);
+}
+
+.disc-eyebrow {
+  color: var(--brand);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.disc-hero h1 {
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.05;
+  margin: 0 0 14px;
+}
+
+.disc-hero-sub {
+  color: var(--text-soft);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  margin: 0;
+  max-width: 620px;
+}
+
+.disc-empty {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  color: var(--text-soft);
+  padding: var(--space-8, 40px);
+  text-align: center;
+}
+
+.disc-grid {
+  display: grid;
+  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
+
+.disc-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-soft);
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  text-decoration: none;
+  transition: transform var(--medium, 220ms ease), box-shadow var(--medium, 220ms ease), border-color var(--medium, 220ms ease);
+}
+
+.disc-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+  transform: translateY(-2px);
+}
+
+.disc-card-cover {
+  aspect-ratio: 16 / 9;
+  align-items: center;
+  background: var(--bg-subtle);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.disc-card-cover img,
+.disc-detail-cover img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.disc-card-cover-fallback {
+  color: var(--text-faint);
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.disc-card-body {
+  display: grid;
+  flex: 1;
+  gap: 6px;
+  padding: 18px 20px 6px;
+}
+
+.disc-card-body h2 {
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: 1.15rem;
+  margin: 0;
+}
+
+.disc-card-city {
+  color: var(--brand);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  margin: 0;
+}
+
+.disc-card-desc {
+  color: var(--text-soft);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  margin: 0;
+  overflow: hidden;
+}
+
+.disc-card-cta {
+  color: var(--brand);
+  font-size: var(--text-sm);
+  font-weight: 800;
+  padding: 12px 20px 18px;
+}
+
+.disc-detail-cover {
+  aspect-ratio: 21 / 9;
+  align-items: center;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-lg, 16px);
+  display: flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.disc-detail-body {
+  display: grid;
+  gap: 8px;
+  margin: 0 auto;
+  max-width: 640px;
+  padding-top: 28px;
+}
+
+.disc-detail-body h1 {
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
+  margin: 0;
+}
+
+.disc-detail-desc {
+  color: var(--text-soft);
+  font-size: 1.02rem;
+  line-height: 1.65;
+  margin: 10px 0 0;
+}
+
+.disc-join-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-soft);
+  display: grid;
+  gap: 12px;
+  margin-top: 28px;
+  padding: 22px 24px;
+}
+
+.disc-join-panel h2 {
+  font-family: var(--font-archivo), "Archivo", sans-serif;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.disc-join-note {
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.disc-join-form {
+  display: grid;
+  gap: 14px;
+}
+
+.disc-join-form label {
+  color: var(--text-soft);
+  display: grid;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  gap: 6px;
+}
+
+/* ── Owner-side marketplace listing form ── */
+
+.marketplace-toggle {
+  align-items: center;
+  color: var(--text);
+  display: flex;
+  font-weight: 700;
+  gap: 10px;
+}
+
+.marketplace-toggle input[type="checkbox"] {
+  accent-color: var(--primary);
+  height: 18px;
+  width: 18px;
+}
+
+.marketplace-cover {
+  display: grid;
+  gap: 10px;
+}
+
+.marketplace-cover-preview {
+  align-items: center;
+  aspect-ratio: 1200 / 630;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  max-width: 420px;
+  overflow: hidden;
+}
+
+.marketplace-cover-preview img {
+  display: block;
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.marketplace-cover-placeholder {
+  color: var(--text-faint);
+  font-size: var(--text-sm);
+}
+
+/* ── Owner-side join-request queue ── */
+
+.join-requests-list {
+  display: grid;
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.join-requests-row {
+  align-items: center;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 14px 16px;
+}
+
+.join-requests-row-main {
+  display: grid;
+  gap: 2px;
+  min-width: 200px;
+}
+
+.join-requests-name {
+  font-weight: 800;
+  margin: 0;
+}
+
+.join-requests-message {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+  margin: 4px 0 0;
+}
+
+.join-requests-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .disc-grid {
+    grid-template-columns: 1fr;
+  }
+}

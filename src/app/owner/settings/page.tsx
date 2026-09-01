@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { GymDetailsForm } from "@/components/gym-details-form";
 import { GymLogoManager } from "@/components/gym-logo-manager";
+import { GymMarketplaceForm } from "@/components/gym-marketplace-form";
 import { GymNoticeManager } from "@/components/gym-notice-manager";
 import { TrainerVisibilityForm } from "@/components/trainer-visibility-form";
 import { requireOwnerPage } from "@/lib/auth";
@@ -45,6 +46,15 @@ export default async function GymSettingsPage() {
         <TrainerVisibilityForm
           gymId={gym.id}
           current={trainerVisibility}
+        />
+
+        <GymMarketplaceForm
+          city={gym.publicListing?.city}
+          coverImageUrl={gym.publicListing?.coverImageUrl}
+          description={gym.publicListing?.description}
+          gymId={gym.id}
+          gymName={gym.name}
+          isPubliclyListed={gym.isPubliclyListed === true}
         />
 
         <div className="form-panel">
