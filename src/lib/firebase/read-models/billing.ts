@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
-import type { Package, PaymentRequest, Membership } from "@/types/domain";
-import { gymCollectionPath } from "../collections";
+import type { Package, PaymentRequest, Membership, SubscriptionEvent } from "@/types/domain";
+import { collectionPaths, gymCollectionPath } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { gymTag } from "./shared";
 
@@ -144,5 +144,37 @@ export const getMembershipsForMember = (gymId: string, memberId: string) =>
     ["read:getMembershipsForMember", gymId, memberId],
     { tags: [gymTag(gymId, "memberships")], revalidate: 60 }
   )();
+
+// ── Consumer subscription events ────────────────────────────────────────────
+// No caching here (unlike the gym-scoped reads above): this list is read
+// right after a member submits an upgrade request and must reflect that
+// write immediately, and it's a small per-user collection.
+
+function mapSubscriptionEvent(docId: string, data: Record<string, unknown>): SubscriptionEvent {
+  return {
+    id: String(data.id ?? docId),
+    uid: String(data.uid ?? ""),
+    type: (["upgrade_requested", "upgrade_stubbed", "cancelled"].includes(String(data.type ?? ""))
+      ? data.type
+      : "upgrade_stubbed") as SubscriptionEvent["type"],
+    plan: (data.plan === "pro" ? "pro" : "free") as SubscriptionEvent["plan"],
+    createdAt: String(data.createdAt ?? ""),
+    notes: data.notes ? String(data.notes) : undefined,
+  };
+}
+
+export async function getSubscriptionEventsForUser(uid: string): Promise<SubscriptionEvent[]> {
+  if (!hasFirebaseAdminConfig()) return [];
+  const { db } = getFirebaseAdminServices();
+  const snap = await db
+    .collection(collectionPaths.authProfiles)
+    .doc(uid)
+    .collection("subscriptionEvents")
+    .limit(50)
+    .get();
+  return snap.docs
+    .map((d) => mapSubscriptionEvent(d.id, d.data() as Record<string, unknown>))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
 
 // ── Dashboard summary ─────────────────────────────────────────────────────────

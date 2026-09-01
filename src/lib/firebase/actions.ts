@@ -13,3 +13,4 @@ export * from "./actions/privacy";
 export * from "./actions/messages";
 export * from "./actions/swaps";
 export * from "./actions/join-requests";
+export * from "./actions/subscription";

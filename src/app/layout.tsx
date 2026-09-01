@@ -55,6 +55,7 @@ import "./styles/29-mobile-member-shell.css";
 import "./styles/30-mobile-workout-logs.css";
 import "./styles/31-mobile-macros-coach.css";
 import "./styles/32-discover-marketplace.css";
+import "./styles/32-subscription.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const archivo = Archivo({
