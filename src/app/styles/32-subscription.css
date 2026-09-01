@@ -1,0 +1,131 @@
+/* ── Member subscription page ─────────────────────────────────────────────
+   Two plan cards (Free / Pro) + the upgrade CTA + activity list. Pro billing
+   doesn't exist yet, so the Pro card must read as "reserve your interest",
+   never as a real checkout — no price, no card form. */
+
+.sub-plan-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: 1fr 1fr;
+  margin-bottom: var(--space-6);
+}
+
+@media (max-width: 720px) {
+  .sub-plan-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.sub-plan-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.sub-plan-card--current {
+  border-color: var(--border-strong);
+}
+
+.sub-plan-card--pro {
+  background: linear-gradient(165deg, var(--accent-soft), var(--bg-elevated) 55%);
+}
+
+.sub-plan-card__head {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.sub-plan-card__name {
+  font-size: var(--text-lg, 1.05rem);
+  font-weight: 780;
+  letter-spacing: -0.01em;
+}
+
+.sub-plan-card__badge {
+  background: var(--bg-muted);
+  border-radius: var(--radius-pill);
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 4px 10px;
+  white-space: nowrap;
+}
+
+.sub-plan-card__badge--accent {
+  background: var(--accent);
+  color: #15180C;
+}
+
+.sub-plan-card__desc {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.sub-plan-card__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.sub-plan-card__list li {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+  padding-left: 20px;
+  position: relative;
+}
+
+.sub-plan-card__list li::before {
+  color: var(--brand);
+  content: "✓";
+  font-weight: 700;
+  left: 0;
+  position: absolute;
+}
+
+.sub-plan-cta-wrap {
+  margin-top: auto;
+}
+
+button.sub-plan-cta {
+  margin-top: 4px;
+  width: 100%;
+}
+
+.sub-plan-cta__note {
+  color: var(--text-faint);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  margin: 8px 0 0;
+}
+
+.sub-plan-cta--done {
+  align-items: center;
+  color: var(--brand);
+  display: flex;
+  font-size: 0.85rem;
+  font-weight: 700;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.sub-plan-cta__check {
+  align-items: center;
+  background: var(--accent);
+  border-radius: 999px;
+  color: #15180C;
+  display: inline-flex;
+  height: 22px;
+  justify-content: center;
+  width: 22px;
+}
