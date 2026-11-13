@@ -16,7 +16,6 @@ import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 
 interface WorkoutScreenProps {
   memberId: string;
-  gymId: string;
   program: WorkoutProgram;
   exercises: Exercise[];
   liftLogs: LiftLog[];
@@ -145,7 +144,7 @@ function loadPersistedSwaps(memberId: string, dayId: string | undefined): Record
   }
 }
 
-export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, dayLogs, selectedDayIndex, onSelectDay }: WorkoutScreenProps) {
+export function WorkoutScreen({ memberId, program, exercises, liftLogs, dayLogs, selectedDayIndex, onSelectDay }: WorkoutScreenProps) {
   const router = useRouter();
   const day = program.days[selectedDayIndex] ?? program.days[0];
   const weekStart = useMemo(() => getWeekStart(), []);
@@ -239,7 +238,7 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
     const dayId = day?.id;
     if (!dayId) return;
     let cancelled = false;
-    getExerciseSwapsForMemberDay(memberId, gymId, dayId)
+    getExerciseSwapsForMemberDay(dayId)
       .then(({ found, swaps }) => {
         if (cancelled || !found) return;
         setExerciseSwaps(swaps);
@@ -255,7 +254,7 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
     return () => {
       cancelled = true;
     };
-  }, [memberId, gymId, day?.id]);
+  }, [memberId, day?.id]);
 
   function startSessionIfNeeded() {
     if (sessionStartRef.current != null) return;
@@ -373,11 +372,10 @@ export function WorkoutScreen({ memberId, gymId, program, exercises, liftLogs, d
       // no-op — localStorage may be unavailable
     }
     // Fire-and-forget: the swap already applied locally (instant, offline-
-    // friendly); this just makes it visible cross-device and to the
-    // member's trainer (see ExerciseSwapNotes on the owner member page). A
+    // friendly); this just makes it visible cross-device. A
     // failure here isn't worth interrupting the workout for — the next
     // successful save (or the reconciliation effect on remount) catches up.
-    void saveExerciseSwaps({ memberId, programId: program.id, dayId: day.id, swaps: next }).catch(() => {});
+    void saveExerciseSwaps({ programId: program.id, dayId: day.id, swaps: next }).catch(() => {});
   }
 
   function clearSwap(exIdx: number) {

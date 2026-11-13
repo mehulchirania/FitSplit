@@ -1,8 +1,7 @@
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollectionPath } from "../collections";
-import { reportReadModelError } from "./shared";
+import { reportReadModelError, userCollection } from "./shared";
 
-/** A member's exercise substitutions for one program day, keyed by exercise index (as a string). */
+/** A user's exercise substitutions for one program day, keyed by exercise index (as a string). */
 export type ExerciseSwapRecord = {
   dayId: string;
   programId: string;
@@ -11,33 +10,18 @@ export type ExerciseSwapRecord = {
 };
 
 /**
- * Fetch every day's exercise swaps for a member, keyed by dayId. Single
- * equality filter on memberId (no orderBy) — a program has at most a
- * handful of days, so this stays small and doesn't need a composite index.
+ * Fetch every day's exercise swaps for a user, keyed by dayId.
  *
- * Used to hydrate WorkoutScreen's swap state from the server (so a swap made
- * on one device shows up on another) and to power ExerciseSwapNotes on the
- * owner member-detail page, so trainers can see what a member actually
- * trains instead of only the prescribed plan.
- *
- * Intentionally keeps days whose swaps map is now empty (fully reverted)
- * rather than dropping them — WorkoutScreen's hydration needs to be able to
- * tell "this day was reverted on another device" apart from "this day was
- * never touched" so a stale local swap doesn't survive a cross-device clear.
- * Callers that only want *active* swaps (e.g. the trainer display) should
- * filter empty entries themselves.
+ * Intentionally keeps days whose swaps map is now empty (fully reverted) so the
+ * workout screen can tell "reverted on another device" from "never touched".
  */
 export async function getExerciseSwapsForMember(
-  memberId: string,
-  gymId: string
+  uid: string
 ): Promise<{ swapsByDay: Record<string, ExerciseSwapRecord> }> {
   if (!hasFirebaseAdminConfig()) return { swapsByDay: {} };
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(gymCollectionPath(gymId, "exerciseSwaps"))
-      .where("memberId", "==", memberId)
-      .get();
+    const snapshot = await userCollection(db, uid, "exerciseSwaps").get();
 
     const swapsByDay: Record<string, ExerciseSwapRecord> = {};
     for (const doc of snapshot.docs) {
@@ -59,7 +43,7 @@ export async function getExerciseSwapsForMember(
 
     return { swapsByDay };
   } catch (error) {
-    reportReadModelError("getExerciseSwapsForMember", error, { memberId, gymId });
+    reportReadModelError("getExerciseSwapsForMember", error, { memberId: uid });
     return { swapsByDay: {} };
   }
 }

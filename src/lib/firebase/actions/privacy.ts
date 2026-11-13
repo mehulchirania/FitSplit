@@ -1,192 +1,146 @@
 "use server";
 
 import { cookies } from "next/headers";
-import { requireRole, requireAuth } from "@/lib/auth";
-import { gymCollectionPath } from "../collections";
+import { redirect } from "next/navigation";
+import { getCurrentUser, requireAuth } from "@/lib/auth";
+import { collectionPaths, userCollectionPath, type UserCollectionKey } from "../collections";
+import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import type { FormActionState } from "@/types/action-state";
-import { requireFirebase, success, failure } from "./shared";
-
-const TERMS_ACK_COOKIE = "fitsplit-terms-ack";
-
-/**
- * Records that the signed-in user accepted the Terms of Service and Privacy Policy.
- * Sets a long-lived cookie (read by the layout's first-login consent gate) and,
- * best-effort, stamps `termsAcceptedAt` on the user's auth profile for an audit trail.
- */
-export async function acceptTerms(): Promise<{ status: "success" } | { status: "error"; message: string }> {
-  try {
-    const user = await requireAuth();
-    const cookieStore = await cookies();
-    cookieStore.set(TERMS_ACK_COOKIE, "1", {
-      httpOnly: true,
-      path: "/",
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 60 * 60 * 24 * 365, // 1 year
-    });
-    try {
-      const db = requireFirebase();
-      await db
-        .collection("authProfiles")
-        .doc(user.uid)
-        .set({ termsAcceptedAt: new Date().toISOString() }, { merge: true });
-    } catch {
-      // Mock mode / no Admin SDK — the cookie alone is sufficient to clear the gate.
-    }
-    return { status: "success" };
-  } catch {
-    return { status: "error", message: "Could not record your acceptance. Please try again." };
-  }
-}
+import { failure } from "./shared";
 import {
-  getMemberWithProfile,
+  getUserProfile,
   getBodyMetricLogsForMember,
   getLiftLogsForMember,
   getDayLogsForMember,
   getMacroLogsForMember,
   getActivityLogsForMember,
-  getAttendanceRecords,
-  getPTSessionsForMember,
-  getMembershipsForMember,
-  getPaymentRequestsForMember,
-  getMemberNotifications,
-  getActivityEvents,
+  getProgramAssignmentForMember
 } from "../read-models";
 
 export type DataExportResult =
   | { status: "success"; filename: string; data: Record<string, unknown> }
   | { status: "error"; message: string };
 
-// Large caps so the export is complete rather than the dashboard's recent-window defaults.
+// Large caps so the export is complete rather than a recent-window default.
 const ALL = 100000;
 
 /**
- * GDPR/CCPA data-portability: gather everything FitSplit holds about the calling
- * member and return it as a serializable object the client downloads as JSON.
- * A member can only ever export their own data (memberId comes from the session).
+ * Data portability: gather everything FitSplit holds about the signed-in user and
+ * return it as a serializable object the client downloads as JSON. The uid always
+ * comes from the session, so a user can only ever export their own data.
  */
-export async function exportMyData(gymId: string): Promise<DataExportResult> {
+export async function exportMyData(): Promise<DataExportResult> {
   try {
-    const user = await requireRole(["member"]);
-    if (user.gymId !== gymId) return { status: "error", message: "You are not a member of this gym." };
-    const memberId = user.memberId ?? user.uid;
+    const user = await requireAuth();
+    const uid = user.uid;
 
-    const [
-      profileRes,
-      bodyMetricLogs,
-      liftLogs,
-      dayLogs,
-      macroLogs,
-      activityLogs,
-      attendance,
-      ptSessions,
-      memberships,
-      paymentRequests,
-      notifications,
-      activityEvents,
-    ] = await Promise.all([
-      getMemberWithProfile(memberId),
-      getBodyMetricLogsForMember(memberId, gymId),
-      getLiftLogsForMember(memberId, gymId),
-      getDayLogsForMember(memberId, gymId),
-      getMacroLogsForMember(memberId, gymId, ALL),
-      getActivityLogsForMember(memberId, gymId, ALL),
-      getAttendanceRecords(memberId, gymId),
-      getPTSessionsForMember(gymId, memberId),
-      getMembershipsForMember(gymId, memberId),
-      getPaymentRequestsForMember(gymId, memberId),
-      getMemberNotifications(memberId, gymId),
-      getActivityEvents("member", memberId, gymId),
+    const [profileRes, bodyMetricLogs, liftLogs, dayLogs, macroLogs, activityLogs, assignment] = await Promise.all([
+      getUserProfile(uid, user.fullName),
+      getBodyMetricLogsForMember(uid, ALL),
+      getLiftLogsForMember(uid, ALL),
+      getDayLogsForMember(uid, ALL),
+      getMacroLogsForMember(uid, ALL),
+      getActivityLogsForMember(uid, ALL),
+      getProgramAssignmentForMember(uid)
     ]);
+
+    // Collections without a dedicated read-model are dumped as stored, so the export is complete.
+    const rawCollections: Record<string, unknown[]> = {};
+    if (hasFirebaseAdminConfig()) {
+      const { db } = getFirebaseAdminServices();
+      const userDoc = await db.collection(collectionPaths.users).doc(uid).get();
+      const raw = userDoc.data() ?? {};
+      rawCollections.consentRecord = [{ consent: raw.consent ?? null, termsAcceptedAt: raw.termsAcceptedAt ?? null }];
+      const extra: UserCollectionKey[] = ["mealLogs", "workoutSessions", "exerciseSwaps"];
+      await Promise.all(
+        extra.map(async (key) => {
+          const snap = await db.collection(userCollectionPath(uid, key)).get();
+          rawCollections[key] = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        })
+      );
+    }
 
     const data: Record<string, unknown> = {
       meta: {
         exportedAt: new Date().toISOString(),
-        gymId,
-        memberId,
-        note: "This is a copy of the personal data FitSplit holds about you. See /privacy for details.",
+        userId: uid,
+        note: "This is a copy of the personal data FitSplit holds about you. See /privacy for details."
       },
-      account: profileRes.member,
-      profile: profileRes.profile,
-      bodyMetricLogs,
-      liftLogs,
-      dayLogs,
-      macroLogs,
-      activityLogs,
-      attendance,
-      ptSessions,
-      memberships,
-      paymentRequests,
-      notifications,
-      activityEvents,
+      account: profileRes.user,
+      bodyMetricLogs: bodyMetricLogs.logs,
+      liftLogs: liftLogs.liftLogs,
+      dayLogs: dayLogs.dayLogs,
+      macroLogs: macroLogs.macroLogs,
+      activityLogs: activityLogs.activityLogs,
+      activeProgram: assignment.assignment,
+      ...rawCollections
     };
 
-    return { status: "success", filename: `fitsplit-data-${memberId}.json`, data };
+    return { status: "success", filename: `fitsplit-data-${uid}.json`, data };
   } catch (err) {
     return { status: "error", message: err instanceof Error ? err.message : "Failed to export your data." };
   }
 }
 
 /**
- * GDPR/CCPA erasure intake: a member requests deletion of their account and data.
- * Actual deletion is a privileged operation (owner/admin via the Admin SDK), so this
- * records the request by notifying the gym owner, who actions it. The member is also
- * told they can email us directly.
+ * Permanently deletes the signed-in user's account: every document under
+ * `users/{uid}`, the profile itself, the avatar, and the Firebase Auth identity.
+ * Irreversible; the client confirms before calling.
  */
-export async function requestAccountDeletion(
-  gymId: string,
-  _prev: FormActionState,
-  formData: FormData
-): Promise<FormActionState> {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export async function deleteMyAccount(_prev: FormActionState, _formData: FormData): Promise<FormActionState> {
   try {
-    const user = await requireRole(["member"]);
-    if (user.gymId !== gymId) return failure(null, "You are not a member of this gym.");
+    const user = await requireAuth();
 
-    const reason = String(formData.get("reason") ?? "").trim().slice(0, 500);
-    const db = requireFirebase();
-    const memberId = user.memberId ?? user.uid;
-    const now = new Date().toISOString();
-
-    // Guard against duplicate open requests.
-    const existing = await db
-      .collection(gymCollectionPath(gymId, "notifications"))
-      .where("type", "==", "data_deletion_request")
-      .where("memberId", "==", memberId)
-      .limit(1)
-      .get();
-    if (!existing.empty) {
-      return success(
-        "You already have a pending deletion request. Your gym will process it; you can also email fitsplit.in@gmail.com.",
-        gymId,
-        ["notifications"]
-      );
+    if (hasFirebaseAdminConfig()) {
+      const { auth, db, storage } = getFirebaseAdminServices();
+      await db.recursiveDelete(db.collection(collectionPaths.users).doc(user.uid));
+      await storage
+        .bucket()
+        .file(`avatars/${user.uid}.png`)
+        .delete({ ignoreNotFound: true })
+        .catch(() => undefined);
+      await auth.deleteUser(user.uid);
     }
 
-    const ownerSnap = await db
-      .collection(gymCollectionPath(gymId, "staff"))
-      .where("role", "==", "owner")
-      .limit(1)
-      .get();
-    if (!ownerSnap.empty) {
-      const ownerId = ownerSnap.docs[0].id;
-      await db.collection(gymCollectionPath(gymId, "notifications")).add({
-        recipientId: ownerId,
-        recipientRole: "owner",
-        type: "data_deletion_request",
-        title: "Data deletion request",
-        body: `${user.fullName} requested deletion of their account and data${reason ? `: "${reason}"` : "."}`,
-        actionHref: `/owner/members/${memberId}`,
-        memberId,
-        createdAt: now,
-      });
-    }
+    const cookieStore = await cookies();
+    cookieStore.delete("fitsplit-session");
+    cookieStore.delete("fitsplit-local-user");
 
-    return success(
-      "Your data deletion request has been submitted. Your gym will process it and contact you. You can also email fitsplit.in@gmail.com.",
-      gymId,
-      ["notifications"]
-    );
   } catch (err) {
-    return failure(err, "Failed to submit your deletion request.");
+    return failure(err, "Failed to delete your account.");
+  }
+  // Everything is gone and the cookies are cleared: leave the signed-in shell.
+  redirect("/?deleted=1");
+}
+
+/**
+ * Records the signed-in user's optional diagnostics choice on their profile consent
+ * record. Under-18 accounts can never opt in (no behavioural monitoring of children).
+ */
+export async function setDiagnosticsConsent(granted: boolean): Promise<FormActionState> {
+  try {
+    // Signed out visitors only have the per-device switch; there is no account record to update.
+    const user = await getCurrentUser();
+    if (user && hasFirebaseAdminConfig()) {
+      const { db } = getFirebaseAdminServices();
+      const ref = db.collection(collectionPaths.users).doc(user.uid);
+      const snap = await ref.get();
+      const data = snap.data() as { consent?: { ageGroup?: string } } | undefined;
+      const isMinor = data?.consent?.ageGroup === "minor";
+      await ref.set(
+        {
+          consent: { diagnostics: { granted: granted && !isMinor, updatedAt: new Date().toISOString() } },
+          updatedAt: new Date().toISOString()
+        },
+        { merge: true }
+      );
+      if (granted && isMinor) {
+        return { status: "error", message: "Diagnostics are not available for under-18 accounts." };
+      }
+    }
+    return { status: "success", message: granted ? "Diagnostics turned on." : "Diagnostics turned off." };
+  } catch (err) {
+    return failure(err, "Could not save your choice.");
   }
 }

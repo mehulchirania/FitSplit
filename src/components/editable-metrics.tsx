@@ -2,10 +2,10 @@
 
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import type { Member } from "@/types/domain";
+import type { UserProfile } from "@/types/domain";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
 
-export function EditableMetrics({ member }: { member: Member }) {
+export function EditableMetrics({ member }: { member: UserProfile }) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [showBmiInfo, setShowBmiInfo] = useState(false);
@@ -50,10 +50,7 @@ export function EditableMetrics({ member }: { member: Member }) {
     e.preventDefault();
     setSaveError("");
     const formData = new FormData();
-    formData.set("memberId", member.id);
     formData.set("fullName", member.fullName);
-    if (member.email) formData.set("email", member.email);
-    formData.set("phone", member.phone ?? "");
     if (age) formData.set("age", age);
     if (weight) formData.set("weightKg", weight);
     if (height) formData.set("heightCm", height);

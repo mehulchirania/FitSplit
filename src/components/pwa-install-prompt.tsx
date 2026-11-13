@@ -103,7 +103,7 @@ export function PwaInstallPrompt() {
         <span>
           {showIosHint
             ? "Use Share, then Add to Home Screen for a full-screen app."
-            : "Add FitSplit to your device for quick gym access."}
+            : "Add FitSplit to your device for quick access."}
         </span>
       </div>
       <div className="pwa-install-actions">

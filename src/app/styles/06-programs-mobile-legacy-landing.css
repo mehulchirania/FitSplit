@@ -50,10 +50,6 @@
   gap: 8px;
 }
 
-.mobile-bottom-nav {
-  display: none;
-}
-
 /* 760px → 768px, the canonical tablet breakpoint. This is the rule that
    actually shows/hides .mobile-bottom-nav; sibling rules that style it were
    remapped to 768px in 15-ui-upgrades.css, which left a 761-768px dead band
@@ -61,58 +57,6 @@
 @media (max-width: 768px) {
   body:has(.mobile-bottom-nav) {
     padding-bottom: 82px;
-  }
-
-  .mobile-bottom-nav {
-    align-items: center;
-    backdrop-filter: blur(20px);
-    background: color-mix(in srgb, var(--surface-glass) 84%, transparent);
-    border: 1px solid var(--border);
-    border-radius: 22px;
-    bottom: calc(10px + env(safe-area-inset-bottom));
-    box-shadow: var(--shadow);
-    display: grid;
-    gap: 4px;
-    grid-auto-flow: column;
-    left: 10px;
-    padding: 8px;
-    position: fixed;
-    right: 10px;
-    z-index: 70;
-  }
-
-  .mobile-bottom-nav a {
-    align-items: center;
-    border-radius: 16px;
-    color: var(--text-soft);
-    display: grid;
-    font-size: 0.68rem;
-    font-weight: 800;
-    gap: 3px;
-    justify-items: center;
-    min-height: 52px;
-    padding: 6px 4px;
-    text-decoration: none;
-  }
-
-  .mobile-bottom-nav svg {
-    height: 19px;
-    width: 19px;
-  }
-
-  .mobile-bottom-nav a:hover {
-    background: var(--surface-glass-strong);
-    color: var(--text);
-  }
-
-  .mobile-bottom-nav a.is-active,
-  .mobile-bottom-nav a[aria-current="page"] {
-    background: color-mix(in srgb, var(--brand) 14%, transparent);
-    color: var(--brand);
-  }
-  .mobile-bottom-nav a.is-active svg,
-  .mobile-bottom-nav a[aria-current="page"] svg {
-    color: var(--brand);
   }
 
   .pwa-install-banner {

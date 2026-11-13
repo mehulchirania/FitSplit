@@ -3,32 +3,18 @@
 import { useState, useTransition, useActionState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { logoutUser } from "@/lib/auth";
-import { updateProfileMetrics, updateMemberAvatar, changeMemberPin, exportMyData, requestAccountDeletion } from "@/lib/firebase/actions";
+import { logoutUser, changePassword } from "@/lib/auth";
+import { updateProfileMetrics, updateMemberAvatar, exportMyData, deleteMyAccount } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
 import { AvatarUploader } from "@/components/avatar-uploader";
-import type { Member, ProfileMetrics } from "@/types/domain";
+import type { UserProfile, ProfileMetrics } from "@/types/domain";
 
 interface MemberSettingsClientProps {
-  member: Member;
+  member: UserProfile;
   profile: ProfileMetrics;
-  gymId: string;
-  memberId: string;
 }
 
 /* ── Reusable primitives ─────────────────────────────────────────────────── */
-
-function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      className={`mset-toggle${on ? " mset-toggle--on" : ""}`}
-      onClick={() => onChange(!on)}
-    />
-  );
-}
 
 function SegControl({ value, onChange, options }: {
   value: string;
@@ -80,18 +66,11 @@ function storedSetting<T extends string>(key: string, fallback: T, allowed: read
   return allowed.includes(value as T) ? value as T : fallback;
 }
 
-function storedToggle(key: string, fallback: boolean) {
-  if (typeof window === "undefined") return fallback;
-  const value = window.localStorage.getItem(key);
-  return value === null ? fallback : value === "1";
-}
-
 /* ── Profile tab ─────────────────────────────────────────────────────────── */
 
-function ProfileTab({ member, profile, memberId }: {
-  member: Member;
+function ProfileTab({ member, profile }: {
+  member: UserProfile;
   profile: ProfileMetrics;
-  memberId: string;
 }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
@@ -100,20 +79,16 @@ function ProfileTab({ member, profile, memberId }: {
 
   // Local form state
   const [fullName, setFullName] = useState(member.fullName);
-  const [phone, setPhone] = useState(member.phone ?? "");
   const [age, setAge] = useState(profile.age?.toString() ?? "");
   const [weightKg, setWeightKg] = useState(profile.weightKg?.toString() ?? "");
   const [heightCm, setHeightCm] = useState(profile.heightCm?.toString() ?? "");
-  const [primarySlot, setPrimarySlot] = useState<"A"|"B"|"C"|"D">(profile.primarySlot ?? "A");
   const [fitnessGoals, setFitnessGoals] = useState(profile.fitnessGoals ?? "");
 
   function resetForm() {
     setFullName(member.fullName);
-    setPhone(member.phone ?? "");
     setAge(profile.age?.toString() ?? "");
     setWeightKg(profile.weightKg?.toString() ?? "");
     setHeightCm(profile.heightCm?.toString() ?? "");
-    setPrimarySlot(profile.primarySlot ?? "A");
     setFitnessGoals(profile.fitnessGoals ?? "");
     setSaveErr("");
     setEditing(false);
@@ -123,14 +98,10 @@ function ProfileTab({ member, profile, memberId }: {
     e.preventDefault();
     setSaveErr("");
     const fd = new FormData();
-    fd.set("memberId", memberId);
     fd.set("fullName", fullName.trim() || member.fullName);
-    fd.set("email", member.email ?? "");
-    fd.set("phone", phone.trim());
     if (age) fd.set("age", age);
     if (weightKg) fd.set("weightKg", weightKg);
     if (heightCm) fd.set("heightCm", heightCm);
-    fd.set("primarySlot", primarySlot);
     fd.set("fitnessGoals", fitnessGoals.trim());
     startTransition(async () => {
       const result = await updateProfileMetrics(initialFormActionState, fd);
@@ -157,11 +128,11 @@ function ProfileTab({ member, profile, memberId }: {
           currentUrl={member.avatarUrl}
           name={member.fullName}
           dataUrlField="avatarDataUrl"
-          fields={{ memberId }}
+          fields={{}}
         />
         <div>
           <strong className="mset-profile-name">{member.fullName}</strong>
-          <span className="mset-profile-meta">@{member.username || memberId} · Member</span>
+          <span className="mset-profile-meta">{member.email || "Free account"}</span>
         </div>
         {!editing && (
           <button
@@ -182,10 +153,6 @@ function ProfileTab({ member, profile, memberId }: {
               <label className="mset-field">
                 <span>Full name</span>
                 <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
-              </label>
-              <label className="mset-field">
-                <span>Phone</span>
-                <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="10-digit mobile number" />
               </label>
               <label className="mset-field">
                 <span>Age</span>
@@ -213,15 +180,6 @@ function ProfileTab({ member, profile, memberId }: {
 
           <Section title="TRAINING">
             <div className="mset-field-grid mset-field-grid--full">
-              <label className="mset-field">
-                <span>Preferred gym slot</span>
-                <select value={primarySlot} onChange={(e) => setPrimarySlot(e.target.value as "A"|"B"|"C"|"D")}>
-                  <option value="A">Slot A — Morning (6 AM – 9 AM)</option>
-                  <option value="B">Slot B — Midday (10 AM – 1 PM)</option>
-                  <option value="C">Slot C — Afternoon (2 PM – 5 PM)</option>
-                  <option value="D">Slot D — Evening (6 PM – 9 PM)</option>
-                </select>
-              </label>
               <label className="mset-field mset-field--full">
                 <span>Fitness goals</span>
                 <input
@@ -265,10 +223,9 @@ function ProfileTab({ member, profile, memberId }: {
           </Section>
 
           <Section title="TRAINING PREFERENCES">
-            <Row label="Preferred slot" sub={["Morning (6–9 AM)", "Midday (10 AM–1 PM)", "Afternoon (2–5 PM)", "Evening (6–9 PM)"][["A","B","C","D"].indexOf(profile.primarySlot ?? "A")] ?? "Morning"} />
             <Row
               label="Fitness goals"
-              sub={profile.fitnessGoals || "Tell your coach what you are working toward"}
+              sub={profile.fitnessGoals || "What are you working toward?"}
               last
             >
               {!profile.fitnessGoals && (
@@ -281,8 +238,8 @@ function ProfileTab({ member, profile, memberId }: {
 
           <Section title="ACCOUNT">
             <Row label="Full name" sub={member.fullName} />
-            <Row label="Phone / Username" sub={member.phone || "Not set"} />
-            <Row label="Gym member since" sub={member.joinedAt ? new Date(member.joinedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }) : "—"} last />
+            <Row label="Email" sub={member.email || "Not set"} />
+            <Row label="Member since" sub={member.joinedAt ? new Date(member.joinedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }) : "—"} last />
           </Section>
         </>
       )}
@@ -292,30 +249,25 @@ function ProfileTab({ member, profile, memberId }: {
 
 /* ── Settings tab ────────────────────────────────────────────────────────── */
 
-function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
+function SettingsTab() {
   const [weightUnit, setWeightUnit] = useState<"kg" | "lbs">(() => storedSetting("fitsplit-weight-unit", "kg", ["kg", "lbs"]));
   const [heightUnit, setHeightUnit] = useState<"cm" | "ft">(() => storedSetting("fitsplit-height-unit", "cm", ["cm", "ft"]));
-  const [workoutReminders, setWorkoutReminders] = useState(() => storedToggle("fitsplit-notif-workout", true));
-  const [coachMessages, setCoachMessages] = useState(() => storedToggle("fitsplit-notif-coach", true));
 
-  // PIN change
+  // Password change
   const [showPin, setShowPin] = useState(false);
-  const [pinState, pinAction] = useActionState(changeMemberPin, initialFormActionState);
+  const [pinState, pinAction] = useActionState(changePassword, initialFormActionState);
 
   // Privacy / DSAR
   const [exporting, setExporting] = useState(false);
   const [exportMsg, setExportMsg] = useState("");
   const [showDelete, setShowDelete] = useState(false);
-  const [delState, delAction] = useActionState(
-    requestAccountDeletion.bind(null, gymId),
-    initialFormActionState
-  );
+  const [delState, delAction] = useActionState(deleteMyAccount, initialFormActionState);
 
   async function handleExport() {
     setExportMsg("");
     setExporting(true);
     try {
-      const res = await exportMyData(gymId);
+      const res = await exportMyData();
       if (res.status === "success") {
         const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -338,49 +290,9 @@ function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
   }
 
   const [isPending, startTransition] = useTransition();
-  const [nowMs] = useState(() => Date.now());
-
-  const daysLeft = member.membershipEndDate
-    ? Math.ceil((new Date(member.membershipEndDate).getTime() - nowMs) / 86400000)
-    : null;
-  const membershipLabel =
-    member.membershipStatus === "active" ? "Active"
-    : member.membershipStatus === "expiring_soon" ? "Expiring soon"
-    : member.membershipStatus === "expired" ? "Expired"
-    : "No membership";
 
   return (
     <div className="mset-body">
-      {/* Membership */}
-      <Section title="MEMBERSHIP">
-        <div className="mset-row">
-          <div className="mset-row__text">
-            <span className="mset-row__label">{member.currentPackageName ?? "No plan"}</span>
-            <span className="mset-row__sub">
-              {member.currentPackageName ?? "No active package"}
-              {daysLeft !== null ? ` · ${daysLeft > 0 ? `${daysLeft}d left` : "Expired"}` : ""}
-            </span>
-          </div>
-          <span className={`mset-status-pill mset-status-pill--${member.membershipStatus ?? "none"}`}>
-            {membershipLabel}
-          </span>
-        </div>
-        <Link href="/member/membership" className="mset-row mset-row--link">
-          <div className="mset-row__text">
-            <span className="mset-row__label">Manage plan</span>
-            <span className="mset-row__sub">Upgrade, renew, or view payment history</span>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </Link>
-        <Link href="/member/pt-history" className="mset-row mset-row--link mset-row--last">
-          <div className="mset-row__text">
-            <span className="mset-row__label">PT history</span>
-            <span className="mset-row__sub">Your personal training sessions</span>
-          </div>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18l6-6-6-6"/></svg>
-        </Link>
-      </Section>
-
       {/* Units */}
       <Section title="UNITS &amp; DISPLAY">
         <Row label="Body weight" sub={`Showing as ${weightUnit}`}>
@@ -391,44 +303,34 @@ function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
         </Row>
       </Section>
 
-      {/* Notifications */}
-      <Section title="NOTIFICATIONS">
-        <Row label="Workout reminders" sub="Daily nudge to log your session">
-          <Toggle on={workoutReminders} onChange={(v) => { setWorkoutReminders(v); localStorage.setItem("fitsplit-notif-workout", v?"1":"0"); }} />
-        </Row>
-        <Row label="Coach messages" sub="Push when your trainer leaves a note" last>
-          <Toggle on={coachMessages} onChange={(v) => { setCoachMessages(v); localStorage.setItem("fitsplit-notif-coach", v?"1":"0"); }} />
-        </Row>
-      </Section>
-
-      {/* PIN change */}
+      {/* Password change */}
       <Section title="ACCOUNT SECURITY">
         {!showPin ? (
           <div className="mset-row mset-row--last">
             <div className="mset-row__text">
-              <span className="mset-row__label">4-digit PIN</span>
-              <span className="mset-row__sub">Change your login PIN</span>
+              <span className="mset-row__label">Password</span>
+              <span className="mset-row__sub">Change your login password</span>
             </div>
             <button type="button" className="mset-action-btn" onClick={() => setShowPin(true)}>Change</button>
           </div>
         ) : (
           <form action={pinAction} className="mset-pin-form">
             <label className="mset-field">
-              <span>Current PIN</span>
-              <input type="password" name="currentPin" inputMode="numeric" maxLength={4} pattern="\d{4}" required placeholder="••••" autoFocus />
+              <span>Current password</span>
+              <input type="password" name="currentPassword" autoComplete="current-password" required autoFocus />
             </label>
             <label className="mset-field">
-              <span>New PIN</span>
-              <input type="password" name="newPin" inputMode="numeric" maxLength={4} pattern="\d{4}" required placeholder="••••" />
+              <span>New password</span>
+              <input type="password" name="newPassword" autoComplete="new-password" minLength={8} required placeholder="At least 8 characters" />
             </label>
             <label className="mset-field">
-              <span>Confirm new PIN</span>
-              <input type="password" name="confirmPin" inputMode="numeric" maxLength={4} pattern="\d{4}" required placeholder="••••" />
+              <span>Confirm new password</span>
+              <input type="password" name="confirmPassword" autoComplete="new-password" minLength={8} required />
             </label>
             {pinState.status === "error" && <p className="mset-save-err">{pinState.message}</p>}
             {pinState.status === "success" && <p className="mset-save-ok">{pinState.message}</p>}
             <div className="mset-edit-actions">
-              <button type="submit" className="mset-save-btn">Update PIN</button>
+              <button type="submit" className="mset-save-btn">Update password</button>
               <button type="button" className="mset-cancel-btn" onClick={() => setShowPin(false)}>Cancel</button>
             </div>
           </form>
@@ -463,21 +365,18 @@ function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
         {!showDelete ? (
           <div className="mset-row mset-row--last">
             <div className="mset-row__text">
-              <span className="mset-row__label">Request account deletion</span>
-              <span className="mset-row__sub">Ask your gym to erase your account and data</span>
+              <span className="mset-row__label">Delete my account</span>
+              <span className="mset-row__sub">Permanently erase your account and all your data</span>
             </div>
-            <button type="button" className="mset-action-btn" onClick={() => setShowDelete(true)}>Request</button>
+            <button type="button" className="mset-action-btn" onClick={() => setShowDelete(true)}>Delete</button>
           </div>
         ) : (
           <form action={delAction} className="mset-pin-form">
-            <label className="mset-field">
-              <span>Reason (optional)</span>
-              <input type="text" name="reason" maxLength={500} placeholder="Tell your gym why (optional)" />
-            </label>
+            <p className="mset-row__sub">This cannot be undone. All your logs, plans and profile details will be erased.</p>
             {delState.status === "error" && <p className="mset-save-err">{delState.message}</p>}
             {delState.status === "success" && <p className="mset-save-ok">{delState.message}</p>}
             <div className="mset-edit-actions">
-              <button type="submit" className="mset-save-btn">Submit request</button>
+              <button type="submit" className="mset-save-btn">Delete everything</button>
               <button type="button" className="mset-cancel-btn" onClick={() => setShowDelete(false)}>Cancel</button>
             </div>
           </form>
@@ -507,7 +406,7 @@ function SettingsTab({ member, gymId }: { member: Member; gymId: string }) {
 
 /* ── Main export ─────────────────────────────────────────────────────────── */
 
-export function MemberSettingsClient({ member, profile, gymId, memberId }: MemberSettingsClientProps) {
+export function MemberSettingsClient({ member, profile }: MemberSettingsClientProps) {
   const [tab, setTab] = useState<"profile" | "settings">("profile");
 
   return (
@@ -530,9 +429,9 @@ export function MemberSettingsClient({ member, profile, gymId, memberId }: Membe
       </div>
 
       {tab === "profile" ? (
-        <ProfileTab member={member} profile={profile} memberId={memberId} />
+        <ProfileTab member={member} profile={profile} />
       ) : (
-        <SettingsTab member={member} gymId={gymId} />
+        <SettingsTab />
       )}
     </div>
   );

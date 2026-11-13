@@ -115,16 +115,6 @@ html[data-theme="dark"] {
    Merged into one rule; the light-theme background override now uses
    var(--bg-elevated) instead of a raw #ffffff (identical value, but a
    token). */
-.login-form input:focus {
-  background: var(--input-bg);
-  border-color: var(--brand);
-  box-shadow: var(--ring);
-  outline: none;
-}
-
-html[data-theme="light"] .login-form input:focus {
-  background: var(--bg-elevated);
-}
 
 /* ── 4. Button: consistent disabled state ───────────────────────────────── */
 /* Consolidated into 00-base-shell.css (`.button:disabled, button:disabled`) —
@@ -133,182 +123,42 @@ html[data-theme="light"] .login-form input:focus {
 /* ── 5. Landing page — mobile nav fix ────────────────────────────────────── */
 
 /* Was max-width: 780px, remapped to canonical 768px (.landing-nav, .landing-nav-links, .landing-nav-links a). */
-@media (max-width: 768px) {
-  .landing-nav {
-    border-radius: 22px;
-    flex-wrap: wrap;
-    gap: 8px;
-    padding: var(--space-2) var(--space-3);
-    position: fixed;
-    top: 10px;
-  }
-
-  .landing-nav-links {
-    flex: 1 1 100%;
-    gap: 4px;
-    justify-content: stretch;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-
-  .landing-nav-links::-webkit-scrollbar {
-    display: none;
-  }
-
-  .landing-nav-links a {
-    flex: 1;
-    font-size: var(--text-xs);
-    min-height: 36px;
-    padding: var(--space-2) var(--space-2);
-    text-align: center;
-    white-space: nowrap;
-  }
-}
 
 /* ── 6. Landing page — section & feature card polish ─────────────────────── */
 
 /* Feature card icons — bigger, in a pill */
-.landing-feature-grid article::before {
-  display: none;
-}
 
 /* Animated gradient on the CTA row */
-.landing-final-cta {
-  background: linear-gradient(135deg,
-    rgb(255 255 255 / 0.10) 0%,
-    rgb(125 211 252 / 0.07) 50%,
-    rgb(255 255 255 / 0.06) 100%) !important;
-}
 
 /* Proof stat numbers — larger on desktop */
 /* Was min-width: 860px, remapped to canonical 1024px (.landing-proof strong). */
-@media (min-width: 1024px) {
-  .landing-proof strong {
-    font-size: clamp(2.2rem, 4vw, 3.4rem);
-    letter-spacing: -0.03em;
-  }
-}
 
 /* Step numbers — more visible */
-.landing-flow-grid .step-number,
-.steps-grid .step-n {
-  color: rgb(255 255 255 / 0.18);
-  font-size: clamp(3rem, 7vw, 5rem);
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  line-height: 1;
-}
 
 /* ── 7. App topbar — active link indicator ───────────────────────────────── */
-
-.topnav a[aria-current="page"],
-.topnav a.is-active {
-  background: var(--brand) !important;
-  border-color: transparent !important;
-  color: var(--bg) !important;
-}
 
 /* ── 8. Member dashboard — fix stat cards for light/dark themes ───────────── */
 
 /* Override the hardcoded dark rgba values */
-.md-hero-stat-new {
-  background: color-mix(in srgb, var(--bg-subtle) 70%, transparent) !important;
-  border: 1px solid var(--border) !important;
-}
 
 /* !important kept — this rule exists specifically to beat a higher-specificity
    hardcoded override in the member-dashboard file (not owned by this pass).
    Raw rgba(255,255,255,x) replaced with color-mix against --text, which is
    near-white in dark mode, for an identical result from a token. */
-html[data-theme="dark"] .md-hero-stat-new {
-  background: color-mix(in srgb, var(--text) 4%, transparent) !important;
-  border-color: color-mix(in srgb, var(--text) 6%, transparent) !important;
-}
-
-.md-hero-stat-new:hover {
-  background: color-mix(in srgb, var(--bg-subtle) 100%, transparent) !important;
-  border-color: var(--brand-border) !important;
-}
-
-html[data-theme="dark"] .md-hero-stat-new:hover {
-  background: color-mix(in srgb, var(--text) 7%, transparent) !important;
-}
 
 /* Stat values — inherit theme text properly */
-.md-hero-stat-new strong {
-  color: var(--text) !important;
-}
-
-.md-hero-stat-new span {
-  color: var(--text-faint) !important;
-}
-
-.md-hero-stat-new small {
-  color: var(--text-soft) !important;
-}
 
 /* ── 9. Member hero — light theme adaptation ────────────────────────────── */
-
-.md-hero-new {
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--bg-elevated) 95%, var(--brand) 5%),
-    var(--bg-elevated)) !important;
-  border-color: var(--border) !important;
-}
-
-html[data-theme="dark"] .md-hero-new {
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--bg-elevated) 90%, var(--brand) 10%),
-    var(--bg-elevated)) !important;
-}
 
 /* ── 10. Workout day tabs — better mobile active indicator ───────────────── */
 
 /* Was max-width: 640px, remapped to canonical 768px (.md-tab-btn.active, .md-tab-btn.active::after, .md-tab-btn.active .md-tab-icon). */
 @media (max-width: 768px) {
-  .md-tab-btn.active {
-    color: var(--brand) !important;
-    position: relative;
-  }
-
-  .md-tab-btn.active::after {
-    background: var(--brand);
-    border-radius: 999px;
-    bottom: -2px;
-    content: "";
-    height: 3px;
-    left: 50%;
-    position: absolute;
-    transform: translateX(-50%);
-    width: 24px;
-  }
 
   /* Distinct icons for active tab */
-  .md-tab-btn.active .md-tab-icon {
-    color: var(--brand);
-    opacity: 1 !important;
-  }
 }
 
 /* ── 11. Workout session bar — more prominent when active ────────────────── */
-
-.workout-session-bar {
-  align-items: center;
-  animation: session-pulse 3s ease-in-out infinite;
-  background: color-mix(in srgb, var(--success) 10%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--success) 30%, var(--border));
-  border-radius: var(--radius-sm);
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding: var(--space-2) var(--space-4);
-}
-
-@keyframes session-pulse {
-  0%, 100% { border-color: color-mix(in srgb, var(--success) 30%, var(--border)); }
-  50%       { border-color: color-mix(in srgb, var(--success) 60%, var(--border)); }
-}
 
 .session-elapsed {
   align-items: center;
@@ -368,10 +218,6 @@ html[data-theme="dark"] .md-hero-new {
   padding: var(--space-2) var(--space-3);
 }
 
-.day-log-chip.is-selected {
-  font-weight: 700;
-}
-
 /* Skipped status banner */
 .day-log-status--skipped {
   background: color-mix(in srgb, var(--text-faint) 6%, var(--bg-subtle));
@@ -395,9 +241,6 @@ html[data-theme="dark"] .md-hero-new {
 
 /* background/border/radius/shadow/overflow moved to the shared card
    selector group in 00-base-shell.css — only the additive property here. */
-.member-progress-history-card {
-  padding-bottom: var(--space-5);
-}
 
 /* ── 15. Empty state — improved design ───────────────────────────────────── */
 
@@ -413,18 +256,6 @@ html[data-theme="dark"] .md-hero-new {
   text-align: center;
 }
 
-.md-empty-icon {
-  align-items: center;
-  background: var(--bg-subtle);
-  border-radius: 16px;
-  color: var(--text-faint);
-  display: flex;
-  height: 72px;
-  justify-content: center;
-  margin-bottom: 8px;
-  width: 72px;
-}
-
 .md-empty h2 {
   color: var(--text);
   font-size: var(--text-lg);
@@ -437,64 +268,7 @@ html[data-theme="dark"] .md-hero-new {
   max-width: 320px;
 }
 
-.md-empty-link {
-  background: var(--brand);
-  border-radius: 999px;
-  color: var(--bg);
-  font-size: var(--text-base);
-  font-weight: 700;
-  margin-top: 4px;
-  padding: var(--space-2) var(--space-5);
-  text-decoration: none;
-  transition: opacity var(--fast);
-}
-
-.md-empty-link:hover {
-  opacity: 0.85;
-}
-
-.md-empty-link.muted {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  color: var(--text-soft);
-  margin-top: 0;
-}
-
 /* ── 16. Workout mode toggle — better visual ─────────────────────────────── */
-
-.workout-mode-toggle {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-  padding: var(--space-1);
-}
-
-.workout-mode-toggle button {
-  background: transparent;
-  border: none;
-  border-radius: 9px;
-  color: var(--text-soft);
-  cursor: pointer;
-  flex: 1;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  min-height: 34px;
-  padding: var(--space-1) var(--space-2);
-  transition: background var(--fast), color var(--fast);
-}
-
-.workout-mode-toggle button.is-selected {
-  background: var(--bg-elevated);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  color: var(--text);
-}
-
-.workout-mode-toggle button:hover:not(.is-selected) {
-  color: var(--text);
-}
 
 /* ── 17. Injury / AI trainer card — cleaner look ─────────────────────────── */
 
@@ -505,22 +279,8 @@ html[data-theme="dark"] .md-hero-new {
    a proper elevated surface. border/border-radius are duplicates of that
    same group and are removed; only the two properties that actually change
    are kept. */
-.injury-card {
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-soft);
-  padding: var(--space-5);
-}
-
-.injury-card label > textarea {
-  margin-top: 8px;
-  min-height: 80px;
-}
 
 /* ── 18. Owner member row — better hover + density ───────────────────────── */
-
-.member-row:hover {
-  background: color-mix(in srgb, var(--brand) 3%, var(--bg-elevated));
-}
 
 /* ── 19. Panel title — consistent cross-page ─────────────────────────────── */
 /* Was a full redeclaration of .panel-title / .panel-title h2 (a third,
@@ -530,11 +290,6 @@ html[data-theme="dark"] .md-hero-new {
    left to declare here. */
 
 /* ── 20. Status pills — add the missing success variant ──────────────────── */
-
-.status-success {
-  background: var(--success-soft);
-  color: var(--success);
-}
 
 /* ── 21. Custom scrollbar — thin and themed ──────────────────────────────── */
 
@@ -599,12 +354,6 @@ html[data-theme="light"] .cal-cell--skipped {
 
 /* ── 24. Smooth page transitions ─────────────────────────────────────────── */
 
-@keyframes page-in {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.md-page,
 .page,
 .home {
   animation: page-in 400ms cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -616,72 +365,20 @@ html[data-theme="light"] .cal-cell--skipped {
    (section 3). */
 
 /* Login submit button — full width + height */
-.login-submit {
-  font-size: var(--text-md);
-  letter-spacing: 0.01em;
-  min-height: 52px;
-}
 
 /* ── 26. Coach note banner — distinct brand line ──────────────────────────── */
-
-.member-dashboard-section [aria-label="Note from your trainer"] {
-  position: relative;
-}
-
-.member-dashboard-section [aria-label="Note from your trainer"]::before {
-  background: var(--brand);
-  border-radius: 999px 0 0 999px;
-  content: "";
-  height: calc(100% - 28px);
-  left: 0;
-  position: absolute;
-  top: 14px;
-  width: 3px;
-}
 
 /* ── 27. Gym notice board — improved card style ───────────────────────────── */
 
 /* ── 28. Lift log success indicator ──────────────────────────────────────── */
-
-.log-success-flash {
-  animation: success-flash 3s ease forwards;
-}
-
-@keyframes success-flash {
-  0%   { background: color-mix(in srgb, var(--success) 15%, var(--bg-elevated)); }
-  70%  { background: color-mix(in srgb, var(--success) 10%, var(--bg-elevated)); }
-  100% { background: var(--bg-elevated); }
-}
 
 /* ── 29. Member training layout — sidebar sticky ─────────────────────────── */
 
 /* Was min-width: 900px, remapped to canonical 1024px (.member-workout-side) —
    1024 is documented as "laptop / sidebar appears", which is exactly what
    this rule does, so this is the most confident remap in this file. */
-@media (min-width: 1024px) {
-  .member-workout-side {
-    position: sticky;
-    top: calc(72px + 16px);
-    max-height: calc(100dvh - 120px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-  }
-}
 
 /* ── 30. AI modification panel — better styling ──────────────────────────── */
-
-.ai-modification-panel {
-  background: color-mix(in srgb, var(--brand-soft) 60%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--brand) 18%, var(--border));
-  border-radius: var(--radius);
-  display: grid;
-  gap: 10px;
-  padding: var(--space-4);
-}
-
-.ai-modification-panel .eyebrow {
-  margin-bottom: 0;
-}
 
 /* ── 31. Form inputs — global consistent look ─────────────────────────────── */
 /* This used to redeclare inputs by [type=...] attribute selector, which has
@@ -694,13 +391,6 @@ html[data-theme="light"] .cal-cell--skipped {
    textarea` rule is now the single definition for every input type. */
 
 /* Don't override the specialty login form inputs */
-.login-form input {
-  background: unset;
-  border: unset;
-  border-radius: var(--radius);
-  min-height: 44px;
-  padding: var(--space-3) var(--space-4);
-}
 
 /* ── 32. Member workout console — exercise eyebrow text spacing ───────────── */
 
@@ -737,10 +427,6 @@ html[data-theme="light"] .cal-cell--skipped {
 }
 
 /* ── 34. Owner pages — stat cards grid improvement ───────────────────────── */
-
-.stats-grid .stat-card {
-  transition: transform var(--spring), border-color var(--medium), box-shadow var(--medium);
-}
 
 /* ── 35. Mobile — better touch targets for all buttons ───────────────────── */
 
@@ -800,19 +486,9 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
 
 /* ── 39. Landing page — hero buttons spacing ─────────────────────────────── */
 
-.landing-actions {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 14px;
-}
-
 /* ── 41. Member tab list — light mode & sticky fix ───────────────────────── */
 
 /* Fix barely-visible border in light and dark themes */
-.md-tab-list {
-  border-color: var(--border) !important;
-}
 
 /* On desktop the tab list shouldn't sit behind/over the topbar.
    Was min-width: 641px, remapped to canonical 768px (.md-tab-list top).
@@ -822,27 +498,10 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
    rule applied simultaneously. Moving this to min-width: 768px closes that
    overlap down to the single 768px boundary pixel, which is standard and
    harmless. This is a genuine fix, not just a nearest-value rounding. */
-@media (min-width: 768px) {
-  .md-tab-list {
-    top: calc(72px + 16px) !important;
-  }
-}
 
 /* Light mode: fully opaque background so text stays readable */
-html[data-theme="light"] .md-tab-list {
-  background: color-mix(in srgb, var(--bg-elevated) 92%, transparent) !important;
-  box-shadow: 0 4px 20px color-mix(in srgb, var(--text) 8%, transparent) !important;
-}
 
 /* ── 42. Progress history card — inner panel title flush ─────────────────── */
-
-.member-progress-history-card > .panel-title {
-  margin: 0;
-}
-
-.member-progress-history-card > [id="history"] {
-  scroll-margin-top: calc(72px + 80px);
-}
 
 /* ── 43. Breadcrumb — visible separator ──────────────────────────────────── */
 
@@ -876,10 +535,6 @@ html[data-theme="light"] .md-tab-list {
    selector group in 00-base-shell.css; nothing additional needed here. */
 
 /* Notifications side panel */
-.odp-side .notification-list {
-  max-height: 520px;
-  overflow-y: auto;
-}
 
 /* ── 45. Activity feed — entry spacing ───────────────────────────────────── */
 
@@ -926,341 +581,31 @@ html[data-theme="light"] .md-tab-list {
 
 /* ── 49. Member hero — badges light mode fix ────────────────────────────── */
 
-html[data-theme="light"] .md-badge-new {
-  background: color-mix(in srgb, var(--bg-subtle) 90%, transparent);
-  border-color: var(--border);
-  color: var(--text-soft);
-}
-
-html[data-theme="light"] .md-badge-accent-new {
-  background: var(--brand-soft);
-  border-color: color-mix(in srgb, var(--brand) 30%, transparent);
-  color: var(--brand-strong);
-}
-
 /* ── 50. Member hero blurred bg circle — light mode mute ────────────────── */
-
-html[data-theme="light"] .md-hero-new::before {
-  opacity: 0.07 !important;
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    51. Notification count badge (bell button)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.notification-count-badge {
-  align-items: center;
-  background: var(--danger);
-  border: 2px solid var(--bg-elevated);
-  border-radius: 99px;
-  color: #fff;
-  display: flex;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  height: 18px;
-  justify-content: center;
-  line-height: 1;
-  min-width: 18px;
-  padding: 0 var(--space-1);
-  pointer-events: none;
-  position: absolute;
-  right: 1px;
-  top: 1px;
-}
-
-.notification-trigger {
-  position: relative;
-}
-
 /* ═══════════════════════════════════════════════════════════════════════════
    52. Rich notification list (NotificationList component)
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.notif-list {
-  display: flex;
-  flex-direction: column;
-}
-
-.notif-row {
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: stretch;
-  position: relative;
-}
-.notif-row:last-child { border-bottom: none; }
-
-.notif-row-link {
-  display: block;
-  flex: 1;
-  min-width: 0;
-  text-decoration: none;
-  color: inherit;
-  transition: background 150ms;
-}
-.notif-row-link:hover,
-.notif-row-link:focus-visible {
-  background: var(--bg-subtle);
-}
-.notif-row-static { cursor: default; }
-.notif-row-static:hover { background: transparent; }
-
-.notif-row-inner {
-  align-items: flex-start;
-  display: flex;
-  gap: 12px;
-  padding: var(--space-3) var(--space-4);
-  position: relative;
-}
-
-.notif-unread::before {
-  background: var(--brand);
-  border-radius: 0 2px 2px 0;
-  bottom: 0;
-  content: "";
-  left: 0;
-  position: absolute;
-  top: 0;
-  width: 3px;
-}
-
-.notif-icon-wrap {
-  align-items: center;
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-soft);
-  display: flex;
-  flex-shrink: 0;
-  height: 34px;
-  justify-content: center;
-  width: 34px;
-}
-
 /* Per-type icon accent */
-.notif-icon-pt { color: var(--brand); background: color-mix(in srgb, var(--brand) 10%, transparent); }
-.notif-icon-program_assigned { color: #8b5cf6; background: color-mix(in srgb, #8b5cf6 10%, transparent); }
-.notif-icon-member_created { color: #10b981; background: color-mix(in srgb, #10b981 10%, transparent); }
-.notif-icon-contact_message { color: #f59e0b; background: color-mix(in srgb, #f59e0b 10%, transparent); }
-.notif-icon-exercise_request { color: #3b82f6; background: color-mix(in srgb, #3b82f6 10%, transparent); }
-.notif-icon-membership { color: #ef4444; background: color-mix(in srgb, #ef4444 10%, transparent); }
-
-.notif-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.notif-title-row {
-  align-items: baseline;
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-  margin-bottom: 3px;
-}
-
-.notif-title {
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: 600;
-  line-height: 1.3;
-}
-
-.notif-time {
-  color: var(--text-faint);
-  flex-shrink: 0;
-  font-size: var(--text-xs);
-}
-
-.notif-body {
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  margin: 0;
-  overflow-wrap: anywhere;
-}
-
-.notif-chevron {
-  align-self: center;
-  color: var(--text-faint);
-  font-size: var(--text-lg);
-  flex-shrink: 0;
-  margin-left: 4px;
-}
-
-.notif-dismiss {
-  align-items: center;
-  background: transparent;
-  border: none;
-  color: var(--text-faint);
-  cursor: pointer;
-  display: flex;
-  flex-shrink: 0;
-  font-size: var(--text-lg);
-  justify-content: center;
-  line-height: 1;
-  opacity: 0;
-  padding: 0 var(--space-3);
-  transition: opacity 150ms, color 150ms;
-  width: 36px;
-}
-.notif-row:hover .notif-dismiss,
-.notif-dismiss:focus-visible {
-  opacity: 1;
-}
-.notif-dismiss:hover { color: var(--danger); }
 
 /* Empty state */
-.notif-empty {
-  align-items: center;
-  color: var(--text-soft);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: var(--space-10) var(--space-5);
-  text-align: center;
-}
-.notif-empty svg { color: var(--text-faint); opacity: 0.5; }
-.notif-empty p  { color: var(--text); font-size: var(--text-base); font-weight: 600; margin: 0; }
-.notif-empty span { color: var(--text-faint); font-size: var(--text-sm); }
 
 /* ═══════════════════════════════════════════════════════════════════════════
    53. Notification dropdown improvements
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.notification-dropdown-header {
-  align-items: center;
-  justify-content: space-between;
-}
-
-.notif-clear-all {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  color: var(--text-soft);
-  cursor: pointer;
-  font-size: var(--text-xs);
-  font-weight: 500;
-  padding: var(--space-1) var(--space-2);
-  transition: background 150ms, color 150ms;
-  white-space: nowrap;
-}
-.notif-clear-all:hover { background: var(--bg-subtle); color: var(--text); }
-.notif-clear-all:disabled { opacity: 0.5; cursor: default; }
-
-.notification-dropdown-list { gap: 0; }
-
-.notif-dd-link,
-.notif-dd-static {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-  border-radius: 6px;
-}
-.notif-dd-link:hover { background: var(--bg-subtle); }
-
-.notif-dd-inner {
-  align-items: flex-start;
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-  padding: var(--space-2) 0;
-}
-
-.notif-dd-text { flex: 1; min-width: 0; }
-.notif-dd-title { display: block; font-size: var(--text-sm); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
-.notif-dd-body  { color: var(--text-soft); font-size: var(--text-xs); line-height: 1.4; margin: 2px 0 0; overflow-wrap: anywhere; }
-
-.notif-dd-meta {
-  align-items: center;
-  color: var(--text-faint);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-  font-size: var(--text-2xs);
-  gap: 2px;
-  text-align: right;
-}
-.notif-dd-chevron { color: var(--text-soft); font-size: var(--text-md); }
-
-.notif-view-all {
-  background: transparent;
-  border-top: 1px solid var(--border);
-  color: var(--brand);
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 500;
-  margin-top: 8px;
-  padding: var(--space-2) var(--space-4) var(--space-0);
-  text-align: center;
-  text-decoration: none;
-  transition: opacity 150ms;
-}
-.notif-view-all:hover { opacity: 0.75; }
-
-.notification-empty { padding: var(--space-5) var(--space-4); }
-.notification-empty p { font-size: var(--text-sm); margin: 0; }
-
 /* ═══════════════════════════════════════════════════════════════════════════
    54. Owner notifications full-page
    ═══════════════════════════════════════════════════════════════════════════ */
 
-.notif-page-header {
-  margin-bottom: 24px;
-}
-
-.notif-page-title-row {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-  margin-top: 8px;
-}
-
-.notif-page-title-row h1 {
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin: 0;
-}
-
-.notif-filter-tabs {
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 0;
-  margin-bottom: 20px;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-.notif-filter-tabs::-webkit-scrollbar { display: none; }
-
-.notif-filter-tab {
-  align-items: center;
-  border-bottom: 2px solid transparent;
-  color: var(--text-soft);
-  display: flex;
-  font-size: var(--text-base);
-  font-weight: 500;
-  gap: 6px;
-  margin-bottom: -1px;
-  padding: var(--space-2) var(--space-4);
-  text-decoration: none;
-  transition: color 150ms, border-color 150ms;
-  white-space: nowrap;
-}
-.notif-filter-tab:hover { color: var(--text); }
-.notif-filter-tab-active {
-  border-bottom-color: var(--brand);
-  color: var(--brand);
-  font-weight: 600;
-}
-
-.notif-filter-count {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: 99px;
-  font-size: var(--text-2xs);
-  font-weight: 600;
-  padding: var(--space-0) var(--space-1);
-}
-.notif-filter-tab-active .notif-filter-count {
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 25%, transparent);
-  color: var(--brand);
-}
+/* Exercise library browser */
+.catalog-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
+.catalog-filters input[type="search"] { flex: 2 1 220px; width: auto; }
+.catalog-filters select { flex: 1 1 150px; width: auto; }
+.catalog-filters__count { color: var(--text-soft); font-size: 0.85rem; margin-top: 12px; }
+.catalog-pager { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }

@@ -330,7 +330,7 @@ function buildProgram(level: Level, slug: string, entry: RawSplitEntry): Workout
       frequency: `${daysPerWeek} training day${daysPerWeek === 1 ? "" : "s"} per week`,
       idealFor: bestFor,
       recoveryDemand: demandFor(level),
-      trainerNotes:
+      notes:
         "Exercise selection rotates across four weeks while preserving the same split pattern, so members get variety without losing progression."
     },
     tags: splitTags[slug] ?? [level, `${daysPerWeek} day`],

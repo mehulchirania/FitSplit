@@ -27,7 +27,7 @@ export default function SignupPage() {
         <div style={styles.footerLinks}>
           <Link href="/terms" style={styles.footerLink}>Terms</Link>
           <Link href="/privacy" style={styles.footerLink}>Privacy</Link>
-          <Link href="/disclaimer" style={styles.footerLink}>Health Disclaimer</Link>
+          <Link href="/health-disclaimer" style={styles.footerLink}>Health Disclaimer</Link>
         </div>
         <p style={styles.copyright}>© {new Date().getFullYear()} FitSplit Technologies. All rights reserved.</p>
       </footer>

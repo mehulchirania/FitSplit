@@ -2,28 +2,11 @@
 
 import { useMemo, useState } from "react";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
-import type { Member, ProfileMetrics } from "@/types/domain";
+import type { ProfileMetrics } from "@/types/domain";
 import { ConfirmActionForm } from "./confirm-action-form";
 import { FieldError } from "./form-action-context";
 
-const slots = [
-  { id: "A", label: "Slot A", time: "6 AM - 10 AM" },
-  { id: "B", label: "Slot B", time: "10 AM - 12 PM" },
-  { id: "C", label: "Slot C", time: "4 PM - 6 PM" },
-  { id: "D", label: "Slot D", time: "6 PM - 9 PM" }
-] as const;
-
-export function ProfileForm({
-  memberId,
-  profile,
-  trainers = [],
-  isReadOnlyTrainer = false
-}: {
-  memberId: string;
-  profile: ProfileMetrics;
-  trainers?: Pick<Member, "id" | "fullName" | "staffType">[];
-  isReadOnlyTrainer?: boolean;
-}) {
+export function ProfileForm({ profile }: { profile: ProfileMetrics }) {
   const [height, setHeight] = useState(String(profile.heightCm ?? ""));
   const [weight, setWeight] = useState(String(profile.weightKg ?? ""));
 
@@ -70,7 +53,6 @@ export function ProfileForm({
         submitLabel="Save profile"
       >
         <h2>Basic details</h2>
-        <input name="memberId" type="hidden" value={memberId} />
         <div className="form-grid">
           <label>
             Full name
@@ -79,13 +61,7 @@ export function ProfileForm({
           </label>
           <label>
             Email
-            <input defaultValue={profile.email} name="email" type="email" required />
-            <FieldError name="email" />
-          </label>
-          <label>
-            Phone
-            <input defaultValue={profile.phone} inputMode="tel" name="phone" pattern="(\+91[\s-]?)?[6-9][0-9]{9}" />
-            <FieldError name="phone" />
+            <input defaultValue={profile.email} disabled name="email" type="email" />
           </label>
           <label>
             Gender
@@ -128,22 +104,6 @@ export function ProfileForm({
             />
             <FieldError name="weightKg" />
           </label>
-          <label>
-            Primary slot
-            <select defaultValue={profile.primarySlot ?? "A"} name="primarySlot">
-              {slots.map((slot) => (
-                <option key={slot.id} value={slot.id}>{slot.label}: {slot.time}</option>
-              ))}
-            </select>
-          </label>
-          <label>
-            Secondary slot
-            <select defaultValue={profile.secondarySlot ?? "D"} name="secondarySlot">
-              {slots.map((slot) => (
-                <option key={slot.id} value={slot.id}>{slot.label}: {slot.time}</option>
-              ))}
-            </select>
-          </label>
         </div>
         <label>
           Fitness goals
@@ -152,36 +112,13 @@ export function ProfileForm({
         </label>
         <label>
           Medical notes
-          <textarea defaultValue={profile.medicalNotes} name="medicalNotes" placeholder="Medical conditions your trainer should know about" rows={3} />
+          <textarea defaultValue={profile.medicalNotes} name="medicalNotes" placeholder="Anything worth keeping in mind when you train" rows={3} />
           <FieldError name="medicalNotes" />
         </label>
         <label>
           Injury and pain management
           <textarea defaultValue={profile.injuryNotes} name="injuryNotes" placeholder="Injuries, pain areas, mobility issues, restrictions" rows={4} />
           <FieldError name="injuryNotes" />
-        </label>
-        <label>
-          Assigned trainer
-          {isReadOnlyTrainer ? (
-            <input
-              defaultValue={profile.assignedTrainer || "Not yet assigned"}
-              name="assignedTrainer"
-              readOnly
-              style={{ cursor: "default", opacity: 0.65, pointerEvents: "none" }}
-              tabIndex={-1}
-            />
-          ) : trainers.length > 0 ? (
-            <select defaultValue={profile.assignedTrainer ?? ""} name="assignedTrainer">
-              <option value="">No trainer assigned</option>
-              {trainers.map((t) => (
-                <option key={t.id} value={t.fullName}>
-                  {t.fullName}{t.staffType === "trainer" ? " (Trainer)" : " (Owner)"}
-                </option>
-              ))}
-            </select>
-          ) : (
-            <input defaultValue={profile.assignedTrainer} name="assignedTrainer" placeholder="Trainer name" />
-          )}
         </label>
       </ConfirmActionForm>
 

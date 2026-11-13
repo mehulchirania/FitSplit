@@ -3,19 +3,11 @@ import "./landing.css";
 import { LandingPageClient } from "@/components/landing/landing-page-client";
 import { MobileEntryGate } from "@/components/onboarding/mobile-entry-gate";
 import { getCurrentUser } from "@/lib/auth";
-import type { Role } from "@/types/domain";
-
-const roleHome: Record<Role, string> = {
-  admin: "/admin",
-  owner: "/owner",
-  trainer: "/trainer",
-  member: "/member"
-};
 
 export default async function Home() {
   const currentUser = await getCurrentUser();
   if (currentUser) {
-    redirect(roleHome[currentUser.role]);
+    redirect("/member");
   }
 
   // MobileEntryGate renders LandingPageClient unchanged on first paint (server

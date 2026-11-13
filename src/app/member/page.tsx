@@ -1,18 +1,15 @@
 import { MemberCoachShell } from "@/components/member-coach-shell";
-import { requireRole } from "@/lib/auth";
-import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
+import { requireAuth } from "@/lib/auth";
 import { getWeekStart, getTrainedDateKeys, nowInIST } from "@/lib/workout-utils";
 import {
-  getActiveWorkoutSessions,
   getDayLogsForMember,
   getExerciseCatalog,
-  getGymDetail,
   getLiftLogsForMember,
   getMacroLogsForMember,
   getMealLogsForMember,
   getActivityLogsForMember,
   getMacroLogForMember,
-  getMemberWithProfile,
+  getUserProfile,
   getProgramAssignmentForMember,
   getWorkoutPrograms
 } from "@/lib/firebase/read-models";
@@ -20,40 +17,33 @@ import {
 export const dynamic = "force-dynamic";
 
 export default async function MemberDashboard() {
-  const currentUser = await requireRole(["member"]);
-  const currentMemberId = currentUser.memberId ?? currentUser.uid;
-  const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
+  const currentUser = await requireAuth();
+  const uid = currentUser.uid;
   const todayDate = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Kolkata" }).format(new Date());
 
   const [
-    { member, profile },
+    { user: member, profile },
     { assignment },
     { programs },
     { liftLogs },
-    { exercises, catalog: exerciseCatalog },
-    { sessions },
-    { gym },
+    { exercises },
     { dayLogs },
     { macroLog: initialMacroLog },
     { macroLogs },
     { activityLogs },
     { mealLogs }
   ] = await Promise.all([
-    getMemberWithProfile(currentMemberId),
-    getProgramAssignmentForMember(currentMemberId, gymId),
-    getWorkoutPrograms(gymId),
-    getLiftLogsForMember(currentMemberId, gymId),
-    getExerciseCatalog(gymId),
-    getActiveWorkoutSessions(gymId),
-    getGymDetail(gymId),
-    getDayLogsForMember(currentMemberId, gymId),
-    getMacroLogForMember(currentMemberId, gymId, todayDate),
-    getMacroLogsForMember(currentMemberId, gymId, 14),
-    getActivityLogsForMember(currentMemberId, gymId, 30),
-    getMealLogsForMember(currentMemberId, gymId, todayDate)
+    getUserProfile(uid, currentUser.fullName),
+    getProgramAssignmentForMember(uid),
+    getWorkoutPrograms(),
+    getLiftLogsForMember(uid),
+    getExerciseCatalog(),
+    getDayLogsForMember(uid),
+    getMacroLogForMember(uid, todayDate),
+    getMacroLogsForMember(uid, 14),
+    getActivityLogsForMember(uid, 30),
+    getMealLogsForMember(uid, todayDate)
   ]);
-
-  if (!member) return null;
 
   const program = assignment ? programs.find((p) => p.id === assignment.programId) ?? null : null;
   const firstName = member.fullName.split(" ")[0];
@@ -117,23 +107,9 @@ export default async function MemberDashboard() {
   return (
     <MemberCoachShell
       firstName={firstName}
-      gymName={gym?.name ?? "Your Gym"}
-      gymLogoUrl={gym?.logoUrl}
-      gymPhone={gym?.phone}
-      gymEmail={gym?.email}
-      gymLocationUrl={gym?.locationUrl}
-      gymNotices={gym?.notices}
       weeklyStreak={weeklyStreak}
       daysTrainedThisWeek={daysTrainedThisWeek}
-      membershipStatus={member.membershipStatus}
-      membershipEndDate={member.membershipEndDate}
-      coachNote={profile.coachNote}
-      coachNoteFrom={profile.coachNoteUpdatedByName}
-      coachNoteUpdatedAt={profile.coachNoteUpdatedAt}
       program={program}
-      assignment={assignment}
-      allPrograms={programs}
-      exerciseCatalog={exerciseCatalog}
       currentWeek={currentWeek}
       exercises={exercises}
       liftLogs={liftLogs}
@@ -146,12 +122,10 @@ export default async function MemberDashboard() {
       macroTarget={profile.macroNutritionTarget}
       injuryNote={profile.injuryNotes}
       memberId={member.id}
-      gymId={gymId}
       todayDate={todayDate}
       member={member}
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       profile={profile as any}
-      initialActiveSessionCount={sessions.length}
     />
   );
 }

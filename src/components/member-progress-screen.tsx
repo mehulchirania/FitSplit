@@ -6,7 +6,7 @@ import type {
   Exercise,
   LiftLog,
   MacroLog,
-  MemberProfile,
+  UserProfile,
   WorkoutProgram,
 } from "@/types/domain";
 import { MemberProgressPanel } from "@/components/member-progress-panel";
@@ -18,7 +18,7 @@ interface ProgressScreenProps {
   dayLogs: DayLog[];
   activityLogs: ActivityLog[];
   macroLogs: MacroLog[];
-  macroTarget?: MemberProfile["macroNutritionTarget"];
+  macroTarget?: UserProfile["macroNutritionTarget"];
   memberId: string;
   program: WorkoutProgram | null;
 }

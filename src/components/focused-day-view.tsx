@@ -306,7 +306,7 @@ export function FocusedDayView({
                   name="note"
                   defaultValue={currentDayLog?.note ?? ""}
                   maxLength={400}
-                  placeholder="Optional context for your coach"
+                  placeholder="Optional notes for yourself"
                   rows={2}
                 />
               </label>

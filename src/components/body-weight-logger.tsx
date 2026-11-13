@@ -7,7 +7,7 @@ import { initialFormActionState } from "@/types/action-state";
 import type { BodyMetricLog } from "@/types/domain";
 
 /**
- * BodyWeightLogger — surfaced on /profile (member) and /owner/members/[id] (owner).
+ * BodyWeightLogger — surfaced on /profile.
  *
  * Three sections:
  *  1. Latest weight headline + 7/30/90 day delta vs the entry from that long ago.
@@ -18,13 +18,7 @@ import type { BodyMetricLog } from "@/types/domain";
  * Server action is logBodyWeight; the form does optimistic prepend so the chart
  * updates without a full re-render.
  */
-export function BodyWeightLogger({
-  memberId,
-  initialLogs
-}: {
-  memberId: string;
-  initialLogs: BodyMetricLog[];
-}) {
+export function BodyWeightLogger({ initialLogs }: { initialLogs: BodyMetricLog[] }) {
   const [logs, setLogs] = useState<BodyMetricLog[]>(initialLogs);
   const [weight, setWeight] = useState("");
   const [bodyFat, setBodyFat] = useState("");
@@ -66,12 +60,11 @@ export function BodyWeightLogger({
     if (!event.currentTarget.reportValidity()) return;
 
     const formData = new FormData(event.currentTarget);
-    formData.set("memberId", memberId);
 
     // Optimistic prepend so the sparkline updates instantly.
     const optimistic: BodyMetricLog = {
       id: `optimistic-${Date.now()}`,
-      memberId,
+      memberId: "",
       weightKg: Number(weight),
       bodyFatPct: bodyFat ? Number(bodyFat) : undefined,
       notes: notes || undefined,

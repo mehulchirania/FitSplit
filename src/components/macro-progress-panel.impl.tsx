@@ -33,14 +33,12 @@ type ActualMacros = {
  */
 export function MacroProgressPanel({
   memberId,
-  gymId,
   date,
   target,
   initialActual,
   macroHistory = []
 }: {
   memberId: string;
-  gymId?: string;
   date?: string;
   target?: MacroNutritionTarget;
   initialActual?: ActualMacros;
@@ -70,7 +68,7 @@ export function MacroProgressPanel({
   // Debounced Firestore sync — water only. saveWaterLog is field-masked so
   // this can never touch protein/carbs/fat even if called with stale state.
   const syncWaterToFirestore = useCallback((nextWater: number) => {
-    if (!gymId || !date) return;
+    if (!date) return;
     if (syncTimerRef.current) clearTimeout(syncTimerRef.current);
     syncTimerRef.current = setTimeout(() => {
       const fd = new FormData();
@@ -81,7 +79,7 @@ export function MacroProgressPanel({
         await saveWaterLog(initialFormActionState, fd);
       });
     }, 800);
-  }, [memberId, gymId, date]);
+  }, [memberId, date]);
 
   const updateWater = (amount: number) => {
     setWater((prev) => {
@@ -98,7 +96,7 @@ export function MacroProgressPanel({
     carbs: 240,
     fat: 70,
     waterLiters: 3.0,
-    notes: "Trainer has not prescribed specific targets yet. Using general standard nutritional targets."
+    notes: "No custom targets set yet. Using general standard nutritional targets."
   };
 
   const caloriesGoal = target?.calories || defaultTarget.calories;
@@ -162,7 +160,7 @@ export function MacroProgressPanel({
             Daily Macro Tracker
           </h2>
           <p style={{ margin: "2px 0 0", fontSize: "0.76rem", color: "var(--text-soft)" }}>
-            {target ? "Trainer-prescribed targets" : "General guidelines"}
+            {target ? "Your targets" : "General guidelines"}
           </p>
         </div>
       </div>
@@ -290,10 +288,10 @@ export function MacroProgressPanel({
         </div>
       )}
 
-      {/* Trainer notes */}
+      {/* Target notes */}
       {targetNotes && (
         <div style={{ background: "color-mix(in srgb, var(--brand) 6%, var(--bg-subtle))", borderLeft: "3px solid var(--brand)", borderRadius: "0 8px 8px 0", padding: "10px 14px", fontSize: "0.76rem", color: "var(--text-soft)", lineHeight: 1.5 }}>
-          <strong style={{ color: "var(--brand)" }}>Trainer note:</strong> {targetNotes}
+          <strong style={{ color: "var(--brand)" }}>Note:</strong> {targetNotes}
         </div>
       )}
     </div>

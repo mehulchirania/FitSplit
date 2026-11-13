@@ -1,401 +1,56 @@
 # FitSplit
 
-FitSplit is a Firebase-backed gym operations and personal training platform. It serves multi-gym workspaces with robust tenant isolation, offline-resilient workout logging, personal training management, and deep operational insights — deployed as a PWA on Firebase App Hosting, with a React Native/Expo mobile client for the member experience.
+FitSplit is a free workout app. Sign up, pick a proven plan, and log every set. There are no gyms, no trainers, no admin roles and no billing: one kind of account, everything free.
 
-**Status: NOT LIVE.** This is a pre-launch build with no real customers. Everything in Firebase today — all 4 gyms, all 80 member profiles, all staff accounts — is test/demo data seeded for development. `fitsplit.in` is deployed but not launched; "deployed" here never means "in front of real users."
+## What it does
 
-### 🚦 Go-Live Checklist (as of 2026-08-04)
+- **Accounts**: email + password signup, login, logout, password reset, profile (name, body metrics, photo), data export and account deletion.
+- **Workouts**: a built-in library of workout splits, a searchable exercise library, per-set logging that works offline, exercise swaps, day completion/skips.
+- **Progress**: lift charts, estimated 1RM, consistency calendar, body-weight log, macro and meal tracking.
 
-Web app and Firestore rules are production-ready (`npm run typecheck` clean, no `allow read, write: if true` wildcards, `/privacy` and `/terms` routes exist). Remaining blockers before store submission / public launch:
+## Stack
 
-- [ ] **`mobile/eas.json` `submit.production.ios` is empty** — no `appleId`, `ascAppId`, or `appleTeamId` set. `eas submit --platform ios` will fail until these are added.
-- [ ] **`mobile/eas.json` has no `env` block on any build profile** — confirm `EXPO_PUBLIC_FIREBASE_*` client config is set as EAS secrets (`eas secret:create` / EAS dashboard) for `production` builds, since `mobile/lib/firebase.ts` reads them from env and nothing in-repo sets them for EAS builds.
-- [ ] **`mobile/eas.json` Android submit has no `serviceAccountKeyPath`** — needed for unattended Play Store submission via `eas submit --platform android`; otherwise it'll prompt interactively.
-- [ ] Cosmetic: `.env.example` has a real-looking Firebase client key/project id (`fitsplit-29215`) rather than a placeholder — low risk (Firebase client keys are public by design) but worth swapping for hygiene.
-- [ ] No self-documented "known issues" list exists — this checklist is the first one; keep it updated as blockers are cleared.
+Next.js 16 (App Router, React 19, TypeScript) with Server Actions, Firebase (Auth + Firestore + Storage via the Admin SDK), Dexie for offline logging, Recharts, Radix UI, Zod, Vitest, Playwright. Shared, framework-free code lives in `packages/core` (`@fitsplit/core`).
 
----
+`mobile/` is an Expo app from the earlier gym product. It is not part of the root build or typecheck and has not been migrated to this simplified model.
 
-## ⚡ Tech Stack & Architecture
+## Where things live
 
-| Layer | Technology |
+| Thing | Location |
 |---|---|
-| Framework | Next.js 16 (App Router, React 19 + React Compiler, TypeScript 6) |
-| Dev bundler | Turbopack (`next dev --turbopack`) |
-| Database | Cloud Firestore (gym-scoped multi-tenant) |
-| Auth | Firebase Authentication — email/password + session cookies |
-| Functions | Firebase Cloud Functions v2 (Node.js 22, `asia-south1`) |
-| Storage | Firebase Storage (logos, exercise media) |
-| Push | Firebase Cloud Messaging (FCM) |
-| Client State | React state + Context (live workout session) |
-| Offline | Dexie.js (IndexedDB — offline lift logging) |
-| Charts | Recharts (lazy-loaded via `next/dynamic`, `ssr:false`) |
-| Calendar | Custom PT calendar component (`pt-calendar.tsx`) |
-| UI Primitives | Radix UI (Dialog, Dropdown, Select) |
-| Animations | Framer Motion |
-| Toasts | Sonner |
-| Validation | Zod |
-| Testing | Vitest |
-| Deployment | Firebase App Hosting (0–10 instances, 512 MB, 80 concurrency) |
-| Mobile | Expo SDK 57, React Native 0.86, React 19 — `mobile/` (`@fitsplit/mobile`), npm workspace alongside the web app |
-| Mobile offline | AsyncStorage-backed write queue for lift logging (`mobile/lib/offline-queue.ts`) |
-| Mobile push | Expo push service (`expo-notifications`), separate channel from the web's FCM |
-| Shared code | `packages/core` (`@fitsplit/core`) — domain types, `workout-utils`, `split-library`, validation helpers, used by both web and mobile |
+| Routes | `src/app` (`/` landing, `/signup`, `/member/*` workout app, `/profile`, legal pages) |
+| Built-in exercise library + workout templates | `src/lib/exercise-library.ts` (data in `src/lib/workouts.json` and `packages/core/src/split-library*.{ts,json}`) |
+| Auth (signup, login, session, password) | `src/lib/auth.ts`, route protection in `src/proxy.ts` |
+| Data reads / writes | `src/lib/firebase/read-models/*`, `src/lib/firebase/actions/*` |
+| Firestore layout | `users/{uid}` and `users/{uid}/{liftLogs,dayLogs,bodyMetricLogs,macroLogs,mealLogs,activityLogs,programAssignments,exerciseSwaps}` (see `src/lib/firebase/collections.ts`) |
+| Security rules | `firestore.rules`, `storage.rules` (clients never write directly; all writes go through server actions) |
 
-**Architecture pattern:** Next.js Server Components + Server Actions for app data access, plus one lightweight App Router health endpoint at `/api/health`. Privileged writes (member creation, program assignment, access control) go through Server Actions and Cloud Functions using the Admin SDK. `src/proxy.ts` enforces role-based routing via session cookies before any page renders. The mobile app talks to the same Firestore project directly via the client SDK for reads (enforced by `firestore.rules`) and through dedicated Cloud Function callables (`functions/src/index.ts`) for writes that need more than a rules-compliant write.
+## Running locally
 
-**Firestore cost posture:** Gym-scoped collections are the canonical tenant data path. The 2026-06-28 cost pass removed the highest-volume progress/offline root writes and replaced admin gym/member-count scans with denormalized gym counters. Remaining cost work is tracked in `docs/12_ARCHITECTURE_AUDIT_2026.md`.
-
-**B2C + B2B Evolution (Planned):** FitSplit is evolving from a pure gym-scoped multi-tenant architecture into a hybrid B2C/B2B platform. Standalone consumers will have their own "personal gym" workspaces (`gyms/personal-{uid}`), allowing them to track progress independently or seamlessly join a real gym later.
-
-**Repo layout:** npm workspaces, root `src/` is the Next.js app. `packages/core` (`@fitsplit/core`) holds framework-agnostic code shared with a future mobile app — domain types, `workout-utils`, `split-library`, and Zod validation helpers. The original `src/types/domain.ts`, `src/lib/workout-utils.ts`, `src/lib/split-library.ts`, and `src/lib/firebase/actions/validation.ts` are now thin re-export shims at their old paths, so nothing importing them changed. See [`docs/20_EXPO_MIGRATION_PLAN.md`](docs/20_EXPO_MIGRATION_PLAN.md).
-
----
-
-## 📚 Core Documentation
-
-The **`docs/`** directory is the single source of truth for FitSplit specifications:
-
-* 🏛️ **[`docs/01_ARCHITECTURE.md`](docs/01_ARCHITECTURE.md)**: System Architecture, Tech Stack, & Authorization Matrix
-* 🗄️ **[`docs/02_DATA_MODEL_AND_ERD.md`](docs/02_DATA_MODEL_AND_ERD.md)**: Multi-Tenant Firestore Schema, Collections & ERD
-* 🏋️ **[`docs/03_BUSINESS_RULES_AND_PRODUCT.md`](docs/03_BUSINESS_RULES_AND_PRODUCT.md)**: Product Philosophy, Workout Companion, & B2B/B2C Systems
-* 🧪 **[`docs/04_TESTING_AND_LOGINS.md`](docs/04_TESTING_AND_LOGINS.md)**: Test Logins Table (Owners, Trainers, Members) & Runbook
-* 📑 **[`docs/_INDEX.md`](docs/_INDEX.md)**: Complete Specifications Index
-This README and [`docs/_INDEX.md`](docs/_INDEX.md) remain the canonical documentation references for FitSplit technical specifications.
-
----
-
-## ✨ Features
-
-### 🏋️ Workout & Program Management
-- **Program Library**: FitSplit global library + gym-custom programs. Split types: PPL ×2, PPL + Upper/Lower, Bro Split, Combo ×2, Custom.
-- **Program Assignment**: Assign programs to individual members or bulk-assign across the roster.
-- **Live Workout Console**: Members log sets and reps in real time with day navigation, skip/modify tracking, and week-over-week history.
-- **Exercise Catalog**: Global FitSplit catalog + gym-custom exercises with YouTube video embeds, muscle group tagging, equipment metadata, and per-exercise muscle-target descriptions (all 66 default catalog entries).
-- **Exercise Requests**: Owners request new gym exercises from the custom plan builder; admins review and approve/reject them.
-- **Workout Progress Signals**: Local lift-history UI surfaces strength trends, recent PRs, progressive-overload charts, and workout history. No external API needed.
-- **Injury Notes**: Members record pain points or limitations (e.g. "left shoulder pain"). Owners/admins can view these notes and adjust the plan; the workout UI also supports same-muscle exercise swaps.
-
-### 🤝 Personal Training
-- **PT Plan Booking**: Owners and trainers book PT plans with configurable duration (default 30 days).
-- **Trainer Live Console**: Real-time set/rep logging during active PT sessions, dual-written to the member's lift log history.
-- **PT History**: Members view their full PT session history and trainer-logged sets.
-- **PT Calendar**: Custom calendar component (`pt-calendar.tsx`) schedule view for trainers.
-
-### 📊 Progress & Analytics
-- **Lift Log History**: Full set/rep history per exercise with progressive overload charts (PR reference line, kg units).
-- **Body Metrics**: Weight and body fat percentage logging with trend charts.
-- **Muscle Radar Chart**: Volume distribution visualization across muscle groups.
-- **Attendance Calendar**: Member check-in/check-out history.
-- **Training Slot Distribution**: Owner dashboards summarize member counts by preferred training slot and derive commonly assigned exercises from active programs.
-- **Owner Reports**: Membership stats, activity feed, and operational summaries.
-
-### 🔔 Notifications & Activity
-- **Rich Notification Center**: Role-scoped notifications with type icons, relative timestamps ("2h ago"), deep-action links, unread indicators, and per-item dismiss.
-- **Full Notifications Page** (`/owner/notifications`): Filter tabs (All / Unread / PT / Members / Other), "Mark all read", paginated list.
-- **Notification Types**: membership expiry, program assigned, PT booked/started/completed/cancelled/rescheduled, exercise requests, contact messages, member created.
-- **Action Deep Links**: Each notification carries an `actionHref` that routes directly to the relevant page (e.g. PT notification → `/owner/training`, member notification → `/owner/members/[id]`).
-- **Bell Badge**: Shows numeric count (capped at 9+), not just a dot.
-- **FCM Push Notifications**: Web push for members via Firebase Cloud Messaging.
-- **Activity Feed**: Audit trail of key events for owners and members.
-- **Admin Inbox**: Platform-wide contact messages from the landing page.
-
-### 🏢 Gym Operations
-- **Geofenced Attendance**: GPS-verified check-in/check-out with configurable gym radius. Logs geofence status (`inside`, `not_configured`, `location_not_provided`).
-- **Membership Management**: Plan tracking with expiry warnings and automated notifications.
-- **Gym Notice Board**: Owners post rules, tips, reminders, and announcements visible to members.
-- **Profile Photos**: Members and staff upload a cropped avatar (client-side circular crop → PNG) stored in Firebase Storage; shown in the top bar and profile screens. Members self-serve in settings; owners/admins can update any member in their gym.
-- **Macro/Nutrition Tracking**: Member profiles can store calorie/macro targets; members track daily macro progress in the wellness panel, either via manual daily totals or by logging itemized meals (quick-add presets or manual entry), which increment the day's macro totals automatically.
-- **Multi-Gym Isolation**: All reads and writes are partitioned by `gymId` — gym-scoped Firestore collections with Firestore security rules enforcing boundaries.
-
-### 📱 PWA
-- Installable on iOS and Android.
-- Offline lift logging via IndexedDB (Dexie.js) with service worker.
-- Mobile bottom navigation, scroll reveal animations, session timeout guard.
-
----
-
-## 👥 User Roles
-
-| Role | Access Scope | Key Capabilities |
-|---|---|---|
-| `admin` | Platform-wide | Manage all gyms, create staff, exercise catalog, global programs, inbox |
-| `owner` | Gym-scoped | Member management, program assignment, PT scheduling, reports, gym settings |
-| `trainer` (staffType) | Gym-scoped | PT schedule, live PT console, assign programs |
-| `member` | Self only | Workout console, lift logging, progress, PT history, body metrics |
-
----
-
-## 🔑 Demo Login Credentials
-
-### Staff Logins (1 Owner + 3 Trainers per Gym)
-Use the **Staff** login tab with password **`password`**:
-
-| Gym Name | Gym ID | Staff Role | Name | Username | Password |
-|---|---|---|---|---|---|
-| **Sri Shakthi Hanuman Gym** | `shg` | Owner | Santosh SHG | `santosh-shg` | `password` |
-| | | Trainer | Ravi Kumar | `shg-trainer-1` | `password` |
-| | | Trainer | Priya Nair | `shg-trainer-2` | `password` |
-| | | Trainer | Vikram Seth | `shg-trainer-3` | `password` |
-| **IronCore Fitness** | `ironcore-blr` | Owner | Arvind Rajagopal | `ironcore-owner-1` | `password` |
-| | | Trainer | Meghana Suresh | `ironcore-trainer-1` | `password` |
-| | | Trainer | Karthik Raja | `ironcore-trainer-2` | `password` |
-| | | Trainer | Ananya Roy | `ironcore-trainer-3` | `password` |
-| **Pulse Fitness Studio** | `pulse-hyd` | Owner | Rehana Fatima | `pulse-owner-1` | `password` |
-| | | Trainer | Sandeep Kaushik | `pulse-trainer-1` | `password` |
-| | | Trainer | Farhan Ali | `pulse-trainer-2` | `password` |
-| | | Trainer | Kavya Sharma | `pulse-trainer-3` | `password` |
-| **Titan Fitness Club** | `titan-gym` | Owner | Alok Nath | `titan-owner-1` | `password` |
-| | | Trainer | Rohan Mehta | `titan-trainer-1` | `password` |
-| | | Trainer | Simran Kaur | `titan-trainer-2` | `password` |
-| | | Trainer | Aditya Verma | `titan-trainer-3` | `password` |
-| **Platform Admin** | — | Admin | FitSplit Admin | `admin` | `password` |
-
-### Primary Test Member & Member Logins
-Use the **Member** login tab (4-digit PIN **`1234`**):
-
-| Username | PIN | Name | Gym | Membership Status | Assigned Program |
-|---|---|---|---|---|---|
-| 👑 **`mehul`** | **`1234`** | **Mehul Chirania** | **`shg`** | **Active (1 Year)** | **Push-Pull-Legs ×2 (`split_01`)** |
-| `aarav` | `1234` | Aarav Sharma | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
-| `meera` | `1234` | Meera Iyer | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
-| `kabir` | `1234` | Kabir Khan | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
-| `nisha` | `1234` | Nisha Rao | `shg` | Active (6 Months) | Push-Pull-Legs ×2 |
-| `vikram.icf` | `1234` | Vikram Rao | `ironcore-blr` | Active (6 Months) | Push-Pull-Legs ×2 |
-| `rakesh.pfs` | `1234` | Rakesh Pillai | `pulse-hyd` | Active (6 Months) | Push-Pull-Legs ×2 |
-| `alisha.tfc` | `1234` | Alisha Fernandes | `titan-gym` | Active (6 Months) | Push-Pull-Legs ×2 |
-
----
-
-## 🛠️ Local Setup
-
-### 1. Install dependencies
 ```bash
 npm install
+cp .env.example .env.local
+npm run dev        # http://localhost:3000
 ```
 
-### 2. Configure environment
-Copy `.env.example` to `.env.local` and fill in the values:
-```env
-# Firebase client keys
-NEXT_PUBLIC_FIREBASE_API_KEY=
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=fitsplit-29215.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=fitsplit-29215
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=fitsplit-29215.firebasestorage.app
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=766523780087
-NEXT_PUBLIC_FIREBASE_APP_ID=
+Three ways to run:
 
-# Firebase Admin SDK (server-side)
-FIREBASE_PROJECT_ID=fitsplit-29215
-FIREBASE_CLIENT_EMAIL=
-FIREBASE_PRIVATE_KEY=
-```
+1. **No Firebase at all.** Set `FITSPLIT_LOCAL_MODE=true`. Any email/password signs in as a throwaway local account; the library and plans work, nothing is persisted. Ignored when `NODE_ENV=production`.
+2. **Firebase emulators.** Copy `.env.emulator` into `.env.local`, then `firebase emulators:start` and `npm run dev`.
+3. **A real Firebase project.** Fill in the `NEXT_PUBLIC_FIREBASE_*` values, `FIREBASE_PROJECT_ID` and credentials (`GOOGLE_APPLICATION_CREDENTIALS`, or `FIREBASE_CLIENT_EMAIL` + `FIREBASE_PRIVATE_KEY`). `NEXT_PUBLIC_FIREBASE_API_KEY` is required for email/password sign-in.
 
-### 3. Run the dev server
-```bash
-npm run dev   # next dev --turbopack (Rust bundler — fast cold start + HMR)
-```
+## Commands
 
-### 4. Type-check and build
-```bash
-npm run typecheck
-npm run build
-```
+| Command | What it does |
+|---|---|
+| `npm run dev` | Dev server (Turbopack) |
+| `npm run build` / `npm start` | Production build / server |
+| `npm run typecheck` | `tsc --noEmit` |
+| `npm test` | Vitest unit tests |
+| `npm run test:rules` | Firestore rules tests (needs the Firestore emulator) |
+| `npm run test:e2e` | Playwright (starts the dev server in local mode) |
+| `npm run lint` / `npm run knip` | ESLint / unused-code check |
 
-### 5. Run tests
-```bash
-npm test
-```
-Vitest unit suite covers the money paths (billing approval transitions in
-`src/lib/firebase/actions/billing-logic.test.ts`, membership-expiry boundaries in
-`src/lib/firebase/actions/membership-expiry-logic.test.ts`), notification auth,
-action validation, and workout utils. Firestore rules: `npm run test:rules`
-(CI uses Node 22 + Java 21; on local Node 24, run the script through Node 22 if
-the emulator runner hits the Windows cleanup crash).
+## Deployment
 
----
-
-## 🚀 Scripts
-
-### Seeding & Demo Data
-```bash
-npm run seed:auth          # Create/update Firebase Auth demo accounts
-npm run seed:firebase      # Seed Firestore with base data
-npm run seed:demo          # Full demo seed — gyms, members, programs, mock logs
-npm run seed:demo-gyms     # Multi-gym E2E seed — 3 gyms x 20 members with varied
-                           # membership states, training history, PT + billing data,
-                           # and Auth users with per-member PINs. Idempotent.
-                           # Full login table: docs/18_DEMO_USERS.md
-```
-
-### Data Migration
-```bash
-npm run backfill:root      # Copy legacy root-collection docs to gyms/{gymId}/... (dry-run
-                           # by default; --apply to write). Runbook: docs/17_ROOT_BACKFILL_RUNBOOK.md
-                           # Run against prod 2026-07-08 — all root docs now gym-scoped.
-```
-
-### Data Migrations & Fixes (Archived)
-Most one-off migration, patch, and video-sync scripts have been successfully executed in production and are now archived in `archive/scripts/`. They are categorized into `migrations/`, `patches/`, `video-imports/`, and `misc-queries/`. See `docs/14_PRODUCT_REFINEMENT_AUDIT_2026-07-02.md` and `docs/17_ROOT_BACKFILL_RUNBOOK.md` for historical context.
-
-### Deployment
-```bash
-npm run deploy:firebase           # Build + full Firebase deploy
-npm run functions:deploy          # Build + deploy Cloud Functions only
-```
-
-### Utilities
-```bash
-npm run split:css                 # Split CSS selectors (legacy helper)
-npm run knip                      # Report unused files / exports / dependencies
-npm run analyze                   # Production build with bundle analyzer (ANALYZE=true)
-```
-
----
-
-## 📂 Architecture Map
-
-```
-app/
-  layout.tsx        # Root shell, global CSS, topbar/nav, consent gate, nonce-aware theme script
-  template.tsx      # Root route template wrapper
-  loading.tsx       # Root loading state
-  error.tsx         # Root error boundary
-  global-error.tsx  # Final root-level render error boundary for Sentry capture
-  not-found.tsx     # Shared FitSplit 404 screen
-  api/health/       # GET/HEAD health probe route handler
-  admin/
-    billing/        # Platform billing — coming soon placeholder
-    exercises/      # Global exercise catalog management
-    gyms/[gymId]/   # Gym detail + staff management (owner edit, add staff)
-    inbox/          # Platform support inbox (contact messages)
-    programs/       # Admin-level program management (inline WorkoutProgramGallery)
-  owner/
-    billing/        # Payment requests — approve/reject with stat cards
-    exercises/      # Gym exercise catalog (table + video preview column)
-    members/        # Hybrid member roster (action queue, KPI strip, directory)
-      [memberId]/   # Member detail — program, PT, coach note, access
-    notifications/  # Full-page notification centre (filter tabs, mark-all-read)
-    packages/       # Membership package management
-    programs/       # Program library (WorkoutProgramGallery + CustomPlanBuilder)
-    reports/        # Gym reports — KPIs, attendance trend, workout coverage, PT plans
-    settings/       # Gym settings — details (owner-editable), logo, notices, trainer visibility
-    trainers/       # Trainer roster with live PT plan counts + AddStaffForm
-    training/       # PT booking + session list + calendar view
-  member/
-    page.tsx        # Member dashboard (MemberCoachShell — workout console, progress, wellness)
-    (pages)/        # Route group — sub-pages share MemberSubSidebar layout
-      coach/        # Trainer conversation + coach note detail
-      exercises/    # Read-only exercise catalog
-      membership/   # Membership status, package request form, payment history
-      programs/     # Read-only workout program library
-      pt-history/   # Full PT session history
-      settings/     # Account settings — units, PIN change, notifications
-  trainer/          # Trainer PT schedule + my members list
-  styles/           # modular CSS files (27 numbered, plus forms.css, member.css) — 22-owner-detail-reports.css: owner member detail (mpd-/tpp-) + reports (rpt-); 23-member-overview.css: member desktop Overview screen (m3d-ov-); 24-member-workout.css: member desktop Workout screen + exercise drawer (m3d-wk-); 25-member-logs.css: member desktop Logs screen (m3d-lg-); 26-member-progress-screen.css: member desktop Progress screen (m3d-pg-); 27-member-macros.css: member desktop Macros screen (m3d-mc-)
-
-components/
-  landing/                          # Public landing page (lp- CSS classes in src/app/landing.css)
-    landing-page-client.tsx         #   Composition: nav, dual-audience hero (gym-first "Live now" path + athlete "Coming soon" path), marquee, model (B2B2C explainer), athletes (Free/Pro "coming soon" cards), gyms, steps, FAQ, enquiry, footer
-    coming-soon-modal.tsx           #   Accessible dialog for individual-account CTAs (pre-B2C launch): focus trap, ESC, click-outside
-    hero-visual.tsx                 #   Canvas particle field + parallax product mockups (no WebGL dependency)
-    login-modal.tsx                 #   Accessible login dialog (focus trap, ESC, inline reset confirm, Enter-to-submit on password/PIN field)
-    enquiry-section.tsx             #   Enquiry form wired to submitContactMessage → /admin/inbox
-  member-sub-sidebar.tsx            # Member sub-pages sidebar (links, gym branding, logout)
-  odp-sidebar.tsx                   # Owner workspace sidebar (nav, user footer, logout)
-  odp-workspace-shell.tsx           # Owner workspace wrapper (sidebar + main area)
-  open-details-button.tsx           # Client button that opens a <details id="…"> + scrolls to it
-  trainer-live-console.tsx          # PT session trainer UI
-  notification-list.tsx             # Rich notification list (icons, timestamps, links, dismiss)
-  app-topbar.tsx                    # Topbar (hidden for /owner/* at component level, see above)
-  workout-program-gallery.tsx       # Program browser with filtering + readOnly mode
-  catalog-video-preview.tsx         # Exercise video preview chip (YouTube + gym video)
-  progress-chart.tsx                # Lift history area chart (styled empty state)
-  progressive-overload-chart.tsx    # Progressive overload line chart (PR reference line, kg units)
-  muscle-radar-chart.tsx            # Muscle group volume radar
-  members-hybrid-view.tsx           # Members workspace: filter-tab toolbar + table, "Needs attention" right rail
-  macro-progress-panel.tsx          # Nutrition target tracking
-  staff-access-actions.tsx          # Inline staff edit/reset-password/delete with useActionState
-  avatar-uploader.tsx               # Reusable circular avatar crop+upload (member avatar / staff image)
-  app-status-screen.tsx             # Shared 404/error status screen
-
-lib/
-  auth.ts                           # Session cookies, login, requireRole(); demo login fallback fixed
-  offline-db.ts                     # Dexie IndexedDB (offline lift logging)
-  workout-utils.ts                  # Workout calculation helpers
-  firebase/
-    actions/                        # Server Actions (mutations) — one file per domain
-      billing.ts                    # Packages + payment approval/rejection (pure logic in billing-logic.ts, unit-tested)
-      gyms.ts                       # updateGymDetails + updateGymLogo allow owner role (not admin-only)
-      members.ts                    # changeMemberPin verifies current PIN via Firebase Auth REST
-      pt.ts                         # PT booking, session management, live logging
-      staff.ts                      # updateStaffProfile (fullName, phone, staffType) + delete
-    read-models/                    # Server-side Firestore reads
-    client.ts                       # Firebase client SDK init
-    admin.ts                        # Firebase Admin SDK init
-    collections.ts                  # Collection path constants
-    functions.ts                    # Cloud Functions callable wrappers
-
-functions/src/index.ts              # All Cloud Functions (~2000+ lines)
-functions/src/membership-expiry-logic.ts  # Pure membership-expiry math (imported by index.ts; unit-tested from root Vitest)
-types/domain.ts                     # Domain types — Notification has actionHref, memberId, ptSessionId
-src/proxy.ts                        # Route protection, role redirects, per-request CSP nonce
-firestore.rules                     # Firestore security rules
-```
-
-### Firestore Structure (gym-first multi-tenant)
-```
-gyms/{gymId}/
-  members/{memberId}          staff/{staffId}
-  exerciseCatalog/{id}        workoutPrograms/{id}
-  programAssignments/{id}     liftLogs/{id}
-  bodyMetricLogs/{id}         dayLogs/{id}
-  workoutSessions/{id}        attendanceRecords/{id}
-  ptSessions/{id}             ptLiftLogs/{id}
-  notifications/{id}          activityEvents/{id}
-  contactMessages/{id}        siteLinks/{id}
-
-authProfiles/{uid}            # Auth/session index (root, lightweight)
-exerciseCatalog/{id}          # FitSplit global library (admin-only writes)
-workoutPrograms/{id}          # FitSplit global library (admin-only writes)
-archives/{id}                 # Soft-delete archive (60-day retention)
-```
-
-See `FIRESTORE_STRUCTURE.md` for the full schema and migration rules.
-
----
-
-## 🔒 Security
-
-- **CSP headers**: Strict Content-Security-Policy set per-request in `src/proxy.ts`. **Production uses a fresh per-request nonce + `'strict-dynamic'`** for `script-src` (no `'unsafe-inline'`/`'unsafe-eval'` in effect); Next.js applies the nonce to every script it renders, and the inline theme script in `layout.tsx` carries it via `headers()`. `img-src` is `https:` only (no mixed content) with `upgrade-insecure-requests`; `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`. Development keeps `'unsafe-inline'`/`'unsafe-eval'` (no nonce) so HMR works.
-- **Security headers**: HSTS (2 years, `preload`), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, a locked-down `Permissions-Policy` (camera/mic/payment/usb off, geolocation self), `Cross-Origin-Opener-Policy: same-origin`, `Cross-Origin-Resource-Policy: same-origin`, `X-DNS-Prefetch-Control: off`, `X-Permitted-Cross-Domain-Policies: none`.
-- **Firestore rules**: Role-based rules (`isAdmin()`, `isOwnerForGym()`, `isStaffForGym()`, `isGymMember()`), gym-scoped at root and per-gym. Privileged writes are `allow: false` — must go through Cloud Functions. Tested via `npm run test:rules` (Firestore emulator).
-- **Storage rules**: Catalog media is gym-scoped — reads limited to users of the owning gym, writes to that gym's owner/admin only, with content-type and size caps. Default-deny for all other paths.
-- **Login lockout**: 5 failed attempts triggers a 15-minute lockout, enforced via a Firebase Auth blocking trigger.
-- **Session cookies**: 2-hour secure HttpOnly cookies (`SameSite=Lax`, `Secure` in production). Role and gymId stored separately for proxy routing.
-- **Secrets**: only public `NEXT_PUBLIC_FIREBASE_*` values are committed (`apphosting.yaml`); the Firebase Admin private key is supplied via Secret Manager, never committed.
-
----
-
-## ⚖️ Legal & Compliance
-
-- **Public legal pages**: `/privacy` (GDPR + CCPA/CPRA) and `/terms` (incl. a health/fitness "not medical advice" disclaimer). `/about` is public too. All three are linked from the landing footer, login modal, and member settings.
-- **Consent**: a blocking **first-login gate** (`components/terms-consent-gate.tsx`) requires every user to accept the Terms and Privacy Policy (incl. fitness-data processing) before using the app — accept to proceed, decline to log out. Acceptance is recorded per-user (`termsAcceptedAt` on the auth profile) plus a session cookie, via the `acceptTerms` server action.
-- **Data subject rights (DSAR)**: members can **export all their data as JSON** and **request account deletion** from Settings → *Privacy & your data* (`src/lib/firebase/actions/privacy.ts`). Deletion requests notify the gym owner, who performs the erasure.
-- **Still required before production**: set `NEXT_PUBLIC_FITSPLIT_LEGAL_NAME`, `NEXT_PUBLIC_FITSPLIT_LEGAL_ADDRESS`, and `NEXT_PUBLIC_FITSPLIT_LEGAL_EMAIL` for the registered operator, and sign a DPA with gyms (FitSplit acts as their processor). See `PROJECT_HANDOFF.md`.
-
----
-
-## 🎨 Design System & UI Patterns
-
-FitSplit uses a custom design system with comprehensive design tokens (dark mode by default), CSS architecture, and reusable layouts (like the owner workspace `.odp2-workspace` and member hybrid view). 
-
-For the complete UI style guide, including color palettes, critical button rules, and CSS prefixes, see **[`docs/12_UI_STYLE_GUIDE.md`](docs/12_UI_STYLE_GUIDE.md)**.
-
----
-
-## 📝 Maintenance & Handoff
-
-For architectural logs, dated updates, and next milestones, see **`PROJECT_HANDOFF.md`**.
-
-This project is jointly developed by **Claude** and **Codex**, in collaboration with **[Blume Labs](https://blumelabs.in)**. Update the handoff log after implementing significant changes.
+Firebase App Hosting (`apphosting.yaml`). Deploy rules with `firebase deploy --only firestore,storage`.

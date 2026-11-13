@@ -11,7 +11,7 @@ import type {
   LiftLog,
   MacroLog,
   MacroNutritionTarget,
-  MemberProfile
+  UserProfile
 } from "@/types/domain";
 
 interface LogsScreenProps {
@@ -20,7 +20,7 @@ interface LogsScreenProps {
   dayLogs: DayLog[];
   activityLogs: ActivityLog[];
   macroLogs: MacroLog[];
-  macroTarget?: MemberProfile["macroNutritionTarget"];
+  macroTarget?: UserProfile["macroNutritionTarget"];
 }
 
 const SKIP_REASON_LABELS: Record<string, string> = {

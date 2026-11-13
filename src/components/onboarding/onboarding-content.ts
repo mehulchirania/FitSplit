@@ -1,6 +1,5 @@
 // Slide copy for the mobile onboarding carousel. Each line states one
-// concrete, real capability in the member's own words — sourced from
-// docs/03_BUSINESS_RULES_AND_PRODUCT.md (Section 1, Product Philosophy).
+// concrete, real capability in the member's own words.
 // Not marketing copy, not a generic feature-tour list.
 
 import type { ComponentType } from "react";
@@ -19,7 +18,7 @@ export const SLIDES: OnboardingSlide[] = [
     icon: Dumbbell,
     title: "Know today's work before you touch a plate",
     body:
-      "Open Push Day A and see your exercises, target muscles, and sets × reps — no scrolling through a program PDF on the gym floor."
+      "Open Push Day A and see your exercises, target muscles, and sets × reps — no scrolling through a program PDF mid-workout."
   },
   {
     id: "form-video",
@@ -33,13 +32,13 @@ export const SLIDES: OnboardingSlide[] = [
     icon: Swap,
     title: "Machine's taken? Swap it.",
     body:
-      "Every exercise offers same-muscle alternatives, so a busy gym floor never stalls your session."
+      "Every exercise offers same-muscle alternatives, so a taken machine never stalls your session."
   },
   {
-    id: "log-coach",
+    id: "log-progress",
     icon: Activity,
-    title: "Log it, tell your coach",
+    title: "Log it, see it grow",
     body:
-      "Track meals and body weight, then message your coach directly — all in the same app you train with."
+      "Track sets, meals and body weight in the same app you train with, then watch the trend build over time."
   }
 ];

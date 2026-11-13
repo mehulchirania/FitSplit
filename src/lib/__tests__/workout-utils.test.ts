@@ -277,7 +277,7 @@ describe("getDefaultDayIndex", () => {
 // ─── findAlternative ──────────────────────────────────────────────────────────
 
 describe("findAlternative", () => {
-  // ownerOnly=true = custom gym exercise (eligible as swap target)
+  // ownerOnly=true marks exercises that are eligible as swap targets
   const catalog: Exercise[] = [
     makeExercise({ id: "alt1", name: "Leg Press",      muscleGroup: "Legs",       ownerOnly: true }),
     makeExercise({ id: "alt2", name: "Plank",           muscleGroup: "Core",       ownerOnly: true }),

@@ -1,24 +1,11 @@
 import type { Metadata } from "next";
 import { Toaster } from "sonner";
-import { headers, cookies } from "next/headers";
+import { headers } from "next/headers";
 import { AppTopbar } from "@/components/app-topbar";
-import { TermsConsentGate } from "@/components/terms-consent-gate";
-import { FcmSetup } from "@/components/fcm-setup";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
 import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
-import { PRIMARY_GYM_ID } from "@/lib/firebase/collections";
-import { getGymDetail } from "@/lib/firebase/read-models/gyms";
-import {
-  getAdminNotifications,
-  getMemberNotifications,
-  getOwnerNotifications,
-  getUnreadContactMessageCount
-} from "@/lib/firebase/read-models/notifications";
-import { getActiveWorkoutSessions } from "@/lib/firebase/read-models/sessions";
-import type { Notification } from "@/types/domain";
 import { Inter, Archivo } from "next/font/google";
 import "./globals.css";
 import "./styles/00-base-shell.css";
@@ -29,11 +16,10 @@ import "./styles/06-programs-mobile-legacy-landing.css";
 import "./styles/07-member-dashboard-legacy.css";
 import "./styles/08-admin-catalog-media.css";
 import "./styles/09-profile-history-notices-loader.css";
+import "./styles/10-pt-training.css";
 import "./styles/forms.css";
 import "./styles/member.css";
-import "./styles/10-pt-training.css";
 import "./styles/11-member-tabs.css";
-import "./styles/11-bulk-member-list.css";
 import "./styles/12-member-dashboard-new.css";
 import "./styles/13-skeletons.css";
 import "./styles/14-radix-overrides.css";
@@ -41,8 +27,6 @@ import "./styles/15-ui-upgrades.css";
 import "./styles/16-ux-improvements.css";
 import "./styles/17-profile-metrics.css";
 import "./styles/18-billing-trainers.css";
-import "./styles/19-members-redesign.css";
-import "./styles/20-owner-dashboard.css";
 import "./styles/21-member-redesign.css";
 import "./styles/22-owner-detail-reports.css";
 import "./styles/23-member-overview.css";
@@ -54,8 +38,6 @@ import "./styles/28-mobile-foundation.css";
 import "./styles/29-mobile-member-shell.css";
 import "./styles/30-mobile-workout-logs.css";
 import "./styles/31-mobile-macros-coach.css";
-import "./styles/32-discover-marketplace.css";
-import "./styles/32-subscription.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const archivo = Archivo({
@@ -67,7 +49,7 @@ const archivo = Archivo({
 
 export const metadata: Metadata = {
   title: "FitSplit",
-  description: "Workout programming and gym operations for focused fitness teams.",
+  description: "Free workout plans, an exercise library and a set-by-set training log.",
   manifest: "/manifest.json?v=11",
   icons: {
     icon: [
@@ -91,51 +73,14 @@ export default async function RootLayout({
   const isPublicLanding = pathname === "/";
   const currentUser = isPublicLanding ? null : await getCurrentUser();
 
-  // First-login consent gate: show until the user has accepted Terms + Privacy.
-  // Real users are remembered via their profile flag; the cookie covers the
-  // current session (and mock-mode demo users with no persisted profile).
-  const termsAck = (await cookies()).get("fitsplit-terms-ack")?.value === "1";
-  const needsConsent = Boolean(currentUser) && !currentUser?.termsAcceptedAt && !termsAck;
-
-  let initials = "";
-  let gymName: string | undefined;
-  let gymLogoUrl: string | undefined;
-  let unreadInboxCount = 0;
-  let notifications: Notification[] = [];
-  let hasLiveSession = false;
-
-  if (currentUser) {
-    initials = currentUser.fullName
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-
-    const memberId = currentUser.memberId ?? currentUser.uid;
-    const [{ gym }] = await Promise.all([
-      getGymDetail(currentUser.gymId ?? PRIMARY_GYM_ID),
-      currentUser.role === "admin"
-        ? getUnreadContactMessageCount().then((n) => { unreadInboxCount = n; })
-        : Promise.resolve(),
-      currentUser.role === "admin"
-        ? getAdminNotifications().then((r) => { notifications = r.notifications; })
-        : Promise.resolve(),
-      currentUser.role === "member"
-        ? getMemberNotifications(memberId, currentUser.gymId).then((r) => { notifications = r.notifications; })
-        : Promise.resolve(),
-      currentUser.role === "owner"
-        ? getOwnerNotifications(currentUser.gymId).then((r) => { notifications = r.notifications; })
-        : Promise.resolve(),
-      currentUser.role === "member"
-        ? getActiveWorkoutSessions(currentUser.gymId).then((r) => {
-            hasLiveSession = r.sessions.some((s) => (s as { memberId?: string }).memberId === memberId);
-          })
-        : Promise.resolve()
-    ]);
-    gymName = gym?.name;
-    gymLogoUrl = gym?.logoUrl;
-  }
+  const initials = currentUser
+    ? currentUser.fullName
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .slice(0, 2)
+        .toUpperCase()
+    : "";
 
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${archivo.variable}`}>
@@ -172,24 +117,11 @@ export default async function RootLayout({
       </head>
       <body>
         <div className="app-shell">
-          {needsConsent && <TermsConsentGate />}
           <ScrollReveal />
           {!isPublicLanding && <PwaInstallPrompt />}
           <SessionTimeout isAuthenticated={Boolean(currentUser)} />
-          <AppTopbar
-            gymLogoUrl={gymLogoUrl}
-            hasLiveSession={hasLiveSession}
-            initials={initials}
-            avatarUrl={currentUser?.avatarUrl}
-            gymName={gymName}
-            notifications={notifications}
-            role={currentUser?.role}
-            staffType={currentUser?.staffType}
-            unreadInboxCount={unreadInboxCount}
-          />
-          {currentUser?.role === "member" && <FcmSetup />}
+          {currentUser && <AppTopbar initials={initials} avatarUrl={currentUser.avatarUrl} />}
           {children}
-          <MobileBottomNav role={currentUser?.role} />
           <Toaster
             position="bottom-center"
             toastOptions={{

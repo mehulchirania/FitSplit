@@ -66,3 +66,7 @@ mobile-signin.png
 onboarding-initial.png
 owner-mobile.png
 staff-tab.png
+
+# local emulator test credentials
+.env.test.local
+.next-e2e/

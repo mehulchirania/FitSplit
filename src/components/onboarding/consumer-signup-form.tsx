@@ -3,264 +3,263 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { requestSignupOtp, signUpConsumer } from "@/lib/firebase/actions/consumer-signup";
+import { signUpWithEmail } from "@/lib/auth";
+import { DIAGNOSTICS_STORAGE_KEY } from "@/lib/consent-preferences";
+import { SIGNUP_LIMITS } from "@/lib/signup-schema";
 
 export function ConsumerSignupForm() {
   const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [phone, setPhone] = useState("");
-  const [otpCode, setOtpCode] = useState("");
   const [fullName, setFullName] = useState("");
-  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [ageGroup, setAgeGroup] = useState<"adult" | "minor" | "">("");
+  const [guardianConsent, setGuardianConsent] = useState(false);
+  const [guardianEmail, setGuardianEmail] = useState("");
+  const [diagnostics, setDiagnostics] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [cooldown, setCooldown] = useState(0);
 
-  function startCooldownTimer() {
-    setCooldown(30);
-    const interval = setInterval(() => {
-      setCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }
-
-  async function handleSendOtp(e?: React.FormEvent) {
-    if (e) e.preventDefault();
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
     setError(null);
-    setInfo(null);
 
-    const clean = phone.replace(/\D/g, "");
-    if (clean.length < 10) {
-      setError("Please enter a valid 10-digit mobile number.");
+    if (fullName.trim().length < 2) {
+      setError("Please enter your name.");
       return;
     }
-
-    startTransition(async () => {
-      const res = await requestSignupOtp(phone);
-      if (res.status === "error") {
-        setError(res.message);
-      } else {
-        setInfo(res.message);
-        if (res.debugOtp) {
-          setOtpCode(res.debugOtp);
-        }
-        setStep(2);
-        startCooldownTimer();
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters.");
+      return;
+    }
+    if (!ageGroup) {
+      setError("Tell us whether you are 18 or older.");
+      return;
+    }
+    if (ageGroup === "minor") {
+      if (!guardianConsent) {
+        setError("A parent or guardian must consent for users under 18.");
+        return;
       }
-    });
-  }
-
-  async function handleVerifyOtp(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    if (!/^\d{6}$/.test(otpCode)) {
-      setError("Please enter a valid 6-digit code.");
-      return;
-    }
-    setStep(3);
-  }
-
-  async function handleCompleteSignup(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-
-    if (!fullName.trim() || fullName.trim().length < 2) {
-      setError("Please enter your full name (minimum 2 characters).");
-      return;
+      if (!guardianEmail.trim()) {
+        setError("Enter your parent or guardian's email address.");
+        return;
+      }
     }
     if (!termsAccepted) {
-      setError("You must accept the terms and disclaimer to proceed.");
+      setError("You must agree to the Terms and the Privacy Notice to create an account.");
       return;
     }
 
     startTransition(async () => {
       const formData = new FormData();
       formData.set("fullName", fullName);
-      formData.set("phone", phone);
-      formData.set("otpCode", otpCode);
+      formData.set("email", email);
+      formData.set("password", password);
       formData.set("termsAccepted", "true");
+      formData.set("ageGroup", ageGroup);
+      if (ageGroup === "minor") {
+        formData.set("guardianConsent", "true");
+        formData.set("guardianEmail", guardianEmail);
+      } else if (diagnostics) {
+        formData.set("diagnosticsConsent", "true");
+      }
 
-      const res = await signUpConsumer(formData);
+      const res = await signUpWithEmail(formData);
       if (res.status === "error") {
         setError(res.message);
-      } else {
-        router.push("/member");
-        router.refresh();
+        return;
       }
+      try {
+        window.localStorage.setItem(DIAGNOSTICS_STORAGE_KEY, ageGroup !== "minor" && diagnostics ? "1" : "0");
+      } catch {
+        /* storage unavailable: diagnostics simply stay off */
+      }
+      window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
+      window.localStorage.setItem("fitsplit-remember-me", "true");
+      router.push(res.redirectUrl);
+      router.refresh();
     });
   }
 
   return (
     <div style={styles.card}>
-      {/* Progress Dots */}
-      <div style={styles.stepsRow}>
-        <div style={{ ...styles.stepDot, ...(step >= 1 ? styles.stepDotActive : {}) }}>
-          <span style={styles.stepNum}>1</span>
-        </div>
-        <div style={{ ...styles.stepLine, ...(step >= 2 ? styles.stepLineActive : {}) }} />
-        <div style={{ ...styles.stepDot, ...(step >= 2 ? styles.stepDotActive : {}) }}>
-          <span style={styles.stepNum}>2</span>
-        </div>
-        <div style={{ ...styles.stepLine, ...(step >= 3 ? styles.stepLineActive : {}) }} />
-        <div style={{ ...styles.stepDot, ...(step >= 3 ? styles.stepDotActive : {}) }}>
-          <span style={styles.stepNum}>3</span>
-        </div>
-      </div>
-
       <div style={styles.header}>
-        <h1 style={styles.title}>
-          {step === 1 && "Create your free account"}
-          {step === 2 && "Enter verification code"}
-          {step === 3 && "Tell us your name"}
-        </h1>
-        <p style={styles.subtitle}>
-          {step === 1 && "Train for free, log lifts offline, and track progressive overload."}
-          {step === 2 && `We sent a 6-digit code to +91 ${phone.replace(/\D/g, "").slice(-10)}`}
-          {step === 3 && "This will be displayed on your personal workout logs and profile."}
-        </p>
+        <h1 style={styles.title}>Create your free account</h1>
+        <p style={styles.subtitle}>Free workout plans, an exercise library and a simple log. No gym needed.</p>
       </div>
 
       {error && <div style={styles.errorBanner}>{error}</div>}
-      {info && <div style={styles.infoBanner}>{info}</div>}
 
-      {/* Step 1: Phone */}
-      {step === 1 && (
-        <form onSubmit={handleSendOtp} style={styles.form}>
-          <label style={styles.label}>
-            Mobile number
-            <div style={styles.phoneInputWrap}>
-              <span style={styles.countryCode}>🇮🇳 +91</span>
-              <input
-                type="tel"
-                placeholder="98765 43210"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                style={styles.phoneInput}
-                autoFocus
-                disabled={isPending}
-                required
-              />
-            </div>
-          </label>
+      <form onSubmit={handleSubmit} style={styles.form}>
+        <label style={styles.label}>
+          Your name
+          <input
+            autoComplete="name"
+            onChange={(e) => setFullName(e.target.value)}
+            maxLength={SIGNUP_LIMITS.name}
+            required
+            style={styles.input}
+            type="text"
+            value={fullName}
+          />
+        </label>
+        <label style={styles.label}>
+          Email
+          <input
+            autoComplete="email"
+            onChange={(e) => setEmail(e.target.value)}
+            maxLength={SIGNUP_LIMITS.email}
+            required
+            style={styles.input}
+            type="email"
+            value={email}
+          />
+        </label>
+        <label style={styles.label}>
+          Password
+          <input
+            autoComplete="new-password"
+            maxLength={SIGNUP_LIMITS.password}
+            minLength={SIGNUP_LIMITS.passwordMin}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="At least 8 characters"
+            required
+            style={styles.input}
+            type="password"
+            value={password}
+          />
+        </label>
 
-          <button
-            type="submit"
-            style={{ ...styles.submitBtn, ...(isPending ? styles.submitBtnDisabled : {}) }}
-            disabled={isPending}
-          >
-            {isPending ? "Sending OTP..." : "Continue with OTP →"}
-          </button>
-        </form>
-      )}
-
-      {/* Step 2: OTP Code */}
-      {step === 2 && (
-        <form onSubmit={handleVerifyOtp} style={styles.form}>
-          <label style={styles.label}>
-            6-digit verification code
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="123456"
-              maxLength={6}
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
-              style={styles.otpInput}
-              autoFocus
-              required
-            />
-          </label>
-
-          <button type="submit" style={styles.submitBtn}>
-            Verify code →
-          </button>
-
-          <div style={styles.resendRow}>
-            {cooldown > 0 ? (
-              <span style={styles.resendText}>Resend code in {cooldown}s</span>
-            ) : (
-              <button
-                type="button"
-                onClick={() => handleSendOtp()}
-                style={styles.resendBtn}
-                disabled={isPending}
-              >
-                Resend OTP
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => { setStep(1); setError(null); }}
-              style={styles.changePhoneBtn}
-            >
-              Change number
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* Step 3: Full Name + Consent */}
-      {step === 3 && (
-        <form onSubmit={handleCompleteSignup} style={styles.form}>
-          <label style={styles.label}>
-            Full name
-            <input
-              type="text"
-              placeholder="e.g. Alex Kumar"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              style={styles.input}
-              autoFocus
-              disabled={isPending}
-              required
-            />
-          </label>
-
+        <fieldset style={styles.fieldset}>
+          <legend style={styles.legend}>Your age</legend>
           <label style={styles.checkboxLabel}>
             <input
-              type="checkbox"
-              checked={termsAccepted}
-              onChange={(e) => setTermsAccepted(e.target.checked)}
+              checked={ageGroup === "adult"}
+              name="ageGroup"
+              onChange={() => setAgeGroup("adult")}
               style={styles.checkbox}
-              required
+              type="radio"
+              value="adult"
+            />
+            <span style={styles.checkboxText}>I am 18 or older</span>
+          </label>
+          <label style={styles.checkboxLabel}>
+            <input
+              checked={ageGroup === "minor"}
+              name="ageGroup"
+              onChange={() => setAgeGroup("minor")}
+              style={styles.checkbox}
+              type="radio"
+              value="minor"
+            />
+            <span style={styles.checkboxText}>I am under 18</span>
+          </label>
+        </fieldset>
+
+        {ageGroup === "minor" && (
+          <div style={styles.guardianBox}>
+            <p style={styles.guardianNote}>
+              Because you are under 18, a parent or legal guardian must agree to FitSplit processing your data. We
+              do not track or profile under-18 users. See the{" "}
+              <Link href="/privacy#children-under-18" style={styles.link} target="_blank">
+                Privacy Notice
+              </Link>
+              .
+            </p>
+            <label style={styles.label}>
+              Parent or guardian email
+              <input
+                autoComplete="off"
+                maxLength={SIGNUP_LIMITS.email}
+                onChange={(e) => setGuardianEmail(e.target.value)}
+                required
+                style={styles.input}
+                type="email"
+                value={guardianEmail}
+              />
+            </label>
+            <label style={styles.checkboxLabel}>
+              <input
+                checked={guardianConsent}
+                onChange={(e) => setGuardianConsent(e.target.checked)}
+                style={styles.checkbox}
+                type="checkbox"
+              />
+              <span style={styles.checkboxText}>
+                I am this person&apos;s parent or legal guardian, and I consent to FitSplit processing their
+                personal data as described in the Privacy Notice.
+              </span>
+            </label>
+          </div>
+        )}
+
+        <p style={styles.noticeSummary}>
+          FitSplit uses your name, email and the workout, body-weight and nutrition data you enter to run your
+          account. Details, your rights and how to reach our Grievance Officer are in the{" "}
+          <Link href="/privacy" style={styles.link} target="_blank">
+            Privacy Notice
+          </Link>
+          .
+        </p>
+
+        <label style={styles.checkboxLabel}>
+          <input
+            checked={termsAccepted}
+            onChange={(e) => setTermsAccepted(e.target.checked)}
+            style={styles.checkbox}
+            type="checkbox"
+          />
+          <span style={styles.checkboxText}>
+            I agree to the{" "}
+            <Link href="/terms" style={styles.link} target="_blank">
+              Terms of Service
+            </Link>{" "}
+            and the{" "}
+            <Link href="/privacy" style={styles.link} target="_blank">
+              Privacy Notice
+            </Link>
+            , and I consent to the processing of my personal data as described in them. I have read the{" "}
+            <Link href="/health-disclaimer" style={styles.link} target="_blank">
+              Health Disclaimer
+            </Link>
+            .
+          </span>
+        </label>
+
+        {ageGroup !== "minor" && (
+          <label style={styles.checkboxLabel}>
+            <input
+              checked={diagnostics}
+              onChange={(e) => setDiagnostics(e.target.checked)}
+              style={styles.checkbox}
+              type="checkbox"
             />
             <span style={styles.checkboxText}>
-              I agree to the{" "}
-              <Link href="/terms" style={styles.link} target="_blank">
-                Terms of Service
-              </Link>
-              ,{" "}
-              <Link href="/privacy" style={styles.link} target="_blank">
-                Privacy Policy
-              </Link>
-              , and{" "}
-              <Link href="/disclaimer" style={styles.link} target="_blank">
-                Health &amp; Fitness Disclaimer
+              Optional: help us fix bugs by letting FitSplit collect error diagnostics from this device (and
+              occasional masked session replays). You can leave this unticked and still use everything, and
+              change your mind any time on the{" "}
+              <Link href="/data-rights" style={styles.link} target="_blank">
+                Data Rights page
               </Link>
               .
             </span>
           </label>
+        )}
 
-          <button
-            type="submit"
-            style={{ ...styles.submitBtn, ...(isPending ? styles.submitBtnDisabled : {}) }}
-            disabled={isPending}
-          >
-            {isPending ? "Setting up workspace..." : "Launch FitSplit Workspace 🚀"}
-          </button>
-        </form>
-      )}
+        <button
+          disabled={isPending}
+          style={{ ...styles.submitBtn, ...(isPending ? styles.submitBtnDisabled : {}) }}
+          type="submit"
+        >
+          {isPending ? "Creating account..." : "Create free account"}
+        </button>
+      </form>
 
       <div style={styles.footer}>
-        Already have a gym account?{" "}
+        Already have an account?{" "}
         <Link href="/" style={styles.loginLink}>
-          Sign in with PIN
+          Log in
         </Link>
       </div>
     </div>
@@ -276,42 +275,6 @@ const styles: Record<string, React.CSSProperties> = {
     maxWidth: "460px",
     width: "100%",
     boxShadow: "0 24px 64px -12px rgba(0,0,0,0.6)"
-  },
-  stepsRow: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: "24px",
-    gap: "8px"
-  },
-  stepDot: {
-    width: "28px",
-    height: "28px",
-    borderRadius: "50%",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    color: "var(--text-muted, #888)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    fontWeight: "700",
-    transition: "all 0.2s ease"
-  },
-  stepDotActive: {
-    backgroundColor: "#C8F135",
-    color: "#0A0A0A"
-  },
-  stepNum: {
-    lineHeight: "1"
-  },
-  stepLine: {
-    width: "36px",
-    height: "2px",
-    backgroundColor: "rgba(255,255,255,0.08)",
-    transition: "all 0.2s ease"
-  },
-  stepLineActive: {
-    backgroundColor: "#C8F135"
   },
   header: {
     textAlign: "center",
@@ -339,15 +302,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontSize: "13px",
     marginBottom: "18px"
   },
-  infoBanner: {
-    backgroundColor: "rgba(200, 241, 53, 0.12)",
-    border: "1px solid rgba(200, 241, 53, 0.3)",
-    color: "#D9F99D",
-    padding: "10px 14px",
-    borderRadius: "8px",
-    fontSize: "13px",
-    marginBottom: "18px"
-  },
   form: {
     display: "flex",
     flexDirection: "column",
@@ -360,44 +314,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "600",
     color: "var(--text-secondary, #BBB)",
     gap: "8px"
-  },
-  phoneInputWrap: {
-    display: "flex",
-    alignItems: "center",
-    backgroundColor: "var(--bg-input, #0A0A0A)",
-    border: "1px solid var(--border-soft, rgba(255,255,255,0.12))",
-    borderRadius: "10px",
-    overflow: "hidden",
-    transition: "border-color 0.15s ease"
-  },
-  countryCode: {
-    padding: "0 12px 0 14px",
-    fontSize: "14px",
-    color: "var(--text-muted, #888)",
-    fontWeight: "600",
-    borderRight: "1px solid rgba(255,255,255,0.08)",
-    lineHeight: "46px"
-  },
-  phoneInput: {
-    flex: 1,
-    border: "none",
-    backgroundColor: "transparent",
-    color: "#FFF",
-    padding: "12px 14px",
-    fontSize: "16px",
-    outline: "none"
-  },
-  otpInput: {
-    backgroundColor: "var(--bg-input, #0A0A0A)",
-    border: "1px solid var(--border-soft, rgba(255,255,255,0.12))",
-    borderRadius: "10px",
-    color: "#C8F135",
-    padding: "12px 14px",
-    fontSize: "24px",
-    textAlign: "center",
-    letterSpacing: "8px",
-    fontWeight: "800",
-    outline: "none"
   },
   input: {
     backgroundColor: "var(--bg-input, #0A0A0A)",
@@ -420,6 +336,41 @@ const styles: Record<string, React.CSSProperties> = {
   checkbox: {
     marginTop: "2px",
     accentColor: "#C8F135"
+  },
+  fieldset: {
+    border: "none",
+    margin: 0,
+    padding: 0,
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px"
+  },
+  legend: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "var(--text-secondary, #BBB)",
+    padding: 0,
+    marginBottom: "10px"
+  },
+  guardianBox: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "14px",
+    padding: "14px",
+    borderRadius: "10px",
+    border: "1px solid var(--border-soft, rgba(255,255,255,0.12))"
+  },
+  guardianNote: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: "1.5",
+    color: "var(--text-muted, #888)"
+  },
+  noticeSummary: {
+    margin: 0,
+    fontSize: "12px",
+    lineHeight: "1.5",
+    color: "var(--text-muted, #888)"
   },
   checkboxText: {
     flex: 1
@@ -445,32 +396,6 @@ const styles: Record<string, React.CSSProperties> = {
   submitBtnDisabled: {
     opacity: 0.6,
     cursor: "not-allowed"
-  },
-  resendRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    fontSize: "13px"
-  },
-  resendText: {
-    color: "var(--text-muted, #666)"
-  },
-  resendBtn: {
-    background: "none",
-    border: "none",
-    color: "#C8F135",
-    fontSize: "13px",
-    fontWeight: "600",
-    cursor: "pointer",
-    padding: 0
-  },
-  changePhoneBtn: {
-    background: "none",
-    border: "none",
-    color: "var(--text-muted, #888)",
-    fontSize: "13px",
-    cursor: "pointer",
-    padding: 0
   },
   footer: {
     marginTop: "24px",

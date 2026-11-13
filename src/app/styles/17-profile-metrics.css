@@ -165,30 +165,6 @@ html[data-theme="light"] .profile-metric-card.theme-yellow { --card-accent: #a16
 
 /* ── Muscle target description pill ────────────────────────────────────────── */
 
-.muscle-target-pill {
-  align-items: flex-start;
-  background: color-mix(in srgb, var(--brand) 8%, var(--bg-subtle));
-  border: 1px solid color-mix(in srgb, var(--brand) 22%, var(--border));
-  border-radius: var(--radius-sm);
-  display: flex;
-  font-size: var(--text-sm);
-  gap: var(--space-2);
-  line-height: 1.5;
-  margin-top: var(--space-2);
-  padding: var(--space-3);
-}
-
-.muscle-target-pill-icon {
-  color: var(--brand);
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-.muscle-target-pill-text {
-  color: var(--text-soft);
-  font-style: italic;
-}
-
 /* ── Macro history section ──────────────────────────────────────────────────── */
 
 .macro-history-section {
@@ -289,12 +265,6 @@ html[data-theme="light"] .profile-metric-card.theme-yellow { --card-accent: #a16
   transition: background var(--fast), color var(--fast);
 }
 
-.activity-type-btn.is-selected {
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-soft);
-  color: var(--text);
-}
-
 .activity-log-recent {
   display: flex;
   flex-direction: column;
@@ -349,34 +319,8 @@ html[data-theme="light"] .profile-metric-card.theme-yellow { --card-accent: #a16
 /* ── Workout tab / progress sections — ensure full opacity ──────────────────── */
 
 /* Override any glass transparency on workout tab content */
-.md-tab-panels .member-dashboard-section,
-.md-tab-panels .member-wellness-section,
-.md-tab-panels .member-progress-section,
-.md-tab-panels .lift-log-panel,
-.md-tab-panels .member-progress-chart-card,
-.md-tab-panels .member-progress-history-card,
-.md-tab-panels .member-workout-side > .lift-log-panel,
-.md-tab-panels .member-workout-side > .injury-card,
-.md-tab-panels .member-workout-side > .ai-modification-panel {
-  background: var(--bg-elevated) !important;
-  border-color: var(--border) !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-}
 
 /* Ensure progress history cards are fully opaque */
-.member-progress-history-card {
-  background: var(--bg-elevated) !important;
-}
-
-.md-gym-location-link {
-  text-decoration: none;
-}
-
-.md-gym-location-link:hover {
-  border-color: color-mix(in srgb, var(--brand) 45%, var(--border));
-  color: var(--text);
-}
 
 /* Collapse/expand history button */
 .history-toggle-btn {

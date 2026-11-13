@@ -274,30 +274,6 @@ svg {
   object-fit: cover;
 }
 
-.gym-brand-lockup {
-  align-items: center;
-  display: inline-flex;
-  gap: 8px;
-}
-
-.gym-brand-x {
-  color: var(--text-faint);
-  font-size: var(--text-sm);
-  font-weight: 900;
-  line-height: 1;
-}
-
-.gym-brand-logo {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  display: block;
-  height: 36px;
-  object-fit: contain;
-  padding: var(--space-1);
-  width: 36px;
-}
-
 .theme-logo-light {
   opacity: 0;
 }
@@ -366,10 +342,6 @@ html[data-theme="light"] .theme-logo-light {
     top: 8px;
     width: calc(100% - 16px);
   }
-
-  .brand-text strong {
-    font-size: var(--text-lg) !important;
-  }
 }
 
 .brand {
@@ -377,32 +349,6 @@ html[data-theme="light"] .theme-logo-light {
   display: inline-flex;
   gap: 10px;
   min-width: max-content;
-}
-
-.brand-logo-lockup {
-  align-items: center;
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 7px;
-}
-
-.brand-x {
-  color: var(--text-faint);
-  font-size: var(--text-sm);
-  font-weight: 900;
-  line-height: 1;
-  text-transform: lowercase;
-}
-
-.partner-logo {
-  background: #050505;
-  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
-  border-radius: 12px;
-  box-shadow: 0 8px 22px rgb(0 0 0 / 0.18);
-  display: block;
-  height: 48px;
-  object-fit: contain;
-  width: 48px;
 }
 
 .brand-icon-wrap {
@@ -422,7 +368,6 @@ html[data-theme="light"] .theme-logo-light {
   width: 94px;
 }
 
-.brand-mark,
 .avatar {
   align-items: center;
   background: linear-gradient(135deg, var(--text), color-mix(in srgb, var(--text) 72%, var(--brand)));
@@ -441,11 +386,7 @@ html[data-theme="light"] .theme-logo-light {
   display: block;
 }
 
-.brand small,
-.member-meta,
-.stat-card span,
-.catalog-item span,
-.detail-window span {
+.brand small {
   color: var(--text-soft);
 }
 
@@ -454,14 +395,6 @@ html[data-theme="light"] .theme-logo-light {
   margin-top: 2px;
 }
 
-.topnav {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  justify-content: flex-end;
-}
-
-.topnav a,
 .theme-toggle,
 .button {
   align-items: center;
@@ -481,11 +414,6 @@ html[data-theme="light"] .theme-logo-light {
     transform var(--spring);
 }
 
-.topnav a {
-  color: var(--text-soft);
-}
-
-.topnav a:hover,
 .theme-toggle:hover:not(:disabled),
 .button:hover:not(:disabled) {
   transform: translateY(-2px);
@@ -505,7 +433,6 @@ button:disabled {
   transform: none;
 }
 
-.topnav a:hover,
 .theme-toggle {
   background: var(--bg-subtle);
   border-color: var(--border);
@@ -516,7 +443,6 @@ button:disabled {
   min-width: 74px;
 }
 
-
 .home,
 .page {
   animation: page-in 520ms var(--slow) both;
@@ -525,7 +451,6 @@ button:disabled {
   padding: var(--space-8) clamp(18px, 4vw, 56px) var(--space-16);
 }
 
-.hero-band,
 .dashboard-header {
   align-items: stretch;
   display: grid;
@@ -534,7 +459,6 @@ button:disabled {
   margin-bottom: 20px;
 }
 
-.hero-copy,
 .header-copy {
   align-content: center;
   min-height: 260px;
@@ -604,13 +528,11 @@ p {
   line-height: 1.62;
 }
 
-.hero-copy > p:not(.eyebrow),
 .header-copy > p:not(.eyebrow) {
   font-size: var(--text-md);
   max-width: 640px;
 }
 
-.hero-actions,
 .toolbar,
 .quick-actions {
   display: flex;
@@ -679,18 +601,9 @@ p {
    .odp-section-card (16-ux-improvements.css) used to redeclare this exact
    background/border/radius/shadow block verbatim; folded in here and
    trimmed to their additive properties only. */
-.hero-panel,
 .summary-panel,
-.member-focus,
-.feature-card,
-.stat-card,
 .list-panel,
-.program-card,
-.exercise-row,
-.notification-row,
-.form-panel,
-.member-progress-history-card,
-.odp-section-card {
+.form-panel {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -702,139 +615,26 @@ p {
     transform var(--spring);
 }
 
-.hero-panel,
 .summary-panel,
-.member-focus,
-.program-card,
-.list-panel,
-.member-progress-history-card,
-.odp-section-card {
+.list-panel {
   overflow: hidden;
 }
 
-.feature-card:hover,
-.stat-card:hover,
-.program-card:hover {
-  border-color: color-mix(in srgb, var(--brand) 22%, var(--border));
-  box-shadow: var(--shadow), 0 0 0 1px color-mix(in srgb, var(--brand) 10%, transparent);
-  transform: translateY(-3px);
-}
-
-.exercise-row:hover,
-.notification-row:hover,
-.catalog-item:hover {
-  border-color: var(--border-strong);
-  box-shadow: var(--shadow-soft);
-  transform: translateX(3px);
-}
-
 .summary-panel,
-.member-focus,
 .form-panel {
   padding: var(--space-5);
 }
 
-.metric-strip {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-}
-
-.metric-strip span {
-  border-right: 1px solid var(--border);
-  color: var(--text-soft);
-  display: block;
-  font-size: var(--text-sm);
-  padding: var(--space-4);
-}
-
-.metric-strip span:last-child {
-  border-right: 0;
-}
-
-.metric-strip strong {
-  color: var(--text);
-  display: block;
-  font-size: var(--text-2xl);
-}
-
-.training-image {
-  background:
-    linear-gradient(rgba(8, 12, 10, 0.04), rgba(8, 12, 10, 0.1)),
-    url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1400&q=80");
-  background-position: center;
-  background-size: cover;
-  min-height: 320px;
-}
-
-.workstream-grid,
-.stats-grid,
 .content-grid,
-.program-grid,
 .catalog-grid {
   display: grid;
   gap: 14px;
 }
 
-.workstream-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-top: 24px;
-}
-
-.feature-card {
-  padding: var(--space-5);
-}
-
-.feature-card svg,
-.ai-band svg,
-.panel-title svg,
-.program-card h2 svg,
-.inline-icon,
-.stat-card svg {
+.panel-title svg {
   color: var(--brand);
   height: 16px;
   width: 16px;
-}
-
-.ai-band {
-  align-items: center;
-  background: var(--brand-soft);
-  border: 1px solid color-mix(in srgb, var(--brand) 20%, var(--border));
-  border-radius: var(--radius);
-  display: grid;
-  gap: 16px;
-  grid-template-columns: auto 1fr auto;
-  margin-top: 14px;
-  padding: var(--space-4);
-}
-
-.ai-band p {
-  margin-bottom: 0;
-}
-
-.stats-grid {
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
-  margin-bottom: 14px;
-}
-
-.stat-card {
-  padding: var(--space-4);
-}
-
-.stat-card svg {
-  display: block;
-  margin-bottom: 10px;
-}
-
-.stat-card strong {
-  color: var(--text);
-  display: block;
-  font-size: var(--text-2xl);
-  line-height: 1.1;
-  margin-bottom: 3px;
-}
-
-.stat-card span {
-  font-size: var(--text-sm);
 }
 
 /* .panel-title and .panel-title h2 used to be redeclared with drifting
@@ -860,69 +660,4 @@ p {
   font-weight: 800;
   gap: var(--space-2);
   margin: 0;
-}
-
-.member-row,
-.notification-row {
-  align-items: center;
-  display: grid;
-  gap: 14px;
-}
-
-.member-row {
-  border-bottom: 1px solid var(--border);
-  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
-  padding: var(--space-3) var(--space-4);
-  transition: background 140ms ease;
-}
-
-.member-row:last-child {
-  border-bottom: 0;
-}
-
-.member-access-inline {
-  align-items: center;
-  display: flex;
-  margin: 0;
-}
-
-.member-name {
-  color: var(--text);
-  display: block;
-  font-weight: 820;
-}
-
-.member-meta {
-  display: block;
-  font-size: var(--text-sm);
-  margin-top: 3px;
-}
-
-.member-row-info { min-width: 0; }
-
-.member-row-meta {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.member-row-goal {
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-}
-
-.member-row-phone {
-  color: var(--brand);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity 140ms;
-}
-.member-row-phone:hover { opacity: 0.75; }
-
-.member-row-joined {
-  color: var(--text-faint);
-  font-size: var(--text-xs);
 }

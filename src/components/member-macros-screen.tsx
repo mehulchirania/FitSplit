@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { logMeal, deleteMealLog, getMealQuickAddSuggestions, getBodyWeightHistory } from "@/lib/firebase/actions";
 import { initialFormActionState } from "@/types/action-state";
-import type { BodyMetricLog, MacroLog, MealLog, Member, MemberProfile } from "@/types/domain";
+import type { BodyMetricLog, MacroLog, MealLog, UserProfile } from "@/types/domain";
 import type { MealSuggestion } from "@/lib/firebase/read-models/progress";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
@@ -15,14 +15,13 @@ import { EditableMetrics } from "@/components/editable-metrics";
 
 interface MacrosScreenProps {
   memberId: string;
-  gymId: string;
   todayDate: string;
   macroLog?: MacroLog | null;
-  macroTarget?: MemberProfile["macroNutritionTarget"];
+  macroTarget?: UserProfile["macroNutritionTarget"];
   macroLogs: MacroLog[];
   mealLogs: MealLog[];
-  profile: MemberProfile;
-  member: Member;
+  profile: UserProfile;
+  member: UserProfile;
 }
 
 type QuickAddPreset = {
@@ -76,7 +75,6 @@ function buildWeightTrend(logs: BodyMetricLog[]) {
 
 export function MacrosScreen({
   memberId,
-  gymId,
   todayDate,
   macroLog,
   macroTarget,
@@ -105,14 +103,14 @@ export function MacrosScreen({
   // server" wrappers around read-models — see actions/progress.ts.
   useEffect(() => {
     let cancelled = false;
-    getMealQuickAddSuggestions(memberId, gymId, todayDate)
+    getMealQuickAddSuggestions(todayDate)
       .then((data) => {
         if (!cancelled) setQuickSuggestions(data);
       })
       .catch(() => {
         // Non-fatal — quick add still works via the static presets below.
       });
-    getBodyWeightHistory(memberId, gymId, 60)
+    getBodyWeightHistory(60)
       .then((data) => {
         if (!cancelled) setWeightHistory(data.logs);
       })
@@ -122,7 +120,7 @@ export function MacrosScreen({
     return () => {
       cancelled = true;
     };
-  }, [memberId, gymId, todayDate]);
+  }, [todayDate]);
 
   const actual = macroLog ?? { protein: 0, carbs: 0, fat: 0, water: 0 };
   const totalKcal = deriveKcal(actual.protein, actual.carbs, actual.fat);
@@ -262,7 +260,6 @@ export function MacrosScreen({
           <h1 className="m3d-pagehead__title">Macros</h1>
           <div className="m3d-mc__sub">
             {todayLabel}
-            {profile.assignedTrainer ? ` · targets set by Coach ${profile.assignedTrainer}` : ""}
           </div>
         </div>
         <button type="button" className="m3d-mc__logbtn" onClick={() => setDialogOpen(true)}>
@@ -406,7 +403,7 @@ export function MacrosScreen({
           </div>
         )}
 
-        <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
+        <MacroProgressPanel memberId={memberId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
         <ProfileMetricsWidget profile={profile} />
         <EditableMetrics member={{ ...member, ...profile }} />
       </div>

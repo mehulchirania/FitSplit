@@ -225,17 +225,11 @@ export function MemberHistory({
                 {sortedLogs.map((log) => {
                   const isPR = log.weight && log.weight === prMap.get(log.exerciseId);
                   const exerciseName = exerciseById.get(log.exerciseId)?.name ?? "Exercise";
-                  const isTrainerLogged = log.source === "trainer";
                   return (
                     <div className="history-log-row" key={log.id}>
                       <span className="history-log-name">
                         {exerciseName}
                         {isPR && <span className="pr-chip" style={{ marginLeft: 6 }}>PR</span>}
-                        {isTrainerLogged && (
-                          <span className="pt-trainer-badge" style={{ marginLeft: 6 }} title="Logged by trainer in PT session">
-                            PT
-                          </span>
-                        )}
                       </span>
                       <span className="history-log-stats">
                         {log.weight}kg x {log.sets} x {log.reps}

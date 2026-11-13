@@ -9,8 +9,7 @@
 
 .topbar-left,
 .topbar-actions,
-.brand,
-.gym-brand-lockup {
+.brand {
   align-items: center;
   display: inline-flex;
   min-width: 0;
@@ -42,20 +41,6 @@
   width: 94px;
 }
 
-.gym-brand-logo {
-  display: block;
-  flex: 0 0 36px;
-  height: 36px;
-  max-height: 36px;
-  max-width: 36px;
-  object-fit: contain;
-  width: 36px;
-}
-
-.gym-brand-x {
-  flex: 0 0 auto;
-}
-
 .brand-wordmark {
   color: var(--text);
   font-size: clamp(var(--text-md), 2vw, var(--text-lg));
@@ -67,11 +52,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-.brand-wordmark--with-gym {
-  max-width: 118px;
-}
-
 
 /* Deleted 2026-08-04: the ".md-*" member-dashboard hero/header block
    (.md-page, .md-hero, .md-hero-inner, .md-hero-copy, .md-hero-title,
@@ -268,10 +248,6 @@
     min-width: 0;
   }
 
-  .brand-wordmark--with-gym {
-    display: none;
-  }
-
   .theme-logo.brand-icon-wrap,
   .brand-icon-wrap {
     flex-basis: 70px;
@@ -287,16 +263,7 @@
     width: 70px;
   }
 
-  .gym-brand-logo {
-    flex-basis: 32px;
-    height: 32px;
-    max-height: 32px;
-    max-width: 32px;
-    width: 32px;
-  }
-
-  .profile-dropdown,
-  .notification-dropdown {
+  .profile-dropdown {
     left: 12px;
     max-width: none;
     position: fixed;

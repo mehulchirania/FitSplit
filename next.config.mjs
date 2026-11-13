@@ -20,6 +20,8 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  // Lets the e2e server use its own build dir so it can run beside `npm run dev`.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   output: "standalone",
   // @fitsplit/core (packages/core) ships raw TS source with no build step —
   // Next doesn't transpile node_modules packages by default, so this is required.

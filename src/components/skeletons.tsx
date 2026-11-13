@@ -41,33 +41,6 @@ export function SkeletonAvatar({ size = 40 }: { size?: number }) {
   );
 }
 
-export function SkeletonText({
-  lines = 2,
-  className = "",
-}: {
-  lines?: number;
-  className?: string;
-}) {
-  return (
-    <div
-      className={`sk-text-group ${className}`}
-      style={{ display: "flex", flexDirection: "column", gap: 8 }}
-      aria-hidden="true"
-    >
-      {Array.from({ length: lines }).map((_, i) => (
-        <SkeletonPulse
-          key={i}
-          style={{
-            height: 14,
-            borderRadius: 6,
-            width: i === lines - 1 ? "60%" : "100%",
-          }}
-        />
-      ))}
-    </div>
-  );
-}
-
 function SkeletonStat() {
   return (
     <div
@@ -149,31 +122,3 @@ export function SkeletonList({
   );
 }
 
-export function SkeletonBanner() {
-  return (
-    <SkeletonPulse
-      style={{
-        height: 72,
-        borderRadius: 12,
-        width: "100%",
-      }}
-    />
-  );
-}
-
-export function SkeletonStatsRow({ count = 4 }: { count?: number }) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: `repeat(${count}, 1fr)`,
-        gap: 12,
-      }}
-      aria-hidden="true"
-    >
-      {Array.from({ length: count }).map((_, i) => (
-        <SkeletonStat key={i} />
-      ))}
-    </div>
-  );
-}

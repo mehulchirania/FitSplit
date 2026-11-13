@@ -192,20 +192,6 @@
 }
 .m3d-ov__day--today { color: var(--brand); font-weight: 700; }
 
-.m3d-ov__coach {
-  margin-top: var(--space-8);
-  padding: var(--space-4) var(--space-5);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.m3d-ov__coach p {
-  margin: var(--space-2) 0 0;
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  color: var(--text);
-}
-
 .m3d-ov__activity { margin-top: var(--space-8); }
 .m3d-ov__activity-head {
   display: flex;

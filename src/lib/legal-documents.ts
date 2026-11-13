@@ -4,11 +4,9 @@ export type LegalDocumentKey =
   | "cookies"
   | "acceptable-use"
   | "health-disclaimer"
-  | "refunds"
   | "data-rights"
   | "consent-notice"
-  | "subprocessors"
-  | "gym-dpa";
+  | "subprocessors";
 
 export type LegalDocumentMeta = {
   key: LegalDocumentKey;
@@ -24,70 +22,56 @@ export const LEGAL_DOCUMENTS: LegalDocumentMeta[] = [
     title: "Terms of Service",
     href: "/terms",
     source: "terms-of-service.md",
-    description: "The terms that govern FitSplit accounts, roles, gym use, content, billing records, and liability."
+    description: "The terms that govern your FitSplit account, your content, and liability."
   },
   {
     key: "privacy",
-    title: "Privacy Policy",
+    title: "Privacy Notice",
     href: "/privacy",
     source: "privacy-policy.md",
-    description: "How FitSplit collects, uses, shares, protects, and retains personal, fitness, and gym data."
+    description: "What personal data FitSplit collects, why, how long we keep it, who processes it, and your rights."
   },
   {
     key: "cookies",
     title: "Cookie Policy",
     href: "/cookies",
     source: "cookie-policy.md",
-    description: "How FitSplit uses essential cookies, local storage, offline app data, and push tokens."
+    description: "The cookies and browser storage FitSplit uses. Essential only; no advertising or tracking cookies."
   },
   {
     key: "acceptable-use",
     title: "Acceptable Use Policy",
     href: "/acceptable-use",
     source: "acceptable-use-policy.md",
-    description: "Rules for safe, lawful, and authorized use of the FitSplit platform."
+    description: "Rules for safe and lawful use of FitSplit."
   },
   {
     key: "health-disclaimer",
     title: "Health and Fitness Disclaimer",
     href: "/health-disclaimer",
     source: "health-and-fitness-disclaimer.md",
-    description: "Important medical, workout, nutrition, trainer, and exercise-risk disclaimers."
-  },
-  {
-    key: "refunds",
-    title: "Refund and Cancellation Policy",
-    href: "/refunds",
-    source: "refund-and-cancellation-policy.md",
-    description: "How member payments, gym memberships, cancellations, and FitSplit platform fees are handled."
+    description: "Important medical, workout, nutrition, and exercise-risk disclaimers."
   },
   {
     key: "data-rights",
     title: "Data Rights and Grievance Notice",
     href: "/data-rights",
     source: "data-rights-and-grievance-notice.md",
-    description: "How users can request access, export, correction, deletion, consent withdrawal, or grievance review."
+    description: "How to access, correct, erase or export your data, withdraw consent, nominate someone, or raise a grievance."
   },
   {
     key: "consent-notice",
     title: "Consent Notice",
     href: "/consent-notice",
     source: "consent-notice.md",
-    description: "Short-form consent language for first login, location attendance, notifications, and gym onboarding."
+    description: "Plain-language summary of what you agree to when you create an account."
   },
   {
     key: "subprocessors",
     title: "Subprocessor List",
     href: "/subprocessors",
     source: "subprocessors.md",
-    description: "Third-party service providers that may process data for FitSplit."
-  },
-  {
-    key: "gym-dpa",
-    title: "Gym Data Processing Addendum",
-    href: "/gym-dpa",
-    source: "gym-data-processing-addendum.md",
-    description: "B2B data-processing terms for gyms using FitSplit with member and staff data."
+    description: "The service providers that process personal data for FitSplit."
   }
 ];
 

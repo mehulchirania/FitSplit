@@ -1,10 +1,9 @@
 import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MealLog, MakeupStatus, SkipReason } from "@/types/domain";
 
-import { gymScopedCollectionPaths } from "../collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
-import { gymCollection, reportReadModelError } from "./shared";
+import { userCollection, reportReadModelError } from "./shared";
 
-export async function getBodyMetricLogsForMember(memberId: string, gymId?: string, limit = 365): Promise<{
+export async function getBodyMetricLogsForMember(uid: string, limit = 365): Promise<{
   logs: BodyMetricLog[];
   isPersisted: boolean;
 }> {
@@ -13,21 +12,13 @@ export async function getBodyMetricLogsForMember(memberId: string, gymId?: strin
   }
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "bodyMetricLogs").where("memberId", "==", memberId).orderBy("loggedAt", "desc").limit(limit).get()
-      : await db
-          .collectionGroup(gymScopedCollectionPaths.bodyMetricLogs)
-          .where("memberId", "==", memberId)
-          .orderBy("loggedAt", "desc")
-          .limit(limit)
-          .get();
+    const scopedSnapshot = await userCollection(db, uid, "bodyMetricLogs").orderBy("loggedAt", "desc").limit(limit).get();
     const logs: BodyMetricLog[] = scopedSnapshot.docs
       .map((doc) => {
         const data = doc.data();
         return {
           id: doc.id,
-          memberId: String(data.memberId ?? memberId),
-          gymId: data.gymId ? String(data.gymId) : undefined,
+          memberId: uid,
           weightKg: Number(data.weightKg ?? 0),
           bodyFatPct: data.bodyFatPct != null ? Number(data.bodyFatPct) : undefined,
           notes: data.notes ? String(data.notes) : undefined,
@@ -37,12 +28,12 @@ export async function getBodyMetricLogsForMember(memberId: string, gymId?: strin
       .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
     return { logs, isPersisted: true };
   } catch (error) {
-    reportReadModelError("getBodyMetricLogsForMember", error, { memberId, gymId });
+    reportReadModelError("getBodyMetricLogsForMember", error, { memberId: uid });
     return { logs: [], isPersisted: false };
   }
 }
 
-export async function getDayLogsForMember(memberId: string, gymId?: string, limit = 365): Promise<{
+export async function getDayLogsForMember(uid: string, limit = 365): Promise<{
   dayLogs: DayLog[];
   isPersisted: boolean;
 }> {
@@ -51,14 +42,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
   }
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "dayLogs").where("memberId", "==", memberId).orderBy("loggedAt", "desc").limit(limit).get()
-      : await db
-          .collectionGroup(gymScopedCollectionPaths.dayLogs)
-          .where("memberId", "==", memberId)
-          .orderBy("loggedAt", "desc")
-          .limit(limit)
-          .get();
+    const scopedSnapshot = await userCollection(db, uid, "dayLogs").orderBy("loggedAt", "desc").limit(limit).get();
     const validSkipReasons = new Set<string>(["rest", "no_time", "equipment", "sick", "other"]);
     const dayLogs: DayLog[] = scopedSnapshot.docs
       .map((doc) => {
@@ -69,8 +53,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
         const rawMakeupStatus = data.makeupStatus ? String(data.makeupStatus) : undefined;
         return {
           id: doc.id,
-          memberId: String(data.memberId ?? memberId),
-          gymId: data.gymId ? String(data.gymId) : undefined,
+          memberId: uid,
           programId: String(data.programId ?? ""),
           dayId: String(data.dayId ?? ""),
           weekStart: String(data.weekStart ?? ""),
@@ -90,7 +73,7 @@ export async function getDayLogsForMember(memberId: string, gymId?: string, limi
       .sort((a, b) => b.loggedAt.localeCompare(a.loggedAt));
     return { dayLogs, isPersisted: true };
   } catch (error) {
-    reportReadModelError("getDayLogsForMember", error, { memberId, gymId });
+    reportReadModelError("getDayLogsForMember", error, { memberId: uid });
     return { dayLogs: [], isPersisted: false };
   }
 }
@@ -129,7 +112,7 @@ function expandLegacyLiftLog(log: LiftLog): LiftLog[] {
   }));
 }
 
-export async function getLiftLogsForMember(memberId: string, gymId?: string, limit = 500): Promise<{
+export async function getLiftLogsForMember(uid: string, limit = 500): Promise<{
   liftLogs: LiftLog[];
   isPersisted: boolean;
 }> {
@@ -141,17 +124,10 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string, lim
 
   try {
     const { db } = getFirebaseAdminServices();
-    const scopedSnapshot = gymId
-      ? await gymCollection(db, gymId, "liftLogs").where("memberId", "==", memberId).orderBy("loggedAt", "desc").limit(limit).get()
-      : await db
-          .collectionGroup(gymScopedCollectionPaths.liftLogs)
-          .where("memberId", "==", memberId)
-          .orderBy("loggedAt", "desc")
-          .limit(limit)
-          .get();
+    const scopedSnapshot = await userCollection(db, uid, "liftLogs").orderBy("loggedAt", "desc").limit(limit).get();
     snapshot = scopedSnapshot;
   } catch (error) {
-    reportReadModelError("getLiftLogsForMember", error, { memberId, gymId });
+    reportReadModelError("getLiftLogsForMember", error, { memberId: uid });
     return { liftLogs: [], isPersisted: false };
   }
 
@@ -164,7 +140,7 @@ export async function getLiftLogsForMember(memberId: string, gymId?: string, lim
       const data = doc.data();
       return {
         id: doc.id,
-        memberId: String(data.memberId ?? memberId),
+        memberId: uid,
         exerciseId: String(data.exerciseId ?? ""),
         weight: Number(data.weight ?? 0),
         sets: Number(data.sets ?? 1),
@@ -196,20 +172,17 @@ export type MacroLogEntry = {
 };
 
 export async function getMacroLogForMember(
-  memberId: string,
-  gymId: string,
+  uid: string,
   date: string
 ): Promise<{ macroLog: MacroLogEntry | null }> {
   if (!hasFirebaseAdminConfig()) return { macroLog: null };
   try {
     const { db } = getFirebaseAdminServices();
-    const docId = `${memberId}_${date}`;
-    const gymDoc = await db
-      .collection(`gyms/${gymId}/macroLogs`)
-      .doc(docId)
+    const docId = date;
+    const macroDoc = await userCollection(db, uid, "macroLogs").doc(docId)
       .get();
-    if (!gymDoc.exists) return { macroLog: null };
-    const data = gymDoc.data() ?? {};
+    if (!macroDoc.exists) return { macroLog: null };
+    const data = macroDoc.data() ?? {};
     return {
       macroLog: {
         protein: Number(data.protein ?? 0),
@@ -219,7 +192,7 @@ export async function getMacroLogForMember(
       }
     };
   } catch (error) {
-    reportReadModelError("getMacroLogForMember", error, { memberId, gymId });
+    reportReadModelError("getMacroLogForMember", error, { memberId: uid });
     return { macroLog: null };
   }
 }
@@ -229,16 +202,13 @@ export async function getMacroLogForMember(
  * Used to render macro history charts and the 7-day summary.
  */
 export async function getMacroLogsForMember(
-  memberId: string,
-  gymId: string,
+  uid: string,
   days = 7
 ): Promise<{ macroLogs: MacroLog[] }> {
   if (!hasFirebaseAdminConfig()) return { macroLogs: [] };
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(`gyms/${gymId}/macroLogs`)
-      .where("memberId", "==", memberId)
+    const snapshot = await userCollection(db, uid, "macroLogs")
       .orderBy("date", "desc")
       .limit(days)
       .get();
@@ -246,8 +216,7 @@ export async function getMacroLogsForMember(
       const data = doc.data();
       return {
         id: doc.id,
-        memberId: String(data.memberId ?? memberId),
-        gymId: String(data.gymId ?? gymId),
+        memberId: uid,
         date: String(data.date ?? ""),
         protein: Number(data.protein ?? 0),
         carbs: Number(data.carbs ?? 0),
@@ -258,32 +227,27 @@ export async function getMacroLogsForMember(
     });
     return { macroLogs };
   } catch (error) {
-    reportReadModelError("getMacroLogsForMember", error, { memberId, gymId });
+    reportReadModelError("getMacroLogsForMember", error, { memberId: uid });
     return { macroLogs: [] };
   }
 }
 
 /** Fetch the itemized meal list for one calendar day — the "meal log" feed on the Macros screen. */
 export async function getMealLogsForMember(
-  memberId: string,
-  gymId: string,
+  uid: string,
   date: string
 ): Promise<{ mealLogs: MealLog[] }> {
   if (!hasFirebaseAdminConfig()) return { mealLogs: [] };
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(`gyms/${gymId}/mealLogs`)
-      .where("memberId", "==", memberId)
+    const snapshot = await userCollection(db, uid, "mealLogs")
       .where("date", "==", date)
-      .orderBy("loggedAt", "asc")
       .get();
     const mealLogs: MealLog[] = snapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
-        memberId: String(data.memberId ?? memberId),
-        gymId: String(data.gymId ?? gymId),
+        memberId: uid,
         date: String(data.date ?? date),
         name: String(data.name ?? "Meal"),
         items: data.items ? String(data.items) : undefined,
@@ -294,24 +258,24 @@ export async function getMealLogsForMember(
         loggedAt: String(data.loggedAt ?? new Date().toISOString())
       };
     });
+    mealLogs.sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
     return { mealLogs };
   } catch (error) {
-    reportReadModelError("getMealLogsForMember", error, { memberId, gymId, date });
+    reportReadModelError("getMealLogsForMember", error, { memberId: uid, date });
     return { mealLogs: [] };
   }
 }
 
 /** Fetch the meals logged on the calendar day immediately before `todayDate` — powers "Repeat yesterday". */
 export async function getYesterdaysMealsForMember(
-  memberId: string,
-  gymId: string,
+  uid: string,
   todayDate: string
 ): Promise<{ mealLogs: MealLog[] }> {
   const yesterday = new Date(`${todayDate}T00:00:00`);
   if (Number.isNaN(yesterday.getTime())) return { mealLogs: [] };
   yesterday.setDate(yesterday.getDate() - 1);
   const yesterdayDate = yesterday.toISOString().slice(0, 10);
-  return getMealLogsForMember(memberId, gymId, yesterdayDate);
+  return getMealLogsForMember(uid, yesterdayDate);
 }
 
 /** One grouped suggestion for the nutrition Quick Add "Recent" row. */
@@ -333,13 +297,9 @@ export type MealSuggestion = {
  * by recency). Powers the personalized "Recent" quick-add row, which ranks
  * ahead of the generic static presets — by day three of real usage, what a
  * member actually eats is a far better default than six hardcoded items.
- *
- * Reuses the existing (memberId ASC, date ASC, loggedAt ASC) composite index
- * on mealLogs — see firestore.indexes.json — so no new index is required.
  */
 export async function getRecentMealsForMember(
-  memberId: string,
-  gymId: string,
+  uid: string,
   options: { lookbackDays?: number; limit?: number } = {}
 ): Promise<{ recentMeals: MealSuggestion[] }> {
   const { lookbackDays = 30, limit = 6 } = options;
@@ -350,19 +310,9 @@ export async function getRecentMealsForMember(
     since.setDate(since.getDate() - lookbackDays);
     const sinceDate = since.toISOString().slice(0, 10);
 
-    // orderBy must list `loggedAt` explicitly (not rely on Firestore's
-    // implicit __name__ tiebreaker) to match the existing composite index
-    // (memberId ASC, date ASC, loggedAt ASC) exactly — a query that instead
-    // falls back to ordering ties by document ID needs a *different*
-    // composite index Firestore doesn't have, which fails outright in
-    // production with FAILED_PRECONDITION rather than degrading. This also
-    // fixes same-day meals sorting by random doc ID instead of chronologically.
-    const snapshot = await db
-      .collection(`gyms/${gymId}/mealLogs`)
-      .where("memberId", "==", memberId)
+    const snapshot = await userCollection(db, uid, "mealLogs")
       .where("date", ">=", sinceDate)
       .orderBy("date", "asc")
-      .orderBy("loggedAt", "asc")
       .limit(500)
       .get();
 
@@ -405,7 +355,7 @@ export async function getRecentMealsForMember(
 
     return { recentMeals };
   } catch (error) {
-    reportReadModelError("getRecentMealsForMember", error, { memberId, gymId });
+    reportReadModelError("getRecentMealsForMember", error, { memberId: uid });
     return { recentMeals: [] };
   }
 }
@@ -414,16 +364,13 @@ export async function getRecentMealsForMember(
  * Fetch recent activity logs (stretch/cardio) for a member.
  */
 export async function getActivityLogsForMember(
-  memberId: string,
-  gymId: string,
+  uid: string,
   limit = 30
 ): Promise<{ activityLogs: ActivityLog[] }> {
   if (!hasFirebaseAdminConfig()) return { activityLogs: [] };
   try {
     const { db } = getFirebaseAdminServices();
-    const snapshot = await db
-      .collection(`gyms/${gymId}/activityLogs`)
-      .where("memberId", "==", memberId)
+    const snapshot = await userCollection(db, uid, "activityLogs")
       .orderBy("loggedAt", "desc")
       .limit(limit)
       .get();
@@ -432,8 +379,7 @@ export async function getActivityLogsForMember(
       const type = data.type === "cardio" ? "cardio" : "stretch";
       return {
         id: doc.id,
-        memberId: String(data.memberId ?? memberId),
-        gymId: String(data.gymId ?? gymId),
+        memberId: uid,
         type,
         name: String(data.name ?? ""),
         duration: data.duration != null ? Number(data.duration) : undefined,
@@ -445,7 +391,7 @@ export async function getActivityLogsForMember(
     });
     return { activityLogs };
   } catch (error) {
-    reportReadModelError("getActivityLogsForMember", error, { memberId, gymId });
+    reportReadModelError("getActivityLogsForMember", error, { memberId: uid });
     return { activityLogs: [] };
   }
 }

@@ -1,12 +1,10 @@
 "use client";
 
-import type { Exercise, LiftLog, DayLog, WorkoutProgram, GymNotice } from "@/types/domain";
-import { GymNoticeBoard } from "@/components/gym-notice-board";
+import type { Exercise, LiftLog, DayLog, WorkoutProgram } from "@/types/domain";
 import { getWeekStart, getTrainedDateKeys, resolveTodaysSession, estimateSessionMinutes, nowInIST } from "@/lib/workout-utils";
 
 interface OverviewScreenProps {
   firstName: string;
-  gymName: string;
   program: WorkoutProgram | null;
   currentWeek: number | null;
   exercises: Exercise[];
@@ -15,9 +13,6 @@ interface OverviewScreenProps {
   weeklyStreak: number;
   daysTrainedThisWeek: number;
   weeklyTarget: number;
-  coachNote?: string | null;
-  coachNoteFrom?: string | null;
-  gymNotices?: GymNotice[] | null;
   goWorkout: () => void;
   goLogs: () => void;
 }
@@ -73,8 +68,8 @@ function getRecentPR(liftLogs: LiftLog[], exercises: Exercise[]) {
 }
 
 export function OverviewScreen({
-  firstName, gymName, program, currentWeek, exercises, liftLogs, dayLogs,
-  weeklyStreak, daysTrainedThisWeek, weeklyTarget, coachNote, coachNoteFrom, gymNotices,
+  firstName, program, currentWeek, exercises, liftLogs, dayLogs,
+  weeklyStreak, daysTrainedThisWeek, weeklyTarget,
   goWorkout, goLogs,
 }: OverviewScreenProps) {
   const today = nowInIST();
@@ -127,12 +122,11 @@ export function OverviewScreen({
       <div className="m3d-ov__header">
         <span className="m3d-ov__avatar">{firstName.charAt(0).toUpperCase()}</span>
         <div>
-          <span className="m3d-ov__eyebrow">MEMBER · {gymName.toUpperCase()}</span>
+          <span className="m3d-ov__eyebrow">FITSPLIT</span>
           <h1 className="m3d-ov__name">{firstName}</h1>
           <div className="m3d-ov__sub">
-            {program ? `${program.title} · ${program.daysPerWeek}-day` : "No program assigned"}
+            {program ? `${program.title} · ${program.daysPerWeek}-day` : "No plan selected"}
             {currentWeek ? ` · Week ${currentWeek}` : ""}
-            {coachNoteFrom ? ` · Coach ${coachNoteFrom}` : ""}
           </div>
         </div>
       </div>
@@ -171,7 +165,7 @@ export function OverviewScreen({
                 <div className="m3d-ov__today-meta">{liftsCount} lifts · {totalSets} sets · est. {estMin} min</div>
               </>
             ) : (
-              <div className="m3d-ov__today-title">No workout plan assigned</div>
+              <div className="m3d-ov__today-title">No workout plan selected</div>
             )}
           </button>
           <button type="button" className="m3d-ov__cta" onClick={goWorkout}>
@@ -190,19 +184,6 @@ export function OverviewScreen({
           ))}
         </div>
       </div>
-
-      {coachNote && (
-        <div className="m3d-ov__coach">
-          <span className="m3d-ov__section-label">COACH&apos;S NOTE</span>
-          <p>{coachNote}</p>
-        </div>
-      )}
-
-      {gymNotices && gymNotices.length > 0 && (
-        <div className="mcr-notices-wrap">
-          <GymNoticeBoard notices={gymNotices} />
-        </div>
-      )}
 
       <div className="m3d-ov__activity">
         <div className="m3d-ov__activity-head">

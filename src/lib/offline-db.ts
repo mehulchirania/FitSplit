@@ -26,8 +26,13 @@ class FitSplitDB extends Dexie {
     this.version(2).stores({
       liftLogs: '++offlineId, id, ptSessionId, memberId, gymId, exerciseId, synced, loggedAt'
     }).upgrade(() => {
-      // No-op: schema is identical to v1.  Replace with real migration logic when
-      // new indexes or table renames are needed.
+      // No-op: schema is identical to v1.
+    });
+
+    // v3 — drop the gym/PT indexes that no longer exist in the data model.
+    // Existing rows are untouched; only the index set changes.
+    this.version(3).stores({
+      liftLogs: '++offlineId, id, memberId, exerciseId, synced, loggedAt'
     });
   }
 }

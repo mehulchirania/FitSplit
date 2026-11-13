@@ -1,14 +1,12 @@
 "use server";
 
 import { requireAuth } from "@/lib/auth";
-import { PRIMARY_GYM_ID } from "../collections";
 import { hasFirebaseAdminConfig } from "../admin";
-import { requireFirebase, mirrorGymScopedRecord, assertCanManageMember } from "./shared";
+import { requireFirebase, userDoc } from "./shared";
 import { getExerciseSwapsForMember } from "../read-models/swaps";
 import { z } from "zod";
 
 const SaveExerciseSwapsSchema = z.object({
-  memberId: z.string().trim().min(1, "Member is required."),
   programId: z.string().trim().min(1, "Program is required."),
   dayId: z.string().trim().min(1, "Day is required."),
   // Keyed by exercise index within the day (as a string — Firestore map keys
@@ -21,16 +19,8 @@ export type SaveExerciseSwapsResult =
   | { status: "success" }
   | { status: "error"; message: string };
 
-/**
- * Persists a member's exercise substitutions for one program day. Swaps used
- * to be localStorage-only (device-local, invisible to trainers) — this is
- * what makes them survive a device switch and actually show up on the
- * trainer's view of the member (see ExerciseSwapNotes on the owner member
- * detail page). Called directly from WorkoutScreen on every swap change, not
- * gated behind a form — same plain-object pattern as sendCoachMessage.
- */
+/** Persists the signed-in user's exercise substitutions for one program day. */
 export async function saveExerciseSwaps(input: {
-  memberId: string;
   programId: string;
   dayId: string;
   swaps: Record<string, string>;
@@ -41,24 +31,19 @@ export async function saveExerciseSwaps(input: {
     if (!parsed.success) {
       return { status: "error", message: parsed.error.issues[0]?.message ?? "Could not save swap." };
     }
-    const { memberId, programId, dayId, swaps } = parsed.data;
-    assertCanManageMember(currentUser, memberId);
+    const { programId, dayId, swaps } = parsed.data;
 
     if (!hasFirebaseAdminConfig()) {
       return { status: "success" };
     }
 
     const db = requireFirebase();
-    const gymId = currentUser.gymId ?? PRIMARY_GYM_ID;
-    const docId = `${memberId}_${dayId}`;
-    const now = new Date().toISOString();
-
-    await mirrorGymScopedRecord(db, gymId, "exerciseSwaps", docId, {
-      memberId,
+    await userDoc(db, currentUser.uid, "exerciseSwaps", dayId).set({
+      memberId: currentUser.uid,
       programId,
       dayId,
       swaps,
-      updatedAt: now
+      updatedAt: new Date().toISOString()
     });
 
     return { status: "success" };
@@ -72,25 +57,17 @@ export async function saveExerciseSwaps(input: {
 }
 
 /**
- * Thin server-action wrapper around the getExerciseSwapsForMember read-model
- * (which uses the Admin SDK and can't be called directly from a client
- * component) so WorkoutScreen can hydrate a member's swaps for the day
- * they're viewing — same pattern as getMealQuickAddSuggestions.
+ * Server-action wrapper around the getExerciseSwapsForMember read-model so the
+ * workout screen can hydrate the swaps for the day being viewed.
  *
- * `found` distinguishes "no doc exists yet for this day" (client should
- * leave its local/pre-migration state alone — nothing to reconcile against)
- * from "a doc exists, possibly with an empty swaps map" (client should
- * treat the server as authoritative and replace local state even with
- * empty, so a swap cleared on another device actually clears here too).
+ * `found` distinguishes "no doc exists yet for this day" from "a doc exists,
+ * possibly with an empty swaps map" (the server is then authoritative).
  */
 export async function getExerciseSwapsForMemberDay(
-  memberId: string,
-  gymId: string,
   dayId: string
 ): Promise<{ found: boolean; swaps: Record<string, string> }> {
   const currentUser = await requireAuth();
-  assertCanManageMember(currentUser, memberId);
-  const { swapsByDay } = await getExerciseSwapsForMember(memberId, gymId);
+  const { swapsByDay } = await getExerciseSwapsForMember(currentUser.uid);
   const record = swapsByDay[dayId];
   return { found: record != null, swaps: record?.swaps ?? {} };
 }

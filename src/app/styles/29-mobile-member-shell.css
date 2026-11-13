@@ -97,39 +97,6 @@
   }
 
   /* ── Coach note banner: pinned-note fold (shell signature) ────────────── */
-  .m3d-coach-banner {
-    position: relative;
-    align-items: flex-start;
-    padding: var(--space-4);
-    border-radius: var(--radius-lg);
-    overflow: visible;
-  }
-
-  .m3d-coach-banner::before {
-    content: "";
-    position: absolute;
-    top: -1px;
-    right: var(--space-5);
-    width: 22px;
-    height: 10px;
-    background: var(--accent);
-    border-radius: 0 0 var(--radius-xs) var(--radius-xs);
-    transform: rotate(-3deg);
-    box-shadow: var(--shadow-soft);
-  }
-
-  .m3d-coach-banner__note {
-    font-size: var(--text-base);
-    line-height: var(--leading-normal);
-  }
-
-  .m3d-coach-banner__link {
-    min-height: 44px;
-    min-width: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
 
   /* ── Stats grid: horizontal scroll snap, no page-level overflow ───────── */
   .mcr-stats {
@@ -248,18 +215,8 @@
   }
 
   /* ── Membership row / no-plan / notices: consistent card rhythm ───────── */
-  .mcr-membership,
-  .mcr-no-plan,
-  .mcr-notices-wrap {
+  .mcr-no-plan {
     border-radius: var(--radius-lg);
-  }
-
-  .mcr-membership__btn {
-    min-height: 44px;
-    padding-left: var(--space-4);
-    padding-right: var(--space-4);
-    display: inline-flex;
-    align-items: center;
   }
 
   /* ── Progress tab ───────────────────────────────────────────────────── */
@@ -366,7 +323,6 @@
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
   .mcr-tabbar__item,
   a.mcr-tabbar__item,
-  .mcr-today-cta,
   .m3d-ov__cta {
     transition: none;
   }

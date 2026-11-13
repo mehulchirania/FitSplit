@@ -1,101 +1,46 @@
-# FitSplit Data Rights and Grievance Notice
+# Data Rights and Grievance Notice
 
-Last updated: July 6, 2026
+**Version {{VERSION}} · Last updated {{LAST_UPDATED}}**
 
-This notice explains how users can exercise privacy rights or raise data grievances related to FitSplit.
+This page explains how to use your rights under India's Digital Personal Data Protection Act, 2023, and equivalent rights under GDPR-style laws. Everything is free. Details of what we hold are in the Privacy Notice.
 
-## 1. Contact details
+## 1. Quick guide
 
-Owner and operator: Blume Labs ([https://blumelabs.in/](https://blumelabs.in/))
+| I want to | What to do |
+|---|---|
+| See or download a copy of my data (access and portability) | Sign in, open [Settings](/member/settings), choose **Download my data**. You get a JSON file with your account and consent record, logs, meals, sessions and active program, including a link to your profile photo |
+| Correct or update my data (correction and updating request) | Edit your name, details and metrics in Settings and Profile. For anything you cannot edit (for example your email address), contact us using section 3 |
+| Delete my data (erasure request) | Sign in, open [Settings](/member/settings), choose **Delete my account** and confirm. Your profile, all logs, your photo and your sign-in identity are permanently erased straight away. This cannot be undone |
+| Withdraw consent | Turn off optional diagnostics with the control at the bottom of this page. To withdraw the core consent given at signup, delete your account as above, or contact us and we will do it for you |
+| Nominate someone to act for me if I die or cannot act | Email us using section 3 with the nominee's name and contact details, from your account email. We will record it and tell you how the nominee can verify themselves later |
+| Raise a grievance | Contact the Grievance Officer in section 3 |
+| Act for a child under 18 | A parent or guardian should email us from the guardian address given at signup, naming the child's account |
 
-Email: fitsplit.in@gmail.com
+If you cannot sign in, email us from your account address and we will verify you before acting.
 
-Registered address: `[REGISTERED ADDRESS]`
+## 2. Your consent choices
 
-Grievance Officer: `[GRIEVANCE OFFICER NAME]`
+The control at the bottom of this page manages the one optional consent FitSplit has (browser error diagnostics). It is off unless you turn it on.
 
-Grievance Officer email: fitsplit.in@gmail.com
+## 3. Contact: Grievance Officer and data protection contact
 
-Grievance Officer postal address: `[GRIEVANCE OFFICER POSTAL ADDRESS]`
+| | |
+|---|---|
+| Name | {{CONTACT_NAME}} |
+| Designation | {{CONTACT_DESIGNATION}} |
+| Email | {{CONTACT_EMAIL}} |
+| Postal address | {{CONTACT_ADDRESS}} |
 
-Support response hours: `[SUPPORT RESPONSE HOURS]`
+Write to us with the subject line "Data request", "Correction", "Erasure", "Withdraw consent", "Nomination" or "Grievance", and tell us which account (the email you signed up with). We will:
 
-## 2. Before contacting us
+- confirm it is you, so nobody else can take your data;
+- acknowledge your request within {{ACK_DAYS}} days;
+- respond, or tell you what more we need, within {{RESPONSE_DAYS}} days, and in any case within the period set by the DPDP Rules.
 
-If you are a gym member, your gym controls many records in FitSplit, including membership, attendance, training, coaching, PT, billing-request, and account-status records. You may contact your gym owner directly for many corrections, membership changes, access changes, or deletion requests.
+## 4. If you are not satisfied
 
-You may also contact FitSplit, and we will route or handle the request as appropriate based on the account, gym, and applicable law.
+If our response does not resolve your grievance, you can complain to the Data Protection Board of India. The DPDP Act expects you to use our grievance process first.
 
-## 3. Rights you may have
+## 5. What we may keep after erasure
 
-Depending on where you live and which law applies, you may have rights to:
-
-- know what personal data is processed and why;
-- access a copy of your data;
-- correct inaccurate or incomplete data;
-- delete personal data;
-- withdraw consent;
-- restrict or object to processing;
-- receive data portability/export;
-- opt out of sale or sharing of personal information, where applicable;
-- nominate another person to exercise rights after death or incapacity, where applicable;
-- complain to a data protection authority, regulator, or grievance body.
-
-Some rights may be limited where data must be retained for legal, security, fraud-prevention, accounting, dispute, or legitimate gym-record purposes.
-
-## 4. India users
-
-Users in India may contact the Grievance Officer about personal data questions, consent withdrawal, correction, erasure, access, or complaints.
-
-When you make a request, please include:
-
-- your full name;
-- username or phone number used for FitSplit;
-- gym name, if applicable;
-- the right or issue involved;
-- enough detail for us to verify and process the request.
-
-We will respond within the period required by applicable law.
-
-## 5. GDPR/UK GDPR users
-
-If GDPR or UK GDPR applies, you may have rights to access, rectification, erasure, restriction, portability, objection, withdrawal of consent, and complaint to a supervisory authority.
-
-Where FitSplit processes data on behalf of a gym, we may forward your request to the gym or support the gym in responding.
-
-## 6. California users
-
-If the CCPA/CPRA applies, California residents may request access/know, deletion, correction, portability, and information about disclosure practices. FitSplit does not sell personal information and does not share it for cross-context behavioral advertising.
-
-You may use an authorized agent where permitted by law. We may require verification of identity and authority before acting on a request.
-
-## 7. Verification
-
-To protect accounts and gym data, we may need to verify your identity before completing a request. Verification may include matching account information, confirming access to your email/phone/account, or asking the gym owner to validate your relationship to the gym.
-
-We will not ask for your password or PIN by email.
-
-## 8. Consent withdrawal
-
-You may withdraw consent where processing is based on consent. Withdrawal does not affect processing that occurred before withdrawal.
-
-Withdrawing consent for health/fitness data, location attendance, or push notifications may limit or disable related features.
-
-## 9. Deletion and retention
-
-Deletion requests may be subject to:
-
-- verification;
-- gym controller instructions;
-- legal retention duties;
-- accounting or dispute needs;
-- security, fraud-prevention, and abuse-prevention records;
-- backup and archive deletion cycles.
-
-Current app behavior includes a soft-delete archive with 60-day retention for supported deleted records, unless a longer retention period is required.
-
-## 10. Complaints
-
-If you are not satisfied with our response, you may reply to the same email thread for escalation to the Grievance Officer.
-
-You may also have the right to complain to a regulator or data protection authority depending on your jurisdiction.
+When you erase your account we delete your data. We may keep a minimal record (such as a request log) only where the law requires it or where we need it to show we handled your request properly, and residual backup copies in Google's systems are overwritten on their normal cycle.

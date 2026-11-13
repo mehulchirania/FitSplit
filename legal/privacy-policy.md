@@ -1,271 +1,130 @@
-# FitSplit Privacy Policy
+# FitSplit Privacy Notice
 
-Last updated: July 6, 2026
+**Version {{VERSION}} · Last updated {{LAST_UPDATED}}**
 
-This Privacy Policy explains how FitSplit collects, uses, shares, stores, and protects personal data when you use the FitSplit gym-management platform.
+This notice explains what personal data FitSplit collects when you use our free workout app, why we collect it, who processes it, how long we keep it, and the rights you have. It is written to meet India's Digital Personal Data Protection Act, 2023 ("DPDP Act") and the rules made under it, and follows GDPR-style good practice. You can ask for this notice in English or in any language listed in the Eighth Schedule to the Constitution of India (write to the contact in section 12).
 
-FitSplit is owned and operated by [Blume Labs](https://blumelabs.in/) ("Blume Labs", "FitSplit", "we", "us", "our"), with its registered address at `[REGISTERED ADDRESS]`. Contact: fitsplit.in@gmail.com.
+## 1. Who we are
 
-## 1. Scope
+FitSplit is operated by {{OPERATOR_NAME}} ({{OPERATOR_LEGAL_FORM}}), registered at {{OPERATOR_ADDRESS}} ("FitSplit", "we", "us"). For the personal data described here we decide the purpose and means of processing, so we are the **Data Fiduciary** under the DPDP Act (and the "controller" in GDPR terms).
 
-This policy applies to:
+FitSplit is a free app for following workout plans and keeping a training log. There are no payments, no gyms, no trainers and no advertising on FitSplit. Every account belongs to one individual who uses the app for themselves.
 
-- gym members;
-- gym owners, trainers, and staff;
-- platform administrators;
-- people who contact FitSplit through the website or app;
-- gym customers that use FitSplit to manage their business.
+## 2. What data we collect
 
-This policy covers FitSplit's web app, PWA, public pages, authentication flows, notifications, and support communications.
+| Category | What it includes | Where it comes from |
+|---|---|---|
+| Account | Name, email address, password (stored only as a salted hash by Firebase Authentication; we never see or store it in readable form), account creation time | You, at signup |
+| Consent record | Which Terms and Privacy Notice versions you accepted and when, your age group (18 or older, or under 18), your optional-diagnostics choice, and for under-18 users a guardian email and the time guardian consent was declared | You, at signup |
+| Profile | Optional: date of birth, age, gender, height, weight, fitness goals, macro targets, profile photo | You, in Settings and Profile |
+| Health notes | Optional: injury notes and medical notes you choose to type into your profile | You, in Profile |
+| Training data | Programs you follow, exercises you swap, sets, reps and weights, completed workout days and sessions, stretch and cardio entries | You, as you log |
+| Body and nutrition data | Body-weight entries, daily macros, meals you log | You, as you log |
+| Profile photo | A cropped image you upload as your avatar | You |
+| Technical data | IP address, browser and device type, pages requested and timestamps in server logs; error details if something breaks | Your browser and our servers |
 
-## 2. Who is responsible for your data
+We do not collect your precise location, contacts, advertising identifiers or payment details, and we do not collect biometric data. Please do not enter other people's personal data, or information you do not want stored, in free-text fields. Injury and medical notes are entirely optional; the app works without them.
 
-For most member and staff data inside a gym workspace, the gym decides why and how the data is used. In that context, the gym is generally the controller/data fiduciary/business, and FitSplit is the processor/service provider/vendor acting on the gym's instructions.
+## 3. Why we use your data, and our basis
 
-For data FitSplit uses for its own purposes, FitSplit is the controller/data fiduciary/business. Examples include platform security, service operations, legal compliance, support, product analytics, abuse prevention, and direct communications with prospective gym customers.
+Under the DPDP Act we rely on your **consent** (section 6), which you give by ticking the box at signup, and on the narrow "certain legitimate uses" the Act allows. The right-hand column also gives the closest GDPR-style basis.
 
-If you are a member, your gym may be the best first contact for membership, coaching, attendance, payment, and account-management questions. You can also contact FitSplit at fitsplit.in@gmail.com.
+| Purpose | Data used | Basis |
+|---|---|---|
+| Create and secure your account, sign you in, keep you signed in | Account, session cookie, technical data | Consent; necessary to provide the service |
+| Provide the app: plans, logging, progress charts, macro tracking, data export | Profile, training, body and nutrition data | Consent; necessary to provide the service |
+| Personalise targets you set yourself (for example macro targets, units) | Profile, body data | Consent |
+| Keep the service secure and prevent abuse (rate limiting, fraud and misuse checks) | IP address, request logs, account data | Consent; our legitimate interest in security |
+| Fix bugs and keep the app reliable (server-side error reports) | Technical data | Our legitimate interest in running a reliable service |
+| Browser error diagnostics and masked session replays | Technical data, masked page content | Your separate, optional consent only (section 6) |
+| Meet legal obligations and respond to lawful requests | Whatever the law requires | Legal obligation / legitimate use under DPDP Act s.7 |
+| Handle your rights requests and grievances | Account data, request details | Legal obligation; consent |
 
-## 3. Personal data we collect
+We do not use your data for advertising, marketing profiles, or automated decisions that significantly affect you. We do not sell your data.
 
-We collect the following categories of data depending on your role and the features used.
+## 4. Health and fitness information
 
-### Account and identity data
+Body weight, nutrition and workout data describe your health and fitness. We treat them with the same care as any sensitive data: they are visible only to you inside your account, are not shared with other users, and are not used for anything other than running your own account. FitSplit does not give medical advice (see the Health and Fitness Disclaimer).
 
-- name and display name;
-- username;
-- phone number;
-- email address or synthetic authentication email;
-- role, staff type, gym association, and account status;
-- authentication identifiers;
-- password or PIN authentication data in protected form;
-- login attempt, lockout, session, and security records.
+## 5. Children (under 18)
 
-### Gym and staff data
+You must be 18 or older to create an account on your own. Under the DPDP Act a person under 18 is a child.
 
-- gym name, logo, location, map link, contact details, social links, and geofence settings;
-- staff names, phone numbers, roles, and assigned-member relationships;
-- gym notices and workspace settings.
+- At signup we ask whether you are 18 or older. If you are under 18, a **parent or legal guardian must consent** by ticking a separate box and giving their email address. We record that declaration, the guardian's email and the time, on the account.
+- We may email the guardian to confirm, and we may suspend or delete an account if consent cannot be confirmed or the guardian withdraws it.
+- For under-18 accounts we do **not** carry out tracking, behavioural monitoring or targeted advertising, and we turn the optional diagnostics in section 6 off and do not offer it.
+- A guardian can ask us to access, correct, export or delete a child's data, or withdraw consent, using the contact in section 12.
+- If you believe a child has signed up without guardian consent, tell us and we will delete the account.
 
-### Health, fitness, and wellness data
+## 6. Optional consent: browser diagnostics
 
-FitSplit may process health-related and fitness data, including:
+Separately from the checkbox that accepts the Terms and this notice, we offer one optional choice: allowing our error-monitoring tool (Sentry) to run in your browser and collect error details, performance samples, and occasional session replays in which all text is masked and images and media are blocked. It is **off by default**, you can use all of FitSplit without it, and you can turn it on or off at any time on the Data Rights page. Your choice is saved on your account and on the device you used. Without it, nothing is sent to Sentry from your browser. (Errors raised on our servers are still reported to Sentry without your profile content; this is limited to technical data.)
 
-- workout programs, exercise assignments, sets, reps, weight, rest, skipped/modified days, and training history;
-- body weight, body fat percentage, height, age, goals, and progress trends;
-- macro and nutrition targets/logs, calories, water, protein, carbs, and fats;
-- injury notes, pain points, coach notes, limitations, and related observations;
-- muscle volume, radar charts, progress charts, and personal-training records.
+## 7. Who processes your data
 
-Some of this data may be treated as sensitive personal data, special category data, or sensitive personal information under applicable law.
+We share personal data only with service providers that process it on our behalf and under their data-protection terms. We do not sell it or share it for advertising.
 
-### Attendance and location data
+| Processor | What for | Data |
+|---|---|---|
+| Google LLC (Firebase Authentication, Cloud Firestore, Cloud Storage, App Hosting and Google Cloud logging) | Hosting the app, storing your account and data, signing you in, storing your profile photo, server logs | All data in section 2 |
+| Functional Software, Inc. (Sentry) | Error monitoring | Technical data; if you opted in, browser diagnostics and masked replays |
 
-- check-in and check-out records;
-- gym geofence status;
-- approximate location coordinates provided by your device for attendance verification where enabled;
-- timestamps and related device/browser context.
+The up-to-date list is on the Subprocessors page. If you watch an exercise tutorial, the video is loaded from YouTube, which then receives your IP address and may set its own cookies; see the Cookie Policy. We may disclose data to a court, regulator or law-enforcement body where the law requires it.
 
-FitSplit does not collect background location continuously. Location is used for attendance verification when the user initiates a check-in/check-out or otherwise uses a location-enabled attendance feature.
+## 8. Transfers outside India
 
-### Membership and billing records
+Your data is stored in Google Cloud in {{DATA_LOCATION}}. Google may also process data in other countries to run, secure and support its services, and Sentry processes error data outside India. The DPDP Act allows transfers to other countries except those the Government of India restricts by notification. We choose processors that commit to contractual security and confidentiality protections, and we will not transfer data to a restricted country.
 
-- membership packages;
-- package duration and status;
-- membership start and end dates;
-- payment requests;
-- owner approval/rejection records;
-- membership expiry notices.
+## 9. How long we keep data
 
-FitSplit does not currently process card payments inside the app.
+| Data | Retention |
+|---|---|
+| Account, profile, training, body and nutrition data, profile photo | For as long as your account exists. When you delete your account in Settings, all of it is erased from our live systems immediately, together with your sign-in identity |
+| Consent record | Kept with your account and deleted with it. If you are asked to prove consent, we may keep a minimal record (user ID, versions, timestamps) for as long as the law requires |
+| Server logs and security logs | A limited period set by Google Cloud (we aim to keep them for no more than one year), then deleted automatically |
+| Error reports and replays in Sentry | A limited period set in our Sentry project (we aim for 90 days or less), then deleted automatically |
+| Backups and copies | Residual copies in Google's systems are overwritten on its standard cycle after deletion |
 
-### Device, usage, and technical data
+We do not currently delete inactive accounts automatically.
 
-- session cookies and role-routing cookies;
-- browser/device information;
-- PWA/service-worker and offline-sync data;
-- Firebase Cloud Messaging push token where you opt in;
-- error, diagnostic, and security logs;
-- IP address and request metadata received by hosting and infrastructure providers.
+## 10. Security
 
-### Communications
+- All traffic is encrypted with HTTPS and we send HSTS so browsers only connect securely.
+- The sign-in session cookie is HttpOnly, Secure and SameSite, and sessions end after 2 hours (or 14 days if you chose "remember me").
+- Passwords are handled by Firebase Authentication, which stores only hashes.
+- Each account's data is stored under its own user ID and the database is deny-by-default: other users cannot read it.
+- We apply security headers (including a Content-Security-Policy), validate and length-limit everything you submit, and rate-limit sign-up and sign-in.
 
-- contact form submissions;
-- support emails;
-- account deletion requests;
-- notifications and activity records.
+No system is perfectly secure. If a personal data breach affects you, we will notify you and the Data Protection Board of India as the DPDP Act requires.
 
-## 4. How we collect data
+## 11. Your rights
 
-We collect data:
+You can:
 
-- directly from you when you log in, update a profile, use workouts, submit logs, check in, upload media, or contact us;
-- from your gym, owner, trainer, or staff when they create or manage your account, membership, training plan, or notes;
-- automatically from your browser, device, cookies, hosting, Firebase, and security systems;
-- from third-party infrastructure providers that help operate the Service.
+- access a summary of your data and a full copy (Settings, "Download my data");
+- correct or update your data (Settings and Profile, or ask us);
+- erase your account and data (Settings, "Delete my account");
+- withdraw consent at any time (the optional diagnostics choice on the Data Rights page; deleting your account withdraws everything). Withdrawal does not affect processing already done, and we cannot provide the service without the data needed for it;
+- raise a grievance and get a response (section 12);
+- nominate another person to exercise your rights if you die or become incapacitated.
 
-## 5. How we use data
+Step-by-step instructions are on the Data Rights page. Exercising these rights is free.
 
-We use data to:
+## 12. Grievance Officer and data protection contact
 
-- create, authenticate, secure, and manage accounts;
-- route users to the correct role and gym workspace;
-- provide workout, progress, attendance, PT, membership, billing-record, notification, and dashboard features;
-- allow owners and trainers to coach, manage, and support members;
-- sync offline workout logs;
-- deliver web push notifications where enabled;
-- maintain security, access control, tenant isolation, rate limiting, and abuse prevention;
-- troubleshoot, test, monitor, and improve the Service;
-- respond to support, legal, privacy, and deletion requests;
-- comply with legal obligations and enforce our terms;
-- maintain records needed for audits, disputes, fraud prevention, and business administration.
+| | |
+|---|---|
+| Name | {{CONTACT_NAME}} |
+| Designation | {{CONTACT_DESIGNATION}} |
+| Email | {{CONTACT_EMAIL}} |
+| Postal address | {{CONTACT_ADDRESS}} |
 
-## 6. Legal bases and consent
+We acknowledge requests within {{ACK_DAYS}} days and aim to respond within {{RESPONSE_DAYS}} days; in any case we will respond within the time the DPDP Rules allow.
 
-Depending on where you live, we rely on one or more legal bases:
+## 13. Complaints to the Board
 
-- performance of a contract or taking steps before entering a contract;
-- your consent, including explicit consent for health and fitness data where required;
-- legitimate interests, such as security, service improvement, fraud prevention, support, and business operations;
-- legal obligation;
-- vital interests or public interest only where applicable and legally permitted.
+If we have not resolved your grievance, you may complain to the Data Protection Board of India. Please use our grievance process first, as the DPDP Act expects.
 
-For India users, FitSplit and/or the relevant gym may process digital personal data based on consent or other lawful grounds available under applicable law. Consent requests should be accompanied by clear notice of the personal data collected, the purpose of processing, and how to exercise rights and grievances.
+## 14. Changes to this notice
 
-For EU/UK users, health-related data may be special category data. Where required, we rely on explicit consent for processing health and fitness data, including injury notes, body metrics, macro logs, and coaching notes. You may withdraw consent at any time, but withdrawal may limit or disable health/fitness features.
-
-## 7. Cookies and similar technologies
-
-We use strictly necessary cookies and local storage technologies to keep the Service working, including authentication/session cookies, role-routing cookies, terms-consent state, PWA/offline data, and security-related storage.
-
-We do not use advertising cookies in the current app. See the Cookie Policy for more detail.
-
-## 8. Push notifications
-
-If you opt in to browser or device push notifications, FitSplit stores a Firebase Cloud Messaging token for your account. Notifications may include membership expiry, program assignment, PT booking/rescheduling/completion, exercise request status, admin contact messages, and other service alerts.
-
-You can disable push notifications through your browser, device, or app settings. Service messages may still appear inside the app.
-
-## 9. Who can see your data
-
-Access depends on role and gym membership:
-
-- members can access their own data;
-- gym owners can access member, staff, training, attendance, membership, and operational data for their gym;
-- trainers can access member data permitted by gym visibility settings and training assignments;
-- platform administrators can access data needed to operate and support FitSplit;
-- service providers can process data only as needed to provide infrastructure, storage, hosting, messaging, diagnostics, and related services.
-
-FitSplit uses tenant isolation and role-based access controls to separate gym workspaces.
-
-## 10. Sharing and disclosure
-
-We may share data with:
-
-- your gym, owners, trainers, and staff, according to role permissions;
-- infrastructure and service providers listed in the Subprocessor List;
-- professional advisers, insurers, and auditors where needed;
-- law enforcement, courts, regulators, or government authorities where required by law;
-- parties involved in a merger, acquisition, financing, reorganization, or sale of assets, subject to appropriate protections;
-- other parties with your consent or at your direction.
-
-We do not sell personal information. We do not share personal information for cross-context behavioral advertising.
-
-## 11. International transfers
-
-FitSplit is operated from India and uses cloud infrastructure that may process data in India and other locations depending on provider configuration, support, security, and service operations. The app is configured around Google Firebase/Cloud services with primary regional operations in `asia-south1` where applicable.
-
-Where required, we use appropriate safeguards for cross-border transfers, such as provider data-processing terms, standard contractual clauses, contractual protections, access controls, and technical safeguards.
-
-## 12. Retention
-
-We keep personal data for as long as needed to provide the Service, operate gym records, comply with legal obligations, resolve disputes, secure the platform, and enforce agreements.
-
-Current app behavior includes:
-
-- active account data retained while the account or gym workspace is active;
-- deleted records archived before hard deletion where supported;
-- archive retention of 60 days unless a longer period is required by law or needed for legitimate dispute, fraud, security, or compliance reasons;
-- account deletion requests routed to the gym owner/admin for action where the gym controls the account.
-
-Some information may remain in backups, logs, audit records, or legal records for a limited period.
-
-## 13. Security
-
-We use administrative, technical, and organizational safeguards designed to protect personal data, including:
-
-- HTTPS and secure transport;
-- Firebase Authentication and session cookies;
-- role-based access controls;
-- Firestore and Storage security rules;
-- gym-scoped tenant separation;
-- login lockout and rate-limiting protections;
-- hashed or protected credentials;
-- restricted privileged server actions and cloud functions;
-- archive and deletion workflows;
-- monitoring and diagnostics.
-
-No system is perfectly secure. Please contact fitsplit.in@gmail.com if you believe your account or data has been compromised.
-
-## 14. Your rights
-
-Depending on where you live, you may have rights to:
-
-- access your data;
-- correct inaccurate data;
-- delete data;
-- restrict or object to processing;
-- withdraw consent;
-- receive a portable copy of data;
-- opt out of sale or sharing where applicable;
-- nominate another person to exercise rights where applicable;
-- complain to a regulator or data protection authority;
-- use a grievance process.
-
-Members may have in-app export and deletion request tools where available. You may also email fitsplit.in@gmail.com.
-
-See the Data Rights and Grievance Notice for details.
-
-## 15. California privacy notice
-
-If the CCPA/CPRA applies, this section supplements the rest of the policy.
-
-Categories of personal information collected may include identifiers, customer records, protected classification data where provided, commercial information, internet or network activity, geolocation data, audio/visual content if uploaded by users, professional/employment-related information for gym staff, sensitive personal information, and inferences from fitness/progress activity.
-
-Purposes include providing the Service, security, support, analytics, legal compliance, account management, gym operations, fitness tracking, and communications.
-
-We do not sell personal information and do not share personal information for cross-context behavioral advertising. We do not use sensitive personal information to infer characteristics beyond providing the Service and related security/support functions.
-
-California residents may request access, deletion, correction, portability, and information about disclosure practices, and may not be discriminated against for exercising rights.
-
-## 16. EU/UK privacy notice
-
-If GDPR or UK GDPR applies, FitSplit may act as controller for platform purposes and processor for gym-controlled member/staff data.
-
-You may have rights to access, rectification, erasure, restriction, portability, objection, withdrawal of consent, and complaint to a supervisory authority.
-
-Where processing is based on legitimate interests, you may object. Where processing is based on consent, you may withdraw consent at any time without affecting processing before withdrawal.
-
-## 17. Children and minors
-
-FitSplit is not directed to children. We do not knowingly collect personal data from children under 16 without appropriate authorization. Gyms must not create accounts for minors unless they have the required parent/guardian consent and legal basis.
-
-If you believe a child has provided data without required consent, contact fitsplit.in@gmail.com.
-
-## 18. Changes to this policy
-
-We may update this Privacy Policy from time to time. We will update the "Last updated" date and provide additional notice for material changes where appropriate.
-
-## 19. Contact and grievance officer
-
-Owner and operator: Blume Labs ([https://blumelabs.in/](https://blumelabs.in/))
-
-Address: `[REGISTERED ADDRESS]`
-
-Email: fitsplit.in@gmail.com
-
-Grievance Officer: `[GRIEVANCE OFFICER NAME]`
-
-Grievance Officer email: fitsplit.in@gmail.com
-
-Grievance Officer postal address: `[GRIEVANCE OFFICER POSTAL ADDRESS]`
+We version this notice (see the top of the page). When we change it in a way that matters, we will tell you in the app or by email and ask for your consent again where the law requires. The versions you accepted are kept on your account.

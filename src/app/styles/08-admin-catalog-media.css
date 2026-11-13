@@ -10,109 +10,8 @@
 html[data-theme="light"] { --adm-gold: #B45309; }
 
 /* Admin stats strip */
-.admin-stats-strip {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: var(--space-3);
-  margin-bottom: var(--space-4);
-}
-.admin-stat {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-4) var(--space-5);
-}
-.admin-stat-value {
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: var(--space-1);
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-.admin-stat-label {
-  font-size: var(--text-xs);
-  color: var(--text-soft);
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
 
 /* Admin gym table */
-.admin-gym-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.admin-gym-table th,
-.admin-gym-table td {
-  padding: var(--space-3) var(--space-4);
-  text-align: left;
-  border-bottom: 1px solid var(--border);
-  vertical-align: middle;
-}
-.admin-gym-table th {
-  font-size: var(--text-xs);
-  color: var(--text-soft);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-}
-.admin-gym-table tr:last-child td {
-  border-bottom: none;
-}
-
-.gym-logo-manager {
-  gap: var(--space-4);
-}
-
-.gym-logo-current,
-.gym-logo-editor {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-4);
-}
-
-.gym-brand-preview {
-  align-items: center;
-  display: flex;
-  gap: var(--space-3);
-  justify-content: center;
-  min-height: 74px;
-}
-
-.gym-brand-preview > img,
-.gym-logo-placeholder {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  display: block;
-  height: 58px;
-  object-fit: contain;
-  padding: var(--space-1);
-  width: 58px;
-}
-
-.gym-brand-preview > span:not(.gym-logo-placeholder) {
-  color: var(--text-faint);
-  font-size: var(--text-base);
-  font-weight: 900;
-}
-
-.gym-logo-placeholder {
-  align-items: center;
-  color: var(--text-soft);
-  display: inline-flex;
-  font-weight: 900;
-  justify-content: center;
-}
-
-.gym-logo-editor {
-  display: grid;
-  place-items: center;
-  position: relative;
-}
 
 /* Intentionally always-dark, regardless of site theme: this is an image
    crop/positioning canvas (like a photo editor's stage), not a themed
@@ -120,72 +19,8 @@ html[data-theme="light"] { --adm-gold: #B45309; }
    colour (including near-white ones) visible while cropping. Text placed
    on it uses a fixed light colour to match, not the theme's --text-faint,
    since this canvas doesn't follow the theme. */
-.gym-logo-canvas {
-  aspect-ratio: 1;
-  background: #0a0a0a;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-lg);
-  display: block;
-  max-width: 280px;
-  width: 100%;
-}
-
-.gym-logo-empty {
-  color: color-mix(in srgb, white 60%, transparent);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  max-width: 220px;
-  position: absolute;
-  text-align: center;
-}
-
-.gym-logo-controls {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.gym-logo-controls label {
-  color: var(--text-soft);
-  display: grid;
-  font-size: var(--text-sm);
-  font-weight: 800;
-  gap: var(--space-2);
-}
-
-.gym-logo-controls input[type="range"] {
-  accent-color: var(--brand);
-}
 
 /* Admin profile card */
-.profile-card-admin {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-5);
-  padding: var(--space-6) var(--space-8);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-bottom: var(--space-1);
-  flex-wrap: wrap;
-}
-.profile-avatar-lg {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  /* Lime-fill avatar: --primary/--primary-foreground are identical in both
-     themes, unlike --brand (dark olive on light, bright lime on dark) —
-     --brand here previously paired with --primary-foreground text, which
-     failed contrast (~2.9:1) in light mode. */
-  background: var(--primary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-xl);
-  font-weight: 700;
-  color: var(--primary-foreground);
-  flex-shrink: 0;
-  letter-spacing: -0.02em;
-}
 
 /* Exercise catalog per-exercise edit */
 .catalog-exercise-entry {
@@ -259,57 +94,6 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 .thumbnail-preview-trigger:disabled {
   cursor: default;
 }
-.exercise-edit-details summary::-webkit-details-marker { display: none; }
-.exercise-edit-details > summary {
-  cursor: pointer;
-  list-style: none;
-}
-.exercise-edit-details[open] > summary {
-  background: var(--bg-subtle);
-}
-.exercise-edit-panel {
-  background: var(--bg-elevated);
-  border-top: 1px solid var(--border);
-  border-radius: 0;
-  padding: var(--space-5) var(--space-4);
-  margin: 0;
-}
-.exercise-edit-panel .exercise-form-section {
-  padding: var(--space-4) 0;
-}
-.exercise-edit-panel .exercise-form-section:first-of-type {
-  padding-top: 0;
-}
-.exercise-edit-panel label {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--text-soft);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-.exercise-edit-panel input[type="text"],
-.exercise-edit-panel input[type="url"],
-.exercise-edit-panel select,
-.exercise-edit-panel textarea {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--text-sm);
-  padding: var(--space-2) var(--space-3);
-}
-.exercise-edit-panel input[type="text"]:focus,
-.exercise-edit-panel input[type="url"]:focus,
-.exercise-edit-panel select:focus,
-.exercise-edit-panel textarea:focus {
-  outline: 2px solid color-mix(in srgb, var(--brand) 40%, transparent);
-  border-color: var(--brand);
-}
-.exercise-edit-panel .exercise-form-actions {
-  padding-top: var(--space-3);
-}
 .catalog-exercise-copy {
   flex: 1;
   min-width: 0;
@@ -358,40 +142,10 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 .video-indicator-label {
   line-height: 1;
 }
-.video-indicator svg,
-.exercise-video-button svg {
+.video-indicator svg {
   height: 14px;
   width: 14px;
   flex-shrink: 0;
-}
-.catalog-edit-toggle {
-  min-width: 86px;
-  padding: var(--space-2) var(--space-3);
-}
-.catalog-edit-close {
-  display: none;
-}
-.exercise-edit-details[open] .catalog-edit-open {
-  display: none;
-}
-.exercise-edit-details[open] .catalog-edit-close {
-  display: inline;
-}
-.exercise-video-button {
-  align-items: center;
-  display: inline-flex;
-  font-size: var(--text-xs);
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
-  white-space: nowrap;
-}
-.exercise-video-button--demo {
-  background: color-mix(in srgb, var(--brand) 12%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
-  color: var(--brand);
-}
-.exercise-video-button--demo:hover {
-  background: color-mix(in srgb, var(--brand) 20%, transparent);
 }
 
 /* YouTube / video modal. The backdrop scrim is intentionally always dark
@@ -488,17 +242,6 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 }
 
 /* Workout session bar */
-.workout-session-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin: 0 0 var(--space-3);
-  flex-wrap: wrap;
-}
 .session-elapsed {
   display: flex;
   align-items: center;
@@ -524,19 +267,6 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 .lift-log-panel h2 { font-size: var(--text-base); font-weight: 700; color: var(--text); margin: 0; }
 
 /* Sidebar: sticky, scrollable internally */
-.list-panel.member-workout-side {
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-.member-workout-side {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  position: sticky;
-  top: 80px;
-  max-height: calc(100vh - 100px);
-  scrollbar-width: none;
-}
 
 /* Lift log table */
 .lift-log-table { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
@@ -563,20 +293,6 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 .lift-log-table span:first-child { color: var(--text); font-weight: 500; }
 
 /* muscle-targets inside exercise-row */
-.muscle-targets {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  margin: var(--space-1) 0 2px;
-}
-.muscle-targets span {
-  font-size: var(--text-xs);
-  color: var(--text-faint);
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  padding: 2px var(--space-2);
-}
 
 /* lift log fields grid */
 .lift-log-fields {
@@ -591,18 +307,12 @@ html[data-theme="light"] { --adm-gold: #B45309; }
     padding: 0 var(--space-4);
     gap: var(--space-4);
   }
-  .md-hero { margin-bottom: var(--space-4); }
-  .md-hero-inner {
-    gap: var(--space-4);
-  }
-  .md-hero-metrics { align-self: stretch; }
   .list-panel { padding: var(--space-4); }
   .lift-log-fields { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 480px) {
   .lift-log-fields { grid-template-columns: 1fr; }
-  .md-hero-title { font-size: var(--text-xl); }
 }
 
 /* Member dashboard polish: stable header, anchored menus, and responsive lift logging. */
@@ -611,9 +321,7 @@ html[data-theme="light"] { --adm-gold: #B45309; }
   z-index: 900;
 }
 
-.topbar-actions,
-.notification-menu,
-.profile-menu {
+.topbar-actions {
   min-width: max-content;
   position: relative;
 }
@@ -640,170 +348,10 @@ html[data-theme="light"] { --adm-gold: #B45309; }
   white-space: nowrap;
 }
 
-.notification-dropdown {
-  animation: dropdown-in 200ms var(--slow) both;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  display: grid;
-  gap: var(--space-3);
-  max-width: calc(100vw - 24px);
-  padding: var(--space-4);
-  position: absolute;
-  right: 0;
-  top: calc(100% + 10px);
-  width: 360px;
-  z-index: 1200;
-}
-
-.notification-dropdown-header {
-  align-items: flex-start;
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-}
-
-.notification-dropdown-header h2 {
-  color: var(--text);
-  font-size: var(--text-md);
-  margin: 2px 0 0;
-}
-
-.notification-dropdown-list {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.notification-dropdown-item {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  display: grid;
-  gap: var(--space-2);
-  grid-template-columns: auto minmax(0, 1fr);
-  padding: var(--space-2);
-}
-
-.notification-dropdown-item strong,
-.notification-dropdown-item p {
-  overflow-wrap: anywhere;
-}
-
-.notification-dropdown-item p,
-.notification-empty {
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  margin: 3px 0 0;
-}
-
-.notification-dot {
-  background: var(--brand);
-  border-radius: var(--radius-pill);
-  height: 8px;
-  margin-top: var(--space-2);
-  width: 8px;
-}
-
-.notification-badge {
-  align-items: center;
-  /* Lime-fill badge: --primary/--primary-foreground are identical in both
-     themes, unlike --brand (dark olive on light, bright lime on dark) —
-     --brand here previously paired with --primary-foreground text, which
-     failed contrast (~2.9:1) in light mode. */
-  background: var(--primary);
-  border: 2px solid var(--bg-elevated);
-  border-radius: var(--radius-pill);
-  color: var(--primary-foreground);
-  display: inline-flex;
-  font-size: var(--text-2xs);
-  font-weight: 900;
-  height: 18px;
-  justify-content: center;
-  min-width: 18px;
-  padding: 0 var(--space-1);
-  position: absolute;
-  right: -4px;
-  top: -5px;
-}
-
-.md-page {
-  padding-top: var(--space-1);
-}
-
-.md-hero {
-  margin-bottom: var(--space-6);
-  padding: 0 clamp(12px, 3vw, 24px);
-}
-
-.md-hero-inner {
-  align-items: stretch;
-  background: linear-gradient(
-    140deg,
-    color-mix(in srgb, var(--bg-elevated) 90%, var(--brand) 10%) 0%,
-    var(--bg-elevated) 55%
-  );
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  border-top: 3px solid var(--brand);
-  /* The inset highlight is a "glossy dark card" sheen — visibly a subtle
-     rim light in dark theme, a harmless no-op in light theme (a near-white
-     highlight on an already-light card blends in rather than looking
-     wrong), so it's left as one declaration rather than a per-theme pair. */
-  box-shadow: 0 24px 80px color-mix(in srgb, black 24%, transparent), 0 1px 0 color-mix(in srgb, white 6%, transparent) inset;
-  display: grid;
-  gap: var(--space-6);
-  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
-  margin: 0 auto;
-  max-width: 1180px;
-  overflow: hidden;
-  padding: clamp(22px, 3vw, 32px);
-}
-
-.md-hero-copy {
-  align-content: center;
-  display: grid;
-  gap: 0;
-  min-width: 0;
-}
-
-.md-hero-title {
-  font-size: clamp(var(--text-2xl), 3vw, var(--text-4xl));
-  margin-bottom: var(--space-4);
-  max-width: 760px;
-  overflow-wrap: anywhere;
-}
-
-.md-hero-meta {
-  max-width: 760px;
-}
-
-.md-badge {
-  font-size: var(--text-xs);
-  font-weight: 650;
-  line-height: 1.2;
-  padding: var(--space-1) var(--space-3);
-}
-
-.md-hero-metrics {
-  align-self: center;
-  min-width: 0;
-}
-
 .content-grid {
   gap: var(--space-5);
   grid-template-columns: minmax(0, 1fr) minmax(320px, 390px);
   max-width: 1180px;
-}
-
-.list-panel.member-workout-side {
-  padding: var(--space-3);
-}
-
-.member-workout-side {
-  gap: var(--space-3);
-  top: 92px;
 }
 
 .lift-log-panel {
@@ -828,96 +376,11 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 }
 
 /* ── Exercise catalog: predefined / custom sections ───────────────────────── */
-.catalog-section {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.catalog-section-header {
-  align-items: center;
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: var(--space-2);
-  padding: var(--space-4) var(--space-5);
-}
-.catalog-section-title {
-  color: var(--text);
-  font-size: var(--text-md);
-  font-weight: 700;
-  margin: 0;
-}
-
-.gym-selector {
-  align-items: flex-start;
-  display: inline-grid;
-  gap: var(--space-2);
-  margin-top: var(--space-4);
-  min-width: min(100%, 320px);
-}
-
-.gym-selector span {
-  color: var(--text-soft);
-  font-size: var(--text-xs);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
-
-.gym-selector select {
-  appearance: none;
-  background:
-    linear-gradient(45deg, transparent 50%, var(--text-soft) 50%) right 16px center / 6px 6px no-repeat,
-    linear-gradient(135deg, var(--text-soft) 50%, transparent 50%) right 11px center / 6px 6px no-repeat,
-    var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--text-base);
-  font-weight: 700;
-  min-height: 42px;
-  padding: var(--space-2) 34px var(--space-2) var(--space-3);
-}
-
-.gym-selector select:focus-visible {
-  border-color: var(--brand);
-  outline: 2px solid color-mix(in srgb, var(--brand) 32%, transparent);
-  outline-offset: 2px;
-}
 
 /* ── Muscle-group collapsible panels inside catalog ───────────────────────── */
 .catalog-grid {
   display: flex;
   flex-direction: column;
-}
-.catalog-group-panel {
-  border-bottom: 1px solid var(--border);
-}
-.catalog-group-panel:last-child {
-  border-bottom: none;
-}
-.catalog-group-panel summary::-webkit-details-marker { display: none; }
-.catalog-group-summary {
-  cursor: pointer;
-  list-style: none;
-  padding: 0;
-}
-.catalog-group-summary-inner {
-  align-items: center;
-  display: flex;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-5);
-  transition: background 120ms ease;
-}
-.catalog-group-summary:hover .catalog-group-summary-inner {
-  background: var(--bg-subtle);
-}
-.catalog-group-name {
-  color: var(--text);
-  font-size: var(--text-base);
-  font-weight: 700;
 }
 .panel-icon {
   color: var(--brand);
@@ -925,68 +388,14 @@ html[data-theme="light"] { --adm-gold: #B45309; }
   height: 16px;
   width: 16px;
 }
-.catalog-group-chevron {
-  color: var(--text-faint);
-  flex-shrink: 0;
-  height: 16px;
-  margin-left: 4px;
-  transition: transform 180ms ease;
-  width: 16px;
-}
-.catalog-group-panel[open] .catalog-group-chevron {
-  transform: rotate(180deg);
-}
 .catalog-list {
   border-top: 1px solid var(--border);
   padding: 0 var(--space-5);
 }
 
 /* ── catalog add section ──────────────────────────────────────────────────── */
-.catalog-add-section .notification-list {
-  padding: 0;
-}
 
 /* ── Exercise edit form sections ──────────────────────────────────────────── */
-.exercise-form-section {
-  border-bottom: 1px solid var(--border);
-  display: grid;
-  gap: var(--space-4);
-  padding: var(--space-4) 0;
-}
-.exercise-form-section:first-of-type {
-  padding-top: 0;
-}
-.exercise-form-section:last-of-type {
-  border-bottom: none;
-  padding-bottom: 0;
-}
-.exercise-form-section-title {
-  color: var(--text);
-  font-size: var(--text-sm);
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  margin: 0;
-  text-transform: uppercase;
-}
-.exercise-form-section-hint {
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  margin: -6px 0 0;
-}
-.exercise-form-label {
-  color: var(--text-soft);
-  display: block;
-  font-size: var(--text-sm);
-  font-weight: 700;
-  margin-bottom: var(--space-2);
-}
-.exercise-form-actions {
-  display: flex;
-  gap: var(--space-2);
-  justify-content: flex-end;
-  padding-top: var(--space-1);
-}
 
 /* form-grid: two-column responsive layout inside form sections */
 .form-grid {
@@ -999,1159 +408,97 @@ html[data-theme="light"] { --adm-gold: #B45309; }
 }
 
 /* ── Equipment chip multi-select ──────────────────────────────────────────── */
-.exercise-form-equipment {
-  display: grid;
-  gap: var(--space-2);
-}
-.equipment-chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-.equipment-chip {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  color: var(--text-soft);
-  cursor: pointer;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  padding: var(--space-1) var(--space-3);
-  transition: background 120ms, border-color 120ms, color 120ms;
-}
-.equipment-chip:hover {
-  border-color: var(--brand);
-  color: var(--text);
-}
-.equipment-chip.is-selected {
-  background: color-mix(in srgb, var(--brand) 18%, var(--bg-elevated));
-  border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
-  color: var(--brand-strong);
-}
-.equipment-custom-input {
-  font-size: var(--text-sm);
-  margin-top: 2px;
-}
-.equipment-selected-preview {
-  color: var(--text-soft);
-  font-size: var(--text-xs);
-  margin: 0;
-}
-.equipment-selected-preview strong {
-  color: var(--text);
-}
 
 /* ── Video entries (dynamic add/remove) ───────────────────────────────────── */
-.video-entries {
-  display: grid;
-  gap: var(--space-2);
-}
-.video-entry-card {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-}
-.video-entry-header {
-  align-items: center;
-  display: flex;
-  gap: var(--space-2);
-}
-.video-channel-select {
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  flex: 1;
-  font-size: var(--text-sm);
-  padding: var(--space-1) var(--space-2);
-}
-.video-entry-remove {
-  align-items: center;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-faint);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: var(--text-sm);
-  height: 30px;
-  justify-content: center;
-  padding: 0 var(--space-2);
-  transition: background 120ms, border-color 120ms, color 120ms;
-}
-.video-entry-remove:hover {
-  background: color-mix(in srgb, var(--danger) 12%, transparent);
-  border-color: color-mix(in srgb, var(--danger) 40%, var(--border));
-  color: var(--danger);
-}
-.video-entry-url {
-  font-size: var(--text-sm);
-  width: 100%;
-}
-.video-add-btn {
-  align-self: flex-start;
-  background: transparent;
-  border: 1px dashed var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-soft);
-  cursor: pointer;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  padding: var(--space-2) var(--space-4);
-  transition: border-color 120ms, color 120ms;
-}
-.video-add-btn:hover {
-  border-color: var(--brand);
-  color: var(--brand);
-}
 
 /* ── Restore defaults section inside edit panel ───────────────────────────── */
-.exercise-restore-section {
-  border-top: 1px solid var(--border);
-  display: grid;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
-  padding-top: var(--space-4);
-}
-.exercise-restore-hint {
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  margin: 0;
-}
 
 /* ── Tutorial toggle switch ────────────────────────────────────────────────── */
-.toggle-track {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  display: inline-block;
-  flex-shrink: 0;
-  height: 18px;
-  position: relative;
-  transition: background 160ms, border-color 160ms;
-  width: 32px;
-}
-.toggle-thumb {
-  background: var(--text-faint);
-  border-radius: var(--radius-pill);
-  height: 12px;
-  left: 2px;
-  position: absolute;
-  top: 2px;
-  transition: left 160ms, background 160ms;
-  width: 12px;
-}
 
 /* Per-exercise toggle */
-.tutorial-toggle-btn {
-  align-items: center;
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: inline-flex;
-  flex-shrink: 0;
-  gap: var(--space-2);
-  padding: var(--space-1) var(--space-2);
-  transition: background 120ms;
-}
-.tutorial-toggle-btn:hover {
-  background: var(--bg-subtle);
-}
-.tutorial-toggle-btn .toggle-label {
-  color: var(--text-faint);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.tutorial-toggle-btn.is-on .toggle-track {
-  background: color-mix(in srgb, var(--brand) 22%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
-}
-.tutorial-toggle-btn.is-on .toggle-thumb {
-  background: var(--brand);
-  left: 16px;
-}
-.tutorial-toggle-btn.is-on .toggle-label {
-  color: var(--brand-strong);
-}
-.tutorial-toggle-btn.is-pending {
-  opacity: 0.55;
-  pointer-events: none;
-}
 
 /* Per-group master toggle */
-.group-tutorial-toggle {
-  align-items: center;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  cursor: pointer;
-  display: inline-flex;
-  flex-shrink: 0;
-  gap: var(--space-2);
-  padding: 3px var(--space-3) 3px var(--space-2);
-  transition: background 120ms, border-color 120ms;
-}
-.group-tutorial-toggle:hover {
-  background: var(--bg-subtle);
-  border-color: color-mix(in srgb, var(--brand) 40%, var(--border));
-}
-.group-tutorial-toggle .toggle-label {
-  color: var(--text-faint);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  line-height: 1;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-.group-tutorial-toggle.is-on {
-  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
-}
-.group-tutorial-toggle.is-on .toggle-track {
-  background: color-mix(in srgb, var(--brand) 22%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 50%, var(--border));
-}
-.group-tutorial-toggle.is-on .toggle-thumb {
-  background: var(--brand);
-  left: 16px;
-}
-.group-tutorial-toggle.is-on .toggle-label {
-  color: var(--brand-strong);
-}
-.group-tutorial-toggle.is-pending {
-  opacity: 0.55;
-  pointer-events: none;
-}
 
 /* ── Tutorial read-only display inside owner edit form ─────────────────────── */
-.tutorial-readonly-row {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-left: 3px solid color-mix(in srgb, var(--brand) 50%, var(--border));
-  border-radius: var(--radius-sm);
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-}
-.tutorial-readonly-label {
-  color: var(--text-soft);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-}
-.tutorial-readonly-url {
-  color: var(--brand);
-  font-size: var(--text-sm);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.tutorial-readonly-note {
-  color: var(--text-faint);
-  font-size: var(--text-xs);
-  font-style: italic;
-  margin-top: 2px;
-}
 
 /* ── Catalog View Controls ── */
-.catalog-controls-bar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-6);
-  gap: var(--space-4);
-  flex-wrap: wrap;
-}
-
-.catalog-filter-chips {
-  display: flex;
-  gap: var(--space-2);
-  overflow-x: auto;
-  padding-bottom: var(--space-1);
-  scrollbar-width: none; /* Firefox */
-}
-
-.catalog-filter-chips::-webkit-scrollbar {
-  display: none; /* Chrome/Safari */
-}
 
 /* Solid, opaque surfaces — the translucent "glass panel" treatment these
    used to lean on (rgba(255,255,255,*) borders/fills, assuming a dark
    backdrop showing through) has been removed from the design system;
    cards now get their surface from the opaque shared card treatment. */
-.filter-chip {
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-pill);
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  font-weight: 500;
-  cursor: pointer;
-  white-space: nowrap;
-  transition: all 0.2s;
-}
-
-.filter-chip:hover {
-  color: var(--text);
-  background: var(--bg-subtle);
-}
-
-.filter-chip.active {
-  background: color-mix(in srgb, var(--brand) 15%, transparent);
-  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
-  color: var(--brand);
-  font-weight: 600;
-}
-
-.catalog-view-toggles {
-  display: flex;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-}
-
-.view-toggle-btn {
-  padding: var(--space-2) var(--space-2);
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-xs);
-  color: var(--text-faint);
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.view-toggle-btn:hover {
-  color: var(--text-soft);
-}
-
-.view-toggle-btn.active {
-  background: var(--bg-muted);
-  color: var(--text);
-}
 
 /* ── Card View Mode ── */
-.catalog-list-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: var(--space-4);
-  padding: 0;
-}
-
-.catalog-list-cards .catalog-exercise-entry {
-  border-bottom: none;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-3);
-}
-
-.catalog-list-cards .catalog-exercise-row {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-3);
-}
-
-.catalog-list-cards .catalog-exercise-thumb {
-  width: 100%;
-  height: 140px;
-  border-radius: calc(var(--radius) - 2px);
-}
-
-.catalog-list-cards .catalog-exercise-actions {
-  width: 100%;
-  justify-content: space-between;
-  margin-top: var(--space-2);
-  padding-top: var(--space-3);
-  border-top: 1px dashed var(--border);
-}
 
 /* ── Admin Overview redesign (adm-* prefix) ─────────────────────────────── */
 
 /* Page header */
-.adm-page-head {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--space-4);
-  margin-bottom: var(--space-5);
-}
-.adm-crumb {
-  font-size: var(--text-xs);
-  color: var(--text-faint);
-  margin-bottom: 3px;
-}
-.adm-title {
-  font-size: var(--text-xl);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--text);
-  line-height: 1.1;
-}
-.adm-head-actions {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  flex-shrink: 0;
-}
-.adm-head-actions .gym-selector {
-  margin-top: 0;
-}
-.adm-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-sm);
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 600;
-  /* Lime-fill button: --primary/--primary-foreground are identical in both
-     themes, unlike --brand (dark olive on light, bright lime on dark) —
-     --brand here previously paired with --primary-foreground text, which
-     failed contrast (~2.9:1) in light mode. */
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border: none;
-  cursor: pointer;
-  text-decoration: none;
-  transition: background 120ms;
-}
-.adm-btn:hover { background: color-mix(in srgb, var(--primary) 88%, black); }
-.adm-btn:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 2px;
-}
-.adm-btn--ghost:focus-visible {
-  outline: 2px solid var(--text-soft);
-  outline-offset: 2px;
-}
-.adm-btn:disabled,
-.adm-btn[disabled] {
-  opacity: 0.45;
-  cursor: not-allowed;
-  pointer-events: none;
-}
-.adm-btn--ghost {
-  background: transparent;
-  color: var(--text);
-  border: 1px solid var(--border);
-}
-.adm-btn--ghost:hover { background: var(--bg-elevated); }
-.adm-btn--sm {
-  font-size: var(--text-sm);
-  padding: var(--space-1) var(--space-3);
-  gap: var(--space-1);
-  border-radius: var(--radius-xs);
-}
 
 /* KPI row */
-.adm-kpis {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: var(--space-3);
-  margin-bottom: var(--space-5);
-}
-@media (max-width: 1024px) { .adm-kpis { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px) { .adm-kpis { grid-template-columns: 1fr; } }
-.adm-kpis--3 { grid-template-columns: repeat(3, 1fr); }
-.adm-kpis--4 { grid-template-columns: repeat(4, 1fr); }
-@media (max-width: 1024px) {
-  .adm-kpis--3, .adm-kpis--4 { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-  .adm-kpis--3, .adm-kpis--4 { grid-template-columns: 1fr; }
-}
-
-.adm-kpi {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-4) var(--space-5);
-}
-.adm-kpi small {
-  display: block;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-faint);
-  margin-bottom: var(--space-2);
-}
-.adm-kpi strong {
-  display: block;
-  font-size: var(--text-2xl);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  color: var(--text);
-  line-height: 1;
-  margin-bottom: var(--space-1);
-  font-variant-numeric: tabular-nums lining-nums;
-}
-.adm-kpi em {
-  font-style: normal;
-  font-size: var(--text-2xs);
-  color: var(--text-faint);
-}
 .adm-kpi--brand { border-color: color-mix(in srgb, var(--brand) 30%, var(--border)); }
 .adm-kpi--brand small { color: var(--brand); }
-.adm-kpi--accent { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
-.adm-kpi--accent small { color: var(--accent); }
-.adm-kpi--warn  { border-color: color-mix(in srgb, var(--warning) 30%, var(--border)); }
-.adm-kpi--warn small { color: var(--warning); }
-.adm-kpi--danger { border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); }
-.adm-kpi--danger small { color: var(--danger); }
 
 /* Two-column grid */
-.adm-grid-2 {
-  display: grid;
-  grid-template-columns: 1.6fr 1fr;
-  gap: var(--space-4);
-}
-@media (max-width: 1024px) { .adm-grid-2 { grid-template-columns: 1fr; } }
 
 /* Card */
-.adm-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-}
-.adm-card__head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-4) var(--space-3);
-  border-bottom: 1px solid var(--border);
-}
-.adm-card__head h3 {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--text);
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-.adm-card__link {
-  font-size: var(--text-xs);
-  color: var(--brand);
-  text-decoration: none;
-  font-weight: 600;
-}
-.adm-card__link:hover { text-decoration: underline; }
-.adm-card__body { padding: var(--space-3) var(--space-4); }
-.adm-card__body--flush { padding: 0; }
 
 /* Gym row */
-.adm-gym-row {
-  display: grid;
-  grid-template-columns: 28px 1.6fr 1fr 60px 80px;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  text-decoration: none;
-  color: inherit;
-  transition: background 80ms;
-}
-.adm-gym-row:hover { background: var(--bg-subtle); }
-.adm-gym-row--border { border-bottom: 1px solid var(--border); }
 /* Background is a per-gym decorative identity colour set inline from TSX
    (one option is var(--brand), which is bright lime in dark theme — plain
    white text on lime is ~1.4:1, illegible). --primary-foreground is
    near-black in both themes and reads on every colour in that palette. */
-.adm-gym-row__avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-xs);
-  color: var(--primary-foreground);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: var(--text-2xs);
-  font-weight: 800;
-  flex-shrink: 0;
-}
-.adm-gym-row__info strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); display: block; }
-.adm-gym-row__info small { font-size: var(--text-2xs); color: var(--text-faint); }
-.adm-gym-row__bar {
-  height: 5px;
-  background: var(--bg-subtle);
-  border-radius: var(--radius-pill);
-  overflow: hidden;
-  border: 1px solid var(--border);
-}
-.adm-gym-row__bar-fill {
-  height: 100%;
-  background: var(--brand);
-  border-radius: var(--radius-pill);
-  min-width: 4px;
-}
-.adm-gym-row__count {
-  font-size: var(--text-sm);
-  font-variant-numeric: tabular-nums lining-nums;
-  color: var(--text);
-  text-align: right;
-}
 
 /* Status tags */
-.adm-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px var(--space-2);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  white-space: nowrap;
-}
-.adm-tag--ok      { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand); }
-.adm-tag--neutral { background: var(--bg-subtle); color: var(--text-soft); }
 
 /* Activity rows */
-.adm-activity-row {
-  padding: var(--space-2) 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.adm-activity-row--border { border-bottom: 1px solid var(--border); }
-.adm-activity-row__label {
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--brand);
-}
-.adm-activity-row__body { font-size: var(--text-xs); color: var(--text); line-height: 1.4; }
-.adm-activity-row__time { font-size: var(--text-2xs); color: var(--text-faint); }
 
 /* Empty state */
-.adm-empty {
-  padding: var(--space-6) var(--space-4);
-  font-size: var(--text-sm);
-  color: var(--text-soft);
-  text-align: center;
-}
-.adm-empty a { color: var(--brand); text-decoration: none; }
 
 /* ── Page descriptor text ──────────────────────────────────────────────────── */
-.adm-page-desc {
-  font-size: var(--text-sm);
-  color: var(--text-soft);
-  margin: -8px 0 var(--space-4);
-  line-height: 1.5;
-}
-.adm-link { color: var(--brand); text-decoration: none; font-weight: 500; }
-.adm-section-head { margin: var(--space-6) 0 var(--space-2); }
-.adm-section-head h2 { font-size: var(--text-base); font-weight: 700; color: var(--text); }
 
 /* ── Filter bar ──────────────────────────────────────────────────────────────── */
-.adm-filter-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-4);
-  flex-wrap: wrap;
-}
-.adm-search {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  flex: 1;
-  max-width: 280px;
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-xs);
-  color: var(--text-soft);
-  cursor: text;
-}
-.adm-chips { display: flex; gap: var(--space-1); flex-wrap: wrap; }
-.adm-chip {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--space-1) var(--space-3);
-  border-radius: var(--radius-pill);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  background: var(--bg-elevated);
-  color: var(--text-soft);
-  text-decoration: none;
-  border: 1px solid var(--border);
-  transition: background 80ms, color 80ms;
-}
-.adm-chip:hover { background: var(--bg-subtle); color: var(--text); }
 /* Lime-fill chip: --primary/--primary-foreground are identical in both
    themes, unlike --brand (dark olive on light, bright lime on dark) —
    --brand here previously paired with --primary-foreground text, which
    failed contrast (~2.9:1) in light mode. */
-.adm-chip--on {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-color: var(--primary);
-}
 
 /* ── Gym workspaces table ─────────────────────────────────────────────────── */
-.adm-gym-table-head {
-  display: grid;
-  grid-template-columns: 30px 1.6fr 1fr 80px 100px 80px 34px;
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-faint);
-  gap: var(--space-3);
-  align-items: center;
-}
-.adm-gym-table-row {
-  display: grid;
-  grid-template-columns: 30px 1.6fr 1fr 80px 100px 80px 34px;
-  padding: var(--space-2) var(--space-4);
-  gap: var(--space-3);
-  align-items: center;
-  transition: background 80ms;
-}
-.adm-gym-table-row:hover { background: var(--bg-subtle); }
-.adm-gym-table-row--border { border-bottom: 1px solid var(--border); }
-.adm-gym-table-row--dim { opacity: 0.5; }
-.adm-gym-table-row__owner { font-size: var(--text-xs); color: var(--text-soft); }
-.adm-gym-table-row__actions { display: flex; align-items: center; justify-content: flex-end; }
-.adm-row-link {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-xs);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-soft);
-  text-decoration: none;
-  transition: background 80ms, color 80ms;
-}
-.adm-row-link:hover { background: var(--bg-subtle); color: var(--text); }
 
 /* Plan tier badges. --adm-gold: "enterprise" tier accent, distinct from
    --warning (different meaning) and from --accent (already used for
    "studio" tier) — no token covers a 3rd amber-family categorical hue, so
    it's a fixed custom property (like --odp2-gold in 20-owner-dashboard.css)
    with a darker light-theme variant so the badge text clears 4.5:1. */
-.adm-plan {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-.adm-plan--enterprise { background: color-mix(in srgb, var(--adm-gold) 18%, transparent); color: var(--adm-gold); }
-.adm-plan--studio { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
-.adm-plan--starter { background: var(--bg-subtle); color: var(--text-soft); }
 
 /* Trial tag */
-.adm-tag--trial { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
-.adm-tag--enterprise { background: color-mix(in srgb, var(--adm-gold) 18%, transparent); color: var(--adm-gold); }
-.adm-tag--studio { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
-.adm-tag--starter { background: var(--bg-subtle); color: var(--text-soft); }
 
 /* ── Gym detail hero ──────────────────────────────────────────────────────── */
-.adm-gym-hero {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: var(--space-5);
-  padding: var(--space-5) var(--space-5);
-  margin-bottom: 0;
-}
 /* Same per-gym decorative-palette avatar as .adm-gym-row__avatar above —
    --primary-foreground reads on every colour in that palette, including
    the lime (--brand) option, where plain white failed at ~1.4:1. */
-.adm-gym-hero__avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: var(--radius-lg);
-  color: var(--primary-foreground);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 800;
-  font-size: var(--text-xl);
-  flex-shrink: 0;
-}
-.adm-gym-hero__name { font-size: var(--text-xl); font-weight: 800; letter-spacing: -0.03em; color: var(--text); margin: 0 0 var(--space-1); }
-.adm-gym-hero__meta { font-size: var(--text-xs); color: var(--text-soft); margin: 0 0 var(--space-2); }
-.adm-gym-hero__tags { display: flex; gap: var(--space-2); flex-wrap: wrap; }
-.adm-gym-hero__actions { display: flex; gap: var(--space-2); flex-shrink: 0; }
-@media (max-width: 768px) {
-  .adm-gym-hero { grid-template-columns: auto 1fr; }
-  .adm-gym-hero__actions { grid-column: 1 / -1; }
-}
 
 /* ── Staff list rows ─────────────────────────────────────────────────────── */
-.adm-staff-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  transition: background 80ms;
-}
-.adm-staff-row:hover { background: var(--bg-subtle); }
-.adm-staff-row--border { border-bottom: 1px solid var(--border); }
 /* Same per-gym/per-person decorative-palette avatar pattern as
    .adm-gym-row__avatar — --primary-foreground reads on every colour in
    that palette, including the lime (--brand) option. */
-.adm-staff-row__avatar {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  color: var(--primary-foreground);
-  font-size: var(--text-xs);
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-.adm-staff-row__info { flex: 1; min-width: 0; }
-.adm-staff-row__info strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); display: block; }
-.adm-staff-row__info small { font-size: var(--text-xs); color: var(--text-soft); }
 
 /* ── Billing rows ────────────────────────────────────────────────────────── */
-.adm-billing-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-2) 0;
-  font-size: var(--text-sm);
-  border-bottom: 1px solid var(--border);
-}
-.adm-billing-row:last-child { border-bottom: none; }
-.adm-billing-row span { color: var(--text-soft); }
-.adm-billing-row strong { color: var(--text); font-weight: 600; }
 
 /* ── Form input ─────────────────────────────────────────────────────────── */
-.adm-input {
-  width: 100%;
-  padding: var(--space-2) var(--space-3);
-  font-size: var(--text-sm);
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xs);
-  color: var(--text);
-  font-family: inherit;
-  box-sizing: border-box;
-  transition: border-color var(--fast);
-}
-.adm-input:focus {
-  outline: none;
-  border-color: var(--brand);
-}
-.adm-input:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: 1px;
-}
-.adm-input::placeholder { color: var(--text-faint); }
-.adm-input:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-  background: var(--bg-subtle);
-}
-.adm-label {
-  display: block;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-faint);
-  margin-bottom: 3px;
-}
 
 /* ── Collapsible detail panels ───────────────────────────────────────────── */
-.adm-details-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-top: var(--space-3);
-  overflow: hidden;
-}
-.adm-details-panel__summary {
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--text-sm);
-  font-weight: 600;
-  color: var(--text-soft);
-  cursor: pointer;
-  list-style: none;
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  user-select: none;
-}
-.adm-details-panel__summary:focus-visible {
-  outline: 2px solid var(--brand);
-  outline-offset: -2px;
-}
-.adm-details-panel__summary::-webkit-details-marker { display: none; }
-.adm-details-panel__summary::before {
-  content: "▸";
-  font-size: var(--text-2xs);
-  color: var(--text-faint);
-  transition: transform 120ms;
-}
-details[open] .adm-details-panel__summary::before { transform: rotate(90deg); }
-.adm-details-panel__body { padding: var(--space-4); border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: var(--space-4); }
-.adm-details-panel--danger { border-color: color-mix(in srgb, var(--danger) 30%, var(--border)); }
-.adm-details-panel__summary--danger { color: var(--danger); }
 
 /* ── Program card grid ────────────────────────────────────────────────────── */
-.adm-program-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-3);
-}
-@media (max-width: 1024px) { .adm-program-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 480px) { .adm-program-grid { grid-template-columns: 1fr; } }
-
-.adm-program-card {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  text-decoration: none;
-  color: inherit;
-  display: block;
-  transition: transform 100ms, box-shadow 100ms;
-}
-.adm-program-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.adm-program-card__header {
-  height: 60px;
-  position: relative;
-  padding: 0 var(--space-3);
-  display: flex;
-  align-items: flex-end;
-  padding-bottom: var(--space-2);
-}
 /* Header background is a per-program decorative colour set inline from
    TSX (same pattern as the gym/staff avatar palettes above) — one option
    is var(--brand), which is bright lime in dark theme, so plain white
    title text would be illegible there too. --primary-foreground reads on
    every colour in the palette; the shadow adds extra insurance since,
    unlike the avatars, this text sits over a whole gradient/photo header. */
-.adm-program-card__title {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--primary-foreground);
-  text-shadow: 0 1px 3px color-mix(in srgb, black 30%, transparent);
-}
-.adm-program-card__body {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-2) var(--space-3);
-}
-.adm-program-card__meta { font-size: var(--text-xs); color: var(--text-soft); }
-.adm-program-card__count { font-size: var(--text-xs); color: var(--text); }
 
 /* ── Inbox two-panel ──────────────────────────────────────────────────────── */
-.adm-inbox {
-  display: grid;
-  grid-template-columns: 1fr 1.4fr;
-  gap: var(--space-4);
-  align-items: start;
-}
-@media (max-width: 768px) { .adm-inbox { grid-template-columns: 1fr; } }
-
-.adm-inbox__list-card,
-.adm-inbox__detail-card { height: 100%; }
-
-.adm-inbox-thread {
-  width: 100%;
-  text-align: left;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: var(--space-3) var(--space-4);
-  font: inherit;
-  transition: background 80ms;
-  display: block;
-}
-.adm-inbox-thread:hover { background: var(--bg-subtle); }
-.adm-inbox-thread--on { background: color-mix(in srgb, var(--brand) 7%, var(--bg-elevated)); }
-.adm-inbox-thread--border { border-bottom: 1px solid var(--border); }
-.adm-inbox-thread__head {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 3px;
-}
-.adm-inbox-thread__head strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); }
-.adm-inbox-thread__head small { font-size: var(--text-2xs); color: var(--text-faint); }
-.adm-inbox-thread__body { font-size: var(--text-xs); color: var(--text-soft); margin-bottom: var(--space-2); }
-.adm-inbox-thread__tags { display: flex; flex-wrap: wrap; gap: var(--space-2); }
-
-.adm-inbox-tag {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px var(--space-2);
-  border-radius: var(--radius-xs);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  letter-spacing: 0.05em;
-}
-.adm-inbox-tag--ok      { background: color-mix(in srgb, var(--brand) 15%, transparent); color: var(--brand); }
-.adm-inbox-tag--accent  { background: color-mix(in srgb, var(--accent) 15%, transparent); color: var(--accent); }
-.adm-inbox-tag--warn    { background: var(--warning-soft); color: var(--warning); }
-.adm-inbox-tag--danger  { background: color-mix(in srgb, var(--danger) 15%, transparent); color: var(--danger); }
-
-.adm-inbox__detail-head { flex-direction: column; align-items: flex-start; gap: 3px; }
-.adm-inbox__detail-head h3 { font-size: var(--text-sm); font-weight: 700; color: var(--text); margin: 0; }
-.adm-inbox__detail-meta { font-size: var(--text-xs); color: var(--text-soft); }
-
-.adm-inbox-bubble {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-sm);
-  padding: var(--space-3) var(--space-4);
-  font-size: var(--text-sm);
-  line-height: 1.6;
-  color: var(--text-soft);
-  margin-bottom: var(--space-3);
-}
-.adm-inbox-reply {
-  background: color-mix(in srgb, var(--brand) 8%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--brand) 20%, var(--border));
-  border-radius: var(--radius-sm);
-  padding: 12px 14px;
-  margin-bottom: 12px;
-}
-.adm-inbox-reply__label {
-  display: block;
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--brand);
-  margin-bottom: var(--space-2);
-}
-.adm-inbox-reply__area {
-  width: 100%;
-  background: transparent;
-  border: none;
-  outline: none;
-  font: inherit;
-  font-size: var(--text-sm);
-  line-height: 1.5;
-  color: var(--text);
-  resize: none;
-}
-.adm-inbox-reply-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--space-2);
-}
-
-.adm-btn--active {
-  background: var(--bg-elevated);
-  color: var(--text);
-  border: 1px solid var(--border);
-  font-weight: 700;
-}
 
 /* ── Admin exercise catalog rows ─────────────────────────────────────────── */
-.adm-ex-group-summary {
-  display: flex;
-  align-items: center;
-  padding: var(--space-2) var(--space-4);
-  cursor: pointer;
-  list-style: none;
-  user-select: none;
-  background: var(--bg-subtle);
-  gap: var(--space-2);
-}
-.adm-ex-group-summary::-webkit-details-marker { display: none; }
-.adm-ex-group-summary:hover { background: color-mix(in srgb, var(--brand) 6%, var(--bg-subtle)); }
-.adm-ex-group-name { font-size: var(--text-xs); font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
-.adm-ex-group-chevron { display: inline-block; font-size: var(--text-xs); color: var(--text-faint); transition: transform 120ms; }
-details[open] > .adm-ex-group-summary .adm-ex-group-chevron { transform: rotate(90deg); }
-
-.adm-ex-list { display: flex; flex-direction: column; }
-
-.adm-ex-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  cursor: pointer;
-  list-style: none;
-  transition: background 80ms;
-}
-.adm-ex-row:hover { background: var(--bg-subtle); }
-.adm-ex-row::-webkit-details-marker { display: none; }
-.adm-ex-row__copy { flex: 1; min-width: 0; }
-.adm-ex-row__copy strong { font-size: var(--text-sm); font-weight: 700; color: var(--text); display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.adm-ex-row__copy p { font-size: var(--text-xs); color: var(--text-soft); margin: 1px 0 0; }
-.adm-ex-row__actions { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
 
 /* ── Program table rows (admin programs page) ─────────────────────────────── */
-.adm-prog-head {
-  display: grid;
-  grid-template-columns: 1.8fr 1fr 0.8fr 0.8fr 88px 160px;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  background: var(--bg-subtle);
-  border-bottom: 1px solid var(--border);
-  font-size: var(--text-2xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.07em;
-  color: var(--text-faint);
-  align-items: center;
-}
-.adm-prog-row {
-  display: grid;
-  grid-template-columns: 1.8fr 1fr 0.8fr 0.8fr 88px 160px;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--border);
-  align-items: center;
-  transition: background 80ms;
-  overflow: hidden;
-}
 /* contain badge inside its column */
-.adm-prog-row > *:nth-child(5) {
-  overflow: hidden;
-  justify-self: start;
-  max-width: 88px;
-}
-.adm-prog-row:last-child { border-bottom: none; }
-.adm-prog-row:hover { background: var(--bg-subtle); }
-.adm-prog-row__title { min-width: 0; }
-.adm-prog-row__title strong {
-  font-size: var(--text-sm);
-  font-weight: 700;
-  color: var(--text);
-  display: block;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.adm-prog-row__title span {
-  font-size: var(--text-xs);
-  color: var(--text-soft);
-  display: block;
-}

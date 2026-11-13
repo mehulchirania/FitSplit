@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { Dumbbell } from "@/components/icons";
 import { CatalogVideoPreview } from "@/components/catalog-video-preview";
 import { ExerciseThumbnailPreview } from "@/components/exercise-thumbnail-preview";
@@ -9,9 +10,13 @@ import type { Exercise, MuscleGroup } from "@/types/domain";
  * /member/exercises route (deep links, bookmarks) so both stay in sync.
  */
 export function MemberExerciseCatalogScreen({
-  catalog
+  catalog,
+  toolbar,
+  footer
 }: {
   catalog: Array<{ muscleGroup: MuscleGroup; exercises: Exercise[] }>;
+  toolbar?: ReactNode;
+  footer?: ReactNode;
 }) {
   return (
     <>
@@ -21,6 +26,7 @@ export function MemberExerciseCatalogScreen({
           <h1 className="m3d-pagehead__title">Exercise Catalog</h1>
         </div>
       </div>
+      {toolbar}
 
       <section className="catalog-grid" style={{ marginTop: 32 }}>
         {catalog.map((group) => (
@@ -45,7 +51,7 @@ export function MemberExerciseCatalogScreen({
                     />
                     <div className="catalog-exercise-copy">
                       <strong>{exercise.name}</strong>
-                      <p>{[exercise.equipment].filter(Boolean).join(" / ")}</p>
+                      <p>{exercise.equipment}</p>
                       {exercise.instructions && (
                         <p style={{ marginTop: 8, fontSize: "0.85rem", color: "var(--text-soft)" }}>
                           {exercise.instructions}
@@ -68,10 +74,12 @@ export function MemberExerciseCatalogScreen({
         ))}
       </section>
 
+      {footer}
+
       {catalog.length === 0 && (
         <div className="md-empty" style={{ marginTop: 32 }}>
           <h2>No exercises found</h2>
-          <p>The exercise catalog is currently empty.</p>
+          <p>Nothing matches. Try a different search or filter.</p>
         </div>
       )}
     </>

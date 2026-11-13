@@ -106,7 +106,7 @@ function MonitorIcon() {
 
 /**
  * `className` is appended to the base icon-button classes so the three shells
- * that host this control (app topbar, member topbar, owner/admin sidebar) can
+ * that host this control (app topbar, member topbar) can
  * each size and place it without forking the component.
  */
 export function ThemeToggle({ className = "" }: { className?: string }) {

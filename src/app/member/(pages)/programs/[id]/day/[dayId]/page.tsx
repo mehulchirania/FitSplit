@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { requireRole } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import {
   getExerciseCatalog,
   getDayLogsForMember,
@@ -26,16 +26,16 @@ export default async function FocusedDayPage({
 }: {
   params: Promise<{ id: string; dayId: string }>;
 }) {
-  const currentUser = await requireRole(["member"]);
-  const memberId = currentUser.memberId ?? currentUser.uid;
+  const currentUser = await requireAuth();
+  const memberId = currentUser.uid;
   const { id: programId, dayId } = await params;
 
   const [{ assignment }, { programs }, { exercises }, { liftLogs }, { dayLogs }] = await Promise.all([
-    getProgramAssignmentForMember(memberId, currentUser.gymId),
-    getWorkoutPrograms(currentUser.gymId),
-    getExerciseCatalog(currentUser.gymId),
-    getLiftLogsForMember(memberId, currentUser.gymId),
-    getDayLogsForMember(memberId, currentUser.gymId)
+    getProgramAssignmentForMember(memberId),
+    getWorkoutPrograms(),
+    getExerciseCatalog(),
+    getLiftLogsForMember(memberId),
+    getDayLogsForMember(memberId)
   ]);
 
   const program = programs.find((p) => p.id === programId);

@@ -7,7 +7,6 @@ import type { WorkoutProgram } from "@/types/domain";
 interface MemberProgramsClientProps {
   programs: WorkoutProgram[];
   assignedProgramId: string | null;
-  gymName: string;
 }
 
 const SPLIT_LABELS: Record<string, string> = {
@@ -121,7 +120,7 @@ function ProgramCard({
   );
 }
 
-export function MemberProgramsClient({ programs, assignedProgramId: initialAssignedId, gymName }: MemberProgramsClientProps) {
+export function MemberProgramsClient({ programs, assignedProgramId: initialAssignedId }: MemberProgramsClientProps) {
   const [showAll, setShowAll] = useState(false);
   const [assignedProgramId, setAssignedProgramId] = useState(initialAssignedId);
   const [isPending, startTransition] = useTransition();
@@ -140,10 +139,7 @@ export function MemberProgramsClient({ programs, assignedProgramId: initialAssig
     });
   }
 
-  // Gym-custom plans always first
-  const gymPlans = programs.filter((p) => p.source === "gym");
-  // FitSplit predefined catalog
-  const catalogPlans = programs.filter((p) => p.source !== "gym");
+  const catalogPlans = programs;
   // Assigned plan (may be either)
   const assignedProgram = programs.find((p) => p.id === assignedProgramId);
 
@@ -170,27 +166,11 @@ export function MemberProgramsClient({ programs, assignedProgramId: initialAssig
         </section>
       )}
 
-      {/* ── Gym-custom plans ───────────────────────────────────────── */}
-      {gymPlans.length > 0 && (
-        <section className="mp-section">
-          <div className="mp-section__head">
-            <h2 className="mp-section__title">{gymName} plans</h2>
-            <span className="mp-section__count">{gymPlans.length}</span>
-          </div>
-          <p className="mp-section__desc">Custom programs designed by your gym for its members.</p>
-          <div className="mp-grid">
-            {gymPlans.map((p) => (
-              <ProgramCard key={p.id} program={p} assignedProgramId={assignedProgramId} onSelect={handleSelectProgram} />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* ── FitSplit catalog ───────────────────────────────────────── */}
       {catalogPlans.length > 0 && (
         <section className="mp-section">
           <div className="mp-section__head">
-            <h2 className="mp-section__title">FitSplit catalog</h2>
+            <h2 className="mp-section__title">Workout plans</h2>
             <span className="mp-section__count">{catalogPlans.length}</span>
           </div>
           <p className="mp-section__desc">Proven training templates — choose any split to make it your active workout plan.</p>

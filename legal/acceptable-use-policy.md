@@ -1,69 +1,24 @@
 # FitSplit Acceptable Use Policy
 
-Last updated: July 5, 2026
+**Version {{VERSION}} · Last updated {{LAST_UPDATED}}**
 
-This Acceptable Use Policy forms part of the FitSplit Terms of Service. It applies to all users, gyms, owners, trainers, staff, members, administrators, and anyone accessing FitSplit.
+This policy is part of the Terms of Service and applies to everyone who uses FitSplit.
 
-## 1. Security and access
+## 1. What you must not do
 
-You must not:
+- Break any law, or use FitSplit to harass, defraud or harm anyone.
+- Access, or try to access, another person's account or data, or probe, scan or test the Service for weaknesses without our written permission.
+- Interfere with the Service: overload it, bypass rate limits or security controls, or introduce malware.
+- Use bots, scrapers or other automated means to create accounts, sign in, or extract content, other than the data export we provide for your own data.
+- Create an account with someone else's identity, or with false details, or on behalf of a child without their parent or guardian's consent.
+- Upload a profile photo that is unlawful, infringing, explicit, or shows someone else without their permission.
+- Copy, resell or republish the plans or exercise library, or remove notices from them.
+- Enter other people's personal data into FitSplit.
 
-- access, view, change, export, or delete data that you are not authorized to access;
-- attempt to bypass authentication, role permissions, Firestore/Storage rules, rate limits, session controls, or tenant isolation;
-- share credentials, passwords, PINs, session tokens, or privileged access;
-- probe, scan, test, or attack FitSplit systems without written authorization;
-- introduce malware, harmful code, credential-harvesting flows, or automated abuse;
-- interfere with service availability, performance, infrastructure, or other users.
+## 2. Reporting a problem or a security issue
 
-## 2. Data and privacy
+Report abuse or a suspected vulnerability to {{CONTACT_EMAIL}}. Please give us reasonable time to fix a vulnerability before telling anyone else, and do not access data that is not yours while testing.
 
-You must not:
+## 3. Consequences
 
-- create accounts without authority from the individual or gym;
-- upload false, misleading, excessive, or unlawfully obtained personal data;
-- collect or process member health, fitness, attendance, or location data without required notice, consent, or legal basis;
-- export member data for unrelated purposes without authorization;
-- disclose another person's personal data outside the gym's authorized operations;
-- use FitSplit to stalk, monitor, discriminate against, or harass anyone.
-
-## 3. Content
-
-You must not upload, submit, display, or distribute content that:
-
-- is unlawful, defamatory, fraudulent, deceptive, or harmful;
-- infringes intellectual property, publicity, privacy, or contractual rights;
-- contains explicit sexual content, hate speech, harassment, threats, or incitement to violence;
-- contains unsafe medical claims, dangerous instructions, or misleading fitness/health promises;
-- impersonates another person or misrepresents affiliation;
-- includes spam, unsolicited promotions, or irrelevant commercial content.
-
-## 4. Fitness and coaching
-
-Gyms, trainers, and staff must:
-
-- use professional judgment when assigning workouts or personal training sessions;
-- consider known injuries, limitations, and member safety;
-- avoid presenting FitSplit content as medical advice;
-- avoid promising guaranteed body, strength, health, or weight-loss results;
-- maintain appropriate qualifications, insurance, and licenses where required by law.
-
-## 5. Platform integrity
-
-You must not:
-
-- scrape, crawl, bulk download, or replicate FitSplit except through approved features;
-- reverse engineer or attempt to derive source code except where allowed by law;
-- resell, sublicense, white-label, or provide outsourced access without written permission;
-- use FitSplit to build a competing service by copying non-public features, workflows, or data;
-- exceed reasonable usage or storage limits.
-
-## 6. Enforcement
-
-FitSplit may investigate suspected violations and may remove content, disable features, suspend accounts, restrict workspaces, notify affected gyms or users, report unlawful activity, or terminate access.
-
-Severe violations may be acted on without prior notice where necessary to protect users, data, infrastructure, or legal compliance.
-
-## 7. Reporting
-
-Report abuse or security concerns to fitsplit.in@gmail.com.
-
+We may remove content, limit features, or suspend or close an account that breaks this policy, and we may report unlawful activity to the authorities. Where we can, we will tell you why.

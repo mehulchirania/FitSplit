@@ -195,9 +195,9 @@ export function HeroVisual() {
             <CheckIcon />
           </span>
           <span>
-            <span className="lp-mock__toast-title">Payment approved</span>
+            <span className="lp-mock__toast-title">New personal record</span>
             <br />
-            <span className="lp-mock__toast-sub">Quarterly plan · renewed today</span>
+            <span className="lp-mock__toast-sub">Bench press · 62.5 kg × 8</span>
           </span>
         </div>
 

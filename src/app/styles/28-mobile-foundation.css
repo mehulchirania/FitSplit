@@ -11,39 +11,6 @@
    44px touch targets, safe-area padding, one canonical full-bleed mobile
    screen shell. B/C/D reuse these classes rather than re-deriving them. */
 
-.mobile-tap-target {
-  align-items: center;
-  display: inline-flex;
-  justify-content: center;
-  min-height: 44px;
-  min-width: 44px;
-}
-
-.mobile-safe-top {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-
-.mobile-safe-bottom {
-  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
-}
-
-.mobile-full-screen {
-  background: var(--bg);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding-top: env(safe-area-inset-top, 0px);
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-  padding-left: env(safe-area-inset-left, 0px);
-  padding-right: env(safe-area-inset-right, 0px);
-  position: fixed;
-  inset: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  z-index: 60;
-}
-
 @media (min-width: 769px) {
   /* Both the carousel and mobile sign-in are phone-only surfaces. Desktop
      never renders them (MobileEntryGate keeps the branch client-side), but
@@ -308,33 +275,6 @@
   margin: 0 0 var(--space-6);
 }
 
-.msi-tabs {
-  background: var(--bg-subtle);
-  border-radius: var(--radius-pill);
-  display: grid;
-  gap: 4px;
-  grid-template-columns: 1fr 1fr;
-  margin-bottom: var(--space-6);
-  padding: 4px;
-}
-
-.msi-tab {
-  background: transparent;
-  border: none;
-  border-radius: var(--radius-pill);
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  font-weight: 700;
-  min-height: 44px;
-  transition: background-color var(--fast), color var(--fast), box-shadow var(--fast);
-}
-
-.msi-tab[aria-selected="true"] {
-  background: var(--bg-elevated);
-  box-shadow: var(--shadow-soft);
-  color: var(--text);
-}
-
 .msi-form {
   display: flex;
   flex-direction: column;
@@ -373,27 +313,6 @@
   color: var(--danger);
   font-size: var(--text-sm);
   margin: 0;
-}
-
-.msi-confirm {
-  background: var(--bg-subtle);
-  border-radius: var(--radius);
-  padding: var(--space-4);
-}
-
-.msi-confirm p {
-  color: var(--text-soft);
-  font-size: var(--text-sm);
-  margin: 0 0 var(--space-4);
-}
-
-.msi-confirm-actions {
-  display: flex;
-  gap: var(--space-3);
-}
-
-.msi-confirm-actions .button {
-  flex: 1 1 0;
 }
 
 .msi-actions {

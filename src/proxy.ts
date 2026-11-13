@@ -1,21 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = [
-  { prefix: "/admin", roles: ["admin"] },
-  { prefix: "/owner", roles: ["owner", "admin"] },
-  { prefix: "/trainer", roles: ["trainer", "owner"] },
-  { prefix: "/member", roles: ["member"] },
-  { prefix: "/profile", roles: ["admin", "owner", "trainer", "member"] },
-  { prefix: "/activity", roles: ["admin", "owner", "trainer", "member"] }
-  // Note: /about, /privacy, /terms are public (no auth) and intentionally omitted.
-] as const;
-
-const roleHome: Record<string, string> = {
-  admin: "/admin",
-  member: "/member",
-  owner: "/owner",
-  trainer: "/trainer"
-};
+// Signed-in-only areas. Everything else (landing, legal pages, /signup) is public.
+const protectedPrefixes = ["/member", "/profile"] as const;
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -40,7 +26,7 @@ function buildCsp(nonce: string): string {
     // Inline style attributes (React style={{…}}) require 'unsafe-inline' here.
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' data: https://fonts.gstatic.com",
-    // No http: — avoid mixed content. https: covers YouTube thumbnails, Unsplash, gym logos.
+    // No http: — avoid mixed content. https: covers YouTube thumbnails, Unsplash, avatars.
     "img-src 'self' data: blob: https:",
     // Firebase Firestore/RTDB/Functions + Identity Toolkit (Auth REST).
     "connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://*.cloudfunctions.net wss://*.firebaseio.com https://identitytoolkit.googleapis.com",
@@ -70,22 +56,18 @@ export function proxy(request: NextRequest) {
     requestHeaders.set("Content-Security-Policy", csp);
   }
 
-  const route = protectedRoutes.find(
-    ({ prefix }) => pathname === prefix || pathname.startsWith(`${prefix}/`)
+  const isProtected = protectedPrefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 
-  if (route) {
-    const session = request.cookies.get("fitsplit-session")?.value;
-    const role = request.cookies.get("fitsplit-role")?.value;
+  if (isProtected) {
+    // Cheap presence check only; the pages verify the session cookie for real
+    // (getCurrentUser / requireAuth) and redirect if it is invalid or revoked.
+    const hasSession =
+      request.cookies.has("fitsplit-session") || request.cookies.has("fitsplit-local-user");
 
-    if (!session && !role) {
+    if (!hasSession) {
       const redirect = NextResponse.redirect(new URL("/", request.url));
-      redirect.headers.set("Content-Security-Policy", csp);
-      return redirect;
-    }
-
-    if (role && !route.roles.includes(role as never)) {
-      const redirect = NextResponse.redirect(new URL(roleHome[role] ?? "/", request.url));
       redirect.headers.set("Content-Security-Policy", csp);
       return redirect;
     }

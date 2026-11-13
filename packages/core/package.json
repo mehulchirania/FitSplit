@@ -11,7 +11,8 @@
     "./action-state": "./src/action-state.ts",
     "./workout-utils": "./src/workout-utils.ts",
     "./split-library": "./src/split-library.ts",
-    "./validation": "./src/validation.ts"
+    "./validation": "./src/validation.ts",
+    "./workouts.json": "./src/workouts.json"
   },
   "dependencies": {
     "zod": "^4.4.3"

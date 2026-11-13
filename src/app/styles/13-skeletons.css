@@ -1,10 +1,5 @@
 /* ─── Skeleton shimmer loading states ─────────────────────────────────────── */
 
-@keyframes sk-shimmer {
-  0%   { background-position: -400px 0; }
-  100% { background-position: 400px 0; }
-}
-
 /* The var(--bg-subtle, #f1f3f5) / var(--bg-elevated, #fff) hex fallbacks were
    dead weight — 00-base-shell.css defines both tokens unconditionally and
    loads before this file, so the fallback branch never runs. Removed to

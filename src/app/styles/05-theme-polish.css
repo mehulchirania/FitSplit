@@ -46,23 +46,10 @@ body {
    the class the live theme-toggle button uses). color-mix against var(--text)
    tints dark-on-paper in light mode and light-on-near-black in dark mode, so
    it reads as a legible, theme-correct control surface in both: 2026-08-04. */
-.topnav a,
 .theme-toggle,
 .button-secondary,
 .neutral-icon-button {
   background: color-mix(in srgb, var(--text) 6%, transparent);
-}
-
-.topnav a:hover,
-.topnav a:focus-visible {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: var(--bg-elevated);
-}
-
-html[data-theme="dark"] .topnav a:hover,
-html[data-theme="dark"] .topnav a:focus-visible {
-  color: var(--primary-foreground);
 }
 
 /* .button-primary override REMOVED — 2026-08-04.
@@ -72,7 +59,6 @@ html[data-theme="dark"] .topnav a:focus-visible {
    and rendering the product's most-clicked control as a grey slab in BOTH
    themes. A relic of the retired greyscale palette. The primary button is
    lime with near-black text in both themes, by design — see 00-base-shell.css. */
-
 
 /* .hero-band trimmed from this and the next 3 comma-groups below — 2026-08-04,
    zero references anywhere in src/. */
@@ -97,7 +83,6 @@ html[data-theme="dark"] .topnav a:focus-visible {
    .ui-cards .blue/.green/.red/.purple accent-var block that followed (also part
    of the dead ui-cards system) was deleted outright. */
 .eyebrow,
-.stat-card svg,
 .panel-title svg {
   color: var(--brand-strong);
 }
@@ -110,69 +95,9 @@ html[data-theme="dark"] .topnav a:focus-visible {
 /* .access-toggle-panel deleted here — 2026-08-04, zero references anywhere in
    src/. */
 
-.access-toggle {
-  --toggle-color: var(--text-soft); /* was var(--text-muted) — never defined */
-  align-items: center;
-  background: color-mix(in srgb, var(--toggle-color) 12%, var(--bg-elevated));
-  border: 1px solid color-mix(in srgb, var(--toggle-color) 34%, var(--border));
-  border-radius: var(--radius-pill);
-  color: var(--text);
-  cursor: pointer;
-  display: inline-flex;
-  font: inherit;
-  font-size: var(--text-sm);
-  font-weight: 850;
-  gap: var(--space-2);
-  justify-content: flex-start;
-  line-height: 1;
-  min-height: 44px; /* touch target floor — not a scale value */
-  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1);
-  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease,
-    transform 180ms ease;
-  width: 148px;
-}
-
-.access-toggle::before {
-  /* Toggle knob: kept theme-invariant white on purpose (iOS switch convention
-     — the knob is a physical-looking disc that reads as "the moving part"
-     precisely because it doesn't tint with the surrounding track/surface).
-     Not a hardcoded-colour bug — 2026-08-04. */
-  background: #ffffff;
-  border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-soft);
-  content: "";
-  display: block;
-  height: var(--space-8);
-  width: var(--space-8);
-}
-
-.access-toggle:hover {
-  box-shadow: 0 12px 30px color-mix(in srgb, var(--toggle-color) 18%, transparent);
-  transform: translateY(-1px);
-}
-
-.access-toggle:disabled {
-  cursor: progress;
-  opacity: 0.72;
-}
-
-.access-toggle.is-on {
-  --toggle-color: var(--brand-strong);
-  color: color-mix(in srgb, var(--brand-strong) 72%, var(--text));
-}
-
-.access-toggle.is-off {
-  --toggle-color: var(--danger);
-  color: color-mix(in srgb, var(--danger) 72%, var(--text));
-  flex-direction: row-reverse;
-  justify-content: space-between;
-  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
-}
-
 /* .member-row-toggle deleted here — 2026-08-04, zero references anywhere in
    src/. */
 
-.day-tabs button.is-selected,
 .day-tabs button:hover {
   border-color: color-mix(in srgb, var(--brand) 34%, var(--border));
 }
@@ -185,20 +110,6 @@ html[data-theme="dark"] .topnav a:focus-visible {
 
 .scroll-reveal-ready .reveal-on-scroll.is-visible {
   animation: reveal-up 760ms var(--slow) var(--reveal-delay, 0ms) both;
-}
-
-@keyframes reveal-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px) scale(0.985);
-    filter: blur(8px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -218,10 +129,6 @@ html[data-theme="dark"] .topnav a:focus-visible {
     grid-template-columns: 1fr auto;
     top: var(--space-2);
     width: calc(100% - var(--space-6));
-  }
-
-  .topnav {
-    grid-column: 1 / -1;
   }
 }
 
@@ -248,7 +155,6 @@ html[data-theme="dark"] .topnav a:focus-visible {
 
 /* ============================================================
    BACKGROUND IMAGE + GLASS LAYER SYSTEM
-   bg-image.png served from public/images/
    ============================================================ */
 
 /* Base body: bg image with a layered dark overlay for readability */
@@ -288,15 +194,13 @@ html[data-theme="dark"] .topnav a:focus-visible {
    radii are also intentionally larger than the standard --shadow token
    (dialogs sit higher than dropdowns, hence the bigger shadow), so neither
    collapses onto a single shared token. */
-.profile-dropdown,
-.notification-dropdown {
+.profile-dropdown {
   background: var(--bg-elevated);
   border-color: var(--border);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
 }
 
-html[data-theme="dark"] .profile-dropdown,
-html[data-theme="dark"] .notification-dropdown {
+html[data-theme="dark"] .profile-dropdown {
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
 }
 
@@ -318,17 +222,6 @@ html[data-theme="dark"] .confirm-dialog {
 /* .feature-card:hover / .program-card:hover trimmed above; .program-dialog
    trimmed from the dark-mode dialog rule above — 2026-08-04, zero references
    anywhere in src/. */
-.stat-card:hover {
-  border-color: color-mix(in srgb, var(--brand) 40%, transparent);
-  box-shadow: var(--shadow);
-  transform: translateY(-4px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stat-card:hover {
-    transform: none;
-  }
-}
 
 /* ============================================================
    FLOATING GLASS NAVBAR
@@ -396,8 +289,3 @@ html[data-theme="dark"] .topbar {
    @keyframes landingGlow. All superseded by the lp-* (landing-page-client.tsx)
    and notif-* (notification-list.tsx) systems. Zero references to any class
    from these sections in any TSX/TS/JS anywhere in src/. */
-
-.empty-state {
-  padding: var(--space-10);
-  text-align: center;
-}

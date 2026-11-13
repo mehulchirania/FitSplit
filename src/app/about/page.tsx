@@ -22,8 +22,8 @@ export default function AboutPage() {
         <h1 className="about-h1">About FitSplit</h1>
         <div className="about-body">
           <p>
-            FitSplit was built to give gym owners, trainers, and members a single, focused workspace
-            to assign plans, guide sessions, and track progress without stitching together spreadsheets and messaging apps.
+            FitSplit is a free workout app: proven training plans, an exercise library, and a simple log
+            for every set, so you can train with structure and see your progress.
           </p>
           <p>
             FitSplit is owned and operated by{" "}
@@ -37,6 +37,11 @@ export default function AboutPage() {
           </p>
           <p>
             For any enquiries, please write to us at <a href="mailto:fitsplit.in@gmail.com">fitsplit.in@gmail.com</a>.
+          </p>
+          <p>
+            The exercise library is built on open data from ExerciseDB, used under the MIT licence.
+            See the <a href="https://github.com/hasaneyldrm/exercises-dataset" target="_blank" rel="noopener noreferrer">dataset</a>{" "}
+            and its <Link href="/exercise-data-notice">attribution notice</Link>.
           </p>
           <p>
             Read our <Link href="/privacy">Privacy Policy</Link> and{" "}

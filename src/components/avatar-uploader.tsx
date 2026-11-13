@@ -13,8 +13,7 @@ type ImageState = { src: string; width: number; height: number };
 /**
  * Reusable circular avatar uploader. Crops the chosen image to a square PNG
  * data URL client-side, then submits it through a server action that uploads to
- * Firebase Storage. Used for both member avatars (`updateMemberAvatar`) and
- * staff images (`updateStaffImage`).
+ * Firebase Storage. Used for the profile photo (`updateMemberAvatar`).
  */
 export function AvatarUploader({
   action,
@@ -31,7 +30,7 @@ export function AvatarUploader({
   name: string;
   /** FormData field name carrying the cropped PNG data URL (e.g. "avatarDataUrl"). */
   dataUrlField: string;
-  /** Extra hidden form fields (e.g. { memberId } or { userId, gymId }). */
+  /** Extra hidden form fields (none needed for the profile photo). */
   fields: Record<string, string>;
 }) {
   const router = useRouter();

@@ -259,7 +259,6 @@
     padding: var(--space-5) var(--space-5) calc(var(--space-8) + env(safe-area-inset-bottom, 0px));
     animation: fsSheetIn 260ms var(--slow);
   }
-  @keyframes fsSheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
 }
 
 @media (prefers-reduced-motion: reduce) {

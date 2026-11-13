@@ -1,52 +1,45 @@
 # FitSplit Cookie Policy
 
-Last updated: July 5, 2026
+**Version {{VERSION}} · Last updated {{LAST_UPDATED}}**
 
-This Cookie Policy explains how FitSplit uses cookies and similar technologies in the FitSplit web app and PWA.
+FitSplit uses **only essential cookies and browser storage**. We do not use advertising, analytics or tracking cookies, so we do not show a cookie banner that asks you to accept or reject cookies. This page lists exactly what is set so you can check.
 
-## 1. What cookies are
+## 1. Cookies
 
-Cookies are small text files stored by your browser. Similar technologies include local storage, IndexedDB, service workers, push tokens, and device/browser storage used to keep web apps working.
+| Name | Purpose | Set when | Lifetime | Flags |
+|---|---|---|---|---|
+| `fitsplit-session` | Keeps you signed in. Holds a signed Firebase session token | You sign in or create an account | 2 hours, or 14 days if you chose "remember me" | HttpOnly, Secure (in production), SameSite=Lax, path `/` |
 
-## 2. What FitSplit uses
+During local development only, a `fitsplit-local-user` cookie imitates a signed-in account. It is never used on the live service.
 
-FitSplit currently uses cookies and local technologies for essential service functions only. These may include:
+## 2. Browser storage (not cookies)
 
-- authentication and session cookies, including `fitsplit-session`;
-- role and workspace routing cookies;
-- terms-acceptance or consent state;
-- CSRF, security, rate-limiting, or abuse-prevention data;
-- PWA service-worker cache needed for installable app behavior;
-- IndexedDB data for offline workout/lift logging;
-- Firebase Cloud Messaging token if you opt in to push notifications;
-- browser/device storage needed for app preferences and continuity.
+These stay on your device and are not sent to us as cookies.
 
-## 3. Why we use them
+| Key or store | Purpose | Kept until |
+|---|---|---|
+| `fitsplit-theme` | Remembers light or dark theme | You clear site data |
+| `fitsplit-weight-unit`, `fitsplit-height-unit` | Remember kg/lbs and cm/ft | You clear site data |
+| `fitsplit-remember-me`, `fitsplit-session-start` | Enforce the session length you chose | You sign out |
+| `fitsplit.onboarded` | Remembers you have seen the welcome screen | You clear site data |
+| Workout swap and session-timer keys | Remember exercise swaps and elapsed time during a workout | The workout ends or you clear site data |
+| `fitsplit-diagnostics-consent` | Remembers your optional diagnostics choice (0 or 1) | You change it or clear site data |
+| IndexedDB database `FitSplitDB` | Holds workout sets logged offline until they sync | They sync or you clear site data |
+| Service worker cache `fitsplit-pwa` | Lets the installed web app load its icons and manifest | A new version replaces it |
 
-We use these technologies to:
+## 3. Third-party content
 
-- keep you signed in;
-- route you to the right member, owner, trainer, or admin workspace;
-- maintain gym tenant isolation;
-- protect accounts and prevent abuse;
-- remember required consent/acknowledgement state;
-- support offline workout logging and later sync;
-- deliver push notifications where enabled;
-- keep the app reliable and functional.
+- **YouTube.** Exercise tutorial videos are embedded from youtube.com and load only when you open a tutorial. YouTube then receives your IP address and may set its own cookies under Google's policies. FitSplit does not control those cookies. Do not open tutorials if you do not want this.
+- **Sentry.** If, and only if, you opted in to browser diagnostics, the Sentry browser SDK runs and sends error details. It does not run otherwise. See the Privacy Notice, section 6.
 
-## 4. Advertising and analytics cookies
+Fonts are bundled with the app and are not loaded from Google at runtime.
 
-FitSplit does not currently use advertising cookies, retargeting pixels, or cross-context behavioral advertising cookies.
+## 4. Your choices
 
-If FitSplit adds non-essential analytics or marketing cookies later, we will update this policy and, where required, request consent before placing them.
+You can block or delete cookies and site data in your browser settings; signing in will not work without the session cookie. You can change the diagnostics choice any time on the Data Rights page.
 
-## 5. Your choices
+If we ever add non-essential cookies, we will ask for your consent first and update this page and its version.
 
-You can block or delete cookies through your browser settings. If you block essential cookies or storage, FitSplit may not work correctly, and you may be unable to log in, stay signed in, use offline logging, or receive notifications.
+## 5. Contact
 
-You can disable push notifications through your browser or device settings.
-
-## 6. Contact
-
-Questions about cookies can be sent to fitsplit.in@gmail.com.
-
+Questions: {{CONTACT_NAME}}, {{CONTACT_DESIGNATION}}, {{CONTACT_EMAIL}}.

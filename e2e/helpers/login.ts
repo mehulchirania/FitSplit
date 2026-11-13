@@ -1,43 +1,30 @@
 import { expect, type Page } from "@playwright/test";
 
-export type LoginMode = "member" | "staff";
-
 /**
  * Logs in through the real landing-page modal (there is no dedicated /login
- * route — see src/components/landing/login-modal.tsx). Waits for the
+ * route, see src/components/landing/login-modal.tsx). Waits for the
  * post-login redirect so callers land on an authenticated page.
  */
-export async function login(page: Page, mode: LoginMode, username: string, password: string) {
+export async function login(page: Page, email: string, password: string) {
   await page.goto("/");
   await page.getByRole("button", { name: "Sign in", exact: true }).first().click();
   const dialog = page.getByRole("dialog");
-  if (mode === "staff") {
-    await dialog.getByRole("tab", { name: "Staff" }).click();
-  }
-  await dialog.locator("#lp-login-user").fill(username);
+  await dialog.locator("#lp-login-user").fill(email);
   await dialog.locator("#lp-login-pass").fill(password);
   await dialog.getByRole("button", { name: "Log in" }).click();
-  await page.waitForURL((url) => !url.pathname.startsWith("/") || url.pathname === "/member" || url.pathname === "/owner" || url.pathname === "/admin" || url.pathname === "/trainer", { timeout: 15_000 });
-  await acceptTermsIfPrompted(page);
+  await page.waitForURL(/\/member/, { timeout: 60_000 });
 }
 
-/**
- * Some accounts (anyone without termsAcceptedAt set — true for freshly
- * reseeded profiles) get a first-login "Before you continue" consent gate.
- * Accept it so callers land on a usable page regardless of which account
- * they logged in with.
- */
-export async function acceptTermsIfPrompted(page: Page) {
-  // The consent gate mounts client-side after the shell renders, so it can
-  // appear a beat after navigation settles — give it a real window rather
-  // than a quick peek, but don't block callers on accounts that never show it.
-  const acceptButton = page.getByRole("button", { name: "Accept & continue" });
-  if (await acceptButton.isVisible({ timeout: 6_000 }).catch(() => false)) {
-    await acceptButton.click();
-    // onAccept awaits the acceptTerms() server action, THEN calls
-    // router.refresh() — give the round trip real headroom before checking.
-    await expect(acceptButton).not.toBeVisible({ timeout: 15_000 });
-  }
+/** Creates a brand-new account through /signup and waits for the redirect into the app. */
+export async function signUp(page: Page, name: string, email: string, password: string) {
+  await page.goto("/signup");
+  await page.getByLabel("Your name").fill(name);
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Password").fill(password);
+  await page.getByRole("radio", { name: /18 or older/ }).check();
+  await page.getByRole("checkbox", { name: /I agree to the/ }).check();
+  await page.getByRole("button", { name: "Create free account" }).click();
+  await page.waitForURL(/\/member/, { timeout: 60_000 });
 }
 
 export async function logout(page: Page) {
@@ -50,3 +37,9 @@ export async function logout(page: Page) {
     await page.context().clearCookies();
   }
 }
+
+export function uniqueEmail() {
+  return `e2e-${Date.now()}-${Math.floor(Math.random() * 1e6)}@example.com`;
+}
+
+export { expect };

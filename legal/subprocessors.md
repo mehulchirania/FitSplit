@@ -1,27 +1,24 @@
 # FitSplit Subprocessor List
 
-Last updated: July 5, 2026
+**Version {{VERSION}} · Last updated {{LAST_UPDATED}}**
 
-This list identifies third-party service providers that may process personal data for FitSplit.
+These are the service providers that process personal data on behalf of FitSplit ({{OPERATOR_NAME}}). We list only providers the app actually uses. There are no advertising, marketing-analytics or payment providers.
 
 ## Current subprocessors
 
-| Subprocessor | Service | Data processed | Location / transfer notes |
+| Provider | Service | Data processed | Location |
 |---|---|---|---|
-| Google Firebase / Google Cloud | Hosting, Cloud Firestore, Firebase Authentication, Cloud Functions, Cloud Storage, Cloud Messaging, app infrastructure, logs, security, and diagnostics | Account data, authentication data, gym records, member records, workout/progress data, attendance/location records, media uploads, notifications, technical logs | FitSplit is configured around Google services with primary regional operations in `asia-south1` where applicable. Google may process data globally for support, security, reliability, and service operations under its data-processing terms. |
+| Google LLC (Firebase Authentication, Cloud Firestore, Cloud Storage, App Hosting, Google Cloud logging) | Sign-in, database, profile photo storage, hosting, server logs and security | Account, consent record, profile, training, body and nutrition data, profile photo, technical logs | {{DATA_LOCATION}}. Google may also process data in other countries to operate and secure its services |
+| Functional Software, Inc. (Sentry) | Error monitoring. Server-side error reports always; browser diagnostics and masked session replays only for users who opted in | Technical data (error details, page address, browser and device type); masked replay content if opted in | Outside India (the region of our Sentry project) |
 
-## Optional or environment-dependent providers
+## Third-party content you request
 
 | Provider | Service | Notes |
 |---|---|---|
-| Error monitoring provider | Error and diagnostic monitoring | The current app documents possible diagnostic/error monitoring. Add the exact provider before launch if enabled. |
-| Email provider | Transactional/support email | Add the exact provider before launch if FitSplit sends email outside Firebase/Google infrastructure. |
-| Payment provider | Online payments | FitSplit does not currently process card payments inside the app. Add provider details before enabling in-app payment processing. |
-| Analytics provider | Product analytics | No advertising or marketing analytics provider is listed for the current app. Add provider details and update the Cookie Policy before enabling non-essential analytics. |
+| YouTube (Google LLC) | Exercise tutorial videos | Loaded only when you open a tutorial. YouTube receives your IP address and may set its own cookies. It acts under its own policies, not as our processor |
 
 ## Changes
 
-FitSplit may update this list when adding or replacing subprocessors. For material changes affecting gym-customer data, FitSplit will provide notice through the Service, email, contract notice, or another reasonable channel.
+We update this list, and its version, when we add or replace a provider. Where a change materially affects your data we will tell you in the app or by email.
 
-Gym customers should review this list before enabling FitSplit for member data.
-
+Questions: {{CONTACT_NAME}}, {{CONTACT_EMAIL}}.

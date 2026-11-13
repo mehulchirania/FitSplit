@@ -1,7 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { LEGAL_DOCUMENTS, getLegalDocument, type LegalDocumentKey } from "@/lib/legal-documents";
+import { applyLegalTokens, legalTokens } from "@/lib/legal-config";
 
 function escapeHtml(value: string) {
   return value
@@ -22,6 +24,14 @@ function renderInline(value: string) {
     })
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/`([^`]+)`/g, "<code>$1</code>");
+}
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/^d+-/, "");
 }
 
 function isTableSeparator(line: string) {
@@ -62,7 +72,7 @@ function renderMarkdown(markdown: string) {
     const heading = /^(#{1,4})\s+(.+)$/.exec(line);
     if (heading) {
       const level = Math.min(heading[1].length, 4);
-      html.push(`<h${level}>${renderInline(heading[2])}</h${level}>`);
+      html.push(`<h${level} id="${slugify(heading[2])}">${renderInline(heading[2])}</h${level}>`);
       i += 1;
       continue;
     }
@@ -117,10 +127,10 @@ function renderMarkdown(markdown: string) {
   return html.join("\n");
 }
 
-export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentKey }) {
+export function LegalDocumentPage({ documentKey, children }: { documentKey: LegalDocumentKey; children?: ReactNode }) {
   const document = getLegalDocument(documentKey);
   const markdownPath = path.join(process.cwd(), "legal", document.source);
-  const markdown = fs.readFileSync(markdownPath, "utf8");
+  const markdown = applyLegalTokens(fs.readFileSync(markdownPath, "utf8"), legalTokens(documentKey));
   const html = renderMarkdown(markdown);
 
   return (
@@ -147,7 +157,10 @@ export function LegalDocumentPage({ documentKey }: { documentKey: LegalDocumentK
             </Link>
           ))}
         </aside>
-        <article className="legal-article" dangerouslySetInnerHTML={{ __html: html }} />
+        <div style={{ minWidth: 0 }}>
+          <article className="legal-article" dangerouslySetInnerHTML={{ __html: html }} />
+          {children}
+        </div>
       </main>
 
       <style>{`

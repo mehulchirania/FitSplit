@@ -115,10 +115,6 @@ function normalize(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 }
 
-export function isGenericExerciseThumbnail(url: string) {
-  return !url || url.includes("images.unsplash.com/photo-1534438327276-14e5300c3a48");
-}
-
 export function getExerciseThumbnail(name: string, muscleGroup: MuscleGroup) {
   const normalizedName = normalize(name);
   const match = keywordThumbnails.find((entry) =>

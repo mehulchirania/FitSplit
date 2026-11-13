@@ -5,19 +5,18 @@ import { MemberHistory } from "@/components/member-history";
 import { EditableMetrics } from "@/components/editable-metrics";
 import { MacroProgressPanel } from "@/components/macro-progress-panel";
 import { ProfileMetricsWidget } from "@/components/profile-metrics-widget";
-import { GymNoticeBoard } from "@/components/gym-notice-board";
 import { OverviewScreen } from "@/components/member-overview-screen";
 import { WorkoutScreen } from "@/components/member-workout-screen";
 import { LogsScreen } from "@/components/member-logs-screen";
 import { ProgressScreen } from "@/components/member-progress-screen";
 import { MacrosScreen } from "@/components/member-macros-screen";
-import { MemberProgramsClient } from "@/components/member-programs-client";
-import { MemberExerciseCatalogScreen } from "@/components/member-exercise-catalog-screen";
+import { MemberSidebar, MEMBER_SCREENS } from "@/components/member-sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
-import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, MealLog, WorkoutProgram, ProgramAssignment, GymNotice, MuscleGroup } from "@/types/domain";
-import type { MemberProfile, Member } from "@/types/domain";
-import React, { useState, useEffect, useMemo, useTransition, useRef } from "react";
+import type { Exercise, LiftLog, DayLog, ActivityLog, MacroLog, MealLog, WorkoutProgram } from "@/types/domain";
+import type { UserProfile } from "@/types/domain";
+import React, { useState, useEffect, useMemo, useTransition } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { logoutUser } from "@/lib/auth";
 import { getWeekStart, getTrainedDateKeys, resolveTodaysSession, estimateSessionMinutes } from "@/lib/workout-utils";
 
@@ -60,23 +59,9 @@ const Icons = {
 /* ── Props types ─────────────────────────────────────────────────── */
 interface MemberCoachShellProps {
   firstName: string;
-  gymName: string;
-  gymLogoUrl?: string | null;
-  gymPhone?: string | null;
-  gymEmail?: string | null;
-  gymLocationUrl?: string | null;
-  gymNotices?: GymNotice[] | null;
   weeklyStreak: number;
   daysTrainedThisWeek: number;
-  membershipStatus?: string | null;
-  membershipEndDate?: string | null;
-  coachNote?: string | null;
-  coachNoteFrom?: string | null;
-  coachNoteUpdatedAt?: string | null;
   program: WorkoutProgram | null;
-  assignment: ProgramAssignment | null;
-  allPrograms: WorkoutProgram[];
-  exerciseCatalog: Array<{ muscleGroup: MuscleGroup; exercises: Exercise[] }>;
   exercises: Exercise[];
   liftLogs: LiftLog[];
   dayLogs: DayLog[];
@@ -84,200 +69,18 @@ interface MemberCoachShellProps {
   macroLogs: MacroLog[];
   mealLogs: MealLog[];
   macroLog?: MacroLog | null;
-  macroTarget?: MemberProfile["macroNutritionTarget"];
+  macroTarget?: UserProfile["macroNutritionTarget"];
   injuryNote?: string | null;
   memberId: string;
-  gymId: string;
   todayDate: string;
-  member: Member;
-  profile: MemberProfile;
+  member: UserProfile;
+  profile: UserProfile;
   currentWeek: number | null;
-  initialActiveSessionCount: number;
 }
 
 /* ── Avatar helper ───────────────────────────────────────────────── */
 function Avatar({ initials, size = "md", className = "" }: { initials: string; size?: "sm" | "md" | "lg" | "xl"; className?: string }) {
   return <span className={`mcr-avatar mcr-avatar--${size} ${className}`}>{initials}</span>;
-}
-
-function ChevD() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-      <polyline points="6 9 12 15 18 9"/>
-    </svg>
-  );
-}
-
-function LogOutIco() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
-    </svg>
-  );
-}
-
-/* ── Sidebar (Desktop) ───────────────────────────────────────────── */
-function Sidebar({
-  screen, setScreen, firstName, gymName, gymLogoUrl,
-}: {
-  screen: string;
-  setScreen: (t: string) => void;
-  firstName: string;
-  gymName: string;
-  gymLogoUrl?: string | null;
-}) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!menuOpen) return;
-    const onClick = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, [menuOpen]);
-
-  const handleLogout = () => {
-    setMenuOpen(false);
-    startTransition(async () => {
-      window.localStorage.removeItem("fitsplit-remember-me");
-      await logoutUser();
-    });
-  };
-
-  const screenItems = [
-    { v: "overview",  label: "Overview",  icon: <Icons.Home size={18} /> },
-    { v: "workout",   label: "Workout",   icon: <Icons.Dumbbell size={18} /> },
-    { v: "logs",      label: "Logs",      icon: <Icons.Note size={18} /> },
-    { v: "progress",  label: "Progress",  icon: <Icons.Chart size={18} /> },
-    { v: "macros",    label: "Macros",    icon: <Icons.Heart size={18} /> },
-    { v: "programs",  label: "Programs",  icon: <Icons.Calendar size={18} /> },
-    { v: "exercises", label: "Exercises", icon: <Icons.Search size={18} /> },
-  ];
-
-  const gymShort = gymName.split(" · ")[0];
-  const initials = firstName.charAt(0).toUpperCase();
-
-  return (
-    <aside className="m3d-side">
-      {/* Brand + gym co-brand lockup — clicking goes to dashboard */}
-      <button
-        className="m3d-side__logo m3d-side__logo--btn"
-        onClick={() => setScreen("overview")}
-        type="button"
-        aria-label="Go to dashboard"
-      >
-        {gymLogoUrl ? (
-          <div className="m3d-side__cobrand">
-            <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/icon-512.png" alt="FitSplit" width={42} height={42} className="m3d-logo-img" />
-            </div>
-            <span className="m3d-side__cobrand-sep">×</span>
-            <div className="m3d-side__logo-mark m3d-side__logo-mark--sm">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={gymLogoUrl} alt={gymShort} width={42} height={42} style={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: "10px" }} />
-            </div>
-          </div>
-        ) : (
-          <div className="m3d-side__logo-mark">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/icon-512.png" alt="FitSplit" width={52} height={52} className="m3d-logo-img" />
-          </div>
-        )}
-        <div className="m3d-side__logo-text">
-          <span className="m3d-side__logo-name">FitSplit</span>
-          <span className="m3d-side__gym-sub">{gymShort}</span>
-        </div>
-      </button>
-
-      {/* Nav */}
-      <nav className="m3d-side__nav">
-        {screenItems.map((it) => (
-          <button
-            key={it.v}
-            className={`m3d-side__item${screen === it.v ? " m3d-side__item--on" : ""}`}
-            onClick={() => setScreen(it.v)}
-            type="button"
-          >
-            {it.icon}
-            <span>{it.label}</span>
-          </button>
-        ))}
-      </nav>
-
-      {/* ── Snowflake-style profile footer ── */}
-      <div className="m3d-side__user-footer" ref={menuRef}>
-        {/* Popup menu — opens upward */}
-        {menuOpen && (
-          <>
-            <div className="m3d-user-menu__overlay" onClick={() => setMenuOpen(false)} />
-            <div className="m3d-user-menu">
-              <div className="m3d-user-menu__header">
-                <Avatar initials={initials} size="sm" />
-                <div>
-                  <div className="m3d-user-menu__name">{firstName}</div>
-                  <div className="m3d-user-menu__role">Member</div>
-                </div>
-              </div>
-              <div className="m3d-user-menu__divider" />
-              <Link href="/member/settings" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
-                <Icons.User size={14} /> Profile &amp; metrics
-              </Link>
-              <Link href="/member/settings" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
-                <Icons.Settings size={14} /> Settings
-              </Link>
-              <Link href="/member/membership" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
-                <Icons.Bell size={14} /> Membership
-              </Link>
-              <Link href="/member/coach" className="m3d-user-menu__item" onClick={() => setMenuOpen(false)}>
-                <Icons.Mail size={14} /> Message coach
-              </Link>
-              <div className="m3d-user-menu__divider" />
-              <button
-                className="m3d-user-menu__item m3d-user-menu__item--danger"
-                onClick={handleLogout}
-                disabled={isPending}
-                type="button"
-              >
-                <LogOutIco /> {isPending ? "Logging out…" : "Log out"}
-              </button>
-            </div>
-          </>
-        )}
-
-        {/* Main trigger */}
-        <button
-          className="m3d-user-btn"
-          type="button"
-          onClick={() => setMenuOpen((p) => !p)}
-          aria-label="Account menu"
-        >
-          <Avatar initials={initials} size="sm" />
-          <div className="m3d-user-btn__id">
-            <strong>{firstName}</strong>
-            <span>Member</span>
-          </div>
-          <span style={{ opacity: 0.45, display: "flex", alignItems: "center" }}><ChevD /></span>
-        </button>
-
-        {/* Standalone logout button */}
-        <button
-          className="m3d-user-out"
-          type="button"
-          title="Log out"
-          onClick={handleLogout}
-          disabled={isPending}
-        >
-          <LogOutIco />
-        </button>
-      </div>
-    </aside>
-  );
 }
 
 /* ── Desktop TopBar ──────────────────────────────────────────────── */
@@ -298,14 +101,11 @@ function DesktopTopBar({ screen }: { screen: string }) {
 }
 
 /* ── Mobile TopBar ───────────────────────────────────────────────── */
-function MobileTopBar({ firstName, gymName }: {
+function MobileTopBar({ firstName }: {
   firstName: string;
-  gymName: string;
-  gymLogoUrl?: string | null;
 }) {
   const [showMenu, setShowMenu] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const gymShort = gymName.split(" · ")[0];
 
   const handleLogout = () => {
     setShowMenu(false);
@@ -318,7 +118,6 @@ function MobileTopBar({ firstName, gymName }: {
   return (
     <div className="mcr-topbar">
       <div className="mcr-topbar__left">
-        <span className="mcr-topbar__gym">{gymShort}</span>
         <div className="mcr-topbar__hi">Hi, {firstName} 👋</div>
       </div>
       <div className="mcr-topbar__right">
@@ -347,12 +146,6 @@ function MobileTopBar({ firstName, gymName }: {
                 <Link href="/member/settings" className="mcr-user-menu__item" onClick={() => setShowMenu(false)}>
                   <Icons.Settings size={15} /> Settings
                 </Link>
-                <Link href="/member/membership" className="mcr-user-menu__item" onClick={() => setShowMenu(false)}>
-                  <Icons.Bell size={15} /> Membership
-                </Link>
-                <Link href="/member/coach" className="mcr-user-menu__item" onClick={() => setShowMenu(false)}>
-                  <Icons.Mail size={15} /> Message coach
-                </Link>
                 <div className="mcr-user-menu__divider" />
                 <button
                   className="mcr-user-menu__item mcr-user-menu__item--danger"
@@ -380,10 +173,9 @@ function MobileTabBar({ tab, setTab }: { tab: string; setTab: (t: string) => voi
   ];
   return (
     <nav className="mcr-tabbar">
-      {/* Coach — links to dedicated full-page view */}
-      <Link href="/member/coach" className="mcr-tabbar__item">
-        <Icons.Mail size={22} />
-        <span>Coach</span>
+      <Link href="/member/programs" className="mcr-tabbar__item">
+        <Icons.Calendar size={22} />
+        <span>Plans</span>
       </Link>
       {tabItems.map((t) => (
         <button
@@ -401,35 +193,12 @@ function MobileTabBar({ tab, setTab }: { tab: string; setTab: (t: string) => voi
 }
 
 
-/* ── Compact coach note banner (train tab) ──────────────────────── */
-function CoachNoteBanner({ coachNote, coachNoteFrom }: {
-  coachNote?: string | null;
-  coachNoteFrom?: string | null;
-}) {
-  if (!coachNote) return null;
-  const initials = coachNoteFrom
-    ? coachNoteFrom.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()
-    : "PT";
-  return (
-    <div className="m3d-coach-banner">
-      <div className="m3d-coach-banner__avatar">{initials}</div>
-      <div className="m3d-coach-banner__body">
-        <span className="m3d-coach-banner__from">{coachNoteFrom ?? "Your coach"}</span>
-        <span className="m3d-coach-banner__note">{coachNote.length > 90 ? coachNote.slice(0, 90) + "…" : coachNote}</span>
-      </div>
-      <Link href="/member/coach" className="m3d-coach-banner__link" aria-label="Open coach thread">
-        <Icons.ChevR size={14} />
-      </Link>
-    </div>
-  );
-}
-
 /* ── Stats section (mobile coach tab) ───────────────────────────── */
 function StatsSection({ weeklyStreak, daysTrainedThisWeek, weeklyTarget, profile, liftLogs }: {
   weeklyStreak: number;
   daysTrainedThisWeek: number;
   weeklyTarget: number;
-  profile: MemberProfile;
+  profile: UserProfile;
   liftLogs: LiftLog[];
 }) {
   // Find best set across all logs
@@ -468,37 +237,6 @@ function StatsSection({ weeklyStreak, daysTrainedThisWeek, weeklyTarget, profile
   );
 }
 
-/* ── Membership row ──────────────────────────────────────────────── */
-function MembershipRow({ membershipStatus, membershipEndDate }: {
-  membershipStatus?: string | null;
-  membershipEndDate?: string | null;
-}) {
-  const [nowMs] = useState(() => Date.now());
-  const daysLeft = membershipEndDate
-    ? Math.ceil((new Date(membershipEndDate).getTime() - nowMs) / (1000 * 60 * 60 * 24))
-    : null;
-
-  const statusText = membershipStatus === "active"
-    ? daysLeft !== null ? `Active · renews in ${daysLeft}d` : "Active"
-    : membershipStatus === "expiring_soon"
-    ? `Expiring soon${daysLeft !== null ? ` · ${daysLeft}d left` : ""}`
-    : membershipStatus === "expired"
-    ? "Expired — please renew"
-    : "No membership";
-
-  const isUrgent = membershipStatus === "expiring_soon" || membershipStatus === "expired";
-
-  return (
-    <section className={`mcr-membership${isUrgent ? " mcr-membership--urgent" : ""}`}>
-      <div>
-        <span className="mcr-membership__label">Membership</span>
-        <strong>{statusText}</strong>
-      </div>
-      <Link href="/member/membership" className="mcr-membership__btn">Manage</Link>
-    </section>
-  );
-}
-
 /** Weekly training-day target derived from the assigned program; falls back to 4 with no program. */
 function getWeeklyTarget(program: WorkoutProgram | null) {
   return program?.days?.length ? program.days.length : 4;
@@ -523,7 +261,7 @@ function MobileTodayCard({ program, currentWeek, selectedDayIndex }: {
     <section className="mcr-today">
       <div className="mcr-today__eyebrow">
         <Icons.Note size={13} />
-        Your coach&apos;s plan
+        Today&apos;s plan
       </div>
       <h2 className="mcr-today__title">{day?.title ?? program.title}</h2>
       <span className="mcr-today__sub">Week {currentWeek ?? 1} · {liftsCount} lifts · {totalSets} sets · ~{estMin}m</span>
@@ -614,24 +352,24 @@ function MobileLatestPRRibbon({ liftLogs, exercises }: { liftLogs: LiftLog[]; ex
 /* ── Main export ─────────────────────────────────────────────────── */
 export function MemberCoachShell(props: MemberCoachShellProps) {
   const {
-    firstName, gymName, gymLogoUrl, gymNotices,
+    firstName,
     weeklyStreak, daysTrainedThisWeek,
-    membershipStatus, membershipEndDate,
-    coachNote, coachNoteFrom,
-    program, assignment, allPrograms, exerciseCatalog,
+    program,
     currentWeek, exercises, liftLogs, dayLogs, activityLogs,
     macroLogs, mealLogs, macroLog, macroTarget,
-    memberId, gymId, todayDate,
+    memberId, todayDate,
     member, profile,
   } = props;
 
   const weeklyTarget = getWeeklyTarget(program);
-  const gymShort = gymName.split(" · ")[0];
 
   // Mobile bottom-tab nav — unchanged, fully independent from desktop nav.
   const [tab, setTab] = useState("train");
-  // Desktop sidebar nav — Overview/Workout/Logs/Progress/Macros/Programs/Exercises.
-  const [screen, setScreen] = useState("overview");
+  // Desktop screen, driven by ?screen= so the shared MemberSidebar can switch it.
+  const current = useSearchParams().get("screen");
+  const screen = MEMBER_SCREENS.find((x) => x === current) ?? "overview";
+  const setScreen = (next: string) =>
+    window.history.pushState(null, "", next === "overview" ? "/member" : `/member?screen=${next}`);
 
   // Seed the default day from the member's actual training state (in-progress
   // session, next scheduled day, rest day, ...) instead of always opening on
@@ -651,7 +389,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
   return (
     <div className="m3d-root">
       {/* ── Desktop Sidebar ── */}
-      <Sidebar screen={screen} setScreen={setScreen} firstName={firstName} gymName={gymName} gymLogoUrl={gymLogoUrl} />
+      <MemberSidebar firstName={firstName} />
 
       {/* ── Main Content ── */}
       <div className="m3d-main">
@@ -664,7 +402,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
             {screen === "overview" && (
               <OverviewScreen
                 firstName={firstName}
-                gymName={gymName}
                 program={program}
                 currentWeek={currentWeek}
                 exercises={exercises}
@@ -673,9 +410,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                 weeklyStreak={weeklyStreak}
                 daysTrainedThisWeek={daysTrainedThisWeek}
                 weeklyTarget={weeklyTarget}
-                coachNote={coachNote}
-                coachNoteFrom={coachNoteFrom}
-                gymNotices={gymNotices}
                 goWorkout={() => setScreen("workout")}
                 goLogs={() => setScreen("logs")}
               />
@@ -685,7 +419,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
               program ? (
                 <WorkoutScreen
                   memberId={memberId}
-                  gymId={gymId}
                   program={program}
                   exercises={exercises}
                   liftLogs={liftLogs}
@@ -706,7 +439,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                   <div className="mcr-no-plan">
                     <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
                     <h2>No workout split active</h2>
-                    <p>Choose a training split from the program library to begin logging your lifts. <button onClick={() => setScreen("programs")} style={{ background: "none", border: "none", color: "#C8F135", fontWeight: "700", cursor: "pointer", padding: 0 }}>Browse splits →</button></p>
+                    <p>Choose a training split from the program library to begin logging your lifts. <Link href="/member/programs" style={{ color: "#C8F135", fontWeight: 700 }}>Browse splits →</Link></p>
                   </div>
                 </>
               )
@@ -721,19 +454,7 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
             )}
 
             {screen === "macros" && (
-              <MacrosScreen memberId={memberId} gymId={gymId} todayDate={todayDate} macroLog={macroLog} macroTarget={macroTarget} macroLogs={macroLogs} mealLogs={mealLogs} profile={profile} member={member} />
-            )}
-
-            {screen === "programs" && (
-              <MemberProgramsClient
-                programs={allPrograms}
-                assignedProgramId={assignment?.programId ?? null}
-                gymName={gymShort}
-              />
-            )}
-
-            {screen === "exercises" && (
-              <MemberExerciseCatalogScreen catalog={exerciseCatalog} />
+              <MacrosScreen memberId={memberId} todayDate={todayDate} macroLog={macroLog} macroTarget={macroTarget} macroLogs={macroLogs} mealLogs={mealLogs} profile={profile} member={member} />
             )}
           </div>
 
@@ -741,16 +462,10 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
           <div className="mcr-mobile-only">
             {tab === "train" && (
               <>
-                <MobileTopBar
-                  firstName={firstName}
-                  gymName={gymName}
-                  gymLogoUrl={gymLogoUrl}
-                />
+                <MobileTopBar firstName={firstName} />
 
                 <div className="m3d-grid">
                   <div className="m3d-grid__left">
-                    <CoachNoteBanner coachNote={coachNote} coachNoteFrom={coachNoteFrom} />
-
                     <StatsSection
                       weeklyStreak={weeklyStreak}
                       daysTrainedThisWeek={daysTrainedThisWeek}
@@ -774,7 +489,6 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                         <div className="mcr-train-logger">
                           <WorkoutScreen
                             memberId={memberId}
-                            gymId={gymId}
                             program={program}
                             exercises={exercises}
                             liftLogs={liftLogs}
@@ -787,18 +501,11 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
                     ) : (
                       <div className="mcr-no-plan">
                         <div className="mcr-no-plan__icon"><Icons.Dumbbell size={28} /></div>
-                        <h2>No workout plan assigned</h2>
-                        <p>Your trainer hasn&apos;t assigned a program yet. <Link href="/member/coach">Reach out to your coach →</Link></p>
+                        <h2>No workout plan yet</h2>
+                        <p>Pick a plan to see today&apos;s session. <Link href="/member/programs">Browse plans →</Link></p>
                       </div>
                     )}
 
-                    {gymNotices && gymNotices.length > 0 && (
-                      <div className="mcr-notices-wrap">
-                        <GymNoticeBoard notices={gymNotices} />
-                      </div>
-                    )}
-
-                    <MembershipRow membershipStatus={membershipStatus} membershipEndDate={membershipEndDate} />
                   </div>
                 </div>
               </>
@@ -818,8 +525,8 @@ export function MemberCoachShell(props: MemberCoachShellProps) {
             {tab === "body" && (
               <div className="mcr-body-tab">
                 <ProfileMetricsWidget profile={profile} />
-                <EditableMetrics member={{ ...member, ...profile }} />
-                <MacroProgressPanel memberId={memberId} gymId={gymId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
+                <EditableMetrics member={member} />
+                <MacroProgressPanel memberId={memberId} date={todayDate} target={macroTarget} initialActual={macroLog ?? undefined} macroHistory={macroLogs} />
               </div>
             )}
           </div>
