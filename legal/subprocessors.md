@@ -19,6 +19,6 @@ These are the service providers that process personal data on behalf of FitSplit
 
 ## Changes
 
-We update this list, and its version, when we add or replace a provider. Where a change materially affects your data we will tell you in the app or by email.
+We update this list, and its version, when we add or replace a provider. Where a change materially affects your data we will tell you in the app.
 
 Questions: {{CONTACT_NAME}}, {{CONTACT_EMAIL}}.

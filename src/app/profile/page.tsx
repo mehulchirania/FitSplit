@@ -1,10 +1,10 @@
 import { BodyWeightLogger } from "@/components/body-weight-logger";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { ProfileForm } from "@/components/profile-form";
-import { ConfirmActionForm } from "@/components/confirm-action-form";
+import { ChangePinForm } from "@/components/change-pin-form";
 import { ProgressiveOverloadChart } from "@/components/progressive-overload-chart";
 import { MuscleRadarChart } from "@/components/muscle-radar-chart";
-import { requireAuth, changePassword } from "@/lib/auth";
+import { requireAuth } from "@/lib/auth";
 import {
   getBodyMetricLogsForMember,
   getUserProfile,
@@ -70,32 +70,10 @@ export default async function ProfilePage() {
       <section className="list-panel" style={{ marginTop: 16 }}>
         <div className="panel-title">
           <h2>Security</h2>
-          <span className="status-pill status-neutral">Change password</span>
+          <span className="status-pill status-neutral">Change PIN</span>
         </div>
         <div className="notification-list">
-          <ConfirmActionForm
-            action={changePassword}
-            className="form-panel"
-            confirmMessage="This updates your login password immediately."
-            confirmTitle="Change password?"
-            pendingLabel="Updating password..."
-            submitLabel="Change password"
-          >
-            <div className="form-grid">
-              <label>
-                Current password
-                <input autoComplete="current-password" name="currentPassword" required type="password" />
-              </label>
-              <label>
-                New password
-                <input autoComplete="new-password" minLength={8} name="newPassword" placeholder="At least 8 characters" required type="password" />
-              </label>
-              <label>
-                Confirm new password
-                <input autoComplete="new-password" minLength={8} name="confirmPassword" placeholder="Repeat new password" required type="password" />
-              </label>
-            </div>
-          </ConfirmActionForm>
+          <ChangePinForm />
         </div>
       </section>
     </main>

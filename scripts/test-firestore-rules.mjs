@@ -51,7 +51,9 @@ async function main() {
     const db = context.firestore();
     await db.doc(`users/${ALICE}`).set({ fullName: "Alice" });
     await db.doc(`users/${ALICE}/liftLogs/l1`).set({ exerciseId: "bench", weight: 60 });
+    await db.doc(`users/${ALICE}/rehabSessions/r1`).set({ exercisesCompleted: 5 });
     await db.doc(`users/${BOB}`).set({ fullName: "Bob" });
+    await db.doc(`users/${BOB}/rehabSessions/r1`).set({ exercisesCompleted: 3 });
     await db.doc(`users/${BOB}/liftLogs/l1`).set({ exerciseId: "squat", weight: 100 });
     await db.doc("misc/doc").set({ any: true });
   });
@@ -67,6 +69,11 @@ async function main() {
   await check("user cannot write own profile from a client", () => assertFails(alice.doc(`users/${ALICE}`).set({ fullName: "Hax" })));
   await check("user cannot write own subcollection from a client", () =>
     assertFails(alice.doc(`users/${ALICE}/liftLogs/l2`).set({ weight: 999 }))
+  );
+  await check("user can read own rehab sessions", () => assertSucceeds(alice.doc(`users/${ALICE}/rehabSessions/r1`).get()));
+  await check("user cannot read another user's rehab sessions", () => assertFails(alice.doc(`users/${BOB}/rehabSessions/r1`).get()));
+  await check("user cannot write rehab sessions from a client", () =>
+    assertFails(alice.doc(`users/${ALICE}/rehabSessions/r2`).set({ exercisesCompleted: 99 }))
   );
   await check("signed-out visitor cannot read a profile", () => assertFails(anon.doc(`users/${ALICE}`).get()));
   await check("other root collections are denied", () => assertFails(alice.doc("misc/doc").get()));

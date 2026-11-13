@@ -14,7 +14,7 @@ FitSplit is a free app for following workout plans and keeping a training log. T
 
 | Category | What it includes | Where it comes from |
 |---|---|---|
-| Account | Name, email address, password (stored only as a salted hash by Firebase Authentication; we never see or store it in readable form), account creation time | You, at signup |
+| Account | Name, mobile number, 4-digit PIN (stored only as a salted hash by Firebase Authentication; we never see or store it in readable form), account creation time. The number is used only to identify your account when you sign in: we do not send it SMS, call it or share it | You, at signup |
 | Consent record | Which Terms and Privacy Notice versions you accepted and when, your age group (18 or older, or under 18), your optional-diagnostics choice, and for under-18 users a guardian email and the time guardian consent was declared | You, at signup |
 | Profile | Optional: date of birth, age, gender, height, weight, fitness goals, macro targets, profile photo | You, in Settings and Profile |
 | Health notes | Optional: injury notes and medical notes you choose to type into your profile | You, in Profile |
@@ -91,7 +91,7 @@ We do not currently delete inactive accounts automatically.
 
 - All traffic is encrypted with HTTPS and we send HSTS so browsers only connect securely.
 - The sign-in session cookie is HttpOnly, Secure and SameSite, and sessions end after 2 hours (or 14 days if you chose "remember me").
-- Passwords are handled by Firebase Authentication, which stores only hashes.
+- Your PIN is handled by Firebase Authentication, which stores only hashes. Wrong PIN guesses are counted per mobile number, and the number is locked for a short time after repeated misses.
 - Each account's data is stored under its own user ID and the database is deny-by-default: other users cannot read it.
 - We apply security headers (including a Content-Security-Policy), validate and length-limit everything you submit, and rate-limit sign-up and sign-in.
 
@@ -127,4 +127,4 @@ If we have not resolved your grievance, you may complain to the Data Protection 
 
 ## 14. Changes to this notice
 
-We version this notice (see the top of the page). When we change it in a way that matters, we will tell you in the app or by email and ask for your consent again where the law requires. The versions you accepted are kept on your account.
+We version this notice (see the top of the page). When we change it in a way that matters, we will tell you in the app and ask for your consent again where the law requires. The versions you accepted are kept on your account.

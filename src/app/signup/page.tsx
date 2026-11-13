@@ -3,8 +3,8 @@ import Link from "next/link";
 import { ConsumerSignupForm } from "@/components/onboarding/consumer-signup-form";
 
 export const metadata: Metadata = {
-  title: "Sign Up Free — FitSplit",
-  description: "Start tracking your workouts, progressive overload, and body metrics with FitSplit. Free forever."
+  title: "Sign up — FitSplit",
+  description: "Start tracking your workouts, progressive overload, and body metrics with FitSplit."
 };
 
 export default function SignupPage() {

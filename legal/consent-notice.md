@@ -10,7 +10,7 @@ This is the short version of what you agree to when you create a FitSplit accoun
 
 By ticking that box you consent to {{OPERATOR_NAME}} processing:
 
-- your account details (name, email, password hash);
+- your account details (name, mobile number, and your PIN, which is stored only as a salted hash);
 - the profile details you choose to add (for example date of birth, gender, height, weight, goals, optional injury or medical notes, profile photo);
 - your workout, body-weight, macro and activity logs;
 - technical data needed to run and secure the app.

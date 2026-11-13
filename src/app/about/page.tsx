@@ -22,7 +22,7 @@ export default function AboutPage() {
         <h1 className="about-h1">About FitSplit</h1>
         <div className="about-body">
           <p>
-            FitSplit is a free workout app: proven training plans, an exercise library, and a simple log
+            FitSplit is a workout app: proven training plans, an exercise library, and a simple log
             for every set, so you can train with structure and see your progress.
           </p>
           <p>

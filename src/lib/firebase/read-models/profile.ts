@@ -24,7 +24,7 @@ function mapUserProfile(uid: string, data: Record<string, unknown>): UserProfile
   return {
     id: uid,
     fullName,
-    email: data.email ? String(data.email) : undefined,
+    phone: data.phone ? String(data.phone) : undefined,
     joinedAt: String(data.joinedAt ?? data.createdAt ?? new Date().toISOString().slice(0, 10)),
     avatarInitials: String(data.avatarInitials ?? initialsOf(fullName)),
     avatarUrl: data.avatarUrl ? String(data.avatarUrl) : undefined,

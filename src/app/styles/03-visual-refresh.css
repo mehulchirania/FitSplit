@@ -68,7 +68,6 @@
 /* Active link state — shows which top-nav section the user is currently in */
 
 .icon-button,
-.theme-toggle,
 .button {
   min-height: var(--space-10);
 }
@@ -78,8 +77,7 @@
 }
 
 .neutral-icon-button,
-.button-secondary,
-.theme-toggle {
+.button-secondary {
   background: var(--surface-glass-strong);
   border-color: color-mix(in srgb, var(--border) 82%, transparent);
 }

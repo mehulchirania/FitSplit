@@ -3,6 +3,7 @@ import type { Exercise, MuscleGroup } from "@/types/domain";
 import {
   catalogExercises,
   exerciseCatalogByMuscle,
+  findExercise,
   libraryEquipment,
   muscleGroups,
   searchExerciseLibrary,
@@ -25,4 +26,17 @@ export function getExerciseCatalog(): ExerciseCatalog {
 /** One page of the full ~1,300-exercise library, filtered. The full set stays on the server. */
 export function getExerciseLibrary(query: LibraryQuery) {
   return { ...searchExerciseLibrary(query), muscleGroups, equipment: libraryEquipment };
+}
+
+/** Resolve exercise ids (any library) to full records, skipping unknown ids. */
+export function getExercisesByIds(ids: Iterable<string>): Exercise[] {
+  const seen = new Set<string>();
+  const found: Exercise[] = [];
+  for (const id of ids) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const exercise = findExercise(id);
+    if (exercise) found.push(exercise);
+  }
+  return found;
 }

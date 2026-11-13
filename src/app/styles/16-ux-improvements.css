@@ -334,24 +334,6 @@ html[data-theme="dark"] {
   width: 12px;
 }
 
-/* ── 23. Workout calendar — light theme overrides ────────────────────────── */
-
-html[data-theme="light"] .cal-cell {
-  background: transparent;
-}
-
-html[data-theme="light"] .cal-cell:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.04);
-}
-
-html[data-theme="light"] .cal-cell--trained {
-  background: color-mix(in srgb, #16a34a 12%, transparent);
-}
-
-html[data-theme="light"] .cal-cell--skipped {
-  background: color-mix(in srgb, #dc2626 8%, transparent);
-}
-
 /* ── 24. Smooth page transitions ─────────────────────────────────────────── */
 
 .page,
@@ -474,11 +456,7 @@ html[data-theme="light"] .cal-cell--skipped {
   }
 }
 
-/* ── 38. Calendar dot colors — ensure visibility in both themes ───────────── */
-
-html[data-theme="light"] .cal-dot--trained  { background: #16a34a; }
-html[data-theme="light"] .cal-dot--skipped  { background: #dc2626; }
-html[data-theme="light"] .cal-dot--makeup   { background: #d97706; }
+/* ── 38. Calendar dot colors ──────────────────────────────────────────────── */
 
 html[data-theme="dark"] .cal-dot--trained   { background: #22c55e; }
 html[data-theme="dark"] .cal-dot--skipped   { background: #ef4444; }

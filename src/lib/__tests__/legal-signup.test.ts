@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { parseSignup } from "@/lib/signup-schema";
-import { applyLegalTokens, buildConsentRecord, legalTokens, LEGAL_VERSIONS } from "@/lib/legal-config";
+import { applyLegalTokens, buildConsentRecord, legalTokens, LEGAL_LAST_UPDATED, LEGAL_VERSIONS } from "@/lib/legal-config";
 import { LEGAL_DOCUMENTS } from "@/lib/legal-documents";
 import { hitRateLimit, resetRateLimits } from "@/lib/rate-limit";
 
@@ -12,13 +12,34 @@ function form(fields: Record<string, string>) {
   return fd;
 }
 
-const base = { fullName: "Asha Rao", email: "Asha@Example.com", password: "correct-horse", ageGroup: "adult", termsAccepted: "true" };
+const base = {
+  fullName: "Asha Rao",
+  phone: "98765 43210",
+  pin: "4821",
+  confirmPin: "4821",
+  ageGroup: "adult",
+  termsAccepted: "true"
+};
 
 describe("signup validation", () => {
-  it("accepts a complete adult signup and lowercases the email", () => {
+  it("accepts a complete adult signup and normalises the number to E.164", () => {
     const r = parseSignup(form(base));
     expect(r.ok).toBe(true);
-    if (r.ok) expect(r.data.email).toBe("asha@example.com");
+    if (r.ok) expect(r.data.phone).toBe("+919876543210");
+  });
+
+  it("rejects an invalid mobile number", () => {
+    expect(parseSignup(form({ ...base, phone: "12345" })).ok).toBe(false);
+    expect(parseSignup(form({ ...base, phone: "5876543210" })).ok).toBe(false);
+  });
+
+  it("requires a 4-digit numeric PIN that matches its confirmation", () => {
+    expect(parseSignup(form({ ...base, pin: "123", confirmPin: "123" })).ok).toBe(false);
+    expect(parseSignup(form({ ...base, pin: "12345", confirmPin: "12345" })).ok).toBe(false);
+    expect(parseSignup(form({ ...base, pin: "12a4", confirmPin: "12a4" })).ok).toBe(false);
+    const mismatch = parseSignup(form({ ...base, confirmPin: "4822" }));
+    expect(mismatch.ok).toBe(false);
+    if (!mismatch.ok) expect(mismatch.message).toMatch(/do not match/);
   });
 
   it("rejects signup without the terms/privacy consent", () => {
@@ -48,15 +69,12 @@ describe("signup validation", () => {
     ).toBe(true);
   });
 
-  it("rejects guardian email equal to the user's own", () => {
-    const r = parseSignup(form({ ...base, ageGroup: "minor", guardianConsent: "true", guardianEmail: "asha@example.com" }));
-    expect(r.ok).toBe(false);
-  });
-
   it("enforces length limits", () => {
     expect(parseSignup(form({ ...base, fullName: "x".repeat(81) })).ok).toBe(false);
-    expect(parseSignup(form({ ...base, password: "p".repeat(129) })).ok).toBe(false);
-    expect(parseSignup(form({ ...base, email: `${"a".repeat(250)}@example.com` })).ok).toBe(false);
+    expect(parseSignup(form({ ...base, phone: "9".repeat(21) })).ok).toBe(false);
+    expect(
+      parseSignup(form({ ...base, ageGroup: "minor", guardianConsent: "true", guardianEmail: `${"a".repeat(250)}@example.com` })).ok
+    ).toBe(false);
   });
 });
 
@@ -84,8 +102,8 @@ describe("legal documents", () => {
       const md = fs.readFileSync(path.join(process.cwd(), "legal", doc.source), "utf8");
       const out = applyLegalTokens(md, legalTokens(doc.key));
       expect(out).not.toMatch(/\{\{/);
-      expect(out).toMatch(/Version 2\.0/);
-      expect(out).toMatch(/2026-11-13/);
+      expect(out).toContain(`Version ${LEGAL_VERSIONS[doc.key]}`);
+      expect(out).toContain(LEGAL_LAST_UPDATED);
       expect(out).not.toMatch(/\b(gym owner|trainer|invoice|refund)\b/i);
     }
   });

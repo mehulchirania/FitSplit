@@ -156,13 +156,6 @@
 .profile-metric-card.theme-red { --card-accent: #ef4444; --badge-color: #ef4444; }
 .profile-metric-card.theme-yellow { --card-accent: #eab308; --badge-color: #eab308; }
 
-html[data-theme="light"] .profile-metric-card.theme-purple { --card-accent: #6d28d9; --badge-color: #6d28d9; }
-html[data-theme="light"] .profile-metric-card.theme-orange { --card-accent: #c2410c; --badge-color: #c2410c; }
-html[data-theme="light"] .profile-metric-card.theme-blue { --card-accent: #1d4ed8; --badge-color: #1d4ed8; }
-html[data-theme="light"] .profile-metric-card.theme-green { --card-accent: #047857; --badge-color: #047857; }
-html[data-theme="light"] .profile-metric-card.theme-red { --card-accent: #b91c1c; --badge-color: #b91c1c; }
-html[data-theme="light"] .profile-metric-card.theme-yellow { --card-accent: #a16207; --badge-color: #a16207; }
-
 /* ── Muscle target description pill ────────────────────────────────────────── */
 
 /* ── Macro history section ──────────────────────────────────────────────────── */

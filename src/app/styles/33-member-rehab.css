@@ -1,0 +1,196 @@
+/* Rehab & mobility screens. Builds on the app primitives in 32-member-app.css (groups, rows,
+   buttons, the workout frame) and the same tokens; only what is new to rehab lives here.
+   Lime stays a fill: the switch track, the ticked step. Text uses --text and --text-soft. */
+
+.fs-switch {
+  background: var(--bg-muted);
+  border-radius: var(--radius-pill);
+  flex: none;
+  height: 30px;
+  position: relative;
+  transition: background-color 200ms var(--ease-out);
+  width: 50px;
+}
+
+.fs-switch > span {
+  background: var(--text);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.4);
+  height: 26px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 220ms var(--ease-out), background-color 200ms var(--ease-out);
+  width: 26px;
+}
+
+.fs-switch[data-on="true"] {
+  background: var(--accent);
+}
+
+.fs-switch[data-on="true"] > span {
+  background: var(--primary-foreground);
+  transform: translateX(20px);
+}
+
+/* quiet safety note */
+.fs-rehab-note {
+  color: var(--text-soft);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin: var(--space-6) var(--space-1) 0;
+}
+
+.fs-rehab-note strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.fs-rehab-note__link {
+  color: var(--text);
+  display: inline-block;
+  margin-top: var(--space-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* the "Rehab · ~N min" card */
+.fs-rehab-card {
+  margin-bottom: var(--space-6);
+}
+
+.fs-rehab-card--summary {
+  margin-top: var(--space-6);
+}
+
+.fs-rehab-card__go {
+  color: var(--text);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.fs-rehab-card .fs-row__chev {
+  margin-left: calc(var(--space-2) * -1);
+}
+
+.fs-section > .fs-rehab-card {
+  margin-bottom: 0;
+}
+
+/* detail screen */
+.fs-rehab-causes {
+  padding: var(--space-1) var(--space-4);
+}
+
+.fs-rehab-causes li {
+  justify-content: flex-start;
+}
+
+.fs-rehab-n {
+  background: var(--bg-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--text-soft);
+  display: grid;
+  flex: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  height: 28px;
+  place-items: center;
+  width: 28px;
+}
+
+.fs-rehab-ex {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-base);
+  gap: var(--space-3);
+  padding: 0 var(--space-4) var(--space-4) calc(var(--space-4) + 28px + var(--space-3));
+}
+
+.fs-rehab-ex .fs-steps {
+  padding-left: var(--space-4);
+}
+
+/* player */
+.fs-rp__unit {
+  margin-top: var(--space-6);
+  text-align: center;
+}
+
+.fs-rp__label {
+  color: var(--text-soft);
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.fs-rp__big {
+  font-size: 5.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin: var(--space-2) 0 var(--space-3);
+}
+
+.fs-rp__unit-word {
+  color: var(--text-soft);
+  font-size: var(--text-xl);
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.fs-rp__seg {
+  cursor: default;
+}
+
+.fs-rp__cues {
+  margin-top: var(--space-6);
+}
+
+.fs-rp__stop {
+  background: var(--warning-soft);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+}
+
+.fs-rehab-ex .fs-rp__stop {
+  margin-top: 0;
+}
+
+.fs-rp__stop strong {
+  color: var(--warning);
+  font-weight: 600;
+}
+
+.fs-rp__rest {
+  padding-top: 0;
+}
+
+/* History: a rehab run sits among workouts with a small "Rehab" tag. Lime is the fill (the
+   dot); the label text stays --text-soft. */
+.fs-tag-rehab {
+  align-items: center;
+  background: var(--bg-muted);
+  border-radius: var(--radius-pill);
+  color: var(--text-soft);
+  display: inline-flex;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  gap: 5px;
+  letter-spacing: 0.04em;
+  margin-left: var(--space-2);
+  padding: 2px 8px 2px 7px;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.fs-tag-rehab::before {
+  background: var(--accent);
+  border-radius: 50%;
+  content: "";
+  height: 6px;
+  width: 6px;
+}

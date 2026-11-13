@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { UserRound } from "@/components/icons";
 import { logoutUser } from "@/lib/auth";
 
@@ -64,17 +63,14 @@ export function AppTopbar({
     <header className={`topbar ${isTopbarHidden ? "topbar-hidden" : ""}`}>
       <div className="topbar-left">
         <Link className="brand" href="/member">
-          <span className="theme-logo brand-icon-wrap" aria-hidden="true">
-            <img alt="" className="brand-icon theme-logo-dark" src="/new_logo.png" />
-            <img alt="" className="brand-icon theme-logo-light" src="/new_logo.png" />
+          <span className="brand-logo-mark brand-icon-wrap" aria-hidden="true">
+            <img alt="" className="brand-icon" src="/new_logo.png" />
           </span>
           <strong className="brand-wordmark">FitSplit</strong>
         </Link>
       </div>
 
       <div className="topbar-actions">
-        <ThemeToggle />
-
         <DropdownMenu.Root>
           <DropdownMenu.Trigger asChild>
             <button aria-label="Open profile menu" className="profile-trigger" type="button">

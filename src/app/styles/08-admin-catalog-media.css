@@ -4,10 +4,8 @@
 /* "Enterprise" plan-tier accent (see .adm-plan--enterprise / .adm-tag--enterprise
    below) — amber-family but a distinct categorical meaning from --warning
    and --accent (already used for the "studio" tier), so no existing token
-   fits. #D97706 (amber-600) is only ~2.6:1 as text on white, so light theme
-   gets a darker (amber-700) variant to clear the 4.5:1 badge-text floor. */
-:root, html[data-theme="dark"] { --adm-gold: #D97706; }
-html[data-theme="light"] { --adm-gold: #B45309; }
+   fits. */
+:root { --adm-gold: #D97706; }
 
 /* Admin stats strip */
 

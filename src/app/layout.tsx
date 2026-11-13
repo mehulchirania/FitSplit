@@ -19,25 +19,14 @@ import "./styles/09-profile-history-notices-loader.css";
 import "./styles/10-pt-training.css";
 import "./styles/forms.css";
 import "./styles/member.css";
-import "./styles/11-member-tabs.css";
-import "./styles/12-member-dashboard-new.css";
 import "./styles/13-skeletons.css";
 import "./styles/14-radix-overrides.css";
 import "./styles/15-ui-upgrades.css";
 import "./styles/16-ux-improvements.css";
 import "./styles/17-profile-metrics.css";
 import "./styles/18-billing-trainers.css";
-import "./styles/21-member-redesign.css";
 import "./styles/22-owner-detail-reports.css";
-import "./styles/23-member-overview.css";
-import "./styles/24-member-workout.css";
-import "./styles/25-member-logs.css";
-import "./styles/26-member-progress-screen.css";
-import "./styles/27-member-macros.css";
 import "./styles/28-mobile-foundation.css";
-import "./styles/29-mobile-member-shell.css";
-import "./styles/30-mobile-workout-logs.css";
-import "./styles/31-mobile-macros-coach.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 const archivo = Archivo({
@@ -67,9 +56,6 @@ export default async function RootLayout({
 }>) {
   const headerList = await headers();
   const pathname = headerList.get("x-pathname") ?? "";
-  // Per-request CSP nonce set by middleware (production only). Inline scripts must
-  // carry it to be allowed under the strict nonce CSP.
-  const nonce = headerList.get("x-nonce") ?? undefined;
   const isPublicLanding = pathname === "/";
   const currentUser = isPublicLanding ? null : await getCurrentUser();
 
@@ -82,11 +68,13 @@ export default async function RootLayout({
         .toUpperCase()
     : "";
 
+  // Dark-only: data-theme="dark" is a fixed marker for the few selectors that still key off it.
   return (
     <html lang="en" data-theme="dark" suppressHydrationWarning className={`${inter.variable} ${archivo.variable}`}>
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <meta name="theme-color" content="#111111" />
+        <meta name="theme-color" content="#0A0A0A" />
+        <meta name="color-scheme" content="dark" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-title" content="FitSplit" />
@@ -96,24 +84,6 @@ export default async function RootLayout({
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=11" />
         <link rel="shortcut icon" href="/favicon-32x32.png?v=11" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=11" />
-        <script
-          nonce={nonce}
-          dangerouslySetInnerHTML={{
-            /* Resolve the theme before first paint so there is no flash. Stored
-               choice wins; otherwise follow the OS. Runs synchronously in <head>. */
-            __html: `
-              try {
-                var stored = localStorage.getItem('fitsplit-theme');
-                var theme = stored === 'light' || stored === 'dark'
-                  ? stored
-                  : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-                document.documentElement.dataset.theme = theme;
-              } catch (_) {
-                document.documentElement.dataset.theme = 'dark';
-              }
-            `
-          }}
-        />
       </head>
       <body>
         <div className="app-shell">
@@ -124,6 +94,8 @@ export default async function RootLayout({
           {children}
           <Toaster
             position="bottom-center"
+            offset={{ bottom: "calc(var(--tabbar-height) + 16px + env(safe-area-inset-bottom, 0px))" }}
+            mobileOffset={{ bottom: "calc(var(--tabbar-height) + 16px + env(safe-area-inset-bottom, 0px))" }}
             toastOptions={{
               style: {
                 background: "var(--bg-elevated)",

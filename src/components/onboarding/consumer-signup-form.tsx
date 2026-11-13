@@ -3,15 +3,18 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signUpWithEmail } from "@/lib/auth";
+import { PhoneField, PinField } from "@/components/phone-pin-fields";
+import { signUpWithPhone } from "@/lib/auth";
 import { DIAGNOSTICS_STORAGE_KEY } from "@/lib/consent-preferences";
+import { isValidPin, normalizePhone } from "@/lib/phone-identity";
 import { SIGNUP_LIMITS } from "@/lib/signup-schema";
 
 export function ConsumerSignupForm() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [ageGroup, setAgeGroup] = useState<"adult" | "minor" | "">("");
   const [guardianConsent, setGuardianConsent] = useState(false);
@@ -28,8 +31,16 @@ export function ConsumerSignupForm() {
       setError("Please enter your name.");
       return;
     }
-    if (password.length < 8) {
-      setError("Password must be at least 8 characters.");
+    if (!normalizePhone(phone)) {
+      setError("Enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!isValidPin(pin)) {
+      setError("Your PIN must be exactly 4 digits.");
+      return;
+    }
+    if (pin !== confirmPin) {
+      setError("The two PINs do not match.");
       return;
     }
     if (!ageGroup) {
@@ -54,8 +65,9 @@ export function ConsumerSignupForm() {
     startTransition(async () => {
       const formData = new FormData();
       formData.set("fullName", fullName);
-      formData.set("email", email);
-      formData.set("password", password);
+      formData.set("phone", phone.trim());
+      formData.set("pin", pin);
+      formData.set("confirmPin", confirmPin);
       formData.set("termsAccepted", "true");
       formData.set("ageGroup", ageGroup);
       if (ageGroup === "minor") {
@@ -65,9 +77,11 @@ export function ConsumerSignupForm() {
         formData.set("diagnosticsConsent", "true");
       }
 
-      const res = await signUpWithEmail(formData);
+      const res = await signUpWithPhone(formData);
       if (res.status === "error") {
         setError(res.message);
+        setPin("");
+        setConfirmPin("");
         return;
       }
       try {
@@ -85,8 +99,8 @@ export function ConsumerSignupForm() {
   return (
     <div style={styles.card}>
       <div style={styles.header}>
-        <h1 style={styles.title}>Create your free account</h1>
-        <p style={styles.subtitle}>Free workout plans, an exercise library and a simple log. No gym needed.</p>
+        <h1 style={styles.title}>Create your account</h1>
+        <p style={styles.subtitle}>Workout plans, an exercise library and a simple log for every set.</p>
       </div>
 
       {error && <div style={styles.errorBanner}>{error}</div>}
@@ -104,32 +118,20 @@ export function ConsumerSignupForm() {
             value={fullName}
           />
         </label>
-        <label style={styles.label}>
-          Email
-          <input
-            autoComplete="email"
-            onChange={(e) => setEmail(e.target.value)}
-            maxLength={SIGNUP_LIMITS.email}
-            required
-            style={styles.input}
-            type="email"
-            value={email}
-          />
-        </label>
-        <label style={styles.label}>
-          Password
-          <input
-            autoComplete="new-password"
-            maxLength={SIGNUP_LIMITS.password}
-            minLength={SIGNUP_LIMITS.passwordMin}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="At least 8 characters"
-            required
-            style={styles.input}
-            type="password"
-            value={password}
-          />
-        </label>
+        <div style={styles.label}>
+          <label htmlFor="signup-phone">Mobile number</label>
+          <PhoneField id="signup-phone" value={phone} onChange={setPhone} disabled={isPending} />
+          <span style={styles.hint}>You will sign in with this number. We never text or call it.</span>
+        </div>
+        <div style={styles.label}>
+          <span>Choose a 4-digit PIN</span>
+          <PinField label="PIN" value={pin} onChange={setPin} disabled={isPending} />
+        </div>
+        <div style={styles.label}>
+          <span>Confirm PIN</span>
+          <PinField label="Confirm PIN" value={confirmPin} onChange={setConfirmPin} disabled={isPending} />
+          <span style={styles.hint}>Pick one you will remember.</span>
+        </div>
 
         <fieldset style={styles.fieldset}>
           <legend style={styles.legend}>Your age</legend>
@@ -195,7 +197,7 @@ export function ConsumerSignupForm() {
         )}
 
         <p style={styles.noticeSummary}>
-          FitSplit uses your name, email and the workout, body-weight and nutrition data you enter to run your
+          FitSplit uses your name, mobile number and the workout, body-weight and nutrition data you enter to run your
           account. Details, your rights and how to reach our Grievance Officer are in the{" "}
           <Link href="/privacy" style={styles.link} target="_blank">
             Privacy Notice
@@ -252,7 +254,7 @@ export function ConsumerSignupForm() {
           style={{ ...styles.submitBtn, ...(isPending ? styles.submitBtnDisabled : {}) }}
           type="submit"
         >
-          {isPending ? "Creating account..." : "Create free account"}
+          {isPending ? "Creating account..." : "Create account"}
         </button>
       </form>
 
@@ -314,6 +316,12 @@ const styles: Record<string, React.CSSProperties> = {
     fontWeight: "600",
     color: "var(--text-secondary, #BBB)",
     gap: "8px"
+  },
+  hint: {
+    fontSize: "12px",
+    fontWeight: "400",
+    color: "var(--text-faint, #808080)",
+    lineHeight: "1.4"
   },
   input: {
     backgroundColor: "var(--bg-input, #0A0A0A)",

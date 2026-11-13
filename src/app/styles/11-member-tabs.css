@@ -1,7 +1,0 @@
-/* Hide the global mobile bottom nav on the member dashboard since the tabs now serve that purpose */
-@media (max-width: 768px) {
-  /* !important retained: overrides .mobile-bottom-nav's own display rule
-     defined in a different stylesheet outside this file's scope; without it
-     the global nav could win on source order or specificity. */
-}
-

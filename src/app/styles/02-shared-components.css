@@ -534,12 +534,6 @@ textarea {
     padding: var(--space-2) clamp(14px, 3vw, 32px);
   }
 
-  .theme-toggle {
-    font-size: var(--text-sm);
-    min-height: 34px;
-    padding: var(--space-2) var(--space-3);
-  }
-
   .dashboard-header,
   .content-grid {
     grid-template-columns: 1fr;
@@ -783,33 +777,4 @@ textarea {
   .confirm-dialog h2 {
     font-size: var(--text-md);
   }
-}
-
-/* ============================================================================
-   Theme toggle (light / dark / system cycle) — topbar icon button.
-   Owned by src/components/theme-toggle.tsx. Sizing and color come from the
-   shared .icon-button / .neutral-icon-button classes defined earlier in this
-   file; these rules only add what those don't already provide.
-   ========================================================================= */
-
-.theme-toggle-button {
-  position: relative;
-}
-
-/* The WCAG 2.1 target-size floor is 44x44px. The shared icon-button classes
-   render at 40x40 so this control stays visually identical to its topbar
-   siblings (notification bell, profile trigger). Rather than grow the
-   visible button, expand the actual hit area with an invisible pseudo box —
-   derived from the spacing scale (half of --space-1 per side) rather than a
-   new hardcoded value. */
-.theme-toggle-button::after {
-  border-radius: inherit;
-  content: "";
-  inset: calc(var(--space-1) / -2);
-  position: absolute;
-}
-
-.theme-toggle-button:disabled {
-  cursor: default;
-  opacity: 0.6;
 }

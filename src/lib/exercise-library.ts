@@ -219,3 +219,14 @@ export function searchExerciseLibrary({ q = "", muscleGroup = "", equipment = ""
   const start = (Math.max(1, page) - 1) * LIBRARY_PAGE_SIZE;
   return { total: hits.length, results: hits.slice(start, start + LIBRARY_PAGE_SIZE) };
 }
+
+const catalogById = new Map(catalogExercises.map((e) => [e.id, e]));
+
+/** Any exercise by id: built-in, plan exercise, or anything from the imported library (`lib-…`). */
+export function findExercise(id: string): Exercise | undefined {
+  const known = catalogById.get(id);
+  if (known) return known;
+  if (!id.startsWith("lib-")) return undefined;
+  const record = getExerciseById(id.slice(4));
+  return record ? toAppExercise(record) : undefined;
+}

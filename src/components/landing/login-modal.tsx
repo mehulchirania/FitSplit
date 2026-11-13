@@ -3,14 +3,15 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, useTransition } from "react";
 import type { FormEvent } from "react";
-import { toast } from "sonner";
-import { loginWithCredentials, requestPasswordReset } from "@/lib/auth";
+import { PhoneField, PinField } from "@/components/phone-pin-fields";
+import { loginWithPin } from "@/lib/auth";
+import { isValidPin, normalizePhone } from "@/lib/phone-identity";
 
 const FOCUSABLE = 'button:not([disabled]), input:not([disabled]), [href], [tabindex]:not([tabindex="-1"])';
 
 export function LoginModal({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [isPending, start] = useTransition();
   const panelRef = useRef<HTMLDivElement>(null);
@@ -53,26 +54,26 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
-    const u = email.trim();
-    if (!u) {
-      setError("Enter your email address.");
+    if (!normalizePhone(phone)) {
+      setError("Enter a valid 10-digit mobile number.");
       return;
     }
-    if (!password) {
-      setError("Enter your password.");
+    if (!isValidPin(pin)) {
+      setError("Enter your 4-digit PIN.");
       return;
     }
 
     start(async () => {
       try {
         const fd = new FormData();
-        fd.set("email", u);
-        fd.set("password", password);
+        fd.set("phone", phone.trim());
+        fd.set("pin", pin);
         fd.set("rememberMe", "true");
         window.localStorage.setItem("fitsplit-remember-me", "true");
-        const session = await loginWithCredentials(fd);
+        const session = await loginWithPin(fd);
         if (session.status !== "success") {
           setError(session.message);
+          setPin("");
           return;
         }
         window.scrollTo(0, 0);
@@ -81,24 +82,6 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
       } catch (err) {
         console.error(err);
         setError("Unable to sign in. Please try again.");
-      }
-    });
-  }
-
-  function onForgotClick() {
-    setError("");
-    if (!email.trim()) {
-      setError("Enter your email address first.");
-      return;
-    }
-    start(async () => {
-      const fd = new FormData();
-      fd.set("email", email.trim());
-      const result = await requestPasswordReset(fd);
-      if (result.status === "success") {
-        toast.success(result.message);
-      } else {
-        setError(result.message);
       }
     });
   }
@@ -129,29 +112,18 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
         <h2 className="lp-modal__title" id="lp-login-title">
           Welcome back.
         </h2>
-        <p className="lp-modal__sub">Sign in with your email and password.</p>
+        <p className="lp-modal__sub">Sign in with your mobile number and 4-digit PIN.</p>
 
         <form className="lp-modal__form" onSubmit={onSubmit}>
           <div className="lp-field">
-            <label htmlFor="lp-login-user">Email</label>
-            <input
-              id="lp-login-user"
-              ref={firstFieldRef}
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
+            <label htmlFor="lp-login-phone">Mobile number</label>
+            <PhoneField id="lp-login-phone" inputRef={firstFieldRef} value={phone} onChange={setPhone} disabled={isPending} />
           </div>
           <div className="lp-field">
-            <label htmlFor="lp-login-pass">Password</label>
-            <input
-              id="lp-login-pass"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <span className="lp-field__label">
+              PIN
+            </span>
+            <PinField label="PIN" value={pin} onChange={setPin} disabled={isPending} invalid={Boolean(error)} />
           </div>
 
           {error && (
@@ -163,13 +135,10 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
           <button type="submit" className="lp-btn lp-btn--primary" disabled={isPending}>
             {isPending ? "Logging in…" : "Log in"}
           </button>
-          <button type="button" className="lp-modal__forgot" onClick={onForgotClick} disabled={isPending}>
-            Forgot password?
-          </button>
         </form>
 
         <p className="lp-modal__footnote">
-          New here? <Link href="/signup">Create a free account</Link>
+          New here? <Link href="/signup">Create an account</Link>
         </p>
       </div>
     </div>

@@ -14,7 +14,7 @@ You must be 18 or older to open an account yourself. If you are under 18, a pare
 
 ## 3. Your account
 
-Give accurate information, choose a strong password, keep it private, and tell us promptly at {{CONTACT_EMAIL}} if you think someone else has accessed your account. You are responsible for activity under your account unless it results from our failure to use reasonable security. One account is for one person.
+Give accurate information, choose a PIN that is hard to guess, keep it private, and tell us promptly at {{CONTACT_EMAIL}} if you think someone else has accessed your account. You are responsible for activity under your account unless it results from our failure to use reasonable security. One account is for one person.
 
 ## 4. Health and safety
 
@@ -46,7 +46,7 @@ To the extent the law allows, FitSplit and {{OPERATOR_NAME}} are not liable for 
 
 ## 11. Changes to these Terms
 
-We version these Terms (see the top of the page). If we change them materially we will tell you in the app or by email and, where the law requires, ask you to accept them again. Continuing to use the Service after notice means you accept the update.
+We version these Terms (see the top of the page). If we change them materially we will tell you in the app and, where the law requires, ask you to accept them again. Continuing to use the Service after notice means you accept the update.
 
 ## 12. Governing law and disputes
 

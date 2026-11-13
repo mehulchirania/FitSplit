@@ -5,7 +5,9 @@
  *   users/{uid}/<userCollections>/*   everything the user owns (active plan, logs, ...)
  */
 export const collectionPaths = {
-  users: "users"
+  users: "users",
+  // Server-only sign-in attempt counters (see lib/pin-lockout.ts). Client rules deny it.
+  loginAttempts: "loginAttempts"
 } as const;
 
 const userCollectionPaths = {
@@ -17,6 +19,10 @@ const userCollectionPaths = {
   mealLogs: "mealLogs",
   activityLogs: "activityLogs",
   workoutSessions: "workoutSessions",
+  // Finished rehab routine runs (history only; never counted toward the streak).
+  rehabSessions: "rehabSessions",
+  // Plans the user built themselves (doc per plan, days + exercises nested).
+  customPrograms: "customPrograms",
   // The user's exercise substitutions for one program day (doc per dayId).
   exerciseSwaps: "exerciseSwaps"
 } as const;

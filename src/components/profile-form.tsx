@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { updateProfileMetrics } from "@/lib/firebase/actions";
+import { formatPhone } from "@/lib/phone-identity";
 import type { ProfileMetrics } from "@/types/domain";
 import { ConfirmActionForm } from "./confirm-action-form";
 import { FieldError } from "./form-action-context";
@@ -60,8 +61,8 @@ export function ProfileForm({ profile }: { profile: ProfileMetrics }) {
             <FieldError name="fullName" />
           </label>
           <label>
-            Email
-            <input defaultValue={profile.email} disabled name="email" type="email" />
+            Mobile number
+            <input defaultValue={profile.phone ? formatPhone(profile.phone) : ""} disabled name="phone" type="tel" />
           </label>
           <label>
             Gender

@@ -10,17 +10,17 @@
  */
 
 /** Date every policy was last revised (ISO). Bump together with the relevant version. */
-export const LEGAL_LAST_UPDATED = "2026-11-13";
+export const LEGAL_LAST_UPDATED = "2026-11-14";
 
 /** Bump a version whenever the document materially changes; users re-consent on material change. */
 export const LEGAL_VERSIONS = {
-  terms: "2.0",
-  privacy: "2.0",
+  terms: "2.1",
+  privacy: "2.1",
   cookies: "2.0",
   "acceptable-use": "2.0",
   "health-disclaimer": "2.0",
-  "data-rights": "2.0",
-  "consent-notice": "2.0",
+  "data-rights": "2.1",
+  "consent-notice": "2.1",
   subprocessors: "2.0"
 } as const;
 

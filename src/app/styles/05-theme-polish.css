@@ -41,12 +41,7 @@ body {
   box-shadow: var(--shadow-soft);
 }
 
-/* Was a flat 44%-opacity white wash — legible on the old photograph, but a
-   washed-out flat white smear on the new light paper background (and this is
-   the class the live theme-toggle button uses). color-mix against var(--text)
-   tints dark-on-paper in light mode and light-on-near-black in dark mode, so
-   it reads as a legible, theme-correct control surface in both: 2026-08-04. */
-.theme-toggle,
+/* A faint tint of --text: reads as a control surface on near-black. */
 .button-secondary,
 .neutral-icon-button {
   background: color-mix(in srgb, var(--text) 6%, transparent);

@@ -21,7 +21,7 @@
   overflow: hidden;
 }
 
-.theme-logo.brand-icon-wrap,
+.brand-logo-mark.brand-icon-wrap,
 .brand-icon-wrap {
   display: inline-grid;
   flex: 0 0 94px;
@@ -30,7 +30,7 @@
   width: 94px;
 }
 
-.theme-logo.brand-icon-wrap img,
+.brand-logo-mark.brand-icon-wrap img,
 .brand-icon {
   display: block;
   grid-area: 1 / 1;
@@ -248,14 +248,14 @@
     min-width: 0;
   }
 
-  .theme-logo.brand-icon-wrap,
+  .brand-logo-mark.brand-icon-wrap,
   .brand-icon-wrap {
     flex-basis: 70px;
     height: 30px;
     width: 70px;
   }
 
-  .theme-logo.brand-icon-wrap img,
+  .brand-logo-mark.brand-icon-wrap img,
   .brand-icon {
     height: 30px;
     max-height: 30px;

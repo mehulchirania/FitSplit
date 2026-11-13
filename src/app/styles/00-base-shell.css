@@ -4,19 +4,14 @@
 /* ============================================================================
    FITSPLIT DESIGN TOKENS — single source of truth.
 
-   Concept: "the marked-up training log." Paper and graphite ink carry the
-   interface; the lime (#C8F135) behaves like a highlighter — it marks what
-   happened today, never what you have to read.
-
-   THE ONE RULE THAT MADE LIGHT MODE FAIL BEFORE:
-   #C8F135 on white is ~1.4:1. Lime is a FILL, never a foreground on paper.
-   For text, links, and icons on light surfaces use --brand (deep olive).
-   The primary button is lime with near-black text in BOTH themes, so the
-   product's most-clicked control looks identical however you view it.
+   Concept: "the training log at night." Near-black paper and graphite ink carry
+   the interface; the lime (#C8F135) behaves like a highlighter — it marks what
+   happened today. FitSplit is dark-only: there is no light theme, no theme
+   toggle and no prefers-color-scheme branch. The palette lives in this one
+   block; every other stylesheet reads it through var().
 
    Scales are fixed. Do not introduce new spacing, radius, or type values —
-   extend the scale here instead. Every value below is theme-independent
-   unless it appears in the palette blocks.
+   extend the scale here instead.
    ========================================================================= */
 
 :root {
@@ -70,6 +65,15 @@
   --medium: 260ms cubic-bezier(0.4, 0, 0.2, 1);
   --slow: 440ms cubic-bezier(0.16, 1, 0.3, 1);
   --spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---- app shell (member area) ---- */
+  /* The signed-in app uses the platform's own UI face: it ships optical sizing
+     and tracking tables, and it reads as native on every device. */
+  --font-app: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "Segoe UI Variable Text", "Segoe UI", system-ui, Roboto, "Helvetica Neue", sans-serif;
+  --tabbar-height: 56px;
+  --hit-min: 44px;  /* smallest permitted tap target */
 
   /* ---- breakpoints (reference — the only four permitted) ----
      480px  phone
@@ -80,65 +84,10 @@
 }
 
 /* ---------------------------------------------------------------------------
-   LIGHT — "paper". Cool near-white with a faint green cast so the lime reads
-   as part of the same world rather than a sticker on a grey app.
-   Cards are true white and lift off the paper; that single step of contrast
-   does the work that heavy shadows used to do.
+   PALETTE — "the floor at night". Lime is legible on near-black, so it serves
+   as both fill and foreground.
    --------------------------------------------------------------------------- */
-:root,
-html[data-theme="light"] {
-  color-scheme: light;
-
-  --bg: #F5F6F2;
-  --bg-elevated: #FFFFFF;
-  --bg-subtle: #EBEEE5;
-  --bg-muted: #E2E6DA;
-
-  /* Ratios below are measured against --bg (#F5F6F2), not estimated. */
-  --text: #15180F;        /* 16.78:1 */
-  --text-soft: #555C4A;   /*  6.41:1 */
-  --text-faint: #6B7260;  /*  4.61:1 — AA floor for normal text. Do not lighten.
-                             Was #7D8570, which measured 3.54:1 and failed AA. */
-
-  --border: #DFE3D7;      /* decorative dividers — low contrast is intentional */
-  --border-strong: #848B76;/* 3.26:1 on --bg — meets WCAG 1.4.11 for input borders
-                              and other UI boundaries that carry meaning.
-                              Was #C3C9B6, which measured 1.57:1 and was
-                              effectively invisible on paper. */
-
-  --brand: #4C6B14;       /* deep olive — ALL brand text/icons/links on paper */
-  --brand-strong: #3A5210;/* hover / pressed */
-  --brand-soft: #E8F4C4;  /* pale lime wash — fills only */
-
-  --accent: #C8F135;      /* the highlighter — fills only, dark text on top */
-  --accent-soft: #EDF7C9;
-
-  --primary: #C8F135;
-  --primary-foreground: #15180F;
-
-  --success: #2D6A2F;
-  --success-soft: #DDF0DC;
-  --warning: #9A5B00;
-  --warning-soft: #FBEBD0;
-  --danger: #B3261E;
-  --danger-soft: #FADEDC;
-  --info: #1B5E9E;
-  --info-soft: #DCEAF7;
-
-  --surface-glass: rgb(255 255 255 / 0.72);
-  --surface-glass-strong: rgb(255 255 255 / 0.88);
-
-  /* layered + tight: premium light UI reads as crisp, never foggy */
-  --shadow-soft: 0 1px 2px rgba(21,24,15,.05), 0 2px 6px rgba(21,24,15,.04);
-  --shadow: 0 2px 4px rgba(21,24,15,.04), 0 8px 24px rgba(21,24,15,.07);
-  --shadow-glow: 0 4px 16px rgba(76,107,20,.16);
-}
-
-/* ---------------------------------------------------------------------------
-   DARK — "the floor at night". Lime is legible on near-black, so here it
-   serves as both fill and foreground.
-   --------------------------------------------------------------------------- */
-html[data-theme="dark"] {
+:root {
   color-scheme: dark;
 
   --bg: #0A0A0A;
@@ -185,6 +134,7 @@ html[data-theme="dark"] {
   --shadow-soft: 0 2px 8px rgba(0,0,0,.40);
   --shadow: 0 8px 32px rgba(0,0,0,.55);
   --shadow-glow: 0 4px 20px rgba(200,241,53,.18);
+  --scrim: rgb(0 0 0 / 0.62);
 }
 
 * {
@@ -263,27 +213,15 @@ svg {
   flex: 0 0 auto;
 }
 
-.theme-logo {
+.brand-logo-mark {
   display: inline-grid;
   flex: 0 0 auto;
 }
 
-.theme-logo img {
+.brand-logo-mark img {
   display: block;
   grid-area: 1 / 1;
   object-fit: cover;
-}
-
-.theme-logo-light {
-  opacity: 0;
-}
-
-html[data-theme="light"] .theme-logo-dark {
-  opacity: 0;
-}
-
-html[data-theme="light"] .theme-logo-light {
-  opacity: 1;
 }
 
 .app-shell {
@@ -395,7 +333,6 @@ html[data-theme="light"] .theme-logo-light {
   margin-top: 2px;
 }
 
-.theme-toggle,
 .button {
   align-items: center;
   border: 1px solid transparent;
@@ -414,7 +351,6 @@ html[data-theme="light"] .theme-logo-light {
     transform var(--spring);
 }
 
-.theme-toggle:hover:not(:disabled),
 .button:hover:not(:disabled) {
   transform: translateY(-2px);
 }
@@ -431,16 +367,6 @@ button:disabled {
   cursor: not-allowed;
   opacity: 0.5;
   transform: none;
-}
-
-.theme-toggle {
-  background: var(--bg-subtle);
-  border-color: var(--border);
-  color: var(--text);
-}
-
-.theme-toggle {
-  min-width: 74px;
 }
 
 .home,
@@ -545,10 +471,9 @@ p {
    below only set fill/border/text + interaction states.
 
    .button-primary was previously `background: linear-gradient(var(--brand)...)`
-   — var(--brand) is deep olive in light mode and lime in dark mode, so the
-   product's most-clicked control changed colour AND shape (gradient vs flat)
-   between themes. Per the design contract, the primary button must be a flat
-   lime fill with near-black text, identical in both themes; --primary /
+   — a gradient on the product's most-clicked control read as a different
+   shape from the rest of the system. Per the design contract, the primary
+   button is a flat lime fill with near-black text; --primary /
    --primary-foreground already encode exactly that. */
 .button-primary {
   background: var(--primary);

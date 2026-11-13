@@ -6,12 +6,20 @@ import { redirect } from "next/navigation";
 import { collectionPaths } from "@/lib/firebase/collections";
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "@/lib/firebase/admin";
 import { buildConsentRecord } from "@/lib/legal-config";
+import { emailToPhone, isValidPin, normalizePhone, phoneToEmail, pinToPassword } from "@/lib/phone-identity";
+import { clearFailures, getLockRemaining, lockMessage, recordFailure } from "@/lib/pin-lockout";
 import { hitRateLimit } from "@/lib/rate-limit";
-import { diagnosticsGranted, parseSignup, SIGNUP_LIMITS } from "@/lib/signup-schema";
+import { diagnosticsGranted, parseSignup } from "@/lib/signup-schema";
 import type { FormActionState } from "@/types/action-state";
 
 /**
- * Authentication for FitSplit: one kind of account, email + password.
+ * Authentication for FitSplit: one kind of account, mobile number + 4-digit PIN.
+ *
+ * Firebase Auth has no phone+PIN credential, so every account is an email/password
+ * user with a synthetic identity derived from the number and PIN
+ * (lib/phone-identity.ts). There is no OTP, no SMS and no email in the flow. Wrong
+ * PINs are counted per number on the server (lib/pin-lockout.ts): 5 misses lock the
+ * number for 15 minutes.
  *
  * - Production: Firebase Auth (identity) + a Firebase session cookie. The
  *   session cookie is verified server-side on every request (checkRevoked).
@@ -29,7 +37,8 @@ const HOME_PATH = "/member";
 
 export type AuthenticatedUser = {
   uid: string;
-  email?: string;
+  /** E.164 mobile number, e.g. +919688227039. */
+  phone?: string;
   fullName: string;
   /** Public URL of the user's avatar, when the identity provider supplies one. */
   avatarUrl?: string;
@@ -62,10 +71,6 @@ async function abuseLimited(scope: "signup" | "login", extra: string, limit: num
   return hitRateLimit(`${scope}:${ip}:${extra}`, limit, windowMs).limited;
 }
 
-function isValidEmail(email: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-}
-
 function initialsOf(name: string) {
   return (
     name
@@ -86,10 +91,10 @@ async function clearAuthCookies() {
 
 // -- Local (no Firebase) accounts ---------------------------------------------
 
-async function startLocalSession(email: string, fullName: string) {
+async function startLocalSession(phone: string, fullName: string) {
   const cookieStore = await cookies();
-  const uid = `local-${Buffer.from(email.toLowerCase()).toString("hex").slice(0, 16)}`;
-  cookieStore.set(localUserCookieName, JSON.stringify({ uid, email, fullName }), cookieOptions(SESSION_LONG_MS / 1000));
+  const uid = `local-${phone.replace(/\D/g, "")}`;
+  cookieStore.set(localUserCookieName, JSON.stringify({ uid, phone, fullName }), cookieOptions(SESSION_LONG_MS / 1000));
   return uid;
 }
 
@@ -98,9 +103,9 @@ async function readLocalUser(): Promise<AuthenticatedUser | null> {
   const raw = (await cookies()).get(localUserCookieName)?.value;
   if (!raw) return null;
   try {
-    const parsed = JSON.parse(raw) as { uid?: string; email?: string; fullName?: string };
+    const parsed = JSON.parse(raw) as { uid?: string; phone?: string; fullName?: string };
     if (!parsed.uid) return null;
-    return { uid: parsed.uid, email: parsed.email, fullName: parsed.fullName || "FitSplit user" };
+    return { uid: parsed.uid, phone: parsed.phone, fullName: parsed.fullName || "FitSplit user" };
   } catch {
     return null;
   }
@@ -143,11 +148,18 @@ async function createSessionFromIdToken(idToken: string, rememberMe: boolean) {
   (await cookies()).set(sessionCookieName, sessionCookie, cookieOptions(Math.floor(expiresIn / 1000)));
 }
 
+const WRONG_CREDENTIALS = "Incorrect mobile number or PIN.";
+
 function loginErrorMessage(code: string) {
   if (code.startsWith("TOO_MANY_ATTEMPTS")) return "Too many failed attempts. Please wait a few minutes and try again.";
   if (code === "USER_DISABLED") return "This account has been disabled.";
   if (code === "MISSING_API_KEY") return "Sign-in is not configured (missing NEXT_PUBLIC_FIREBASE_API_KEY).";
-  return "Invalid email or password.";
+  return WRONG_CREDENTIALS;
+}
+
+/** Errors that mean "that number/PIN pair is wrong" (as opposed to a network or config failure). */
+function isWrongCredentials(code: string) {
+  return code === "INVALID_LOGIN_CREDENTIALS" || code === "INVALID_PASSWORD" || code === "EMAIL_NOT_FOUND";
 }
 
 // -- Public actions ------------------------------------------------------------
@@ -156,13 +168,15 @@ export type AuthResult =
   | { status: "success"; redirectUrl: string }
   | { status: "error"; message: string };
 
-/** Create a new account and sign the user in. */
-export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
+/** Create a new account (name, mobile number, PIN) and sign the user in. */
+export async function signUpWithPhone(formData: FormData): Promise<AuthResult> {
   try {
     // Server-side validation. The consent checkboxes are enforced here, not just in the browser.
     const parsed = parseSignup(formData);
     if (!parsed.ok) return { status: "error", message: parsed.message };
-    const { fullName, email, password } = parsed.data;
+    const { fullName, phone, pin } = parsed.data;
+    const email = phoneToEmail(phone);
+    const password = pinToPassword(pin);
     const consent = buildConsentRecord({
       ageGroup: parsed.data.ageGroup,
       diagnostics: diagnosticsGranted(parsed.data.diagnosticsConsent),
@@ -174,7 +188,7 @@ export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
     }
 
     if (localModeAllowed()) {
-      await startLocalSession(email, fullName);
+      await startLocalSession(phone, fullName);
       return { status: "success", redirectUrl: HOME_PATH };
     }
     if (!hasFirebaseAdminConfig()) {
@@ -189,10 +203,7 @@ export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
     } catch (error) {
       const code = (error as { code?: string }).code ?? "";
       if (code === "auth/email-already-exists") {
-        return { status: "error", message: "An account with this email already exists. Try signing in." };
-      }
-      if (code === "auth/invalid-password") {
-        return { status: "error", message: "Password must be at least 8 characters." };
+        return { status: "error", message: "An account with this mobile number already exists. Try signing in." };
       }
       throw error;
     }
@@ -201,7 +212,7 @@ export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
     await db.collection(collectionPaths.users).doc(uid).set({
       id: uid,
       fullName,
-      email,
+      phone,
       avatarInitials: initialsOf(fullName),
       goal: "General fitness",
       isActive: true,
@@ -220,102 +231,92 @@ export async function signUpWithEmail(formData: FormData): Promise<AuthResult> {
     await createSessionFromIdToken(signedIn.idToken, true);
     return { status: "success", redirectUrl: HOME_PATH };
   } catch (error) {
-    console.error("[auth] signUpWithEmail failed:", error);
+    console.error("[auth] signUpWithPhone failed:", error);
     return { status: "error", message: "Unable to create your account. Please try again." };
   }
 }
 
-/** Sign in with email + password. */
-export async function loginWithCredentials(formData: FormData): Promise<AuthResult> {
+/** Sign in with mobile number + PIN. */
+export async function loginWithPin(formData: FormData): Promise<AuthResult> {
   try {
-    const email = String(formData.get("email") ?? "").trim().toLowerCase();
-    const password = String(formData.get("password") ?? "");
+    const phone = normalizePhone(String(formData.get("phone") ?? ""));
+    const pin = String(formData.get("pin") ?? "");
     const rememberMe = formData.get("rememberMe") === "true";
 
-    if (!email || !password) return { status: "error", message: "Enter your email and password." };
-    if (email.length > SIGNUP_LIMITS.email || password.length > SIGNUP_LIMITS.password) {
-      return { status: "error", message: "Invalid email or password." };
-    }
-    if (await abuseLimited("login", email, 10, 10 * 60 * 1000)) {
+    if (!phone) return { status: "error", message: "Enter a valid 10-digit mobile number." };
+    if (!isValidPin(pin)) return { status: "error", message: "Enter your 4-digit PIN." };
+    if (await abuseLimited("login", phone, 10, 10 * 60 * 1000)) {
       return { status: "error", message: "Too many sign-in attempts. Please wait a few minutes and try again." };
     }
 
     if (localModeAllowed()) {
-      await startLocalSession(email, email.split("@")[0] || "Athlete");
+      await startLocalSession(phone, "Athlete");
       return { status: "success", redirectUrl: HOME_PATH };
     }
     if (!hasFirebaseAdminConfig()) {
       return { status: "error", message: "Sign-in is unavailable: the server is not connected to Firebase." };
     }
 
-    const result = await signInWithPasswordRest(email, password);
-    if (!result.ok) return { status: "error", message: loginErrorMessage(result.code) };
+    const { db } = getFirebaseAdminServices();
+    const locked = await getLockRemaining(db, phone);
+    if (locked > 0) return { status: "error", message: lockMessage(locked) };
 
+    const result = await signInWithPasswordRest(phoneToEmail(phone), pinToPassword(pin));
+    if (!result.ok) {
+      if (isWrongCredentials(result.code)) {
+        const state = await recordFailure(db, phone);
+        if (state.lockedUntil) return { status: "error", message: lockMessage(state.lockedUntil - Date.now()) };
+      }
+      return { status: "error", message: loginErrorMessage(result.code) };
+    }
+
+    await clearFailures(db, phone);
     await createSessionFromIdToken(result.idToken, rememberMe);
     return { status: "success", redirectUrl: HOME_PATH };
   } catch (error) {
-    console.error("[auth] loginWithCredentials failed:", error);
+    console.error("[auth] loginWithPin failed:", error);
     return { status: "error", message: "Unable to sign in. Please try again." };
   }
 }
 
-/** Send a password-reset email through Firebase Auth. */
-export async function requestPasswordReset(formData: FormData): Promise<{ status: "success" | "error"; message: string }> {
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  if (!isValidEmail(email)) return { status: "error", message: "Enter your email address first." };
-
-  // Same response whether or not the account exists, so emails can't be probed.
-  const generic = {
-    status: "success" as const,
-    message: "If an account exists for that email, a password reset link is on its way."
-  };
-
-  const apiKey = process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
-  if (!apiKey) return generic;
-
-  try {
-    await fetch(`${identityToolkitBase()}/accounts:sendOobCode?key=${apiKey}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requestType: "PASSWORD_RESET", email }),
-      signal: AbortSignal.timeout(10_000)
-    });
-  } catch (error) {
-    console.error("[auth] requestPasswordReset failed:", error);
-  }
-  return generic;
-}
-
-/** Change the signed-in user's password (requires the current one). */
-export async function changePassword(
+/** Change the signed-in user's PIN (requires the current one; wrong guesses count toward the lock). */
+export async function changePin(
   _previous: FormActionState,
   formData: FormData
 ): Promise<FormActionState> {
   try {
     const user = await requireAuth();
-    const currentPassword = String(formData.get("currentPassword") ?? "");
-    const newPassword = String(formData.get("newPassword") ?? "");
-    const confirmPassword = String(formData.get("confirmPassword") ?? "");
+    const currentPin = String(formData.get("currentPin") ?? "");
+    const newPin = String(formData.get("newPin") ?? "");
+    const confirmPin = String(formData.get("confirmPin") ?? "");
 
-    if (newPassword.length < 8) return { status: "error", message: "New password must be at least 8 characters." };
-    if (newPassword !== confirmPassword) return { status: "error", message: "New passwords do not match." };
-    if (newPassword === currentPassword) return { status: "error", message: "Choose a different password." };
+    if (!isValidPin(currentPin)) return { status: "error", message: "Enter your current 4-digit PIN." };
+    if (!isValidPin(newPin)) return { status: "error", message: "Your new PIN must be exactly 4 digits." };
+    if (newPin !== confirmPin) return { status: "error", message: "The new PINs do not match." };
+    if (newPin === currentPin) return { status: "error", message: "Choose a different PIN." };
 
     if (!hasFirebaseAdminConfig()) {
-      return { status: "success", message: "Password updated (local mode)." };
+      return { status: "success", message: "PIN updated (local mode)." };
     }
-    if (!user.email) return { status: "error", message: "This account has no email address." };
+    if (!user.phone) return { status: "error", message: "This account has no mobile number." };
 
-    const verified = await signInWithPasswordRest(user.email, currentPassword);
-    if (!verified.ok) return { status: "error", message: "Your current password is incorrect." };
+    const { auth, db } = getFirebaseAdminServices();
+    const locked = await getLockRemaining(db, user.phone);
+    if (locked > 0) return { status: "error", message: lockMessage(locked) };
 
-    const { auth } = getFirebaseAdminServices();
-    await auth.updateUser(user.uid, { password: newPassword });
-    return { status: "success", message: "Password updated." };
+    const verified = await signInWithPasswordRest(phoneToEmail(user.phone), pinToPassword(currentPin));
+    if (!verified.ok) {
+      if (isWrongCredentials(verified.code)) await recordFailure(db, user.phone);
+      return { status: "error", message: "Your current PIN is incorrect." };
+    }
+
+    await auth.updateUser(user.uid, { password: pinToPassword(newPin) });
+    await clearFailures(db, user.phone);
+    return { status: "success", message: "PIN updated." };
   } catch (error) {
     if (error instanceof Error && error.message === "NEXT_REDIRECT") throw error;
-    console.error("[auth] changePassword failed:", error);
-    return { status: "error", message: "Unable to update your password. Please try again." };
+    console.error("[auth] changePin failed:", error);
+    return { status: "error", message: "Unable to update your PIN. Please try again." };
   }
 }
 
@@ -343,13 +344,13 @@ async function _getCurrentUserImpl(): Promise<AuthenticatedUser | null> {
 
   try {
     const { auth } = getFirebaseAdminServices();
-    // checkRevoked: true so a disabled account or a password reset takes effect
+    // checkRevoked: true so a disabled account or a PIN reset takes effect
     // immediately instead of when the cookie expires.
     const decoded = await auth.verifySessionCookie(session, true);
     return {
       uid: decoded.uid,
-      email: decoded.email,
-      fullName: (decoded.name as string | undefined) || decoded.email?.split("@")[0] || "FitSplit user",
+      phone: emailToPhone(decoded.email) ?? undefined,
+      fullName: (decoded.name as string | undefined) || "FitSplit user",
       avatarUrl: decoded.picture
     };
   } catch {

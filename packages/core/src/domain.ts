@@ -97,7 +97,8 @@ type MuscleTargetId =
 export type UserProfile = {
   id: string;
   fullName: string;
-  email?: string;
+  /** Sign-in mobile number in E.164 (e.g. +919688227039). */
+  phone?: string;
   joinedAt: string;
   avatarInitials: string;
   /** Public download URL of the uploaded avatar photo, if any. */
@@ -125,7 +126,7 @@ export type UserProfile = {
 export type ProfileMetrics = Pick<
   UserProfile,
   | "fullName"
-  | "email"
+  | "phone"
   | "avatarUrl"
   | "age"
   | "gender"
@@ -349,6 +350,14 @@ export type WorkoutSession = {
   programDayId?: string;
   programId?: string;
   dayTitle?: string;
+  /** Wall-clock length of the workout, in seconds (set when it is finished). */
+  durationSec?: number;
+  /** Number of sets the user ticked off. */
+  setsCompleted?: number;
+  /** Number of exercises with at least one completed set. */
+  exercisesCompleted?: number;
+  /** Total volume lifted (sum of weight x reps), in kg. */
+  volumeKg?: number;
 };
 
 

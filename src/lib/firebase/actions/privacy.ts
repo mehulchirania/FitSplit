@@ -7,6 +7,8 @@ import { collectionPaths, userCollectionPath, type UserCollectionKey } from "../
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import type { FormActionState } from "@/types/action-state";
 import { failure } from "./shared";
+import { REHAB_FIELD } from "@/lib/rehab/catalog";
+import { sanitizeConditionIds } from "@/lib/rehab/routine";
 import {
   getUserProfile,
   getBodyMetricLogsForMember,
@@ -51,7 +53,8 @@ export async function exportMyData(): Promise<DataExportResult> {
       const userDoc = await db.collection(collectionPaths.users).doc(uid).get();
       const raw = userDoc.data() ?? {};
       rawCollections.consentRecord = [{ consent: raw.consent ?? null, termsAcceptedAt: raw.termsAcceptedAt ?? null }];
-      const extra: UserCollectionKey[] = ["mealLogs", "workoutSessions", "exerciseSwaps"];
+      rawCollections.rehab = [{ [REHAB_FIELD]: sanitizeConditionIds(raw[REHAB_FIELD]) }];
+      const extra: UserCollectionKey[] = ["mealLogs", "workoutSessions", "rehabSessions", "exerciseSwaps", "customPrograms"];
       await Promise.all(
         extra.map(async (key) => {
           const snap = await db.collection(userCollectionPath(uid, key)).get();

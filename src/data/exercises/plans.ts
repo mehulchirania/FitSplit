@@ -43,6 +43,35 @@ const day = (n: number, title: string, focus: string, exercises: PlanExercise[])
 
 export const freePlans: FreePlan[] = [
   {
+    id: "beginner-strength-3x",
+    title: "Beginner Strength",
+    description:
+      "Learn the big barbell lifts and add weight every week. Three days, low reps, plenty of rest.",
+    difficulty: "beginner",
+    daysPerWeek: 3,
+    equipment: "Barbell, rack, bench",
+    days: [
+      day(1, "Squat + Bench", "Legs, chest, back", [
+        x("0043", 3, "5", 150), // barbell full squat
+        x("0025", 3, "5", 150), // barbell bench press
+        x("0027", 3, "8", 120), // barbell bent over row
+        x("0276", 3, "10 / side", 45), // dead bug
+      ]),
+      day(2, "Deadlift + Press", "Back, shoulders", [
+        x("0032", 2, "5", 210), // barbell deadlift
+        x("0091", 3, "5", 150), // barbell seated overhead press
+        x("0017", 3, "8", 120), // assisted pull-up
+        x("0464", 3, "10 / side", 45), // front plank with twist
+      ]),
+      day(3, "Squat + Incline", "Legs, upper chest", [
+        x("0043", 3, "5", 150),
+        x("0047", 3, "8", 120), // barbell incline bench press
+        x("0085", 3, "8", 120), // barbell romanian deadlift
+        x("0054", 3, "8 / leg", 90), // barbell lunge
+      ]),
+    ],
+  },
+  {
     id: "bodyweight-home-3x",
     title: "Bodyweight at Home",
     description: "No equipment needed. Push-ups, squats, rows and core work you can do in a living room.",
