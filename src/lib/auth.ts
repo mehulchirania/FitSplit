@@ -30,8 +30,7 @@ import type { FormActionState } from "@/types/action-state";
 
 const sessionCookieName = "fitsplit-session";
 const localUserCookieName = "fitsplit-local-user";
-const SESSION_SHORT_MS = 1000 * 60 * 60 * 2; // 2 h  - default (no "remember me")
-const SESSION_LONG_MS = 1000 * 60 * 60 * 24 * 14; // 14 d - remember me (Firebase max)
+const SESSION_MS = 1000 * 60 * 60 * 24 * 14; // 14 d (Firebase max); renewed on every sign-in
 
 const HOME_PATH = "/member";
 
@@ -94,7 +93,7 @@ async function clearAuthCookies() {
 async function startLocalSession(phone: string, fullName: string) {
   const cookieStore = await cookies();
   const uid = `local-${phone.replace(/\D/g, "")}`;
-  cookieStore.set(localUserCookieName, JSON.stringify({ uid, phone, fullName }), cookieOptions(SESSION_LONG_MS / 1000));
+  cookieStore.set(localUserCookieName, JSON.stringify({ uid, phone, fullName }), cookieOptions(SESSION_MS / 1000));
   return uid;
 }
 
@@ -140,10 +139,11 @@ async function signInWithPasswordRest(email: string, password: string): Promise<
   return payload.idToken ? { ok: true, idToken: payload.idToken } : { ok: false, code: "NO_TOKEN" };
 }
 
-async function createSessionFromIdToken(idToken: string, rememberMe: boolean) {
+async function createSessionFromIdToken(idToken: string) {
   const { auth } = getFirebaseAdminServices();
   await auth.verifyIdToken(idToken);
-  const expiresIn = rememberMe ? SESSION_LONG_MS : SESSION_SHORT_MS;
+  // Always the maximum: people stay signed in until they log out themselves.
+  const expiresIn = SESSION_MS;
   const sessionCookie = await auth.createSessionCookie(idToken, { expiresIn });
   (await cookies()).set(sessionCookieName, sessionCookie, cookieOptions(Math.floor(expiresIn / 1000)));
 }
@@ -228,7 +228,7 @@ export async function signUpWithPhone(formData: FormData): Promise<AuthResult> {
     if (!signedIn.ok) {
       return { status: "error", message: "Your account was created. Please sign in." };
     }
-    await createSessionFromIdToken(signedIn.idToken, true);
+    await createSessionFromIdToken(signedIn.idToken);
     return { status: "success", redirectUrl: HOME_PATH };
   } catch (error) {
     console.error("[auth] signUpWithPhone failed:", error);
@@ -241,7 +241,6 @@ export async function loginWithPin(formData: FormData): Promise<AuthResult> {
   try {
     const phone = normalizePhone(String(formData.get("phone") ?? ""));
     const pin = String(formData.get("pin") ?? "");
-    const rememberMe = formData.get("rememberMe") === "true";
 
     if (!phone) return { status: "error", message: "Enter a valid 10-digit mobile number." };
     if (!isValidPin(pin)) return { status: "error", message: "Enter your 4-digit PIN." };
@@ -271,7 +270,7 @@ export async function loginWithPin(formData: FormData): Promise<AuthResult> {
     }
 
     await clearFailures(db, phone);
-    await createSessionFromIdToken(result.idToken, rememberMe);
+    await createSessionFromIdToken(result.idToken);
     return { status: "success", redirectUrl: HOME_PATH };
   } catch (error) {
     console.error("[auth] loginWithPin failed:", error);

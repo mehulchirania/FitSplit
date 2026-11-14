@@ -4,7 +4,6 @@ import { headers } from "next/headers";
 import { AppTopbar } from "@/components/app-topbar";
 import { PwaInstallPrompt } from "@/components/pwa-install-prompt";
 import { ScrollReveal } from "@/components/scroll-reveal";
-import { SessionTimeout } from "@/components/session-timeout";
 import { getCurrentUser } from "@/lib/auth";
 import { Inter, Archivo } from "next/font/google";
 import "./globals.css";
@@ -89,7 +88,6 @@ export default async function RootLayout({
         <div className="app-shell">
           <ScrollReveal />
           {!isPublicLanding && <PwaInstallPrompt />}
-          <SessionTimeout isAuthenticated={Boolean(currentUser)} />
           {currentUser && <AppTopbar initials={initials} avatarUrl={currentUser.avatarUrl} />}
           {children}
           <Toaster
