@@ -3,6 +3,7 @@ import { requireAuth } from "@/lib/auth";
 import { getAllProgramsForMember, getLiftLogsForMember } from "@/lib/firebase/read-models";
 import { findExercise } from "@/lib/exercise-library";
 import { matchDayIndex } from "@/lib/today";
+import { overloadNudge, trimSession } from "@/lib/workout-utils";
 import { buildRoutine, routineMinutes } from "@/lib/rehab/routine";
 import { getRehabConditions } from "@/lib/rehab/server";
 import { WorkoutSessionLoader } from "@/components/app/workout-session-loader";
@@ -11,9 +12,10 @@ import type { LiftLog } from "@/types/domain";
 
 export const dynamic = "force-dynamic";
 
-export default async function WorkoutPage({ params }: { params: Promise<{ id: string; dayId: string }> }) {
+export default async function WorkoutPage({ params, searchParams }: { params: Promise<{ id: string; dayId: string }>; searchParams: Promise<{ short?: string }> }) {
   const user = await requireAuth();
   const { id, dayId } = await params;
+  const short = (await searchParams).short === "1";
 
   const [programs, { liftLogs }] = await Promise.all([getAllProgramsForMember(user.uid), getLiftLogsForMember(user.uid)]);
   const program = programs.find((p) => p.id === id);
@@ -43,7 +45,16 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
       .map((l) => ({ weight: l.weight, reps: parseInt(l.reps, 10) || 0 }));
   };
 
-  const exercises: SessionExercise[] = day.exercises.flatMap((item, i) => {
+  // The last two sessions of an exercise, newest first, for the progressive-overload nudge.
+  const recentSessions = (exerciseId: string) => {
+    const logs = byExercise.get(exerciseId) ?? [];
+    const ids: string[] = [];
+    for (const l of logs) if (l.sessionId && !ids.includes(l.sessionId)) ids.push(l.sessionId);
+    return ids.slice(0, 2).map((sid) => logs.filter((l) => l.sessionId === sid).map((l) => ({ weight: l.weight, reps: parseInt(l.reps, 10) || 0 })));
+  };
+
+  const planned = short ? trimSession(day.exercises) : day.exercises;
+  const exercises: SessionExercise[] = planned.flatMap((item, i) => {
     const e = findExercise(item.exerciseId);
     if (!e) return [];
     return [
@@ -59,7 +70,8 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
         reps: item.reps ?? "8-12",
         restSeconds: item.restSeconds ?? 90,
         last: lastSets(item.exerciseId),
-        priorBest: priorBest.get(item.exerciseId) ?? 0
+        priorBest: priorBest.get(item.exerciseId) ?? 0,
+        nudge: overloadNudge(recentSessions(item.exerciseId), item.reps ?? "8-12", e.muscleGroup)
       }
     ];
   });
@@ -75,6 +87,7 @@ export default async function WorkoutPage({ params }: { params: Promise<{ id: st
       dayTitle={day.title}
       exercises={exercises}
       nextDayTitle={days.length > 1 ? nextDay.title : null}
+      variant={short ? "short" : undefined}
       rehab={rehabRoutine.length > 0 ? { count: rehabRoutine.length, minutes: routineMinutes(rehabRoutine) } : null}
     />
   );

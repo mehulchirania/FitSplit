@@ -15,6 +15,14 @@ const MAX_AGE_MS = 24 * 60 * 60 * 1000;
 /** Tolerated client clock drift ahead of the server. */
 const FUTURE_SLACK_MS = 5 * 60 * 1000;
 
+/** How the member felt after a run. */
+export const REHAB_FEELINGS = ["better", "same", "worse"] as const;
+export type RehabFeeling = (typeof REHAB_FEELINGS)[number];
+
+export function parseRehabFeeling(v: unknown): RehabFeeling | undefined {
+  return typeof v === "string" && (REHAB_FEELINGS as readonly string[]).includes(v) ? (v as RehabFeeling) : undefined;
+}
+
 export type RehabRunInput = {
   runId: string;
   conditionIds: string[];
@@ -22,6 +30,7 @@ export type RehabRunInput = {
   durationSec: number;
   exercisesCompleted: number;
   exercisesSkipped: number;
+  feeling?: RehabFeeling;
 };
 
 /** The document stored at users/{uid}/rehabSessions/{runId}. */
@@ -32,6 +41,7 @@ export type RehabSessionDoc = {
   durationSec: number;
   exercisesCompleted: number;
   exercisesSkipped: number;
+  feeling?: RehabFeeling;
 };
 
 export type RehabSession = RehabSessionDoc & { id: string };
@@ -78,6 +88,8 @@ export function validateRehabRun(input: unknown, now: Date = new Date()): RehabR
   if (typeof r.durationSec !== "number" || !Number.isFinite(r.durationSec)) return { ok: false, reason: "invalid" };
   if (r.durationSec < 0 || r.durationSec > MAX_DURATION_SEC) return { ok: false, reason: "invalid" };
 
+  const feeling = parseRehabFeeling(r.feeling);
+
   return {
     ok: true,
     id: r.runId,
@@ -87,7 +99,8 @@ export function validateRehabRun(input: unknown, now: Date = new Date()): RehabR
       completedAt: now.toISOString(),
       durationSec: Math.round(r.durationSec),
       exercisesCompleted,
-      exercisesSkipped
+      exercisesSkipped,
+      ...(feeling ? { feeling } : {})
     }
   };
 }
@@ -105,8 +118,19 @@ export function mapRehabSession(id: string, data: Record<string, unknown> | unde
     completedAt,
     durationSec: num(data.durationSec),
     exercisesCompleted: num(data.exercisesCompleted),
-    exercisesSkipped: num(data.exercisesSkipped)
+    exercisesSkipped: num(data.exercisesSkipped),
+    ...(parseRehabFeeling(data.feeling) ? { feeling: parseRehabFeeling(data.feeling) } : {})
   };
+}
+
+/** Feelings of the most recent sessions that recorded one, oldest first, for the trend strip. */
+export function recentFeelings(sessions: RehabSession[], count = 7): RehabFeeling[] {
+  return sessions
+    .filter((s) => s.feeling)
+    .sort((a, b) => b.completedAt.localeCompare(a.completedAt))
+    .slice(0, count)
+    .reverse()
+    .map((s) => s.feeling as RehabFeeling);
 }
 
 export type HistoryEntry<W extends { id: string }> =

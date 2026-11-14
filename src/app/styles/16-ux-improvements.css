@@ -160,16 +160,6 @@ html[data-theme="dark"] {
 
 /* ── 11. Workout session bar — more prominent when active ────────────────── */
 
-.session-elapsed {
-  align-items: center;
-  color: var(--success);
-  display: flex;
-  font-size: var(--text-base);
-  font-weight: 700;
-  gap: 6px;
-  letter-spacing: 0.02em;
-}
-
 /* ── 12. Day-log section — visual polish ─────────────────────────────────── */
 
 .day-log-section {
@@ -231,42 +221,12 @@ html[data-theme="dark"] {
 
 /* ── 13. Selected workout day card — breathing room ─────────────────────── */
 
-.selected-workout-day {
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: clamp(14px, 3vw, 22px);
-}
-
 /* ── 14. Member progress history card — spacing ──────────────────────────── */
 
 /* background/border/radius/shadow/overflow moved to the shared card
    selector group in 00-base-shell.css — only the additive property here. */
 
 /* ── 15. Empty state — improved design ───────────────────────────────────── */
-
-.md-empty {
-  align-items: center;
-  background: var(--bg-elevated);
-  border: 1px dashed var(--border);
-  border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: var(--space-12) var(--space-6);
-  text-align: center;
-}
-
-.md-empty h2 {
-  color: var(--text);
-  font-size: var(--text-lg);
-  margin-bottom: 4px;
-}
-
-.md-empty p {
-  font-size: var(--text-base);
-  line-height: 1.5;
-  max-width: 320px;
-}
 
 /* ── 16. Workout mode toggle — better visual ─────────────────────────────── */
 
@@ -375,15 +335,6 @@ html[data-theme="dark"] {
 /* Don't override the specialty login form inputs */
 
 /* ── 32. Member workout console — exercise eyebrow text spacing ───────────── */
-
-.selected-workout-day > .eyebrow {
-  margin-bottom: 4px;
-}
-
-.selected-workout-day > p:first-of-type {
-  font-size: var(--text-base);
-  margin-bottom: 10px;
-}
 
 /* ── 33. Day muscle targets pill row ──────────────────────────────────────── */
 
@@ -516,20 +467,6 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
 
 /* ── 45. Activity feed — entry spacing ───────────────────────────────────── */
 
-.activity-feed-entry {
-  border-bottom: 1px solid var(--border);
-  padding: var(--space-3) var(--space-5);
-  transition: background var(--fast);
-}
-
-.activity-feed-entry:last-child {
-  border-bottom: none;
-}
-
-.activity-feed-entry:hover {
-  background: var(--bg-subtle);
-}
-
 /* ── 46. Profile page form panels ─────────────────────────────────────────── */
 /* background/border/border-radius/overflow used to be redeclared here for
    both .form-panel and .list-panel, verbatim duplicates of the canonical
@@ -552,10 +489,6 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
 }
 
 /* ── 48. Lift log table — zebra striping ─────────────────────────────────── */
-
-.lift-log-table > div:nth-child(even) {
-  background: color-mix(in srgb, var(--bg-subtle) 60%, transparent);
-}
 
 /* ── 49. Member hero — badges light mode fix ────────────────────────────── */
 
@@ -582,8 +515,3 @@ html[data-theme="dark"] .cal-dot--makeup    { background: #f59e0b; }
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* Exercise library browser */
-.catalog-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 24px; }
-.catalog-filters input[type="search"] { flex: 2 1 220px; width: auto; }
-.catalog-filters select { flex: 1 1 150px; width: auto; }
-.catalog-filters__count { color: var(--text-soft); font-size: 0.85rem; margin-top: 12px; }
-.catalog-pager { display: flex; gap: 10px; justify-content: center; margin-top: 24px; }

@@ -55,9 +55,6 @@
    remapped to 768px in 15-ui-upgrades.css, which left a 761-768px dead band
    where the nav was hidden but its styling had already engaged. */
 @media (max-width: 768px) {
-  body:has(.mobile-bottom-nav) {
-    padding-bottom: 82px;
-  }
 
   .pwa-install-banner {
     bottom: calc(86px + env(safe-area-inset-bottom));

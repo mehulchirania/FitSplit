@@ -96,7 +96,7 @@ export const exercises: Exercise[] = Object.entries(workoutSource.exercise_catal
       videoUrl: catalogExercise.video_url ?? "",
       gymVideoUrl: "",
       gymVideoSource: "none" as const,
-      thumbnailUrl: getExerciseThumbnail(catalogExercise.name, muscleGroup as MuscleGroup),
+      thumbnailUrl: getExerciseThumbnail(catalogExercise.name),
       muscleTargetDescription: catalogExercise.muscle_target_description,
       ownerOnly: true
     }))

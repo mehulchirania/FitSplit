@@ -89,8 +89,6 @@ export function ConsumerSignupForm() {
       } catch {
         /* storage unavailable: diagnostics simply stay off */
       }
-      window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
-      window.localStorage.setItem("fitsplit-remember-me", "true");
       router.push(res.redirectUrl);
       router.refresh();
     });

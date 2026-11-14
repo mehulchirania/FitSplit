@@ -14,7 +14,7 @@ const checked = (v: unknown) => v === "on" || v === "true";
  * identity: it is the contact a parent or guardian gives when consenting for a
  * user under 18 (DPDP Act s.9), and is only stored on the consent record.
  */
-export const SignupSchema = z
+const SignupSchema = z
   .object({
     fullName: z.string().trim().min(2, "Enter your name.").max(SIGNUP_LIMITS.name, "Name is too long."),
     phone: z

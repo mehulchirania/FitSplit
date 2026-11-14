@@ -70,3 +70,4 @@ staff-tab.png
 # local emulator test credentials
 .env.test.local
 .next-e2e/
+.next-fs/

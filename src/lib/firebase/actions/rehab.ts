@@ -5,7 +5,7 @@ import { collectionPaths } from "../collections";
 import { requireFirebase, userDoc } from "./shared";
 import { REHAB_FIELD } from "@/lib/rehab/catalog";
 import { getCondition, sanitizeConditionIds } from "@/lib/rehab/routine";
-import { validateRehabRun, type RehabRunInput } from "@/lib/rehab/session";
+import { parseRehabFeeling, validateRehabRun, type RehabRunInput } from "@/lib/rehab/session";
 
 /**
  * Opt in to (or out of) a rehab condition. Stored as `rehabConditions: string[]` on the
@@ -54,5 +54,26 @@ export async function saveRehabSession(
   } catch (error) {
     console.error("Unable to save rehab session", error);
     return { ok: false, message: "Could not save your rehab session. Check your connection and try again." };
+  }
+}
+
+/** Record how a saved run felt (better / same / worse) on the member's own session doc. */
+export async function setRehabFeeling(
+  runId: string,
+  feeling: string
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  try {
+    const user = await requireAuth();
+    const f = parseRehabFeeling(feeling);
+    if (!f || typeof runId !== "string" || !/^[A-Za-z0-9_-]{8,80}$/.test(runId)) {
+      return { ok: false, message: "Could not read that answer." };
+    }
+    const ref = userDoc(requireFirebase(), user.uid, "rehabSessions", runId);
+    if (!(await ref.get()).exists) return { ok: false, message: "Save the session first." };
+    await ref.set({ feeling: f }, { merge: true });
+    return { ok: true };
+  } catch (error) {
+    console.error("Unable to save rehab feeling", error);
+    return { ok: false, message: "Could not save that. Try again." };
   }
 }

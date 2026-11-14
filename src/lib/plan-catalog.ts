@@ -5,7 +5,7 @@ import type { WorkoutProgram } from "@/types/domain";
  * from the built-in library; this list only decides which ones lead and how they are
  * described in one line.
  */
-export const FEATURED_PLANS: ReadonlyArray<{ id: string; title: string; blurb: string }> = [
+const FEATURED_PLANS: ReadonlyArray<{ id: string; title: string; blurb: string }> = [
   {
     id: "split_beginner_full_body",
     title: "Full Body",
@@ -33,7 +33,7 @@ export const FEATURED_PLANS: ReadonlyArray<{ id: string; title: string; blurb: s
   }
 ];
 
-export const FEATURED_IDS = new Set(FEATURED_PLANS.map((p) => p.id));
+const FEATURED_IDS = new Set(FEATURED_PLANS.map((p) => p.id));
 
 const LEVEL_ORDER = { beginner: 0, intermediate: 1, advanced: 2 } as const;
 

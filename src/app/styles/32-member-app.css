@@ -466,8 +466,7 @@ body:has(.fs) {
 .fs-seg:focus-visible,
 .fs-tab:focus-visible,
 .fs-set__check:focus-visible,
-.fs-chip-btn:focus-visible,
-.fs-segmented button:focus-visible {
+.fs-chip-btn:focus-visible {
   outline: 2px solid var(--brand);
   outline-offset: -2px;
 }
@@ -1233,11 +1232,6 @@ body:has(.fs) {
   font-size: var(--text-base);
 }
 
-.fs-ok {
-  color: var(--success);
-  font-size: var(--text-base);
-}
-
 .fs-search {
   align-items: center;
   background: var(--bg-subtle);
@@ -1344,32 +1338,6 @@ body:has(.fs) {
 
 .fs-steps li + li {
   margin-top: var(--space-2);
-}
-
-.fs-segmented {
-  background: var(--bg-subtle);
-  border-radius: 10px;
-  display: grid;
-  gap: 2px;
-  grid-template-columns: repeat(3, 1fr);
-  padding: 2px;
-  width: 100%;
-}
-
-.fs-segmented button {
-  background: none;
-  border: 0;
-  border-radius: 8px;
-  color: var(--text);
-  cursor: pointer;
-  font: 500 var(--text-base) / 1 var(--font-app);
-  min-height: 36px;
-  transition: background-color 160ms var(--ease-out);
-}
-
-.fs-segmented button[aria-checked="true"] {
-  background: var(--bg-muted);
-  font-weight: 650;
 }
 
 .fs-profile-head {

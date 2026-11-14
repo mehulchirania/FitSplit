@@ -7,7 +7,6 @@ import { describe, it, expect } from "vitest";
 import {
   estimate1RM,
   best1RM,
-  ONE_RM_REP_CAP,
   computeWeeklyStreak,
   computeWorkoutVolume,
   suggestNextSet,

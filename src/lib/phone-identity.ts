@@ -11,7 +11,7 @@
 export const PIN_LENGTH = 4;
 
 /** Domain of the synthetic Firebase Auth email. Not a real mailbox. */
-export const PHONE_EMAIL_DOMAIN = "phone.fitsplit.app";
+const PHONE_EMAIL_DOMAIN = "phone.fitsplit.app";
 
 const DEFAULT_COUNTRY_CODE = "91";
 

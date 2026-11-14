@@ -2,10 +2,11 @@ import Link from "next/link";
 import { requireAuth } from "@/lib/auth";
 import { REHAB_CONDITIONS } from "@/lib/rehab/catalog";
 import { buildRoutine, conditionExercises, routineMinutes } from "@/lib/rehab/routine";
-import { getRehabConditions } from "@/lib/rehab/server";
+import { recentFeelings } from "@/lib/rehab/session";
+import { getRehabConditions, getRehabSessionsForMember } from "@/lib/rehab/server";
 import { countLabel } from "@/lib/today";
 import { CheckIcon, ChevronLeft, ChevronRight } from "@/components/app/icons";
-import { RehabCard, RehabDisclaimer } from "@/components/app/rehab/rehab-bits";
+import { RehabCard, RehabDisclaimer, RehabTrend } from "@/components/app/rehab/rehab-bits";
 
 export const dynamic = "force-dynamic";
 
@@ -13,7 +14,8 @@ export const metadata = { title: "Rehab & mobility | FitSplit" };
 
 export default async function RehabPage() {
   const user = await requireAuth();
-  const mine = await getRehabConditions(user.uid);
+  const [mine, sessions] = await Promise.all([getRehabConditions(user.uid), getRehabSessionsForMember(user.uid, 30)]);
+  const feelings = recentFeelings(sessions);
   const combined = buildRoutine(mine);
 
   return (
@@ -34,6 +36,8 @@ export default async function RehabPage() {
           <RehabCard minutes={routineMinutes(combined)} count={combined.length} />
         </section>
       )}
+
+      <RehabTrend feelings={feelings} />
 
       <section className="fs-section">
         <h2 className="fs-section__title">Conditions</h2>

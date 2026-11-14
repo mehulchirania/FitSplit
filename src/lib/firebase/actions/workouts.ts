@@ -5,6 +5,9 @@ import { requireAuth } from "@/lib/auth";
 import { z } from "zod";
 import { requireFirebase, userDoc } from "./shared";
 import { istDateKey, weekStartOf } from "@/lib/today";
+import { findExercise, searchExerciseLibrary } from "@/lib/exercise-library";
+import { getLiftLogsForMember } from "@/lib/firebase/read-models";
+import { swapAlternatives } from "@/lib/workout-utils";
 
 // The workout logger writes through these. Each call writes only to the signed-in
 // user's own data. A set is one liftLog document (sets === 1), as everywhere else.
@@ -120,5 +123,48 @@ export async function finishWorkout(input: z.input<typeof FinishInput>): Promise
   } catch (error) {
     console.error("Unable to finish workout", error);
     return { ok: false, message: "Could not save your workout. Please try again." };
+  }
+}
+
+export type SwapOption = {
+  id: string;
+  name: string;
+  muscleGroup: string;
+  equipment: string;
+  steps: string[];
+  videoUrl: string;
+  last: Array<{ weight: number; reps: number }>;
+  priorBest: number;
+};
+
+/** Alternatives for one exercise (same muscle group, same equipment first), with the user's own history for each. */
+export async function getSwapOptions(exerciseId: string): Promise<SwapOption[]> {
+  try {
+    const user = await requireAuth();
+    const current = typeof exerciseId === "string" ? findExercise(exerciseId) : undefined;
+    if (!current) return [];
+    const pool = searchExerciseLibrary({ muscleGroup: current.muscleGroup }).results;
+    const picks = swapAlternatives(current, pool, 12);
+    const { liftLogs } = await getLiftLogsForMember(user.uid);
+    return picks.map((e) => {
+      const logs = liftLogs.filter((l) => l.exerciseId === e.id);
+      const sessionId = logs[0]?.sessionId;
+      return {
+        id: e.id,
+        name: e.name,
+        muscleGroup: e.muscleGroup,
+        equipment: e.equipment,
+        steps: e.instructions.split(/\r?\n/).map((s) => s.trim()).filter(Boolean),
+        videoUrl: e.videoSource === "youtube" ? e.videoUrl : "",
+        last: logs
+          .filter((l) => l.sessionId === sessionId)
+          .sort((a, b) => (a.setIndex ?? 0) - (b.setIndex ?? 0))
+          .map((l) => ({ weight: l.weight, reps: parseInt(l.reps, 10) || 0 })),
+        priorBest: logs.reduce((m, l) => Math.max(m, l.weight), 0)
+      };
+    });
+  } catch (error) {
+    console.error("Unable to load swap options", error);
+    return [];
   }
 }

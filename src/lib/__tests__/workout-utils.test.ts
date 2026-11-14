@@ -465,3 +465,55 @@ describe("estimateSessionMinutes", () => {
     expect(estimateSessionMinutes([])).toBe(0);
   });
 });
+
+import { overloadNudge, sessionMinutes, swapAlternatives, trimSession } from "@/lib/workout-utils";
+import { advanceHistory, resolveNextDayIndex, trainedDateKeys } from "@/lib/today";
+
+describe("trimSession", () => {
+  const day = Array.from({ length: 7 }, (_, i) => ({ id: `e${i}`, sets: 4, restSeconds: 90 }));
+  it("keeps leading lifts, caps sets and fits the target", () => {
+    const out = trimSession(day, 20);
+    expect(out.map((e) => e.id)).toEqual(["e0", "e1", "e2"]);
+    expect(out.every((e) => e.sets <= 3)).toBe(true);
+    expect(sessionMinutes(out)).toBeLessThanOrEqual(25);
+  });
+  it("leaves an already short day alone", () => {
+    const small = [{ sets: 2, restSeconds: 60 }];
+    expect(trimSession(small, 20)).toEqual(small);
+  });
+});
+
+describe("overloadNudge", () => {
+  const top = [{ weight: 60, reps: 12 }, { weight: 60, reps: 12 }];
+  it("suggests +2.5 upper and +5 lower after two top-of-range sessions", () => {
+    expect(overloadNudge([top, top], "8-12", "Chest")).toEqual({ fromKg: 60, toKg: 62.5, reps: 12 });
+    expect(overloadNudge([top, top], "8-12", "Legs")?.toKg).toBe(65);
+  });
+  it("stays quiet with one session, a missed set, or no top", () => {
+    expect(overloadNudge([top], "8-12", "Chest")).toBeNull();
+    expect(overloadNudge([top, [{ weight: 60, reps: 12 }, { weight: 60, reps: 10 }]], "8-12", "Chest")).toBeNull();
+    expect(overloadNudge([top, top], "AMRAP", "Chest")).toBeNull();
+  });
+});
+
+describe("swapAlternatives", () => {
+  const cur = { id: "a", muscleGroup: "Chest", equipment: "Barbell" };
+  const pool = [
+    { id: "a", name: "A", muscleGroup: "Chest", equipment: "Barbell" },
+    { id: "b", name: "B", muscleGroup: "Chest", equipment: "Cable" },
+    { id: "c", name: "C", muscleGroup: "Chest", equipment: "Barbell" },
+    { id: "d", name: "D", muscleGroup: "Back", equipment: "Barbell" }
+  ];
+  it("same muscle group, same equipment first, excludes itself", () => {
+    expect(swapAlternatives(cur, pool).map((e) => e.id)).toEqual(["c", "b"]);
+  });
+});
+
+describe("skipped days", () => {
+  const days = [{ id: "d1", title: "A" }, { id: "d2", title: "B" }, { id: "d3", title: "C" }] as never;
+  const logs = [{ programId: "p", dayId: "d1", status: "skipped", loggedAt: "2026-11-14T05:00:00Z" }];
+  it("advances the plan but is not a trained day", () => {
+    expect(resolveNextDayIndex(days, advanceHistory([], logs, "p"))).toBe(1);
+    expect(trainedDateKeys([], logs).size).toBe(0);
+  });
+});

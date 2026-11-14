@@ -67,16 +67,10 @@
 
 /* Active link state — shows which top-nav section the user is currently in */
 
-.icon-button,
 .button {
   min-height: var(--space-10);
 }
 
-.icon-button {
-  box-shadow: none;
-}
-
-.neutral-icon-button,
 .button-secondary {
   background: var(--surface-glass-strong);
   border-color: color-mix(in srgb, var(--border) 82%, transparent);
@@ -206,7 +200,6 @@ p {
    .ai-modification-panel trimmed 2026-08-04 — zero references anywhere in src/. */
 .panel-title h2,
 .form-panel h2,
-.selected-workout-day h2,
 .confirm-dialog h2 {
   font-size: var(--text-lg);
   letter-spacing: var(--tracking-normal);
@@ -214,8 +207,7 @@ p {
 
 /* .program-grid and .workstream-grid trimmed here — 2026-08-04, zero references
    anywhere in src/. */
-.content-grid,
-.catalog-grid {
+.content-grid {
   gap: 16px;
 }
 
@@ -252,15 +244,6 @@ p {
 /* .notification-row, .catalog-item, and .member-row trimmed from this and the
    :hover group below (and the standalone .member-row border-bottom rule removed)
    — 2026-08-04, zero references anywhere in src/. */
-.activity-item {
-  background: color-mix(in srgb, var(--bg-elevated) 42%, transparent);
-  border-color: color-mix(in srgb, var(--border) 70%, transparent);
-}
-
-.activity-item:hover {
-  background: color-mix(in srgb, var(--bg-elevated) 70%, transparent);
-  transform: translateY(-2px);
-}
 
 .status-pill {
   border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
@@ -293,14 +276,6 @@ p {
 .day-tabs button:hover {
   background: var(--surface-glass-strong);
   box-shadow: var(--shadow-soft);
-}
-
-.selected-workout-day {
-  background: color-mix(in srgb, var(--bg-elevated) 48%, transparent);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-top: 14px;
-  padding: var(--space-4);
 }
 
 /* .program-dialog trimmed here — 2026-08-04, zero references anywhere in src/. */

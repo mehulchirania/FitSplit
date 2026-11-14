@@ -68,13 +68,6 @@
    selectors are dead (.member-workout-side never renders); .member-progress-history-card
    is dead too. .member-progress-console > .lift-log-panel and
    .member-progress-chart-card are live and kept in all 3 occurrences. */
-.member-progress-console > .lift-log-panel,
-.member-progress-chart-card {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--bg-elevated) 96%, var(--brand) 4%), var(--bg-elevated));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-}
 
 /* .member-workout-main and its > .panel-title rules deleted here —
    2026-08-04, zero references anywhere in src/. */
@@ -104,129 +97,16 @@
 
 /* .member-workout-side deleted here — 2026-08-04, zero references anywhere
    in src/. */
-
-.member-progress-console > .lift-log-panel,
-.member-progress-chart-card {
-  margin: 0;
-  overflow: hidden;
-  padding: var(--space-4);
-}
 /* .member-progress-section deleted here — 2026-08-04, zero references anywhere
    in src/ (also referenced, equally unreachably, from 17-profile-metrics.css's
    ".md-tab-panels .member-progress-section" rule — flagged for that file's
    owner, not edited here). */
-
-.member-progress-console {
-  display: grid;
-  gap: var(--space-4);
-  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
-}
-
-.member-progress-console .lift-log-title {
-  align-items: flex-start;
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  margin: 0 0 var(--space-4);
-}
-
-.offline-sync-banner {
-  align-items: center;
-  background: color-mix(in srgb, var(--warning) 12%, var(--bg-subtle));
-  border: 1px solid color-mix(in srgb, var(--warning) 34%, var(--border));
-  border-radius: var(--radius);
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  margin: var(--space-3) 0;
-  padding: var(--space-3);
-}
-
-.offline-sync-banner strong {
-  color: var(--text);
-  display: block;
-  font-size: var(--text-sm);
-}
-
-.offline-sync-banner p {
-  color: var(--text-soft);
-  font-size: var(--text-xs);
-  line-height: 1.4;
-  margin: var(--space-1) 0 0;
-}
-
-.offline-sync-banner .button {
-  flex: 0 0 auto;
-  min-height: 44px;
-  padding: var(--space-2) var(--space-3);
-}
-
-.member-progress-console .lift-log-form {
-  display: grid;
-  gap: var(--space-3);
-  grid-template-columns: 1fr;
-  min-width: 0;
-}
-
-.member-progress-console .lift-log-exercise-field,
-.member-progress-console .lift-log-fields label {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
-.member-progress-console .lift-log-fields {
-  display: grid;
-  gap: var(--space-3);
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.member-progress-console .lift-log-fields input,
-.member-progress-console .lift-log-exercise-field select {
-  max-width: 100%;
-  width: 100%;
-}
-
-.member-progress-console .lift-log-submit {
-  justify-content: center;
-  width: 100%;
-}
-
-.member-progress-console .member-details-panel {
-  background: var(--bg-subtle);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  margin-top: var(--space-3);
-  padding: var(--space-3);
-}
-
-.member-progress-console .member-details-summary {
-  justify-content: space-between;
-}
-
-.member-progress-console .lift-log-table {
-  overflow-x: auto;
-}
-
-.member-progress-console .lift-log-table div {
-  grid-template-columns: minmax(130px, 1fr) 64px 44px 54px;
-  min-width: 300px;
-}
 
 /* .member-workout-side .injury-card [textarea|.button] deleted here —
    2026-08-04, zero references anywhere in src/ (dead ancestor). */
 
 /* .workout-session-bar deleted here — 2026-08-04, zero references anywhere
    in src/. */
-
-.video-modal-backdrop {
-  z-index: 2000;
-}
-
-.video-modal {
-  border: 1px solid var(--border);
-  max-height: calc(100dvh - 32px);
-}
 
 /* Deleted 2026-08-04: an @media (max-width: 1024px) block that only contained
    .md-hero-inner / .member-wellness-grid / .member-training-layout /
@@ -280,20 +160,7 @@
 
   /* Trimmed 3rd occurrence of the 7-selector group (border-radius variant) —
      see note near line ~250. */
-  .member-progress-console > .lift-log-panel,
-  .member-progress-chart-card {
-    border-radius: var(--radius-lg);
-  }
 
   /* .member-workout-main rules and all ".member-workout-body ..." rules
      deleted here — 2026-08-04, zero references anywhere in src/. */
-  .member-progress-console .lift-log-fields {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 1024px) {
-  .member-progress-console {
-    grid-template-columns: 1fr;
-  }
 }

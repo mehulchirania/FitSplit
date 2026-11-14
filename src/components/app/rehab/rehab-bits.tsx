@@ -48,3 +48,21 @@ export function RehabCard({
     </div>
   );
 }
+
+const FEELING_LABEL = { better: "Better", same: "Same", worse: "Worse" } as const;
+
+/** The last few sessions' "how did it feel" answers, oldest to newest. */
+export function RehabTrend({ feelings }: { feelings: Array<"better" | "same" | "worse"> }) {
+  if (feelings.length === 0) return null;
+  return (
+    <section className="fs-section" aria-label="How your last sessions felt">
+      <h2 className="fs-section__title">How it felt</h2>
+      <div className="fs-rehab-trend" role="list">
+        {feelings.map((f, i) => (
+          <span key={i} role="listitem" className="fs-rehab-trend__dot" data-feeling={f} aria-label={FEELING_LABEL[f]} title={FEELING_LABEL[f]} />
+        ))}
+      </div>
+      <p className="fs-soft fs-rehab-trend__legend">Last {feelings.length} sessions, oldest to newest</p>
+    </section>
+  );
+}

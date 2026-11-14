@@ -207,7 +207,6 @@ export function ProfileScreen({ member, profile }: { member: UserProfile; profil
             disabled={pending}
             onClick={() =>
               startTransition(async () => {
-                window.localStorage.removeItem("fitsplit-remember-me");
                 await logoutUser();
               })
             }

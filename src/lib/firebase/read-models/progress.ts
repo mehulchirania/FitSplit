@@ -1,4 +1,4 @@
-import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MealLog, MakeupStatus, SkipReason } from "@/types/domain";
+import type { ActivityLog, BodyMetricLog, DayLog, LiftLog, MacroLog, MakeupStatus, SkipReason } from "@/types/domain";
 
 import { getFirebaseAdminServices, hasFirebaseAdminConfig } from "../admin";
 import { userCollection, reportReadModelError } from "./shared";
@@ -157,47 +157,6 @@ export async function getLiftLogsForMember(uid: string, limit = 500): Promise<{
 }
 
 /**
- * Build a calendar data map for the given member from their lift logs and day logs.
- * Returns a record keyed by "YYYY-MM-DD" date strings for the last `daysBack` days.
- * This is computed server-side from data we already have — no extra Firestore queries.
- */
-  // Build lookup: date → trained
-  // Build lookup: date → DayLog (using loggedAt as the calendar date)
-  // Build the date range
-export type MacroLogEntry = {
-  protein: number;
-  carbs: number;
-  fat: number;
-  water: number;
-};
-
-export async function getMacroLogForMember(
-  uid: string,
-  date: string
-): Promise<{ macroLog: MacroLogEntry | null }> {
-  if (!hasFirebaseAdminConfig()) return { macroLog: null };
-  try {
-    const { db } = getFirebaseAdminServices();
-    const docId = date;
-    const macroDoc = await userCollection(db, uid, "macroLogs").doc(docId)
-      .get();
-    if (!macroDoc.exists) return { macroLog: null };
-    const data = macroDoc.data() ?? {};
-    return {
-      macroLog: {
-        protein: Number(data.protein ?? 0),
-        carbs: Number(data.carbs ?? 0),
-        fat: Number(data.fat ?? 0),
-        water: Number(data.water ?? 0)
-      }
-    };
-  } catch (error) {
-    reportReadModelError("getMacroLogForMember", error, { memberId: uid });
-    return { macroLog: null };
-  }
-}
-
-/**
  * Fetch the last N days of macro logs for a member.
  * Used to render macro history charts and the 7-day summary.
  */
@@ -229,134 +188,6 @@ export async function getMacroLogsForMember(
   } catch (error) {
     reportReadModelError("getMacroLogsForMember", error, { memberId: uid });
     return { macroLogs: [] };
-  }
-}
-
-/** Fetch the itemized meal list for one calendar day — the "meal log" feed on the Macros screen. */
-export async function getMealLogsForMember(
-  uid: string,
-  date: string
-): Promise<{ mealLogs: MealLog[] }> {
-  if (!hasFirebaseAdminConfig()) return { mealLogs: [] };
-  try {
-    const { db } = getFirebaseAdminServices();
-    const snapshot = await userCollection(db, uid, "mealLogs")
-      .where("date", "==", date)
-      .get();
-    const mealLogs: MealLog[] = snapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        memberId: uid,
-        date: String(data.date ?? date),
-        name: String(data.name ?? "Meal"),
-        items: data.items ? String(data.items) : undefined,
-        kcal: Number(data.kcal ?? 0),
-        protein: Number(data.protein ?? 0),
-        carbs: Number(data.carbs ?? 0),
-        fat: Number(data.fat ?? 0),
-        loggedAt: String(data.loggedAt ?? new Date().toISOString())
-      };
-    });
-    mealLogs.sort((a, b) => a.loggedAt.localeCompare(b.loggedAt));
-    return { mealLogs };
-  } catch (error) {
-    reportReadModelError("getMealLogsForMember", error, { memberId: uid, date });
-    return { mealLogs: [] };
-  }
-}
-
-/** Fetch the meals logged on the calendar day immediately before `todayDate` — powers "Repeat yesterday". */
-export async function getYesterdaysMealsForMember(
-  uid: string,
-  todayDate: string
-): Promise<{ mealLogs: MealLog[] }> {
-  const yesterday = new Date(`${todayDate}T00:00:00`);
-  if (Number.isNaN(yesterday.getTime())) return { mealLogs: [] };
-  yesterday.setDate(yesterday.getDate() - 1);
-  const yesterdayDate = yesterday.toISOString().slice(0, 10);
-  return getMealLogsForMember(uid, yesterdayDate);
-}
-
-/** One grouped suggestion for the nutrition Quick Add "Recent" row. */
-export type MealSuggestion = {
-  name: string;
-  items?: string;
-  kcal: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  /** How many times this meal (grouped by trimmed, case-insensitive name) was logged in the lookback window. */
-  frequency: number;
-  lastLoggedAt: string;
-};
-
-/**
- * Groups a member's meals from the last `lookbackDays` days by name and
- * returns the most-frequently-logged ones, most frequent first (ties broken
- * by recency). Powers the personalized "Recent" quick-add row, which ranks
- * ahead of the generic static presets — by day three of real usage, what a
- * member actually eats is a far better default than six hardcoded items.
- */
-export async function getRecentMealsForMember(
-  uid: string,
-  options: { lookbackDays?: number; limit?: number } = {}
-): Promise<{ recentMeals: MealSuggestion[] }> {
-  const { lookbackDays = 30, limit = 6 } = options;
-  if (!hasFirebaseAdminConfig()) return { recentMeals: [] };
-  try {
-    const { db } = getFirebaseAdminServices();
-    const since = new Date();
-    since.setDate(since.getDate() - lookbackDays);
-    const sinceDate = since.toISOString().slice(0, 10);
-
-    const snapshot = await userCollection(db, uid, "mealLogs")
-      .where("date", ">=", sinceDate)
-      .orderBy("date", "asc")
-      .limit(500)
-      .get();
-
-    const byName = new Map<string, MealSuggestion>();
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const rawName = String(data.name ?? "").trim();
-      if (!rawName) continue;
-      const key = rawName.toLowerCase();
-      const loggedAt = String(data.loggedAt ?? new Date().toISOString());
-      const existing = byName.get(key);
-      if (existing) {
-        existing.frequency += 1;
-        if (loggedAt > existing.lastLoggedAt) {
-          existing.lastLoggedAt = loggedAt;
-          existing.name = rawName;
-          existing.items = data.items ? String(data.items) : existing.items;
-          existing.kcal = Number(data.kcal ?? existing.kcal);
-          existing.protein = Number(data.protein ?? existing.protein);
-          existing.carbs = Number(data.carbs ?? existing.carbs);
-          existing.fat = Number(data.fat ?? existing.fat);
-        }
-      } else {
-        byName.set(key, {
-          name: rawName,
-          items: data.items ? String(data.items) : undefined,
-          kcal: Number(data.kcal ?? 0),
-          protein: Number(data.protein ?? 0),
-          carbs: Number(data.carbs ?? 0),
-          fat: Number(data.fat ?? 0),
-          frequency: 1,
-          lastLoggedAt: loggedAt
-        });
-      }
-    }
-
-    const recentMeals = Array.from(byName.values())
-      .sort((a, b) => b.frequency - a.frequency || b.lastLoggedAt.localeCompare(a.lastLoggedAt))
-      .slice(0, limit);
-
-    return { recentMeals };
-  } catch (error) {
-    reportReadModelError("getRecentMealsForMember", error, { memberId: uid });
-    return { recentMeals: [] };
   }
 }
 

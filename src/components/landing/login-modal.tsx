@@ -68,8 +68,6 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
         const fd = new FormData();
         fd.set("phone", phone.trim());
         fd.set("pin", pin);
-        fd.set("rememberMe", "true");
-        window.localStorage.setItem("fitsplit-remember-me", "true");
         const session = await loginWithPin(fd);
         if (session.status !== "success") {
           setError(session.message);
@@ -77,7 +75,6 @@ export function LoginModal({ open, onClose }: { open: boolean; onClose: () => vo
           return;
         }
         window.scrollTo(0, 0);
-        window.localStorage.setItem("fitsplit-session-start", String(Date.now()));
         window.location.replace(session.redirectUrl);
       } catch (err) {
         console.error(err);

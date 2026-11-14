@@ -21,283 +21,33 @@
 /* Admin profile card */
 
 /* Exercise catalog per-exercise edit */
-.catalog-exercise-entry {
-  border-bottom: 1px solid var(--border);
-}
-.catalog-exercise-entry:last-child {
-  border-bottom: none;
-}
-.catalog-exercise-row {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) 0;
-}
-.catalog-exercise-thumb {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-sm);
-  background: var(--bg-subtle);
-  background-size: cover;
-  background-position: center;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid var(--border);
-}
-.thumbnail-preview-trigger {
-  appearance: none;
-  cursor: zoom-in;
-  overflow: hidden;
-  padding: 0;
-  position: relative;
-  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-}
 /* Fixed dark scrim + white "View" label, intentionally theme-independent:
    this overlay sits on top of arbitrary uploaded thumbnail photos, not the
    page chrome, so it needs to stay legible regardless of what's in the
    photo and regardless of site theme (same rationale as the image-preview
    overlays used elsewhere in the design). */
-.thumbnail-preview-trigger:not(:disabled)::after {
-  align-items: center;
-  background: color-mix(in srgb, black 58%, transparent);
-  border-radius: var(--radius-pill);
-  color: white;
-  content: "View";
-  display: flex;
-  font-size: var(--text-2xs);
-  font-weight: 800;
-  inset: auto 5px 5px 5px;
-  justify-content: center;
-  letter-spacing: 0.04em;
-  opacity: 0;
-  padding: 3px 0;
-  position: absolute;
-  text-transform: uppercase;
-  transform: translateY(4px);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-.thumbnail-preview-trigger:not(:disabled):hover,
-.thumbnail-preview-trigger:not(:disabled):focus-visible {
-  border-color: color-mix(in srgb, var(--brand) 60%, var(--border));
-  box-shadow: var(--shadow);
-  transform: translateY(-1px);
-}
-.thumbnail-preview-trigger:not(:disabled):hover::after,
-.thumbnail-preview-trigger:not(:disabled):focus-visible::after {
-  opacity: 1;
-  transform: translateY(0);
-}
-.thumbnail-preview-trigger:disabled {
-  cursor: default;
-}
-.catalog-exercise-copy {
-  flex: 1;
-  min-width: 0;
-}
-.catalog-exercise-copy strong {
-  color: var(--text);
-  display: block;
-  font-size: var(--text-base);
-}
-.catalog-exercise-copy p {
-  color: var(--text-soft);
-  font-size: var(--text-xs);
-  margin: 2px 0 0;
-}
-.catalog-exercise-actions {
-  align-items: center;
-  display: flex;
-  flex-shrink: 0;
-  gap: var(--space-2);
-}
-.video-indicator {
-  align-items: center;
-  background: var(--brand-soft);
-  border: 1px solid color-mix(in srgb, var(--brand) 34%, var(--border));
-  border-radius: var(--radius-pill);
-  color: var(--brand-strong);
-  display: inline-flex;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  gap: var(--space-1);
-  height: 30px;
-  justify-content: center;
-  letter-spacing: 0.01em;
-  padding: 0 var(--space-3) 0 var(--space-2);
-  text-decoration: none;
-  white-space: nowrap;
-}
-.video-indicator--demo {
-  background: color-mix(in srgb, var(--brand) 10%, var(--bg-elevated));
-  border-color: color-mix(in srgb, var(--brand) 30%, var(--border));
-  color: color-mix(in srgb, var(--brand) 80%, var(--text));
-}
-.video-indicator:hover {
-  background: color-mix(in srgb, var(--brand) 20%, transparent);
-}
-.video-indicator-label {
-  line-height: 1;
-}
-.video-indicator svg {
-  height: 14px;
-  width: 14px;
-  flex-shrink: 0;
-}
 
 /* YouTube / video modal. The backdrop scrim is intentionally always dark
    (dims whatever page is behind it) regardless of site theme — standard
    modal/lightbox convention, not a light/dark bug. */
-.video-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: color-mix(in srgb, black 82%, transparent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  padding: var(--space-4);
-}
-.video-modal {
-  background: var(--bg-elevated);
-  border-radius: var(--radius);
-  overflow: hidden;
-  width: 100%;
-  max-width: 700px;
-  box-shadow: 0 24px 64px color-mix(in srgb, black 50%, transparent);
-}
 /* Portrait modal (YouTube Shorts) — narrow container so 9:16 doesn't stretch */
-.video-modal--portrait {
-  max-width: 380px;
-}
-.video-modal-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-  border-bottom: 1px solid var(--border);
-  gap: var(--space-3);
-}
 /* Landscape embed (default) */
-.video-embed {
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  display: block;
-  border: none;
-}
 /* Portrait embed (YouTube Shorts 9:16) */
-.video-embed--portrait {
-  aspect-ratio: 9 / 16;
-  width: auto;
-  /* Cap height so it doesn't overflow the viewport on small screens */
-  max-height: min(65vh, 560px);
-  /* Centre inside the narrow modal */
-  margin: 0 auto;
-}
 
 /* Image preview modal */
 /* Same theme-independent scrim rationale as the video modal above. */
-.image-modal-backdrop {
-  align-items: center;
-  background: color-mix(in srgb, black 84%, transparent);
-  display: flex;
-  inset: 0;
-  justify-content: center;
-  padding: var(--space-4);
-  position: fixed;
-  z-index: 220;
-}
-.image-modal {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  box-shadow: 0 28px 80px color-mix(in srgb, black 55%, transparent);
-  max-height: min(780px, 92vh);
-  max-width: min(760px, 94vw);
-  overflow: hidden;
-  width: 100%;
-}
-.image-modal-header {
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  padding: var(--space-4) var(--space-5);
-}
-.image-modal-header h3 {
-  color: var(--text);
-  font-size: var(--text-md);
-  margin: 0;
-}
-.image-modal-media {
-  background: var(--bg-subtle);
-  display: block;
-  max-height: calc(92vh - 74px);
-  object-fit: contain;
-  width: 100%;
-}
 
 /* Workout session bar */
-.session-elapsed {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--text-md);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums lining-nums;
-  color: var(--brand);
-  flex: 1;
-}
-.session-end-btn {
-  font-size: var(--text-sm);
-  padding: var(--space-2) var(--space-4);
-}
 
 /* Lift log panel */
-.lift-log-panel {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: var(--space-5);
-}
-.lift-log-panel h2 { font-size: var(--text-base); font-weight: 700; color: var(--text); margin: 0; }
 
 /* Sidebar: sticky, scrollable internally */
 
 /* Lift log table */
-.lift-log-table { display: flex; flex-direction: column; gap: var(--space-1); margin-top: var(--space-3); }
-.lift-log-table div {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-sm);
-  font-size: var(--text-sm);
-  align-items: center;
-  font-variant-numeric: tabular-nums lining-nums;
-}
-.lift-log-table div:first-child {
-  color: var(--text-faint);
-  font-size: var(--text-xs);
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  padding-bottom: var(--space-1);
-}
-.lift-log-table div + div { background: var(--bg-subtle); }
-.lift-log-table span { color: var(--text-soft); }
-.lift-log-table span:first-child { color: var(--text); font-weight: 500; }
 
 /* muscle-targets inside exercise-row */
 
 /* lift log fields grid */
-.lift-log-fields {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: var(--space-3);
-}
 
 @media (max-width: 768px) {
   .content-grid {
@@ -306,11 +56,6 @@
     gap: var(--space-4);
   }
   .list-panel { padding: var(--space-4); }
-  .lift-log-fields { grid-template-columns: 1fr 1fr; }
-}
-
-@media (max-width: 480px) {
-  .lift-log-fields { grid-template-columns: 1fr; }
 }
 
 /* Member dashboard polish: stable header, anchored menus, and responsive lift logging. */
@@ -352,44 +97,9 @@
   max-width: 1180px;
 }
 
-.lift-log-panel {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.lift-log-title {
-  align-items: flex-start;
-  display: flex;
-  gap: var(--space-3);
-  justify-content: space-between;
-  margin-bottom: 0;
-}
-
-.lift-log-heading {
-  align-items: center;
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  min-width: 0;
-}
-
 /* ── Exercise catalog: predefined / custom sections ───────────────────────── */
 
 /* ── Muscle-group collapsible panels inside catalog ───────────────────────── */
-.catalog-grid {
-  display: flex;
-  flex-direction: column;
-}
-.panel-icon {
-  color: var(--brand);
-  flex-shrink: 0;
-  height: 16px;
-  width: 16px;
-}
-.catalog-list {
-  border-top: 1px solid var(--border);
-  padding: 0 var(--space-5);
-}
 
 /* ── catalog add section ──────────────────────────────────────────────────── */
 
@@ -433,8 +143,6 @@
 /* Page header */
 
 /* KPI row */
-.adm-kpi--brand { border-color: color-mix(in srgb, var(--brand) 30%, var(--border)); }
-.adm-kpi--brand small { color: var(--brand); }
 
 /* Two-column grid */
 

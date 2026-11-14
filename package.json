@@ -29,7 +29,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "knip": "knip",
-    "prepare": "husky"
+    "prepare": "husky",
+    "smoke": "node scripts/smoke-check.mjs"
   },
   "dependencies": {
     "@fitsplit/core": "*",
@@ -43,10 +44,7 @@
     "@opentelemetry/semantic-conventions": "^1.41.1",
     "@radix-ui/react-dialog": "^1.1.19",
     "@radix-ui/react-dropdown-menu": "^2.1.24",
-    "@radix-ui/react-select": "^2.3.2",
-    "dexie": "^4.4.4",
     "firebase-admin": "^14.1.0",
-    "framer-motion": "^12.42.0",
     "next": "^16.3.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

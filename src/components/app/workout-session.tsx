@@ -3,8 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { finishWorkout, logSet, removeSet } from "@/lib/firebase/actions/workouts";
+import { finishWorkout, getSwapOptions, logSet, removeSet, type SwapOption } from "@/lib/firebase/actions/workouts";
 import { formatClock, formatDuration, formatKg, parseReps } from "@/lib/today";
+import { sessionRecords, type SessionRecord } from "@/lib/recap";
+import { ShareCardButton } from "./share-card";
 import { CheckIcon, ChevronDown, ChevronLeft, CloseIcon, ExternalIcon, ListIcon } from "./icons";
 import { Sheet } from "./sheet";
 import { RehabCard } from "./rehab/rehab-bits";
@@ -24,6 +26,8 @@ export type SessionExercise = {
   last: Array<{ weight: number; reps: number }>;
   /** Heaviest weight ever logged for this exercise before today (0 = never). */
   priorBest: number;
+  /** Two straight sessions at the top of the rep range: a small weight jump to offer. Never forced. */
+  nudge?: { fromKg: number; toKg: number; reps: number } | null;
 };
 
 export type SessionProps = {
@@ -34,11 +38,14 @@ export type SessionProps = {
   nextDayTitle: string | null;
   /** The user's combined rehab routine, when they have added conditions: offered after the summary. */
   rehab?: { count: number; minutes: number } | null;
+  /** "short": the trimmed version of the day, kept apart from a full session in storage. */
+  variant?: "short";
 };
 
 type Row = { weight: string; reps: string; done: boolean; saving: boolean; edited: boolean; logId?: string };
 type Rows = Record<string, Row[]>;
-type Saved = { sessionId: string; startedAt: number; rows: Rows; index: number };
+type Swaps = Record<string, Partial<SessionExercise>>;
+type Saved = { sessionId: string; startedAt: number; rows: Rows; index: number; swaps?: Swaps };
 
 const STALE_MS = 1000 * 60 * 60 * 12;
 
@@ -61,7 +68,7 @@ function initialRows(exercises: SessionExercise[]): Rows {
 }
 
 function storageKey(p: SessionProps) {
-  return `fitsplit-session:${p.programId}:${p.dayId}`;
+  return `fitsplit-session:${p.programId}:${p.dayId}${p.variant ? `:${p.variant}` : ""}`;
 }
 
 function loadSaved(p: SessionProps): Saved | null {
@@ -70,12 +77,14 @@ function loadSaved(p: SessionProps): Saved | null {
     if (!raw) return null;
     const saved = JSON.parse(raw) as Saved;
     if (!saved.sessionId || Date.now() - saved.startedAt > STALE_MS) return null;
-    const rows = initialRows(p.exercises);
-    for (const ex of p.exercises) {
+    const swaps = saved.swaps ?? {};
+    const base = p.exercises.map((e) => (swaps[e.key] ? { ...e, ...swaps[e.key] } : e));
+    const rows = initialRows(base);
+    for (const ex of base) {
       const kept = saved.rows[ex.key];
       if (kept?.length) rows[ex.key] = kept.map((r) => ({ ...r, saving: false }));
     }
-    return { ...saved, rows, index: Math.min(saved.index ?? 0, p.exercises.length - 1) };
+    return { ...saved, swaps, rows, index: Math.min(saved.index ?? 0, p.exercises.length - 1) };
   } catch {
     return null;
   }
@@ -162,9 +171,13 @@ function RestTimer({
 /* ── the logger ─────────────────────────────────────────────────────────── */
 
 export default function WorkoutSession(props: SessionProps) {
-  const { exercises } = props;
   const router = useRouter();
   const [init] = useState(() => loadSaved(props));
+  const [swaps, setSwaps] = useState<Swaps>(() => init?.swaps ?? {});
+  // Swaps apply to this session only: the plan itself is never touched.
+  const exercises = props.exercises.map((e) => (swaps[e.key] ? { ...e, ...swaps[e.key] } : e));
+  const [swapOpen, setSwapOpen] = useState(false);
+  const [swapOptions, setSwapOptions] = useState<SwapOption[] | null>(null);
   const [sessionId] = useState(() => init?.sessionId ?? newSessionId());
   const [startedAt] = useState(() => init?.startedAt ?? Date.now());
   const [rows, setRows] = useState<Rows>(() => init?.rows ?? initialRows(exercises));
@@ -178,7 +191,7 @@ export default function WorkoutSession(props: SessionProps) {
     durationSec: number;
     sets: number;
     volume: number;
-    records: Array<{ name: string; weight: number }>;
+    records: SessionRecord[];
   }>(null);
 
   const ex = exercises[index];
@@ -193,11 +206,11 @@ export default function WorkoutSession(props: SessionProps) {
   useEffect(() => {
     if (summary) return;
     try {
-      window.localStorage.setItem(storageKey(props), JSON.stringify({ sessionId, startedAt, rows, index } satisfies Saved));
+      window.localStorage.setItem(storageKey(props), JSON.stringify({ sessionId, startedAt, rows, index, swaps } satisfies Saved));
     } catch {
       /* storage unavailable: the logger still works, it just will not resume */
     }
-  }, [rows, index, sessionId, startedAt, summary, props]);
+  }, [rows, index, swaps, sessionId, startedAt, summary, props]);
 
   // Keep the screen awake between sets.
   useEffect(() => {
@@ -298,6 +311,44 @@ export default function WorkoutSession(props: SessionProps) {
     });
   }
 
+  function openSwap() {
+    setSwapOpen(true);
+    setSwapOptions(null);
+    void getSwapOptions(ex.exerciseId).then(setSwapOptions);
+  }
+
+  function applySwap(o: SwapOption) {
+    const targetReps = parseReps(ex.reps);
+    setSwaps((prev) => ({
+      ...prev,
+      [ex.key]: {
+        exerciseId: o.id,
+        name: o.name,
+        muscleGroup: o.muscleGroup,
+        equipment: o.equipment,
+        steps: o.steps,
+        videoUrl: o.videoUrl,
+        last: o.last,
+        priorBest: o.priorBest,
+        nudge: null
+      }
+    }));
+    setRows((prev) => ({
+      ...prev,
+      [ex.key]: Array.from({ length: prev[ex.key].length }, (_, i) => {
+        const p = o.last[i] ?? o.last[o.last.length - 1];
+        return { weight: p ? formatKg(p.weight) : "", reps: String(p?.reps ?? targetReps ?? ""), done: false, saving: false, edited: false };
+      })
+    }));
+    setShowHow(false);
+    setSwapOpen(false);
+    toast.success(`Swapped to ${o.name} for this workout.`);
+  }
+
+  function applyNudge(kg: number) {
+    setRows((prev) => ({ ...prev, [ex.key]: prev[ex.key].map((r) => (r.done ? r : { ...r, weight: formatKg(kg), edited: true })) }));
+  }
+
   function go(next: number) {
     setIndex(Math.max(0, Math.min(exercises.length - 1, next)));
     setShowHow(false);
@@ -311,13 +362,9 @@ export default function WorkoutSession(props: SessionProps) {
     const durationSec = (Date.now() - startedAt) / 1000;
     const exercisesCompleted = new Set(done.map(({ e }) => e.key)).size;
 
-    const bestByExercise = new Map<string, { name: string; weight: number; prior: number }>();
-    for (const { e, r } of done) {
-      const w = Number(r.weight.replace(",", ".")) || 0;
-      const cur = bestByExercise.get(e.key);
-      if (!cur || w > cur.weight) bestByExercise.set(e.key, { name: e.name, weight: w, prior: e.priorBest });
-    }
-    const records = [...bestByExercise.values()].filter((b) => b.prior > 0 && b.weight > b.prior).map((b) => ({ name: b.name, weight: b.weight }));
+    const records = sessionRecords(
+      done.map(({ e, r }) => ({ key: e.key, name: e.name, weight: Number(r.weight.replace(",", ".")) || 0, prior: e.priorBest }))
+    );
 
     startSaving(async () => {
       const res = await finishWorkout({
@@ -387,18 +434,38 @@ export default function WorkoutSession(props: SessionProps) {
         </div>
 
         {summary.records.length > 0 && (
-          <section className="fs-section">
-            <h2 className="fs-section__title">New personal bests</h2>
+          <section className="fs-section fs-pr" aria-label="Personal bests">
+            <h2 className="fs-section__title">
+              {summary.records.length === 1 ? "New personal best" : `${summary.records.length} new personal bests`}
+            </h2>
             <div className="fs-group">
               {summary.records.map((r) => (
-                <div className="fs-row" key={r.name}>
-                  <span className="fs-row__title">{r.name}</span>
+                <div className="fs-row fs-pr__row" key={r.name}>
+                  <span className="fs-pr__mark" aria-hidden="true" />
+                  <span className="fs-row__main">
+                    <span className="fs-row__title">{r.name}</span>
+                    <span className="fs-row__sub fs-num">
+                      Was {formatKg(r.prior)} kg, up {formatKg(Math.round((r.weight - r.prior) * 10) / 10)} kg
+                    </span>
+                  </span>
                   <span className="fs-row__value fs-num">{formatKg(r.weight)} kg</span>
                 </div>
               ))}
             </div>
           </section>
         )}
+
+        <div className="fs-share">
+          <ShareCardButton
+            data={{
+              title: props.dayTitle,
+              durationLabel: formatDuration(summary.durationSec),
+              volumeLabel: `${Math.round(summary.volume).toLocaleString("en-US")} kg`,
+              prCount: summary.records.length,
+              dateLabel: new Intl.DateTimeFormat("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "Asia/Kolkata" }).format(new Date())
+            }}
+          />
+        </div>
 
         {props.rehab && <RehabCard variant="summary" count={props.rehab.count} minutes={props.rehab.minutes} />}
 
@@ -479,6 +546,21 @@ export default function WorkoutSession(props: SessionProps) {
           <p className="fs-wk__last">
             <span className="fs-soft">Last time</span> <span className="fs-num">{lastTime}</span>
           </p>
+        )}
+        {ex.nudge && !exRows.some((r) => r.done) && (
+          <p className="fs-nudge">
+            <span>
+              Hit {ex.nudge.reps} reps on every set twice running. Try <strong className="fs-num">{formatKg(ex.nudge.toKg)} kg</strong> today.
+            </span>
+            <button type="button" className="fs-chip-btn" onClick={() => applyNudge(ex.nudge!.toKg)}>
+              Use {formatKg(ex.nudge.toKg)} kg
+            </button>
+          </p>
+        )}
+        {!exRows.some((r) => r.done) && (
+          <button type="button" className="fs-text-btn fs-wk__how" onClick={openSwap}>
+            Swap exercise
+          </button>
         )}
         {ex.steps.length > 0 && (
           <button type="button" className="fs-text-btn fs-wk__how" aria-expanded={showHow} onClick={() => setShowHow((v) => !v)}>
@@ -591,6 +673,28 @@ export default function WorkoutSession(props: SessionProps) {
           </button>
         )}
       </nav>
+
+      <Sheet open={swapOpen} onOpenChange={setSwapOpen} title={`Swap ${ex.name}`}>
+        {swapOptions === null ? (
+          <p className="fs-soft">Finding alternatives…</p>
+        ) : swapOptions.length === 0 ? (
+          <p className="fs-soft">No alternatives found for this exercise.</p>
+        ) : (
+          <>
+            <p className="fs-soft fs-sheet__note">Same muscle group. Applies to this workout only.</p>
+            <div className="fs-group">
+              {swapOptions.map((o) => (
+                <button key={o.id} type="button" className="fs-row fs-row--tap" onClick={() => applySwap(o)}>
+                  <span className="fs-row__main">
+                    <span className="fs-row__title">{o.name}</span>
+                    <span className="fs-row__sub">{o.equipment}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </>
+        )}
+      </Sheet>
 
       <Sheet open={listOpen} onOpenChange={setListOpen} title="Exercises">
         <div className="fs-group">

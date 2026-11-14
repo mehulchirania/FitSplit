@@ -3,8 +3,9 @@ import { redirect } from "next/navigation";
 import { requireAuth } from "@/lib/auth";
 import { getDayLogsForMember, getWorkoutSessionsForMember } from "@/lib/firebase/read-models";
 import { exerciseName, getActivePlan } from "@/lib/member-data";
-import { estimateSessionMinutes } from "@/lib/workout-utils";
-import { countLabel, istDateKey, resolveNextDayIndex, trainedDateKeys, weekDateKeys, weekStartOf, type CompletedWorkout } from "@/lib/today";
+import { estimateSessionMinutes, sessionMinutes, trimSession } from "@/lib/workout-utils";
+import { advanceHistory, countLabel, istDateKey, resolveNextDayIndex, trainedDateKeys, trainingStreak, weekDateKeys, weekStartOf } from "@/lib/today";
+import { SkipDay } from "@/components/app/skip-day";
 import { UpcomingDays } from "@/components/app/upcoming-days";
 import { CheckIcon } from "@/components/app/icons";
 import { RehabChecklist, type RehabItem } from "@/components/app/rehab/rehab-checklist";
@@ -44,19 +45,14 @@ export default async function TodayPage() {
   }));
 
   const days = program.days.filter((d) => d.exercises.length > 0);
-  const history: CompletedWorkout[] = [
-    ...sessions
-      .filter((s) => s.programId === program.id)
-      .map((s) => ({ dayId: s.programDayId, dayTitle: s.dayTitle, completedAt: s.endedAt ?? s.startedAt })),
-    ...dayLogs
-      .filter((l) => l.programId === program.id && l.status === "completed")
-      .map((l) => ({ dayId: l.dayId, completedAt: l.loggedAt }))
-  ];
+  // Finished sessions, completed days and skipped days all move the plan on; only the first two count as training.
+  const history = advanceHistory(sessions, dayLogs, program.id);
   const nextIndex = resolveNextDayIndex(days, history, assignment.assignedAt);
   const next = days[nextIndex];
 
   // Workout-only: finished sessions and completed days. Rehab runs and stray sets never tick it.
   const trained = trainedDateKeys(sessions, dayLogs);
+  const streak = trainingStreak(sessions, dayLogs, istDateKey());
 
   const todayKey = istDateKey();
   const week = weekDateKeys(weekStartOf(todayKey));
@@ -74,6 +70,10 @@ export default async function TodayPage() {
     .map(({ d, i }) => ({ id: d.id, title: d.title, position: i + 1, href: href(d.id), exercises: toLines(d) }));
 
   const nextLines = toLines(next);
+  const shortPlan = trimSession(next.exercises);
+  const fullMinutes = estimateSessionMinutes(next.exercises);
+  const shortMinutes = sessionMinutes(shortPlan);
+  const offerShort = shortPlan.length < next.exercises.length || shortMinutes < fullMinutes;
 
   return (
     <main className="fs-page">
@@ -106,7 +106,26 @@ export default async function TodayPage() {
         <Link href={href(next.id)} className="fs-btn fs-btn--primary fs-btn--lg">
           Start workout
         </Link>
+        <div className="fs-hero__alt">
+          {offerShort ? (
+            <Link href={`${href(next.id)}?short=1`} className="fs-text-btn">
+              Short on time · {countLabel(shortPlan.length, "exercise")}, about {shortMinutes} min
+            </Link>
+          ) : (
+            <span />
+          )}
+          {days.length > 1 && <SkipDay programId={program.id} dayId={next.id} nextTitle={days[(nextIndex + 1) % days.length].title} />}
+        </div>
       </section>
+
+      {streak.weeks > 0 && (
+        <p className="fs-streak">
+          <strong className="fs-num">{streak.weeks} week streak</strong>
+          <span className="fs-soft">
+            {streak.atRisk ? "One workout this week keeps it going." : "Nice and steady."}
+          </span>
+        </p>
+      )}
 
       {rehab.length > 0 && (
         <section className="fs-section" aria-label="Rehab">

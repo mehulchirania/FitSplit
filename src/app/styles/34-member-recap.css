@@ -1,0 +1,101 @@
+/* PR list on the finish summary, the share button and the weekly recap on Progress.
+   Colour comes only from tokens; lime is a fill (the PR tick) and never text. */
+
+.fs-pr__row {
+  gap: var(--space-3);
+}
+
+.fs-pr__mark {
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  flex: none;
+  height: 28px;
+  width: 4px;
+}
+
+.fs-share {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 var(--space-6);
+}
+
+.fs-recap {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--space-6);
+  padding: var(--space-5);
+}
+
+.fs-recap__line {
+  color: var(--text);
+  font-size: var(--text-md);
+  line-height: 1.45;
+  margin: 0 0 var(--space-4);
+}
+
+.fs-recap__grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.fs-recap__grid dt {
+  color: var(--text-soft);
+  font-size: var(--text-xs);
+  margin: 0 0 var(--space-1);
+}
+
+.fs-recap__grid dd {
+  color: var(--text);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  margin: 0;
+}
+
+.fs-recap__grid small {
+  color: var(--text-soft);
+  display: block;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+/* Progressive-overload hint, swap sheet note, skip day, streak and short-on-time. Tokens only. */
+.fs-nudge {
+  align-items: center;
+  background: var(--bg-elevated);
+  border-radius: var(--radius-sm);
+  box-shadow: inset 0 0 0 1px var(--border);
+  display: flex;
+  font-size: var(--text-base);
+  gap: var(--space-3);
+  justify-content: space-between;
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+}
+
+.fs-sheet__note {
+  margin-bottom: var(--space-3);
+}
+
+.fs-streak {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.fs-streak strong {
+  font-size: var(--text-md);
+}
+
+.fs-hero__alt {
+  align-items: center;
+  display: flex;
+  gap: var(--space-2);
+  justify-content: space-between;
+  margin-top: var(--space-2);
+}

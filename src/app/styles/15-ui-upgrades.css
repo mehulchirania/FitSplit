@@ -30,10 +30,6 @@ html[data-theme="dark"] .status-active {
 
 /* ── #4: Set-logged row flash ───────────────────────────────────────────── */
 
-.lift-log-table div[data-new="true"] {
-  animation: row-flash 700ms ease-out both;
-}
-
 /* ── #6: Owner quick-action bento cards ────────────────────────────────── */
 
 /* ── #2: Live-session dot on profile trigger ────────────────────────────── */
@@ -71,27 +67,11 @@ html[data-theme="dark"] .status-active {
 
 /* ── #10: Day focus view exercise card ──────────────────────────────────── */
 
-.pr-chip {
-  background: linear-gradient(135deg, #f59e0b, #ef4444);
-  border-radius: 4px;
-  color: #fff;
-  display: inline-block;
-  font-size: var(--text-2xs);
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  padding: var(--space-0) var(--space-1);
-  text-transform: uppercase;
-}
-
 /* ── #9: Reports page chart section ─────────────────────────────────────── */
 
 /* ── Workout makeup card ─────────────────────────────────────────────────── */
 
 /* ── Workout training calendar ───────────────────────────────────────────── */
-.workout-calendar {
-  container-type: inline-size;
-  max-width: 420px;          /* keeps cells a comfortable size on wide screens */
-}
 
 /* ── Header row: prev | month+stats | next ── */
 .cal-header {

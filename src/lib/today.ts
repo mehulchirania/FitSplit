@@ -149,3 +149,47 @@ export function trainedDateKeys(
   keys.delete("");
   return keys;
 }
+
+export type TrainingStreak = {
+  /** Consecutive Monday-first weeks with at least one real workout, counting back from now. */
+  weeks: number;
+  /** Whether a workout has already been logged in the current week. */
+  trainedThisWeek: boolean;
+  /** True while the streak is alive but this week still needs a workout to extend it. */
+  atRisk: boolean;
+};
+
+/**
+ * Consistency streak from workout sessions and completed day logs only. Rehab runs are
+ * deliberately not an input, so they can never extend a workout streak.
+ */
+export function trainingStreak(
+  sessions: { startedAt: string; endedAt?: string }[],
+  dayLogs: { status: string; loggedAt: string }[],
+  todayKey: string
+): TrainingStreak {
+  const trained = trainedDateKeys(sessions, dayLogs);
+  const thisWeek = weekStartOf(todayKey);
+  const trainedThisWeek = [...trained].some((k) => weekStartOf(k) === thisWeek);
+  const weeks = weeklyStreak(trained, todayKey);
+  return { weeks, trainedThisWeek, atRisk: weeks > 0 && !trainedThisWeek };
+}
+
+/**
+ * Everything that moves the plan forward: finished sessions, completed days, and days the user
+ * skipped. Skips only advance the plan; trainedDateKeys / trainingStreak never see them.
+ */
+export function advanceHistory(
+  sessions: { programId?: string; programDayId?: string; dayTitle?: string; startedAt: string; endedAt?: string }[],
+  dayLogs: { programId: string; dayId: string; status: string; loggedAt: string }[],
+  programId: string
+): CompletedWorkout[] {
+  return [
+    ...sessions
+      .filter((s) => s.programId === programId)
+      .map((s) => ({ dayId: s.programDayId, dayTitle: s.dayTitle, completedAt: s.endedAt ?? s.startedAt })),
+    ...dayLogs
+      .filter((l) => l.programId === programId && (l.status === "completed" || l.status === "skipped"))
+      .map((l) => ({ dayId: l.dayId, completedAt: l.loggedAt }))
+  ];
+}

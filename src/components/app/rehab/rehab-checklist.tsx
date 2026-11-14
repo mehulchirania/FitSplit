@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { saveRehabSession } from "@/lib/firebase/actions/rehab";
+import { saveRehabSession, setRehabFeeling } from "@/lib/firebase/actions/rehab";
+import { REHAB_FEELINGS, type RehabFeeling } from "@/lib/rehab/session";
 import { CheckIcon } from "../icons";
 import { Sheet } from "../sheet";
 
@@ -38,6 +39,8 @@ export function RehabChecklist({
   const [done, setDone] = useState<Set<string>>(new Set());
   const [openId, setOpenId] = useState<string | null>(null);
   const [save, setSave] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [feeling, setFeeling] = useState<RehabFeeling | null>(null);
+  const [feelingError, setFeelingError] = useState(false);
   const [startedAt] = useState(() => Date.now());
   const runId = useRef<string>("");
 
@@ -80,6 +83,13 @@ export function RehabChecklist({
       exercisesSkipped: items.length - done.size
     }).catch(() => ({ ok: false as const }));
     setSave(res.ok ? "saved" : "error");
+  }
+
+  async function answer(f: RehabFeeling) {
+    setFeeling(f);
+    setFeelingError(false);
+    const res = await setRehabFeeling(runId.current, f).catch(() => ({ ok: false as const }));
+    if (!res.ok) setFeelingError(true);
   }
 
   const open = useMemo(() => items.find((i) => i.id === openId) ?? null, [items, openId]);
@@ -133,6 +143,31 @@ export function RehabChecklist({
             </button>
           )}
         </div>
+        {save === "saved" && (
+          <div className="fs-rehab-feel" role="group" aria-label="How did it feel?">
+            <p className="fs-rehab-feel__q">How did it feel?</p>
+            <div className="fs-rehab-feel__opts">
+              {REHAB_FEELINGS.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  className="fs-rehab-feel__opt"
+                  aria-pressed={feeling === f}
+                  onClick={() => void answer(f)}
+                >
+                  {f === "better" ? "Better" : f === "same" ? "Same" : "Worse"}
+                </button>
+              ))}
+            </div>
+            {feelingError && <p className="fs-soft">Could not save that. Tap again to retry.</p>}
+            {feeling === "worse" && (
+              <p className="fs-rehab-feel__note" role="status">
+                Thanks for telling us. If pain is persistent, sharp or spreads down a limb, or you feel numbness or tingling, see
+                a physiotherapist or doctor. Stop any exercise that increases your pain.
+              </p>
+            )}
+          </div>
+        )}
       </div>
 
       <Sheet open={open !== null} onOpenChange={(o) => !o && setOpenId(null)} title={sheetItem?.name ?? ""}>

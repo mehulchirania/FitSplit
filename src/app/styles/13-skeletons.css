@@ -46,11 +46,6 @@ html[data-theme="dark"] .sk-pulse {
 
 /* Constrain header-width skeleton to feel like an actual heading. Width is a
    mocked content dimension, not layout spacing, so it stays a literal value. */
-.sk-heading {
-  height: 28px;
-  border-radius: var(--radius-xs);
-  width: 220px;
-}
 
 /* Respect reduced-motion: freeze the shimmer sweep but keep the static tinted
    block (still communicates "loading" shape without the motion). */

@@ -112,39 +112,6 @@
 }
 
 /* player */
-.fs-rp__unit {
-  margin-top: var(--space-6);
-  text-align: center;
-}
-
-.fs-rp__label {
-  color: var(--text-soft);
-  font-size: var(--text-base);
-  font-weight: 600;
-}
-
-.fs-rp__big {
-  font-size: 5.5rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.05;
-  margin: var(--space-2) 0 var(--space-3);
-}
-
-.fs-rp__unit-word {
-  color: var(--text-soft);
-  font-size: var(--text-xl);
-  font-weight: 600;
-  letter-spacing: 0;
-}
-
-.fs-rp__seg {
-  cursor: default;
-}
-
-.fs-rp__cues {
-  margin-top: var(--space-6);
-}
 
 .fs-rp__stop {
   background: var(--warning-soft);
@@ -163,10 +130,6 @@
 .fs-rp__stop strong {
   color: var(--warning);
   font-weight: 600;
-}
-
-.fs-rp__rest {
-  padding-top: 0;
 }
 
 /* History: a rehab run sits among workouts with a small "Rehab" tag. Lime is the fill (the
@@ -259,4 +222,72 @@
 
 .fs-rehab-choose .fs-row__sub {
   max-width: 34ch;
+}
+
+/* "How did it feel?" after saving, and the trend strip on the rehab tab */
+.fs-rehab-feel {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border, rgba(255, 255, 255, 0.08));
+}
+
+.fs-rehab-feel__q {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.fs-rehab-feel__opts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+}
+
+.fs-rehab-feel__opt {
+  min-height: 44px;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.fs-rehab-feel__opt[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--primary-foreground);
+}
+
+.fs-rehab-feel__note {
+  color: var(--text-soft);
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+}
+
+.fs-rehab-trend {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.fs-rehab-trend__dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid var(--text-soft);
+  box-sizing: border-box;
+}
+
+.fs-rehab-trend__dot[data-feeling="better"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.fs-rehab-trend__dot[data-feeling="same"] {
+  background: var(--text-soft);
+}
+
+.fs-rehab-trend__legend {
+  margin-top: var(--space-2);
+  font-size: var(--text-sm);
 }

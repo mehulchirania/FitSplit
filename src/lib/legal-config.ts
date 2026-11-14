@@ -27,7 +27,7 @@ export const LEGAL_VERSIONS = {
 export type LegalVersionKey = keyof typeof LEGAL_VERSIONS;
 
 /** Operator (the Data Fiduciary under the DPDP Act). */
-export const OPERATOR = {
+const OPERATOR = {
   name: "Blume Labs",
   legalForm: "[LEGAL FORM, e.g. proprietorship / LLP / private limited]",
   registeredAddress: "[REGISTERED ADDRESS]",
@@ -36,7 +36,7 @@ export const OPERATOR = {
 } as const;
 
 /** Grievance Officer / Data Protection contact. Rendered on the privacy and data-rights pages. */
-export const DATA_PROTECTION_CONTACT = {
+const DATA_PROTECTION_CONTACT = {
   name: "[NAME]",
   designation: "[DESIGNATION]",
   email: "[privacy@yourdomain]",
@@ -47,7 +47,7 @@ export const DATA_PROTECTION_CONTACT = {
 } as const;
 
 /** Where Firebase data lives. Confirm against the Firebase console, then replace. */
-export const DATA_LOCATION = "[CONFIRM: Firestore and Storage location, e.g. Mumbai (asia-south1)]";
+const DATA_LOCATION = "[CONFIRM: Firestore and Storage location, e.g. Mumbai (asia-south1)]";
 
 /** Age of majority for consent purposes (DPDP Act s.2(f): under 18 is a child). */
 export const ADULT_AGE = 18;

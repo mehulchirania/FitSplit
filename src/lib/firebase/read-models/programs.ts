@@ -53,7 +53,7 @@ export const isCustomProgramId = (id: string) => id.startsWith(CUSTOM_PREFIX);
 export const newCustomProgramId = (uuid: string) => `${CUSTOM_PREFIX}${uuid}`;
 
 /** Plans the user built themselves (`users/{uid}/customPrograms`), newest first. */
-export const getCustomProgramsForMember = cache(async function getCustomProgramsForMember(uid: string): Promise<WorkoutProgram[]> {
+const getCustomProgramsForMember = cache(async function getCustomProgramsForMember(uid: string): Promise<WorkoutProgram[]> {
   if (!hasFirebaseAdminConfig()) return [];
   try {
     const { db } = getFirebaseAdminServices();

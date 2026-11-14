@@ -15,12 +15,6 @@ export function requireFirebaseServices() {
   return getFirebaseAdminServices();
 }
 
-export function requireText(formData: FormData, key: string, label = key) {
-  const value = String(formData.get(key) ?? "").trim();
-  if (!value) throw new Error(`${label} is required.`);
-  return value;
-}
-
 export function parsePngDataUrl(dataUrl: string) {
   const match = dataUrl.match(/^data:image\/png;base64,([A-Za-z0-9+/=]+)$/);
   if (!match?.[1]) {

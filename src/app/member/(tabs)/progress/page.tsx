@@ -5,7 +5,8 @@ import { exerciseName } from "@/lib/member-data";
 import { getCondition } from "@/lib/rehab/routine";
 import { getRehabSessionsForMember } from "@/lib/rehab/server";
 import { mergeHistory } from "@/lib/rehab/session";
-import { formatDuration, formatKg, istDateKey, trainedDateKeys, weekDateKeys, weekStartOf, weeklyStreak } from "@/lib/today";
+import { formatDuration, formatKg, istDateKey, trainedDateKeys, trainingStreak, weekDateKeys, weekStartOf } from "@/lib/today";
+import { weeklyRecap } from "@/lib/recap";
 import { ChevronLeft } from "@/components/app/icons";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +29,9 @@ export default async function ProgressPage() {
   const weekVolume = liftLogs
     .filter((l) => thisWeek.has(istDateKey(l.loggedAt)))
     .reduce((n, l) => n + l.weight * (parseInt(l.reps, 10) || 0), 0);
-  const streak = weeklyStreak(trained, todayKey);
+  const streak = trainingStreak(sessions, dayLogs, todayKey).weeks;
+  const recap = weeklyRecap(sessions, liftLogs, todayKey);
+  const pct = recap.volumeChangePct;
 
   const best = new Map<string, { weight: number; reps: number }>();
   for (const l of liftLogs) {
@@ -55,6 +58,33 @@ export default async function ProgressPage() {
       <header className="fs-head">
         <h1 className="fs-title">Progress</h1>
       </header>
+
+      <section className="fs-section" aria-label="Weekly recap">
+        <h2 className="fs-section__title">This week</h2>
+        <div className="fs-recap">
+          <p className="fs-recap__line">{recap.summary}</p>
+          <dl className="fs-recap__grid">
+            <div>
+              <dt>Sessions</dt>
+              <dd className="fs-num">
+                {recap.sessions}
+                <small>Last week {recap.lastSessions}</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Volume</dt>
+              <dd className="fs-num">
+                {recap.volume.toLocaleString("en-US")} kg
+                <small>{pct === null ? "No prior week" : `${pct > 0 ? "+" : ""}${pct}% vs last week`}</small>
+              </dd>
+            </div>
+            <div>
+              <dt>Records</dt>
+              <dd className="fs-num">{recap.prs}</dd>
+            </div>
+          </dl>
+        </div>
+      </section>
 
       <div className="fs-group">
         <div className="fs-row">

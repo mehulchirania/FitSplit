@@ -14,6 +14,7 @@ const IMAGES: Record<string, string> = {
   "front-plank": `${WGER}/1307/321d796a-f394-40b8-a1ea-874bbed6ecee.png`,
   "hip-flexor-stretch": `${WGER}/1867/767631e5-10d2-46b8-b03f-cc298f96963b.png`,
   "quad-stretch": `${WGER}/2687/c0ed299b-6d87-4d90-885d-bb3b5d85f1eb.png`,
+  "figure-four-stretch": `${WGER}/1869/c49187bd-9f90-4a7a-b25e-1d50e857a104.png`,
   "calf-stretch": `${WGER}/1239/5026373a-a7b4-4e26-a0aa-c46634205196.jpg`
 };
 

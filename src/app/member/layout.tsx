@@ -1,5 +1,6 @@
 import "../styles/32-member-app.css";
 import "../styles/33-member-rehab.css";
+import "../styles/34-member-recap.css";
 import { requireAuth } from "@/lib/auth";
 
 /** Everything under /member is the signed-in app: one container carries the app type face and safe areas. */

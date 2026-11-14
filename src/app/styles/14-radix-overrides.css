@@ -42,30 +42,8 @@
    --bg-elevated: #161616, a fully opaque solid. The raw hex is gone; this
    now just uses the real token, which is solid in both themes by
    definition. */
-.radix-select-content {
-  background: var(--bg-elevated);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  box-shadow: var(--shadow);
-  color: var(--text);
-}
 
 /* ── Radix Select items ─────────────────────────────────────────────────── */
-.radix-select-item {
-  color: var(--text);
-  background: transparent;
-}
-
-.radix-select-item[data-highlighted] {
-  background: var(--bg-subtle);
-  color: var(--brand);
-  outline: none;
-}
-
-.radix-select-trigger:focus-visible {
-  border-color: var(--brand-strong);
-  outline: none;
-}
 
 /* ── Native <select> for chart exercise picker ──────────────────────────── */
 /* Same stale-comment issue as above — --bg-elevated is solid in dark theme,

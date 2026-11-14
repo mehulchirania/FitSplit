@@ -53,8 +53,6 @@ export function AppTopbar({
 
   function handleLogout() {
     startLogoutTransition(async () => {
-      window.localStorage.removeItem("fitsplit-session-start");
-      window.localStorage.removeItem("fitsplit-remember-me");
       await logoutUser();
     });
   }

@@ -10,7 +10,7 @@ import {
   sanitizeConditionIds,
   unitWorkSeconds
 } from "./routine";
-import { mapRehabSession, mergeHistory, validateRehabRun } from "./session";
+import { mapRehabSession, mergeHistory, parseRehabFeeling, recentFeelings, validateRehabRun } from "./session";
 
 describe("catalogue", () => {
   it("exposes the field name and seed id", () => {
@@ -176,5 +176,34 @@ describe("mapRehabSession and mergeHistory", () => {
     const merged = mergeHistory(workouts, (w) => w.at, rehab);
     expect(merged.map((m) => m.kind)).toEqual(["workout", "rehab", "workout"]);
     expect(merged.map((m) => m.id)).toEqual(["w:w1", "r:r1", "w:w0"]);
+  });
+});
+
+describe("rehab feeling", () => {
+  const now = new Date("2026-05-01T12:00:00Z");
+  const base = { runId: "run-12345678", conditionIds: [LOWER_BACK_PAIN_ID], startedAt: "2026-05-01T11:30:00Z", durationSec: 600, exercisesCompleted: 4, exercisesSkipped: 1 };
+  it("parses only the three known answers", () => {
+    expect(parseRehabFeeling("better")).toBe("better");
+    expect(parseRehabFeeling("worse")).toBe("worse");
+    expect(parseRehabFeeling("great")).toBeUndefined();
+    expect(parseRehabFeeling(3)).toBeUndefined();
+  });
+  it("keeps a valid feeling on the run and drops an invalid one", () => {
+    const ok = validateRehabRun({ ...base, feeling: "same" }, now);
+    expect(ok.ok && ok.doc.feeling).toBe("same");
+    const bad = validateRehabRun({ ...base, feeling: "meh" }, now);
+    expect(bad.ok && "feeling" in bad.doc).toBe(false);
+  });
+  it("maps a stored feeling and ignores junk", () => {
+    const doc = { completedAt: "2026-05-01T12:00:00Z", conditionIds: [LOWER_BACK_PAIN_ID] };
+    expect(mapRehabSession("a", { ...doc, feeling: "worse" })?.feeling).toBe("worse");
+    expect(mapRehabSession("a", { ...doc, feeling: "x" })?.feeling).toBeUndefined();
+  });
+  it("lists the last feelings oldest first, skipping sessions without one", () => {
+    const mk = (i: number, feeling?: "better" | "same" | "worse") => ({
+      id: String(i), conditionIds: [], startedAt: "", completedAt: `2026-05-0${i}T10:00:00Z`, durationSec: 0, exercisesCompleted: 1, exercisesSkipped: 0, feeling
+    });
+    expect(recentFeelings([mk(3, "worse"), mk(2), mk(1, "better")])).toEqual(["better", "worse"]);
+    expect(recentFeelings([1, 2, 3, 4, 5, 6, 7, 8].map((i) => mk(i, "same")), 3)).toHaveLength(3);
   });
 });

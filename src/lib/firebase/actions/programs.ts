@@ -8,6 +8,7 @@ import { userCollectionPath } from "../collections";
 import { getWorkoutPrograms, isCustomProgramId, newCustomProgramId } from "../read-models/programs";
 import { getExerciseLibrary } from "../read-models/exercises";
 import { findExercise } from "@/lib/exercise-library";
+import { istDateKey, weekStartOf } from "@/lib/today";
 
 // The active plan is stored per user: users/{uid}/programAssignments/* (at most one "active").
 // Plans the user builds live in users/{uid}/customPrograms/*. Everything here writes only
@@ -138,4 +139,48 @@ export async function searchExercisesForPlan(query: string, muscleGroup = ""): P
   await requireAuth();
   const { results } = getExerciseLibrary({ q: String(query ?? "").slice(0, 60), muscleGroup: String(muscleGroup ?? "") });
   return results.slice(0, 30).map((e) => ({ id: e.id, name: e.name, muscleGroup: e.muscleGroup, equipment: e.equipment }));
+}
+
+/**
+ * Skip today's workout: the plan moves on to the next day, nothing is logged as trained, so the
+ * week strip, days trained and the streak are untouched. Stored as a dayLog with status "skipped";
+ * the returned id lets the caller undo it.
+ */
+export async function skipDay(programId: string, dayId: string): Promise<Result & { id?: string }> {
+  try {
+    const user = await requireAuth();
+    if (typeof programId !== "string" || typeof dayId !== "string" || !programId || !dayId || dayId.length > 160) {
+      return fail("Could not skip today.");
+    }
+    const now = new Date().toISOString();
+    const id = `skip_${randomUUID()}`;
+    await userDoc(requireFirebase(), user.uid, "dayLogs", id).set({
+      memberId: user.uid,
+      programId,
+      dayId,
+      weekStart: weekStartOf(istDateKey()),
+      status: "skipped",
+      skipReason: "other",
+      note: "skipped from Today",
+      loggedAt: now,
+      updatedAt: now
+    });
+    return { ok: true, id };
+  } catch (error) {
+    console.error("Unable to skip day", error);
+    return fail("Could not skip today. Please try again.");
+  }
+}
+
+/** Undo a skip made with skipDay. Only skip records can be removed here. */
+export async function undoSkipDay(id: string): Promise<Result> {
+  try {
+    const user = await requireAuth();
+    if (typeof id !== "string" || !id.startsWith("skip_") || id.includes("/")) return fail("Could not undo.");
+    await userDoc(requireFirebase(), user.uid, "dayLogs", id).delete();
+    return { ok: true };
+  } catch (error) {
+    console.error("Unable to undo skip", error);
+    return fail("Could not undo. Please try again.");
+  }
 }
