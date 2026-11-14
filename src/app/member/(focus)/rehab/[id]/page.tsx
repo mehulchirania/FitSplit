@@ -20,7 +20,7 @@ export default async function RehabConditionPage({ params }: { params: Promise<{
   const exercises = conditionExercises(condition.id);
 
   return (
-    <main className="fs-page fs-page--focus fs-page--cta">
+    <main className="fs-page fs-page--focus">
       <header className="fs-navbar">
         <Link href="/member/rehab" className="fs-text-btn fs-navbar__back">
           <ChevronLeft size={18} /> Rehab
@@ -84,11 +84,6 @@ export default async function RehabConditionPage({ params }: { params: Promise<{
 
       <RehabDisclaimer />
 
-      <div className="fs-sticky-cta">
-        <Link href={`/member/rehab/play?c=${condition.id}`} className="fs-btn fs-btn--primary fs-btn--lg">
-          Start routine
-        </Link>
-      </div>
     </main>
   );
 }

@@ -7,8 +7,9 @@ import { estimateSessionMinutes } from "@/lib/workout-utils";
 import { countLabel, istDateKey, resolveNextDayIndex, trainedDateKeys, weekDateKeys, weekStartOf, type CompletedWorkout } from "@/lib/today";
 import { UpcomingDays } from "@/components/app/upcoming-days";
 import { CheckIcon } from "@/components/app/icons";
-import { RehabCard } from "@/components/app/rehab/rehab-bits";
-import { buildRoutine, routineMinutes } from "@/lib/rehab/routine";
+import { RehabChecklist, type RehabItem } from "@/components/app/rehab/rehab-checklist";
+import { rehabImage } from "@/lib/rehab/media";
+import { buildRoutine, dosageLabel, routineMinutes } from "@/lib/rehab/routine";
 import { getRehabConditions } from "@/lib/rehab/server";
 
 export const dynamic = "force-dynamic";
@@ -31,6 +32,16 @@ export default async function TodayPage() {
     getRehabConditions(user.uid)
   ]);
   const rehab = buildRoutine(rehabConditions);
+  const rehabItems: RehabItem[] = rehab.map((e) => ({
+    id: e.id,
+    name: e.name,
+    target: e.target,
+    dose: dosageLabel(e.dosage),
+    image: rehabImage(e.id),
+    steps: e.cues.slice(0, 3),
+    stopIf: e.stopIf,
+    equipment: e.equipment
+  }));
 
   const days = program.days.filter((d) => d.exercises.length > 0);
   const history: CompletedWorkout[] = [
@@ -99,7 +110,8 @@ export default async function TodayPage() {
 
       {rehab.length > 0 && (
         <section className="fs-section" aria-label="Rehab">
-          <RehabCard minutes={routineMinutes(rehab)} count={rehab.length} />
+          <h2 className="fs-section__title">Rehab</h2>
+          <RehabChecklist items={rehabItems} conditionIds={rehabConditions} dayKey={todayKey} minutes={routineMinutes(rehab)} />
         </section>
       )}
 

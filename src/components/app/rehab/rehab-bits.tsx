@@ -25,7 +25,7 @@ export function RehabCard({
   minutes,
   count,
   variant = "row",
-  href = "/member/rehab/play"
+  href = "/member"
 }: {
   minutes: number;
   count: number;
@@ -42,7 +42,7 @@ export function RehabCard({
             {count} {count === 1 ? "exercise" : "exercises"}
           </span>
         </span>
-        <span className="fs-rehab-card__go">Start</span>
+        <span className="fs-rehab-card__go">View</span>
         <ChevronRight size={18} className="fs-row__chev" />
       </Link>
     </div>
