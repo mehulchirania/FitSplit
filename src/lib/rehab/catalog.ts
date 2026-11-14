@@ -434,6 +434,117 @@ const EXERCISE_LIST: RehabExercise[] = [
       "Keep your knees tracking over your second toe and weight in your heels."
     ],
     stopIf: "Stop if the front of the knee hurts. Go shallower, or skip it."
+  },
+  {
+    id: "side-leg-raise",
+    name: "Side-lying leg raise",
+    target: "Outer hip (gluteus medius)",
+    dosage: reps(12, 2, true, 3),
+    cues: [
+      "Lie on your side with your hips stacked and your bottom knee bent for balance.",
+      "Keep the top leg straight and toes pointing forward, then lift it a short way up and slightly back.",
+      "Lower slowly without rocking your hips backward."
+    ],
+    stopIf: `Stop if ${PAIN} in the hip or lower back.`
+  },
+  {
+    id: "band-side-step",
+    name: "Banded side step",
+    target: "Outer hip, keeping the knees from drifting in",
+    dosage: reps(10, 2, true, 3),
+    cues: [
+      "Place a light band just above your knees and stand with feet hip-width apart, knees slightly bent.",
+      "Step sideways, keeping your knees pushed out against the band and toes forward.",
+      "Take small steps and keep your hips level."
+    ],
+    stopIf: `Stop if ${PAIN} in the knee or hip.`,
+    equipment: "Light loop band"
+  },
+  {
+    id: "sit-to-stand-knees-out",
+    name: "Sit-to-stand, knees out",
+    target: "Glutes and thighs with knee control",
+    dosage: reps(10, 2, false, 4),
+    cues: [
+      "Sit on a chair with feet hip-width apart and toes pointing slightly out.",
+      "Stand up slowly, pressing your knees out so they track over your second toe.",
+      "Sit back down with control; do not let your knees fall inward."
+    ],
+    stopIf: `Stop if ${PAIN} in the knees.`
+  },
+  {
+    id: "single-leg-balance",
+    name: "Single-leg balance",
+    target: "Balance and control from foot to hip",
+    dosage: hold(30, 2, true),
+    cues: [
+      "Stand near a wall or chair for support and lift one foot a short way off the floor.",
+      "Keep your standing knee soft and pointing over your second toe, with the arch of your foot gently lifted.",
+      "Stand tall and keep your hips level."
+    ],
+    stopIf: "Stop if you lose your balance or feel pain in the foot, knee or hip."
+  },
+  {
+    id: "foot-roll",
+    name: "Foot roll",
+    target: "Sole of the foot, gentle release",
+    dosage: hold(45, 1, true),
+    cues: [
+      "Sit on a chair and place a tennis ball or similar ball under one foot.",
+      "Roll slowly from the heel to the ball of the foot with light pressure.",
+      "Pause on any tight spot and breathe; keep the pressure comfortable."
+    ],
+    stopIf: "Stop if you feel sharp pain, numbness or tingling in the foot.",
+    equipment: "Tennis ball"
+  },
+  {
+    id: "short-foot",
+    name: "Short foot",
+    target: "Small muscles that support the arch",
+    dosage: hold(10, 3, true),
+    cues: [
+      "Sit or stand with your foot flat and your toes relaxed.",
+      "Without curling your toes, draw the ball of your foot toward your heel so the arch lifts.",
+      "Hold, keeping the big toe and heel pressed down, then relax."
+    ],
+    stopIf: "Stop if you feel cramping that does not ease, or sharp pain in the foot."
+  },
+  {
+    id: "toe-yoga",
+    name: "Toe lift and spread",
+    target: "Big toe control and arch",
+    dosage: reps(8, 2, true, 4),
+    cues: [
+      "Sit with your foot flat on the floor.",
+      "Lift only your big toe while keeping the other four pressed down, then switch.",
+      "Move slowly and keep your heel and ball of foot on the floor."
+    ],
+    stopIf: "Stop if you feel cramping that does not ease, or pain in the foot."
+  },
+  {
+    id: "towel-scrunch",
+    name: "Towel scrunch",
+    target: "Foot muscles under the arch",
+    dosage: reps(10, 2, true, 4),
+    cues: [
+      "Sit with your foot flat on a small towel on a smooth floor.",
+      "Curl your toes to scrunch the towel toward you.",
+      "Relax, smooth the towel out and repeat."
+    ],
+    stopIf: "Stop if you feel foot cramping that does not ease, or sharp pain.",
+    equipment: "Small towel"
+  },
+  {
+    id: "heel-raise",
+    name: "Heel raise",
+    target: "Calves and the muscles that lift the arch",
+    dosage: reps(12, 2, false, 4),
+    cues: [
+      "Stand holding a wall with feet hip-width apart.",
+      "Rise onto the balls of your feet, keeping your weight over your big toes rather than rolling outward.",
+      "Lower slowly through the full movement."
+    ],
+    stopIf: "Stop if you feel pain in the Achilles tendon, heel or arch."
   }
 ];
 
@@ -550,5 +661,27 @@ export const REHAB_CONDITIONS: RehabCondition[] = [
       "glute-bridge",
       "mini-wall-sit"
     ]
+  },
+  {
+    id: "knock-knees",
+    name: "Knocked knees",
+    forWho: "Knees that drift inward when you stand, squat or walk, sometimes with knee or hip aches. Common and often improves with hip and foot strength.",
+    causes: ["Weak outer hip and glutes", "Tight inner thighs and calves", "Flat or rolling-in feet", "Poor knee control in squats and landings"],
+    routine: [
+      "calf-stretch",
+      "clamshell",
+      "side-leg-raise",
+      "glute-bridge",
+      "band-side-step",
+      "sit-to-stand-knees-out",
+      "single-leg-balance"
+    ]
+  },
+  {
+    id: "flat-feet",
+    name: "Flat feet",
+    forWho: "Low or collapsing arches, sometimes with tired feet, shin or knee aches. This builds foot and calf strength; it will not change bone structure.",
+    causes: ["Weak small muscles in the foot", "Tight calves", "Weak hips that let the knees roll in", "Long hours on hard surfaces"],
+    routine: ["foot-roll", "calf-stretch", "short-foot", "toe-yoga", "towel-scrunch", "heel-raise", "single-leg-balance"]
   }
 ];
